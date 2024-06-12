@@ -1,3 +1,9 @@
+/*
+ * Niklas Hörnblad
+ * Paolo Bientinesi
+ * Umeå University - June 2024
+ */
+
 #include "product.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,7 +60,7 @@ int main(int argc, char const *argv[])
         0, 0, 0, 0
     };*/
 
-    /*int IDXA = 2;
+    int IDXA = 2;
     int EXTA[2] = {4, 3};
     int STRA[2] = {1, 4};
     float A[12] = {
@@ -105,9 +111,9 @@ int main(int argc, char const *argv[])
     bool FB = false;
     bool FC = false;
 
-    char EINSUM[] = "ij, ij -> ij";*/
+    char EINSUM[] = "ij, ij -> ij";
 
-    int IDXA = 3;
+    /*int IDXA = 3;
 
     int EXTA[3] = {4, 2, 3};
 
@@ -172,13 +178,13 @@ int main(int argc, char const *argv[])
     bool FB = false;
     bool FC = false;
 
-    char EINSUM[] = "ijk, jkl -> il";
+    char EINSUM[] = "ijk, jkl -> il";*/
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 12; i++)
     {
-        printf("%f + %fi\n", creal(D[i]), cimag(D[i]));
+        printf("%f\n", D[i]);
     }
     
     return 0;
