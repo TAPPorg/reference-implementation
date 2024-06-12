@@ -43,11 +43,11 @@ void zero_array(int* arr, int size);
  * EINSUM: the einsum string
  */
 
-int PRODUCT(int IDXA, int* EXTA, int* STRA, float complex* A,
-            int IDXB, int* EXTB, int* STRB, float complex* B,
-            int IDXC, int* EXTC, int* STRC, float complex* C,
-            int IDXD, int* EXTD, int* STRD, float complex* D,
-            float complex ALPHA, float complex BETA, bool FA, bool FB, bool FC, char* EINSUM
+int PRODUCT(int IDXA, int* EXTA, int* STRA, float* A,
+            int IDXB, int* EXTB, int* STRB, float* B,
+            int IDXC, int* EXTC, int* STRC, float* C,
+            int IDXD, int* EXTD, int* STRD, float* D,
+            float ALPHA, float BETA, bool FA, bool FB, bool FC, char* EINSUM
 ) {
     char* indices_A = (char*) malloc(IDXA * sizeof(char));
     char* indices_B = (char*) malloc(IDXB * sizeof(char));
@@ -93,7 +93,8 @@ int PRODUCT(int IDXA, int* EXTA, int* STRA, float complex* A,
             index_C += coordinates_D[j] * STRC[j];
             index_D += coordinates_D[j] * STRD[j];
         }
-        D[index_D] = BETA * (FC ? conjf(C[index_C]) : C[index_C]);
+        //D[index_D] = BETA * (FC ? conjf(C[index_C]) : C[index_C]);
+        D[index_D] = BETA * C[index_C];
         for (int j = 0; j < size_contraction; j++) {
             int index_A = index_A_free;
             int index_B = index_B_free;
@@ -102,7 +103,8 @@ int PRODUCT(int IDXA, int* EXTA, int* STRA, float complex* A,
                 index_A += coordinates_contraction[i] * contracted_strides_A[i];
                 index_B += coordinates_contraction[i] * contracted_strides_B[i];
             }
-            D[index_D] += ALPHA * (FA ? conjf(A[index_A]) : A[index_A]) * (FB ? conjf(B[index_B]) : B[index_B]);
+            //D[index_D] += ALPHA * (FA ? conjf(A[index_A]) : A[index_A]) * (FB ? conjf(B[index_B]) : B[index_B]);
+            D[index_D] += ALPHA * A[index_A] * B[index_B];
             increment_coordinates(coordinates_contraction, contractions, extents_contraction);
         }
         increment_coordinates(coordinates_D, IDXD, EXTD);

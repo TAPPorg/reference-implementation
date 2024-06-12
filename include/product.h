@@ -36,16 +36,16 @@
  * EINSUM: the einsum string
  */
 
-/*int PRODUCT(int IDXA, int* EXTA, int* STRA, float* A,
+int PRODUCT(int IDXA, int* EXTA, int* STRA, float* A,
             int IDXB, int* EXTB, int* STRB, float* B,
             int IDXC, int* EXTC, int* STRC, float* C,
             int IDXD, int* EXTD, int* STRD, float* D,
-            float ALPHA, float BETA, bool FA, bool FB, bool FC, char* EINSUM);*/
+            float ALPHA, float BETA, bool FA, bool FB, bool FC, char* EINSUM);
 
-int PRODUCT(int IDXA, int* EXTA, int* STRA, float complex * A,
+/*int PRODUCT(int IDXA, int* EXTA, int* STRA, float complex * A,
             int IDXB, int* EXTB, int* STRB, float complex* B,
             int IDXC, int* EXTC, int* STRC, float complex* C,
             int IDXD, int* EXTD, int* STRD, float complex* D,
-            float complex ALPHA, float complex BETA, bool FA, bool FB, bool FC, char* EINSUM);
+            float complex ALPHA, float complex BETA, bool FA, bool FB, bool FC, char* EINSUM);*/
 
 #endif
