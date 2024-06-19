@@ -96,8 +96,8 @@ def main():
 	print("Commutativity:", TestCommutativity())
 	print("Permutations:", TestPermutations())
 	print("Equal Extents:", TestEqualExtents())
-	print("Zero Contractions:", TestZeroContractions())
-	print("All Contractions:", TestAllContractions())
+	print("Outer Product:", TestOuterProduct())
+	print("Full Contraction:", TestFullContraction())
 	print("Zero Dim Tensor Contraction:", TestZeroDimTensorContraction())
 	print("One Dim Tensor Contraction:", TestOneDimTensorContraction())
 
@@ -182,7 +182,7 @@ def TestEqualExtents():
 	
 	return np.allclose(D, E)
 
-def TestZeroContractions():
+def TestOuterProduct():
 	A, B, C, ALPHA, BETA, FA, FB, FC, EINSUM = GenerateContration(contractions = 0)
 
 	D = PRODUCT(A, B, C, ALPHA, BETA, FA, FB, FC, EINSUM)
@@ -191,7 +191,7 @@ def TestZeroContractions():
 
 	return np.allclose(D, E)
 
-def TestAllContractions():
+def TestFullContraction():
 	A, B, C, ALPHA, BETA, FA, FB, FC, EINSUM = GenerateContration(ndimD = 0)
 
 	D = PRODUCT(A, B, C, ALPHA, BETA, FA, FB, FC, EINSUM)
@@ -225,13 +225,11 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 		ndimA = ndimA + contractions
 		ndimB = ndimB + contractions
 	elif ndimA is None:
-		contractions = random.randint(0, ndimB)
-		contractions = contractions
-		ndimA = contractions + ndimD - ndimB + contractions
+		contractions = random.randint(0, ndimB) if contractions > ndimB else contractions
+		ndimA = ndimD - ndimB + contractions * 2
 	elif ndimB is None:
-		contractions = random.randint(0, ndimA)
-		contractions = contractions
-		ndimB = contractions + ndimD - ndimA + contractions
+		contractions = random.randint(0, ndimA) if contractions > ndimA else contractions
+		ndimB = ndimD - ndimA + contractions * 2
 	else:
 		contractions = random.randint(0, min(ndimA, ndimB))
 		ndimD = ndimA + ndimB - contractions * 2
@@ -253,7 +251,7 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 		ExtentC = [Extent] * ndimD
 	else:
 		ExtentA = list(np.random.randint(1, 5, ndimA))
-		ExtentB = [ExtentA[IndicesA.index(i)] if i in IndicesA else np.random.randint(1, 3) for i in IndicesB]
+		ExtentB = [ExtentA[IndicesA.index(i)] if i in IndicesA else np.random.randint(1, 5) for i in IndicesB]
 		ExtentC = [ExtentA[IndicesA.index(i)] if i in IndicesA else ExtentB[IndicesB.index(i)] for i in IndicesD]
 
 	A = np.random.rand(*ExtentA)
