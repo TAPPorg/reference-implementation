@@ -91,7 +91,7 @@ def PRODUCT(A,
 	return D
 
 def main():
-	print("Hadamard Product:", TestHadamard())
+	print("Hadamard Product:", TestHadamardProduct())
 	print("Contration:", TestContration())
 	print("Commutativity:", TestCommutativity())
 	print("Permutations:", TestPermutations())
@@ -101,7 +101,7 @@ def main():
 	print("Zero Dim Tensor Contraction:", TestZeroDimTensorContraction())
 	print("One Dim Tensor Contraction:", TestOneDimTensorContraction())
 
-def TestHadamard():
+def TestHadamardProduct():
 	ndim = random.randint(1, 5)
 	shape = list(np.random.randint(1, 5, ndim))
 
@@ -226,9 +226,11 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 		ndimB = ndimB + contractions
 	elif ndimA is None:
 		contractions = random.randint(0, ndimB) if contractions > ndimB else contractions
+		ndimD = ndimB - contractions + random.randint(0, 5) if ndimD < ndimB - contractions else ndimD
 		ndimA = ndimD - ndimB + contractions * 2
 	elif ndimB is None:
 		contractions = random.randint(0, ndimA) if contractions > ndimA else contractions
+		ndimD = ndimA - contractions + random.randint(0, 5) if ndimD < ndimA - contractions else ndimD
 		ndimB = ndimD - ndimA + contractions * 2
 	else:
 		contractions = random.randint(0, min(ndimA, ndimB))
