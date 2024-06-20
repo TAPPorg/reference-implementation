@@ -11,7 +11,7 @@ TBLIS = -ltblis -lm -L../tblis/lib/.libs -I../tblis/src/external/tci -I../tblis/
 all: obj/product.o out/test out/test++ lib/product.so
 
 obj/product.o: src/product.c include/product.h
-	$(CC) -c $(SRC)/product.c -o $(OBJ)/product.o -I$(INC)
+	$(CC) -g $(SRC)/product.c -o $(OBJ)/product.o -I$(INC)
 
 out/test: $(TEST)/test.c $(OBJ)/product.o
 	$(CC) -g  $(TEST)/test.c $(OBJ)/product.o -o $(OUT)/test -I$(INC)
