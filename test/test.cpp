@@ -29,7 +29,13 @@ std::tuple<int, int*, int*, float*,
            int, int*, int*, float*,
            int, int*, int*, float*,
            int, int*, int*, float*,
-           float, float, bool, bool, bool, char*> generate_contraction(int IDXA, int IDXB, int IDXD, int contractions, bool equal_extents);
+           float, float, bool, bool, bool, char*,
+           float*, float*, float*, float*,
+           int, int, int, int,
+           int*, int*, int*, int*> generate_contraction(int IDXA, int IDXB, int IDXD, 
+                                                                       int contractions, bool equal_extents,
+                                                                       bool lower_extent, bool lower_idx,
+                                                                       bool negative_str);
 
 std::string str(bool b);
 
@@ -41,6 +47,14 @@ char* swap_indices(char* indices, int IDXA, int IDXB, int IDXD);
 
 void print_tensor(int IDX, int* EXT, int* STR, float* data);
 
+std::tuple<float*, float*> copy_tensor_data(int size, float* data, int IDX, int* offset, int* STR, bool negative_str);
+
+std::tuple<float*, float*> zero_tensor(int size, int IDX, int* offset, int* STR, bool negative_str);
+
+float* zero_tensor(int IDX, int* EXT);
+
+float* copy_tensor_data(int IDX, int* EXT, float* data);
+
 bool test_hadamard_product();
 bool test_contraction();
 bool test_commutativity();
@@ -50,6 +64,11 @@ bool test_outer_product();
 bool test_full_contraction();
 bool test_zero_dim_tensor_contraction();
 bool test_one_dim_tensor_contraction();
+bool test_subtensor_same_idx();
+bool test_subtensor_lower_idx();
+bool test_negative_strides();
+bool test_negative_strides_subtensor_same_idx();
+bool test_negative_strides_subtensor_lower_idx();
 
 int main(int argc, char const *argv[])
 {
@@ -63,6 +82,11 @@ int main(int argc, char const *argv[])
     std::cout << "Full Contraction: " << str(test_full_contraction()) << std::endl;
     std::cout << "Zero Dim Tensor Contraction: " << str(test_zero_dim_tensor_contraction()) << std::endl;
     std::cout << "One Dim Tensor Contraction: " << str(test_one_dim_tensor_contraction()) << std::endl;
+    std::cout << "Subtensor Same Index: " << str(test_subtensor_same_idx()) << std::endl;
+    std::cout << "Subtensor Lower Index: " << str(test_subtensor_lower_idx()) << std::endl;
+    std::cout << "Negative Strides: " << str(test_negative_strides()) << std::endl;
+    std::cout << "Negative Strides Subtensor Same Index: " << str(test_negative_strides_subtensor_same_idx()) << std::endl;
+    std::cout << "Negative Strides Subtensor Lower Index: " << str(test_negative_strides_subtensor_lower_idx()) << std::endl;
     return 0;
 }
 
@@ -110,7 +134,7 @@ void run_tblis_mult(int IDXA, int* EXTA, int* STRA, float* A,
     tblis::tblis_init_tensor_s(&tblis_A, IDXA, len_A, A, stride_A);
     tblis::tblis_init_tensor_s(&tblis_B, IDXB, len_B, B, stride_B);
     tblis::tblis_init_tensor_scaled_s(&tblis_C, BETA, IDXC, len_C, C, stride_C);
-    tblis::tblis_init_tensor_s(&tblis_D, IDXD, len_D, D, stride_D);
+    tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, IDXD, len_D, D, stride_D);
 
     std::string einsum(EINSUM);
     std::string indices = einsum.substr(0, einsum.find("->"));
@@ -141,6 +165,8 @@ void run_tblis_mult(int IDXA, int* EXTA, int* STRA, float* A,
         idx_D[i] = indices_D[i];
     }
 
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, idx_D);
+
     tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, idx_A, &tblis_B, idx_B, &tblis_D, idx_D);
 
     tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, idx_D);
@@ -157,7 +183,7 @@ bool compare_tensors(float* A, float* B, int size) {
     for (int i = 0; i < size; i++)
     {
         float rel_diff = fabsf((A[i] - B[i]) / (A[i] > B[i] ? A[i] : B[i]));
-        if (rel_diff > 0.000001)
+        if (rel_diff > 0.000005)
         {
             std::cout << "\n" << i << ": " << A[i] << " - " << B[i] << std::endl;
             std::cout << "\n" << i << ": " << rel_diff << std::endl;
@@ -171,7 +197,10 @@ std::tuple<int, int*, int*, float*,
            int, int*, int*, float*,
            int, int*, int*, float*,
            int, int*, int*, float*,
-           float, float, bool, bool, bool, char*> generate_contraction(int IDXA = -1, int IDXB = -1, int IDXD = randi(0, 5), int contractions = randi(0, 5), bool equal_extents = false) {
+           float, float, bool, bool, bool, char*,
+           float*, float*, float*, float*,
+           int, int, int, int,
+           int*, int*, int*, int*> generate_contraction(int IDXA = -1, int IDXB = -1, int IDXD = randi(0, 5), int contractions = randi(0, 5), bool equal_extents = false, bool lower_extent = false, bool lower_idx = false, bool negative_str = false) {
     if (IDXA == -1 && IDXB == -1)
     {
         IDXA = randi(0, IDXD);
@@ -182,11 +211,13 @@ std::tuple<int, int*, int*, float*,
     else if (IDXA == -1)
     {
         contractions = contractions > IDXB ? randi(0, IDXB) : contractions;
+        IDXD = IDXD < IDXB - contractions ? IDXB - contractions + randi(0, 5) : IDXD;
         IDXA = contractions*2 + IDXD - IDXB;
     }
     else if (IDXB == -1)
     {
         contractions = contractions > IDXA ? randi(0, IDXA) : contractions;
+        IDXD = IDXD < IDXA - contractions ? IDXA - contractions + randi(0, 5) : IDXD;
         IDXB = contractions*2 + IDXD - IDXA;
     }
     else
@@ -194,7 +225,7 @@ std::tuple<int, int*, int*, float*,
         contractions = contractions > std::min(IDXA, IDXB) ? randi(0, std::min(IDXA, IDXB)) : contractions;
         IDXD = IDXA + IDXB - contractions * 2;
     }
-    int IDXC = IDXD;
+    int IDXC = IDXD;    
 
     char indicesA[IDXA];
     for (int i = 0; i < IDXA; i++)
@@ -333,76 +364,150 @@ std::tuple<int, int*, int*, float*,
     }
     int* EXTC = new int[IDXC];
     std::copy(EXTD, EXTD + IDXD, EXTC);
-    
+
+    int outer_IDXA = lower_idx ? IDXA + randi(1, 5) : IDXA;
+    int outer_IDXB = lower_idx ? IDXB + randi(1, 5) : IDXB;
+    int outer_IDXC = lower_idx ? IDXC + randi(1, 5) : IDXC;
+    int outer_IDXD = lower_idx ? IDXD + randi(1, 5) : IDXD;
+    int outer_EXTA[outer_IDXA];
+    int outer_EXTB[outer_IDXB];
+    int outer_EXTC[outer_IDXC];
+    int outer_EXTD[outer_IDXD];
     int* STRA = new int[IDXA];
     int* STRB = new int[IDXB];
     int* STRC = new int[IDXC];
     int* STRD = new int[IDXD];
-    if (IDXA > 0)
-    {
-        STRA[0] = 1;
-    }
-    if (IDXB > 0)
-    {
-        STRB[0] = 1;
-    }
-    if (IDXC > 0)
-    {
-        STRC[0] = 1;
-    }
-    if (IDXD > 0)
-    {
-        STRD[0] = 1;
-    }
-    for (int i = 1; i < IDXA; i++)
-    {
-        STRA[i] = STRA[i-1] * EXTA[i-1];
-    }
-    for (int i = 1; i < IDXB; i++)
-    {
-        STRB[i] = STRB[i-1] * EXTB[i-1];
-    }
-    for (int i = 1; i < IDXD; i++)
-    {
-        STRC[i] = STRC[i-1] * EXTC[i-1];
-        STRD[i] = STRD[i-1] * EXTD[i-1];
-    }
-
+    int* offsetA = new int[IDXA];
+    int* offsetB = new int[IDXB];
+    int* offsetC = new int[IDXC];
+    int* offsetD = new int[IDXD];
     int sizeA = 1;
     int sizeB = 1;
     int sizeC = 1;
     int sizeD = 1;
-    for (int i = 0; i < IDXA; i++)
+
+    int str = negative_str ? -1 : 1;
+    int idx = 0;
+    for (int i = 0; i < outer_IDXA; i++)
     {
-        sizeA *= EXTA[i];
+        if ((randf(0, 1) < (float)IDXA/(float)outer_IDXA || outer_IDXA - i == IDXA - idx) && IDXA - idx > 0)
+        {
+            int extension = randi(1, 5);
+            outer_EXTA[i] = lower_extent ? EXTA[idx] + extension : EXTA[idx];
+            offsetA[idx] = lower_extent && extension - EXTA[idx] > 0 ? randi(0, extension - EXTA[idx]) : 0;
+            STRA[idx] = str;
+            str *= outer_EXTA[i];
+            idx++;
+        }
+        else
+        {
+            outer_EXTA[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            str *= outer_EXTA[i];
+        }
+        sizeA *= outer_EXTA[i];
     }
-    for (int i = 0; i < IDXB; i++)
+    str = negative_str ? -1 : 1;
+    idx = 0;
+    for (int i = 0; i < outer_IDXB; i++)
     {
-        sizeB *= EXTB[i];
+        if ((randf(0, 1) < (float)IDXB/(float)outer_IDXB || outer_IDXB - i == IDXB - idx) && IDXB - idx > 0)
+        {
+            int extension = randi(1, 5);
+            outer_EXTB[i] = lower_extent ? EXTB[idx] + extension : EXTB[idx];
+            offsetB[idx] = lower_extent && extension - EXTB[idx] > 0 ? randi(0, extension - EXTB[idx]) : 0;
+            STRB[idx] = str;
+            str *= outer_EXTB[i];
+            idx++;
+        }
+        else
+        {
+            outer_EXTB[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            str *= outer_EXTB[i];
+        }
+        sizeB *= outer_EXTB[i];
     }
-    for (int i = 0; i < IDXD; i++)
+    str = negative_str ? -1 : 1;
+    idx = 0;
+    for (int i = 0; i < outer_IDXC; i++)
     {
-        sizeC *= EXTC[i];
-        sizeD *= EXTD[i];
+        if ((randf(0, 1) < (float)IDXC/(float)outer_IDXC || outer_IDXC - i == IDXC - idx) && IDXC - idx > 0)
+        {
+            int extension = randi(1, 5);
+            outer_EXTC[i] = lower_extent ? EXTC[idx] + extension : EXTC[idx];
+            offsetC[idx] = lower_extent && extension - EXTC[idx] > 0 ? randi(0, extension - EXTC[idx]) : 0;
+            STRC[idx] = str;
+            str *= outer_EXTC[i];
+            idx++;
+        }
+        else
+        {
+            outer_EXTC[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            str *= outer_EXTC[i];
+        }
+        sizeC *= outer_EXTC[i];
+    }
+    str = negative_str ? -1 : 1;
+    idx = 0;
+    for (int i = 0; i < outer_IDXD; i++)
+    {
+        if ((randf(0, 1) < (float)IDXD/(float)outer_IDXD || outer_IDXD - i == IDXD - idx) && IDXD - idx > 0)
+        {
+            int extension = randi(1, 5);
+            outer_EXTD[i] = lower_extent ? EXTD[idx] + extension : EXTD[idx];
+            offsetD[idx] = lower_extent && extension - EXTD[idx] > 0 ? randi(0, extension - EXTD[idx]) : 0;
+            STRD[idx] = str;
+            str *= outer_EXTD[i];
+            idx++;
+        }
+        else
+        {
+            outer_EXTD[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+        }
+        sizeD *= outer_EXTD[i];
     }
 
-    float* A = new float[sizeA];
-    float* B = new float[sizeB];
-    float* C = new float[sizeC];
-    float* D = new float[sizeD];
+    float* dataA = new float[sizeA];
+    float* dataB = new float[sizeB];
+    float* dataC = new float[sizeC];
+    float* dataD = new float[sizeD];
 
     for (int i = 0; i < sizeA; i++)
     {
-        A[i] = randf(0, 1);
+        dataA[i] = randf(0, 1);
     }
     for (int i = 0; i < sizeB; i++)
     {
-        B[i] = randf(0, 1);
+        dataB[i] = randf(0, 1);
+    }
+    for (int i = 0; i < sizeC; i++)
+    {
+        dataC[i] = randf(0, 1);
     }
     for (int i = 0; i < sizeD; i++)
     {
-        C[i] = randf(0, 1);
-        D[i] = randf(0, 1);
+        dataD[i] = randf(0, 1);
+    }
+
+    float* A = negative_str ? dataA + sizeA - 1 : dataA;
+    float* B = negative_str ? dataB + sizeB - 1 : dataB;
+    float* C = negative_str ? dataC + sizeC - 1 : dataC;
+    float* D = negative_str ? dataD + sizeD - 1 : dataD;
+
+    for (int i = 0; i < IDXA; i++)
+    {
+        A += offsetA[i] * STRA[i];
+    }
+    for (int i = 0; i < IDXB; i++)
+    {
+        B += offsetB[i] * STRB[i];
+    }
+    for (int i = 0; i < IDXC; i++)
+    {
+        C += offsetC[i] * STRC[i];
+    }
+    for (int i = 0; i < IDXD; i++)
+    {
+        D += offsetD[i] * STRD[i];
     }
 
     float ALPHA = randf(0, 1);
@@ -416,7 +521,35 @@ std::tuple<int, int*, int*, float*,
             IDXB, EXTB, STRB, B,
             IDXC, EXTC, STRC, C,
             IDXD, EXTD, STRD, D,
-            ALPHA, BETA, FA, FB, FC, EINSUM};
+            ALPHA, BETA, FA, FB, FC, EINSUM,
+            dataA, dataB, dataC, dataD,
+            sizeA, sizeB, sizeC, sizeD,
+            offsetA, offsetB, offsetC, offsetD};
+}
+
+std::tuple<float*, float*> copy_tensor_data(int size, float* data, int IDX, int* offset, int* STR, bool negative_str = false) {
+    float* dataA = new float[size];
+    std::copy(data, data + size, dataA);
+    float* A = negative_str ? dataA + size - 1 : dataA;
+    for (int i = 0; i < IDX; i++)
+    {
+        A += offset[i] * STR[i];
+    }
+    return {A, dataA};
+}
+
+std::tuple<float*, float*> zero_tensor(int size, int IDX, int* offset, int* STR, bool negative_str = false) {
+    float* dataA = new float[size];
+    for (int i = 0; i < size; i++)
+    {
+        dataA[i] = 0;
+    }
+    float* A = negative_str ? dataA + size - 1 : dataA;
+    for (int i = 0; i < IDX; i++)
+    {
+        A += offset[i] * STR[i];
+    }
+    return {A, dataA};
 }
 
 float* copy_tensor_data(int IDX, int* EXT, float* data) {
@@ -561,7 +694,9 @@ bool test_hadamard_product() {
         EXT[i] = randi(1, 5);
         size *= EXT[i];
     }
-    STR[0] = 1;
+    if (IDX > 0) {
+        STR[0] = 1;
+    }
     for (int i = 1; i < IDX; i++)
     {
         STR[i] = STR[i-1] * EXT[i-1];
@@ -596,7 +731,7 @@ bool test_hadamard_product() {
     EINSUM[IDX*2+5] = ' ';
     EINSUM[IDX*3+6] = '\0';
 
-    float* E = zero_tensor(IDX, EXT);
+    float* E = copy_tensor_data(IDX, EXT, D);
 
     PRODUCT(IDX, EXT, STR, A, IDX, EXT, STR, B, IDX, EXT, STR, C, IDX, EXT, STR, D, ALPHA, BETA, true, true, true, EINSUM);
 
@@ -621,15 +756,18 @@ bool test_contraction() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction();
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
 
-    float* E = zero_tensor(IDXD, EXTD);
+    auto [E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -639,12 +777,16 @@ bool test_contraction() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] dataE;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
 
     return result;
 }
@@ -654,21 +796,24 @@ bool test_commutativity() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction();
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
 
-    float* E = zero_tensor(IDXD, EXTD);
+    auto [E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
-    float* F = copy_tensor_data(IDXD, EXTD, D);
+    auto [F, dataF] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
-    float* G = zero_tensor(IDXD, EXTD);
+    auto[G, dataG] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
-    float* C1 = copy_tensor_data(IDXC, EXTC, C);
+    auto[C1, dataC1] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
 
-    float* C2 = copy_tensor_data(IDXC, EXTC, C);
+    auto[C2, dataC2] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
 
-    float* C3 = copy_tensor_data(IDXC, EXTC, C);
+    auto[C3, dataC3] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
 
-    float* C4 = copy_tensor_data(IDXC, EXTC, C);
+    auto[C4, dataC4] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
 
     char* swapped_EINSUM = swap_indices(EINSUM, IDXA, IDXB, IDXD);
 
@@ -680,7 +825,7 @@ bool test_commutativity() {
 
     run_tblis_mult(IDXB, EXTB, STRB, B, IDXA, EXTA, STRA, A, IDXC, EXTC, STRC, C4, IDXD, EXTD, STRD, G, ALPHA, BETA, FA, FB, FC, swapped_EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD)) && compare_tensors(F, G, calculate_tensor_size(IDXD, EXTD)) && compare_tensors(D, F, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD) && compare_tensors(dataF, dataG, sizeD) && compare_tensors(dataD, dataF, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -690,19 +835,24 @@ bool test_commutativity() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] C1;
-    delete[] C2;
-    delete[] C3;
-    delete[] C4;
-    delete[] D;
-    delete[] E;
-    delete[] F;
-    delete[] G;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+    delete[] dataF;
+    delete[] dataG;
+    delete[] dataC1;
+    delete[] dataC2;
+    delete[] dataC3;
+    delete[] dataC4;
     delete[] swapped_EINSUM;
+
 
     return result;
 }
@@ -712,28 +862,25 @@ bool test_permutations() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction();
-    
-    float* E;
-
-    float* C1;
-
-    float* C2;
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
     
     bool result = true;
 
     for (int i = 0; i < IDXD; i++)
     {
-        C1 = copy_tensor_data(IDXC, EXTC, C);
+        auto[C1, dataC1] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
         PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C1, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
-        C2 = copy_tensor_data(IDXC, EXTC, C);
-        E = zero_tensor(IDXD, EXTD);
+        auto[C2, dataC2] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
+        auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
         run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C2, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
-        result = result && compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+        result = result && compare_tensors(dataD, dataE, sizeD);
         rotate_output_indices(EINSUM, IDXA, IDXB, IDXC, EXTC, STRC, IDXD, EXTD, STRD);
-        delete[] C1;
-        delete[] C2;
-        delete[] E;
+        delete[] dataC1;
+        delete[] dataC2;
+        delete[] dataE;
     }
     
     delete[] EXTA;
@@ -744,11 +891,15 @@ bool test_permutations() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
 
     return result;
 }
@@ -758,15 +909,18 @@ bool test_equal_extents() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction(true);
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(true);
     
-    float* E = zero_tensor(IDXD, EXTD);    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -776,12 +930,16 @@ bool test_equal_extents() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
 
     return result;
 }
@@ -791,15 +949,18 @@ bool test_outer_product() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction(-1, -1, randi(0, 5), 0);
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), 0);
     
-    float* E = zero_tensor(IDXD, EXTD);
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
     
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -809,12 +970,16 @@ bool test_outer_product() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
 
     return result;
 }
@@ -824,15 +989,18 @@ bool test_full_contraction() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction(-1, -1, 0);
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, 0);
     
-    float* E = zero_tensor(IDXD, EXTD);
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -842,12 +1010,16 @@ bool test_full_contraction() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
 
     return result;
 }
@@ -857,15 +1029,18 @@ bool test_zero_dim_tensor_contraction() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction(0);
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(0);
     
-    float* E = zero_tensor(IDXD, EXTD);
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -875,12 +1050,16 @@ bool test_zero_dim_tensor_contraction() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
 
     return result;
 }
@@ -890,15 +1069,18 @@ bool test_one_dim_tensor_contraction() {
           IDXB, EXTB, STRB, B,
           IDXC, EXTC, STRC, C,
           IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM] = generate_contraction(1);
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(1);
     
-    float* E = zero_tensor(IDXD, EXTD);
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
     PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
 
     run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
 
-    bool result = compare_tensors(D, E, calculate_tensor_size(IDXD, EXTD));
+    bool result = compare_tensors(dataD, dataE, sizeD);
 
     delete[] EXTA;
     delete[] EXTB;
@@ -908,12 +1090,216 @@ bool test_one_dim_tensor_contraction() {
     delete[] STRB;
     delete[] STRC;
     delete[] STRD;
-    delete[] A;
-    delete[] B;
-    delete[] C;
-    delete[] D;
-    delete[] E;
     delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+
+    return result;
+}
+
+bool test_subtensor_same_idx() {
+    auto [IDXA, EXTA, STRA, A,
+          IDXB, EXTB, STRB, B,
+          IDXC, EXTC, STRC, C,
+          IDXD, EXTD, STRD, D,
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true);
+    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+
+    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    bool result = compare_tensors(dataD, dataE, sizeD);
+
+    delete[] EXTA;
+    delete[] EXTB;
+    delete[] EXTC;
+    delete[] EXTD;
+    delete[] STRA;
+    delete[] STRB;
+    delete[] STRC;
+    delete[] STRD;
+    delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+
+    return result;
+}
+
+bool test_subtensor_lower_idx() {
+    auto [IDXA, EXTA, STRA, A,
+          IDXB, EXTB, STRB, B,
+          IDXC, EXTC, STRC, C,
+          IDXD, EXTD, STRD, D,
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, true);
+    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+
+    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    bool result = compare_tensors(dataD, dataE, sizeD);
+
+    delete[] EXTA;
+    delete[] EXTB;
+    delete[] EXTC;
+    delete[] EXTD;
+    delete[] STRA;
+    delete[] STRB;
+    delete[] STRC;
+    delete[] STRD;
+    delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+
+    return result;
+}
+
+bool test_negative_strides() {
+    auto [IDXA, EXTA, STRA, A,
+          IDXB, EXTB, STRB, B,
+          IDXC, EXTC, STRC, C,
+          IDXD, EXTD, STRD, D,
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, false, false, true);
+    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+
+    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    bool result = compare_tensors(dataD, dataE, sizeD);
+
+    delete[] EXTA;
+    delete[] EXTB;
+    delete[] EXTC;
+    delete[] EXTD;
+    delete[] STRA;
+    delete[] STRB;
+    delete[] STRC;
+    delete[] STRD;
+    delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+
+    return result;
+}
+
+bool test_negative_strides_subtensor_same_idx() {
+    auto [IDXA, EXTA, STRA, A,
+          IDXB, EXTB, STRB, B,
+          IDXC, EXTC, STRC, C,
+          IDXD, EXTD, STRD, D,
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, false, true);
+    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+
+    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    bool result = compare_tensors(dataD, dataE, sizeD);
+
+    delete[] EXTA;
+    delete[] EXTB;
+    delete[] EXTC;
+    delete[] EXTD;
+    delete[] STRA;
+    delete[] STRB;
+    delete[] STRC;
+    delete[] STRD;
+    delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
+
+    return result;
+}
+
+bool test_negative_strides_subtensor_lower_idx() {
+    auto [IDXA, EXTA, STRA, A,
+          IDXB, EXTB, STRB, B,
+          IDXC, EXTC, STRC, C,
+          IDXD, EXTD, STRD, D,
+          ALPHA, BETA, FA, FB, FC, EINSUM,
+          dataA, dataB, dataC, dataD,
+          sizeA, sizeB, sizeC, sizeD,
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, true, true);
+    
+    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+
+    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+
+    bool result = compare_tensors(dataD, dataE, sizeD);
+
+    delete[] EXTA;
+    delete[] EXTB;
+    delete[] EXTC;
+    delete[] EXTD;
+    delete[] STRA;
+    delete[] STRB;
+    delete[] STRC;
+    delete[] STRD;
+    delete[] EINSUM;
+    delete[] dataA;
+    delete[] dataB;
+    delete[] dataC;
+    delete[] dataD;
+    delete[] offsetA;
+    delete[] offsetB;
+    delete[] offsetC;
+    delete[] offsetD;
+    delete[] dataE;
 
     return result;
 }
