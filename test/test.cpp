@@ -34,7 +34,7 @@ std::tuple<int, int*, int*, float*,
            int, int, int, int,
            int*, int*, int*, int*> generate_contraction(int IDXA, int IDXB, int IDXD, 
                                                                        int contractions, bool equal_extents,
-                                                                       bool lower_extent, bool lower_idx,
+                                                                       bool lower_extents, bool lower_idx,
                                                                        bool negative_str);
 
 std::string str(bool b);
@@ -200,7 +200,10 @@ std::tuple<int, int*, int*, float*,
            float, float, bool, bool, bool, char*,
            float*, float*, float*, float*,
            int, int, int, int,
-           int*, int*, int*, int*> generate_contraction(int IDXA = -1, int IDXB = -1, int IDXD = randi(0, 5), int contractions = randi(0, 5), bool equal_extents = false, bool lower_extent = false, bool lower_idx = false, bool negative_str = false) {
+           int*, int*, int*, int*> generate_contraction(int IDXA = -1, int IDXB = -1,
+                                                        int IDXD = randi(0, 5), int contractions = randi(0, 5),
+                                                        bool equal_extents = false, bool lower_extents = false,
+                                                        bool lower_idx = false, bool negative_str = false) {
     if (IDXA == -1 && IDXB == -1)
     {
         IDXA = randi(0, IDXD);
@@ -393,15 +396,15 @@ std::tuple<int, int*, int*, float*,
         if ((randf(0, 1) < (float)IDXA/(float)outer_IDXA || outer_IDXA - i == IDXA - idx) && IDXA - idx > 0)
         {
             int extension = randi(1, 5);
-            outer_EXTA[i] = lower_extent ? EXTA[idx] + extension : EXTA[idx];
-            offsetA[idx] = lower_extent && extension - EXTA[idx] > 0 ? randi(0, extension - EXTA[idx]) : 0;
+            outer_EXTA[i] = lower_extents ? EXTA[idx] + extension : EXTA[idx];
+            offsetA[idx] = lower_extents && extension - EXTA[idx] > 0 ? randi(0, extension - EXTA[idx]) : 0;
             STRA[idx] = str;
             str *= outer_EXTA[i];
             idx++;
         }
         else
         {
-            outer_EXTA[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            outer_EXTA[i] = lower_extents ? randi(1, 10) : randi(1, 5);
             str *= outer_EXTA[i];
         }
         sizeA *= outer_EXTA[i];
@@ -413,15 +416,15 @@ std::tuple<int, int*, int*, float*,
         if ((randf(0, 1) < (float)IDXB/(float)outer_IDXB || outer_IDXB - i == IDXB - idx) && IDXB - idx > 0)
         {
             int extension = randi(1, 5);
-            outer_EXTB[i] = lower_extent ? EXTB[idx] + extension : EXTB[idx];
-            offsetB[idx] = lower_extent && extension - EXTB[idx] > 0 ? randi(0, extension - EXTB[idx]) : 0;
+            outer_EXTB[i] = lower_extents ? EXTB[idx] + extension : EXTB[idx];
+            offsetB[idx] = lower_extents && extension - EXTB[idx] > 0 ? randi(0, extension - EXTB[idx]) : 0;
             STRB[idx] = str;
             str *= outer_EXTB[i];
             idx++;
         }
         else
         {
-            outer_EXTB[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            outer_EXTB[i] = lower_extents ? randi(1, 10) : randi(1, 5);
             str *= outer_EXTB[i];
         }
         sizeB *= outer_EXTB[i];
@@ -433,15 +436,15 @@ std::tuple<int, int*, int*, float*,
         if ((randf(0, 1) < (float)IDXC/(float)outer_IDXC || outer_IDXC - i == IDXC - idx) && IDXC - idx > 0)
         {
             int extension = randi(1, 5);
-            outer_EXTC[i] = lower_extent ? EXTC[idx] + extension : EXTC[idx];
-            offsetC[idx] = lower_extent && extension - EXTC[idx] > 0 ? randi(0, extension - EXTC[idx]) : 0;
+            outer_EXTC[i] = lower_extents ? EXTC[idx] + extension : EXTC[idx];
+            offsetC[idx] = lower_extents && extension - EXTC[idx] > 0 ? randi(0, extension - EXTC[idx]) : 0;
             STRC[idx] = str;
             str *= outer_EXTC[i];
             idx++;
         }
         else
         {
-            outer_EXTC[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            outer_EXTC[i] = lower_extents ? randi(1, 10) : randi(1, 5);
             str *= outer_EXTC[i];
         }
         sizeC *= outer_EXTC[i];
@@ -453,15 +456,15 @@ std::tuple<int, int*, int*, float*,
         if ((randf(0, 1) < (float)IDXD/(float)outer_IDXD || outer_IDXD - i == IDXD - idx) && IDXD - idx > 0)
         {
             int extension = randi(1, 5);
-            outer_EXTD[i] = lower_extent ? EXTD[idx] + extension : EXTD[idx];
-            offsetD[idx] = lower_extent && extension - EXTD[idx] > 0 ? randi(0, extension - EXTD[idx]) : 0;
+            outer_EXTD[i] = lower_extents ? EXTD[idx] + extension : EXTD[idx];
+            offsetD[idx] = lower_extents && extension - EXTD[idx] > 0 ? randi(0, extension - EXTD[idx]) : 0;
             STRD[idx] = str;
             str *= outer_EXTD[i];
             idx++;
         }
         else
         {
-            outer_EXTD[i] = lower_extent ? randi(1, 10) : randi(1, 5);
+            outer_EXTD[i] = lower_extents ? randi(1, 10) : randi(1, 5);
         }
         sizeD *= outer_EXTD[i];
     }
