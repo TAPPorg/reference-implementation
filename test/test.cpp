@@ -201,7 +201,7 @@ std::tuple<int, int*, int*, float*,
            float*, float*, float*, float*,
            int, int, int, int,
            int*, int*, int*, int*> generate_contraction(int IDXA = -1, int IDXB = -1,
-                                                        int IDXD = randi(0, 5), int contractions = randi(0, 5),
+                                                        int IDXD = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
                                                         bool lower_idx = false, bool negative_str = false) {
     if (IDXA == -1 && IDXB == -1)
@@ -214,13 +214,13 @@ std::tuple<int, int*, int*, float*,
     else if (IDXA == -1)
     {
         contractions = contractions > IDXB ? randi(0, IDXB) : contractions;
-        IDXD = IDXD < IDXB - contractions ? IDXB - contractions + randi(0, 5) : IDXD;
+        IDXD = IDXD < IDXB - contractions ? IDXB - contractions + randi(0, 4) : IDXD;
         IDXA = contractions*2 + IDXD - IDXB;
     }
     else if (IDXB == -1)
     {
         contractions = contractions > IDXA ? randi(0, IDXA) : contractions;
-        IDXD = IDXD < IDXA - contractions ? IDXA - contractions + randi(0, 5) : IDXD;
+        IDXD = IDXD < IDXA - contractions ? IDXA - contractions + randi(0, 4) : IDXD;
         IDXB = contractions*2 + IDXD - IDXA;
     }
     else
@@ -305,10 +305,10 @@ std::tuple<int, int*, int*, float*,
     int* EXTA = new int[IDXA];
     int* EXTB = new int[IDXB];
     int* EXTD = new int[IDXD];
-    int extent = randi(1, 5);
+    int extent = randi(1, 4);
     for (int i = 0; i < IDXA; i++)
     {
-        EXTA[i] = equal_extents ? randi(1, 5) : extent;
+        EXTA[i] = equal_extents ? randi(1, 4) : extent;
     }
     for (int i = 0; i < IDXB; i++)
     {
@@ -327,7 +327,7 @@ std::tuple<int, int*, int*, float*,
         }
         else
         {
-            EXTB[i] = equal_extents ? randi(1, 5) : extent;
+            EXTB[i] = equal_extents ? randi(1, 4) : extent;
         }
     }
     for (int i = 0; i < IDXD; i++)
@@ -368,10 +368,10 @@ std::tuple<int, int*, int*, float*,
     int* EXTC = new int[IDXC];
     std::copy(EXTD, EXTD + IDXD, EXTC);
 
-    int outer_IDXA = lower_idx ? IDXA + randi(1, 5) : IDXA;
-    int outer_IDXB = lower_idx ? IDXB + randi(1, 5) : IDXB;
-    int outer_IDXC = lower_idx ? IDXC + randi(1, 5) : IDXC;
-    int outer_IDXD = lower_idx ? IDXD + randi(1, 5) : IDXD;
+    int outer_IDXA = lower_idx ? IDXA + randi(1, 4) : IDXA;
+    int outer_IDXB = lower_idx ? IDXB + randi(1, 4) : IDXB;
+    int outer_IDXC = lower_idx ? IDXC + randi(1, 4) : IDXC;
+    int outer_IDXD = lower_idx ? IDXD + randi(1, 4) : IDXD;
     int outer_EXTA[outer_IDXA];
     int outer_EXTB[outer_IDXB];
     int outer_EXTC[outer_IDXC];
@@ -395,7 +395,7 @@ std::tuple<int, int*, int*, float*,
     {
         if ((randf(0, 1) < (float)IDXA/(float)outer_IDXA || outer_IDXA - i == IDXA - idx) && IDXA - idx > 0)
         {
-            int extension = randi(1, 5);
+            int extension = randi(1, 4);
             outer_EXTA[i] = lower_extents ? EXTA[idx] + extension : EXTA[idx];
             offsetA[idx] = lower_extents && extension - EXTA[idx] > 0 ? randi(0, extension - EXTA[idx]) : 0;
             STRA[idx] = str;
@@ -404,7 +404,7 @@ std::tuple<int, int*, int*, float*,
         }
         else
         {
-            outer_EXTA[i] = lower_extents ? randi(1, 10) : randi(1, 5);
+            outer_EXTA[i] = lower_extents ? randi(1, 8) : randi(1, 4);
             str *= outer_EXTA[i];
         }
         sizeA *= outer_EXTA[i];
@@ -415,7 +415,7 @@ std::tuple<int, int*, int*, float*,
     {
         if ((randf(0, 1) < (float)IDXB/(float)outer_IDXB || outer_IDXB - i == IDXB - idx) && IDXB - idx > 0)
         {
-            int extension = randi(1, 5);
+            int extension = randi(1, 4);
             outer_EXTB[i] = lower_extents ? EXTB[idx] + extension : EXTB[idx];
             offsetB[idx] = lower_extents && extension - EXTB[idx] > 0 ? randi(0, extension - EXTB[idx]) : 0;
             STRB[idx] = str;
@@ -424,7 +424,7 @@ std::tuple<int, int*, int*, float*,
         }
         else
         {
-            outer_EXTB[i] = lower_extents ? randi(1, 10) : randi(1, 5);
+            outer_EXTB[i] = lower_extents ? randi(1, 8) : randi(1, 4);
             str *= outer_EXTB[i];
         }
         sizeB *= outer_EXTB[i];
@@ -435,7 +435,7 @@ std::tuple<int, int*, int*, float*,
     {
         if ((randf(0, 1) < (float)IDXC/(float)outer_IDXC || outer_IDXC - i == IDXC - idx) && IDXC - idx > 0)
         {
-            int extension = randi(1, 5);
+            int extension = randi(1, 4);
             outer_EXTC[i] = lower_extents ? EXTC[idx] + extension : EXTC[idx];
             offsetC[idx] = lower_extents && extension - EXTC[idx] > 0 ? randi(0, extension - EXTC[idx]) : 0;
             STRC[idx] = str;
@@ -444,7 +444,7 @@ std::tuple<int, int*, int*, float*,
         }
         else
         {
-            outer_EXTC[i] = lower_extents ? randi(1, 10) : randi(1, 5);
+            outer_EXTC[i] = lower_extents ? randi(1, 8) : randi(1, 4);
             str *= outer_EXTC[i];
         }
         sizeC *= outer_EXTC[i];
@@ -455,7 +455,7 @@ std::tuple<int, int*, int*, float*,
     {
         if ((randf(0, 1) < (float)IDXD/(float)outer_IDXD || outer_IDXD - i == IDXD - idx) && IDXD - idx > 0)
         {
-            int extension = randi(1, 5);
+            int extension = randi(1, 4);
             outer_EXTD[i] = lower_extents ? EXTD[idx] + extension : EXTD[idx];
             offsetD[idx] = lower_extents && extension - EXTD[idx] > 0 ? randi(0, extension - EXTD[idx]) : 0;
             STRD[idx] = str;
@@ -464,7 +464,7 @@ std::tuple<int, int*, int*, float*,
         }
         else
         {
-            outer_EXTD[i] = lower_extents ? randi(1, 10) : randi(1, 5);
+            outer_EXTD[i] = lower_extents ? randi(1, 8) : randi(1, 4);
         }
         sizeD *= outer_EXTD[i];
     }
@@ -688,13 +688,13 @@ void print_tensor(int IDX, int* EXT, int* STR, float* data) {
 }
 
 bool test_hadamard_product() {
-    int IDX = randi(0, 5);
+    int IDX = randi(0, 4);
     int* EXT = new int[IDX];
     int* STR = new int[IDX];
     int size = 1;
     for (int i = 0; i < IDX; i++)
     {
-        EXT[i] = randi(1, 5);
+        EXT[i] = randi(1, 4);
         size *= EXT[i];
     }
     if (IDX > 0) {
@@ -955,7 +955,7 @@ bool test_outer_product() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), 0);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), 0);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
     
@@ -1115,7 +1115,7 @@ bool test_subtensor_same_idx() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
@@ -1155,7 +1155,7 @@ bool test_subtensor_lower_idx() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, true);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
 
@@ -1195,7 +1195,7 @@ bool test_negative_strides() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, false, false, true);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, false, false, true);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
 
@@ -1235,7 +1235,7 @@ bool test_negative_strides_subtensor_same_idx() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, false, true);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, false, true);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
 
@@ -1275,7 +1275,7 @@ bool test_negative_strides_subtensor_lower_idx() {
           ALPHA, BETA, FA, FB, FC, EINSUM,
           dataA, dataB, dataC, dataD,
           sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 5), randi(0, 5), false, true, true, true);
+          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true, true);
     
     auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
 

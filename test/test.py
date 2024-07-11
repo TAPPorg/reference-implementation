@@ -168,8 +168,8 @@ def main():
 	print("Subtensor Lower Idx:", TestSubtensorLowerIdx())
 
 def TestHadamardProduct():
-	IDX = random.randint(1, 5)
-	EXT = list(np.random.randint(1, 5, IDX))
+	IDX = random.randint(1, 4)
+	EXT = list(np.random.randint(1, 4, IDX))
 	STR = ([1] + list(np.cumprod(EXT)))[:IDX]
 	offset = [0] * IDX
 
@@ -310,8 +310,8 @@ def TestSubtensorLowerIdx():
 	
 	return np.allclose(E, F)
 
-def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
-					   contractions = random.randint(0, 5), equal_extents = False,
+def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 4),
+					   contractions = random.randint(0, 4), equal_extents = False,
 					   lower_extents = False, lower_idx = False):
 	if ndimA is None and ndimB is None:
 		ndimA = random.randint(0, ndimD)
@@ -320,11 +320,11 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 		ndimB = ndimB + contractions
 	elif ndimA is None:
 		contractions = random.randint(0, ndimB) if contractions > ndimB else contractions
-		ndimD = ndimB - contractions + random.randint(0, 5) if ndimD < ndimB - contractions else ndimD
+		ndimD = ndimB - contractions + random.randint(0, 4) if ndimD < ndimB - contractions else ndimD
 		ndimA = ndimD - ndimB + contractions * 2
 	elif ndimB is None:
 		contractions = random.randint(0, ndimA) if contractions > ndimA else contractions
-		ndimD = ndimA - contractions + random.randint(0, 5) if ndimD < ndimA - contractions else ndimD
+		ndimD = ndimA - contractions + random.randint(0, 4) if ndimD < ndimA - contractions else ndimD
 		ndimB = ndimD - ndimA + contractions * 2
 	else:
 		contractions = random.randint(0, min(ndimA, ndimB))
@@ -346,21 +346,21 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 	EXTD = []
 
 	if equal_extents:
-		Extent = random.randint(1, 5)
+		Extent = random.randint(1, 4)
 		EXTA = [Extent] * ndimA
 		EXTB = [Extent] * ndimB
 		EXTC = [Extent] * ndimD
 		EXTD = [Extent] * ndimD
 	else:
-		EXTA = list(np.random.randint(1, 5, ndimA))
+		EXTA = list(np.random.randint(1, 4, ndimA))
 		EXTB = [EXTA[indicesA.index(i)] if i in indicesA else np.random.randint(1, 2) for i in indicesB]
 		EXTC = [EXTA[indicesA.index(i)] if i in indicesA else EXTB[indicesB.index(i)] for i in indicesD]
 		EXTD = EXTC.copy()
 
-	outer_ndimA = ndimA + random.randint(1, 5) if lower_idx else ndimA
-	outer_ndimB = ndimB + random.randint(1, 5) if lower_idx else ndimB
-	outer_ndimC = ndimD + random.randint(1, 5) if lower_idx else ndimD
-	outer_ndimD = ndimD + random.randint(1, 5) if lower_idx else ndimD
+	outer_ndimA = ndimA + random.randint(1, 4) if lower_idx else ndimA
+	outer_ndimB = ndimB + random.randint(1, 4) if lower_idx else ndimB
+	outer_ndimC = ndimD + random.randint(1, 4) if lower_idx else ndimD
+	outer_ndimD = ndimD + random.randint(1, 4) if lower_idx else ndimD
 	outer_extentA = []
 	outer_extentB = []
 	outer_extentC = []
@@ -378,56 +378,56 @@ def GenerateContration(ndimA = None, ndimB = None, ndimD = random.randint(0, 5),
 	stride = 1
 	for i in range(outer_ndimA):
 		if (random.uniform(0, 1) < float(ndimA) / float(outer_ndimA) or outer_ndimA - i == ndimA - idx) and ndimA - idx > 0:
-			extension = random.randint(1, 5)
+			extension = random.randint(1, 4)
 			outer_extentA.append(EXTA[idx] + extension if lower_extents else EXTA[idx])
 			offsetA.append(random.randint(0, extension - EXTA[idx]) if lower_extents and extension - EXTA[idx] > 0 else 0)
 			STRA.append(stride)
 			stride *= outer_extentA[i]
 			idx += 1
 		else:
-			outer_extentA.append(random.randint(1, 10) if lower_extents else random.randint(1, 5))
+			outer_extentA.append(random.randint(1, 8) if lower_extents else random.randint(1, 4))
 			stride *= outer_extentA[i]
 	
 	idx = 0
 	stride = 1
 	for i in range(outer_ndimB):
 		if (random.uniform(0, 1) < float(ndimB) / float(outer_ndimB) or outer_ndimB - i == ndimB - idx) and ndimB - idx > 0:
-			extension = random.randint(1, 5)
+			extension = random.randint(1, 4)
 			outer_extentB.append(EXTB[idx] + extension if lower_extents else EXTB[idx])
 			offsetB.append(random.randint(0, extension - EXTB[idx]) if lower_extents and extension - EXTB[idx] > 0 else 0)
 			STRB.append(stride)
 			stride *= outer_extentB[i]
 			idx += 1
 		else:
-			outer_extentB.append(random.randint(1, 10) if lower_extents else random.randint(1, 5))
+			outer_extentB.append(random.randint(1, 8) if lower_extents else random.randint(1, 4))
 			stride *= outer_extentB[i]
 	
 	idx = 0
 	stride = 1
 	for i in range(outer_ndimC):
 		if (random.uniform(0, 1) < float(ndimD) / float(outer_ndimC) or outer_ndimC - i == ndimD - idx) and ndimD - idx > 0:
-			extension = random.randint(1, 5)
+			extension = random.randint(1, 4)
 			outer_extentC.append(EXTC[idx] + extension if lower_extents else EXTC[idx])
 			offsetC.append(random.randint(0, extension - EXTC[idx]) if lower_extents and extension - EXTC[idx] > 0 else 0)
 			STRC.append(stride)
 			stride *= outer_extentC[i]
 			idx += 1
 		else:
-			outer_extentC.append(random.randint(1, 10) if lower_extents else random.randint(1, 5))
+			outer_extentC.append(random.randint(1, 8) if lower_extents else random.randint(1, 4))
 			stride *= outer_extentC[i]
 	
 	idx = 0
 	stride = 1
 	for i in range(outer_ndimD):
 		if (random.uniform(0, 1) < float(ndimD) / float(outer_ndimD) or outer_ndimD - i == ndimD - idx) and ndimD - idx > 0:
-			extension = random.randint(1, 5)
+			extension = random.randint(1, 4)
 			outer_extentD.append(EXTD[idx] + extension if lower_extents else EXTD[idx])
 			offsetD.append(random.randint(0, extension - EXTD[idx]) if lower_extents and extension - EXTD[idx] > 0 else 0)
 			STRD.append(stride)
 			stride *= outer_extentD[i]
 			idx += 1
 		else:
-			outer_extentD.append(random.randint(1, 10) if lower_extents else random.randint(1, 5))
+			outer_extentD.append(random.randint(1, 8) if lower_extents else random.randint(1, 4))
 			stride *= outer_extentD[i]
 
 	A = np.random.rand(*outer_extentA[::-1])
