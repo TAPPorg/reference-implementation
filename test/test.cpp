@@ -14,25 +14,25 @@
 #include "tblis.h"
 #pragma GCC diagnostic pop
 extern "C" {
-    #include "product.h"
+    #include "tapp.h"
 }
 
-void run_tblis_mult(int IDXA, int* EXTA, int* STRA, float* A,
-                    int IDXB, int* EXTB, int* STRB, float* B,
-                    int IDXC, int* EXTC, int* STRC, float* C,
-                    int IDXD, int* EXTD, int* STRD, float* D,
-                    float ALPHA, float BETA, bool FA, bool FB, bool FC, char* EINSUM);
+void run_tblis_mult(int nmode_A, int* extents_A, int* strides_A, float* A, int op_A, char* idx_A,
+                    int nmode_B, int* extents_B, int* strides_B, float* B, int op_B, char* idx_B,
+                    int nmode_C, int* extents_C, int* strides_C, float* C, int op_C, char* idx_C,
+                    int nmode_D, int* extents_D, int* strides_D, float* D, int op_D, char* idx_D,
+                    float alpha, float beta);
 
 bool compare_tensors(float* A, float* B, int size);
 
-std::tuple<int, int*, int*, float*,
-           int, int*, int*, float*,
-           int, int*, int*, float*,
-           int, int*, int*, float*,
-           float, float, bool, bool, bool, char*,
+std::tuple<int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           float, float,
            float*, float*, float*, float*,
-           int, int, int, int,
-           int*, int*, int*, int*> generate_contraction(int IDXA, int IDXB, int IDXD, 
+           int64_t, int64_t, int64_t, int64_t,
+           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
                                                                        bool negative_str);
@@ -45,15 +45,15 @@ float randf(float min, float max);
 
 char* swap_indices(char* indices, int IDXA, int IDXB, int IDXD);
 
-void print_tensor(int IDX, int* EXT, int* STR, float* data);
+void print_tensor(int nmode, int64_t* extents, int64_t* strides, float* data);
 
-std::tuple<float*, float*> copy_tensor_data(int size, float* data, int IDX, int* offset, int* STR, bool negative_str);
+std::tuple<float*, float*> copy_tensor_data(int64_t size, float* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str);
 
 std::tuple<float*, float*> zero_tensor(int size, int IDX, int* offset, int* STR, bool negative_str);
 
 float* zero_tensor(int IDX, int* EXT);
 
-float* copy_tensor_data(int IDX, int* EXT, float* data);
+float* copy_tensor_data(int IDX, int64_t* EXT, float* data);
 
 bool test_hadamard_product();
 bool test_contraction();
@@ -90,92 +90,88 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-void run_tblis_mult(int IDXA, int* EXTA, int* STRA, float* A,
-                    int IDXB, int* EXTB, int* STRB, float* B,
-                    int IDXC, int* EXTC, int* STRC, float* C,
-                    int IDXD, int* EXTD, int* STRD, float* D,
-                    float ALPHA, float BETA, bool FA, bool FB, bool FC, char* EINSUM) {
+void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, float* A, int op_A, int64_t* idx_A,
+                    int nmode_B, int64_t* extents_B, int64_t* strides_B, float* B, int op_B, int64_t* idx_B,
+                    int nmode_C, int64_t* extents_C, int64_t* strides_C, float* C, int op_C, int64_t* idx_C,
+                    int nmode_D, int64_t* extents_D, int64_t* strides_D, float* D, int op_D, int64_t* idx_D,
+                    float alpha, float beta) {
     tblis::tblis_tensor tblis_A;
-    tblis::len_type len_A[IDXA];
-    tblis::stride_type stride_A[IDXA];
-    for (int i = 0; i < IDXA; i++)
+    tblis::len_type len_A[nmode_A];
+    tblis::stride_type stride_A[nmode_A];
+    for (int i = 0; i < nmode_A; i++)
     {
-        len_A[i] = EXTA[i];
-        stride_A[i] = STRA[i];
+        len_A[i] = extents_A[i];
+        stride_A[i] = strides_A[i];
     }
 
     tblis::tblis_tensor tblis_B;
-    tblis::len_type len_B[IDXB];
-    tblis::stride_type stride_B[IDXB];
-    for (int i = 0; i < IDXB; i++)
+    tblis::len_type len_B[nmode_B];
+    tblis::stride_type stride_B[nmode_B];
+    for (int i = 0; i < nmode_B; i++)
     {
-        len_B[i] = EXTB[i];
-        stride_B[i] = STRB[i];
+        len_B[i] = extents_B[i];
+        stride_B[i] = strides_B[i];
     }
 
     tblis::tblis_tensor tblis_C;
-    tblis::len_type len_C[IDXC];
-    tblis::stride_type stride_C[IDXC];
-    for (int i = 0; i < IDXC; i++)
+    tblis::len_type len_C[nmode_C];
+    tblis::stride_type stride_C[nmode_C];
+    for (int i = 0; i < nmode_C; i++)
     {
-        len_C[i] = EXTC[i];
-        stride_C[i] = STRC[i];
+        len_C[i] = extents_C[i];
+        stride_C[i] = strides_C[i];
     }
 
     tblis::tblis_tensor tblis_D;
-    tblis::len_type len_D[IDXD];
-    tblis::stride_type stride_D[IDXD];
-    for (int i = 0; i < IDXD; i++)
+    tblis::len_type len_D[nmode_D];
+    tblis::stride_type stride_D[nmode_D];
+    for (int i = 0; i < nmode_D; i++)
     {
-        len_D[i] = EXTD[i];
-        stride_D[i] = STRD[i];
+        len_D[i] = extents_D[i];
+        stride_D[i] = strides_D[i];
     }
 
-    tblis::tblis_init_tensor_s(&tblis_A, IDXA, len_A, A, stride_A);
-    tblis::tblis_init_tensor_s(&tblis_B, IDXB, len_B, B, stride_B);
-    tblis::tblis_init_tensor_scaled_s(&tblis_C, BETA, IDXC, len_C, C, stride_C);
-    tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, IDXD, len_D, D, stride_D);
+    tblis::tblis_init_tensor_s(&tblis_A, nmode_A, len_A, A, stride_A);
+    tblis::tblis_init_tensor_s(&tblis_B, nmode_B, len_B, B, stride_B);
+    tblis::tblis_init_tensor_scaled_s(&tblis_C, beta, nmode_C, len_C, C, stride_C);
+    tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, nmode_D, len_D, D, stride_D);
 
-    std::string einsum(EINSUM);
-    std::string indices = einsum.substr(0, einsum.find("->"));
-    std::string indices_A = indices.substr(0, indices.find(","));
-    std::string indices_B = indices.substr(indices.find(",")+1, indices.size());
-    std::string indices_D = einsum.substr(einsum.find("->")+2, einsum.size());
-
-    indices_A.erase(std::remove_if(indices_A.begin(), indices_A.end(), ::isspace), indices_A.end());
-    indices_B.erase(std::remove_if(indices_B.begin(), indices_B.end(), ::isspace), indices_B.end());
-    indices_D.erase(std::remove_if(indices_D.begin(), indices_D.end(), ::isspace), indices_D.end());
-
-    tblis::label_type idx_A[indices_A.size() + 1];
-    tblis::label_type idx_B[indices_B.size() + 1];
-    tblis::label_type idx_D[indices_D.size() + 1];
-    idx_A[indices_A.size()] = '\0';
-    idx_B[indices_B.size()] = '\0';
-    idx_D[indices_D.size()] = '\0';
-    for (int i = 0; i < indices_A.size(); i++)
+    tblis::label_type indices_A[nmode_A + 1];
+    tblis::label_type indices_B[nmode_B + 1];
+    tblis::label_type indices_C[nmode_C + 1];
+    tblis::label_type indices_D[nmode_D + 1];
+    indices_A[nmode_A] = '\0';
+    indices_B[nmode_B] = '\0';
+    indices_C[nmode_C] = '\0';
+    indices_D[nmode_D] = '\0';
+    for (int i = 0; i < nmode_A; i++)
     {
-        idx_A[i] = indices_A[i];
+        indices_A[i] = idx_A[i];
     }
-    for (int i = 0; i < indices_B.size(); i++)
+    for (int i = 0; i < nmode_B; i++)
     {
-        idx_B[i] = indices_B[i];
+        indices_B[i] = idx_B[i];
     }
-    for (int i = 0; i < indices_D.size(); i++)
+    for (int i = 0; i < nmode_C; i++)
     {
-        idx_D[i] = indices_D[i];
+        indices_C[i] = idx_C[i];
+    }
+    for (int i = 0; i < nmode_D; i++)
+    {
+        indices_D[i] = idx_D[i];
     }
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, idx_D);
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
 
-    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, idx_A, &tblis_B, idx_B, &tblis_D, idx_D);
+    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, indices_A, &tblis_B, indices_B, &tblis_D, indices_D);
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, idx_D);
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, indices_C);
 
-    tblis::tblis_init_tensor_scaled_s(&tblis_D, ALPHA, IDXD, len_D, D, stride_D);
+    tblis::tblis_init_tensor_scaled_s(&tblis_D, alpha, nmode_D, len_D, D, stride_D);
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, idx_D);
-    
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, idx_D, &tblis_D, idx_D);
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
 }
 
 bool compare_tensors(float* A, float* B, int size) {
@@ -193,79 +189,80 @@ bool compare_tensors(float* A, float* B, int size) {
     return !found;
 }
 
-std::tuple<int, int*, int*, float*,
-           int, int*, int*, float*,
-           int, int*, int*, float*,
-           int, int*, int*, float*,
-           float, float, bool, bool, bool, char*,
+std::tuple<int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           int, int64_t*, int64_t*, float*, int, int64_t*,
+           float, float,
            float*, float*, float*, float*,
-           int, int, int, int,
-           int*, int*, int*, int*> generate_contraction(int IDXA = -1, int IDXB = -1,
-                                                        int IDXD = randi(0, 4), int contractions = randi(0, 4),
+           int64_t, int64_t, int64_t, int64_t,
+           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction(int nmode_A = -1, int nmode_B = -1,
+                                                        int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
-                                                        bool lower_idx = false, bool negative_str = false) {
-    if (IDXA == -1 && IDXB == -1)
+                                                        bool lower_nmode = false, bool negative_str = false) {
+    if (nmode_A == -1 && nmode_B == -1)
     {
-        IDXA = randi(0, IDXD);
-        IDXB = IDXD - IDXA;
-        IDXA = IDXA + contractions;
-        IDXB = IDXB + contractions;
+        nmode_A = randi(0, nmode_D);
+        nmode_B = nmode_D - nmode_A;
+        nmode_A = nmode_A + contractions;
+        nmode_B = nmode_B + contractions;
     }
-    else if (IDXA == -1)
+    else if (nmode_A == -1)
     {
-        contractions = contractions > IDXB ? randi(0, IDXB) : contractions;
-        IDXD = IDXD < IDXB - contractions ? IDXB - contractions + randi(0, 4) : IDXD;
-        IDXA = contractions*2 + IDXD - IDXB;
+        contractions = contractions > nmode_B ? randi(0, nmode_B) : contractions;
+        nmode_D = nmode_D < nmode_B - contractions ? nmode_B - contractions + randi(0, 4) : nmode_D;
+        nmode_A = contractions*2 + nmode_D - nmode_B;
     }
-    else if (IDXB == -1)
+    else if (nmode_B == -1)
     {
-        contractions = contractions > IDXA ? randi(0, IDXA) : contractions;
-        IDXD = IDXD < IDXA - contractions ? IDXA - contractions + randi(0, 4) : IDXD;
-        IDXB = contractions*2 + IDXD - IDXA;
+        contractions = contractions > nmode_A ? randi(0, nmode_A) : contractions;
+        nmode_D = nmode_D < nmode_A - contractions ? nmode_A - contractions + randi(0, 4) : nmode_D;
+        nmode_B = contractions*2 + nmode_D - nmode_A;
     }
     else
     {
-        contractions = contractions > std::min(IDXA, IDXB) ? randi(0, std::min(IDXA, IDXB)) : contractions;
-        IDXD = IDXA + IDXB - contractions * 2;
+        contractions = contractions > std::min(nmode_A, nmode_B) ? randi(0, std::min(nmode_A, nmode_B)) : contractions;
+        nmode_D = nmode_A + nmode_B - contractions * 2;
     }
-    int IDXC = IDXD;    
+    int nmode_C = nmode_D;    
 
-    char indicesA[IDXA];
-    for (int i = 0; i < IDXA; i++)
+    int64_t* idx_A = new int64_t[nmode_A];
+    for (int i = 0; i < nmode_A; i++)
     {
-        indicesA[i] = 'a' + i;
+        idx_A[i] = 'a' + i;
     }
-    if (IDXA > 0) {
-        std::shuffle(indicesA, indicesA + IDXA, std::default_random_engine());
+    if (nmode_A > 0) {
+        std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
     
-    char indicesB[IDXB];
-    int contracted_indices[contractions];
+    int64_t* idx_B = new int64_t[nmode_B];
+    int idx_contracted[contractions];
     for (int i = 0; i < contractions; i++)
     {
-        indicesB[i] = indicesA[i];
-        contracted_indices[i] = indicesA[i];
+        idx_B[i] = idx_A[i];
+        idx_contracted[i] = idx_A[i];
     }
-    for (int i = 0; i < IDXB - contractions; i++)
+    for (int i = 0; i < nmode_B - contractions; i++)
     {
-        indicesB[i + contractions] = 'a' + IDXA + i;
+        idx_B[i + contractions] = 'a' + nmode_A + i;
     }
-    if (IDXB > 0) {
-        std::shuffle(indicesB, indicesB + IDXB, std::default_random_engine());
+    if (nmode_B > 0) {
+        std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
-    if (IDXA > 0) {
-        std::shuffle(indicesA, indicesA + IDXA, std::default_random_engine());
+    if (nmode_A > 0) {
+        std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
 
-    char indicesD[IDXD];
+    int64_t* idx_C = new int64_t[nmode_C];
+    int64_t* idx_D = new int64_t[nmode_D];
     int index = 0;
-    for (int j = 0; j < IDXA + IDXB - contractions; j++)
+    for (int j = 0; j < nmode_A + nmode_B - contractions; j++)
     {
-        char idx = 'a' + j;
+        int64_t idx = 'a' + j;
         bool found = false;
         for (int i = 0; i < contractions; i++)
         {
-            if (idx == contracted_indices[i])
+            if (idx == idx_contracted[i])
             {
                 found = true;
                 break;
@@ -273,49 +270,29 @@ std::tuple<int, int*, int*, float*,
         }
         if (!found)
         {
-            indicesD[index] = idx;
+            idx_D[index] = idx;
             index++;
         }
     }
-    if (IDXD > 0) {
-        std::shuffle(indicesD, indicesD + IDXD, std::default_random_engine());
+    if (nmode_D > 0) {
+        std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
     }
+    std::copy(idx_D, idx_D + nmode_D, idx_C);
 
-    char* EINSUM = new char[IDXA + IDXB + IDXD + 7];
-    for (int i = 0; i < IDXA; i++)
+    int64_t* extents_A = new int64_t[nmode_A];
+    int64_t* extents_B = new int64_t[nmode_B];
+    int64_t* extents_D = new int64_t[nmode_D];
+    int64_t extent = randi(1, 4);
+    for (int i = 0; i < nmode_A; i++)
     {
-        EINSUM[i] = indicesA[i];
+        extents_A[i] = equal_extents ? randi(1, 4) : extent;
     }
-    EINSUM[IDXA] = ',';
-    EINSUM[IDXA+1] = ' ';
-    for (int i = 0; i < IDXB; i++)
-    {
-        EINSUM[IDXA+2+i] = indicesB[i];
-    }
-    EINSUM[IDXA+IDXB+2] = ' ';
-    EINSUM[IDXA+IDXB+3] = '-';
-    EINSUM[IDXA+IDXB+4] = '>';
-    EINSUM[IDXA+IDXB+5] = ' ';
-    for (int i = 0; i < IDXD; i++)
-    {
-        EINSUM[IDXA+IDXB+6+i] = indicesD[i];
-    }
-    EINSUM[IDXA+IDXB+IDXD+6] = '\0';
-
-    int* EXTA = new int[IDXA];
-    int* EXTB = new int[IDXB];
-    int* EXTD = new int[IDXD];
-    int extent = randi(1, 4);
-    for (int i = 0; i < IDXA; i++)
-    {
-        EXTA[i] = equal_extents ? randi(1, 4) : extent;
-    }
-    for (int i = 0; i < IDXB; i++)
+    for (int i = 0; i < nmode_B; i++)
     {
         int found = -1;
-        for (int j = 0; j < IDXA; j++)
+        for (int j = 0; j < nmode_A; j++)
         {
-            if (indicesB[i] == indicesA[j])
+            if (idx_B[i] == idx_A[j])
             {
                 found = j;
                 break;
@@ -323,243 +300,245 @@ std::tuple<int, int*, int*, float*,
         }
         if (found != -1)
         {
-            EXTB[i] = EXTA[found];
+            extents_B[i] = extents_A[found];
         }
         else
         {
-            EXTB[i] = equal_extents ? randi(1, 4) : extent;
+            extents_B[i] = equal_extents ? randi(1, 4) : extent;
         }
     }
-    for (int i = 0; i < IDXD; i++)
+    for (int i = 0; i < nmode_D; i++)
     {
-        int foundA = -1;
-        for (int j = 0; j < IDXA; j++)
+        int found_A = -1;
+        for (int j = 0; j < nmode_A; j++)
         {
-            if (indicesD[i] == indicesA[j])
+            if (idx_D[i] == idx_A[j])
             {
-                foundA = j;
+                found_A = j;
                 break;
             }
         }
 
-        int foundB = -1;
-        for (int j = 0; j < IDXB; j++)
+        int found_B = -1;
+        for (int j = 0; j < nmode_B; j++)
         {
-            if (indicesD[i] == indicesB[j])
+            if (idx_D[i] == idx_B[j])
             {
-                foundB = j;
+                found_B = j;
                 break;
             }
         }
 
-        if (foundA != -1)
+        if (found_A != -1)
         {
-            EXTD[i] = EXTA[foundA];
+            extents_D[i] = extents_A[found_A];
         }
-        else if (foundB != -1)
+        else if (found_B != -1)
         {
-            EXTD[i] = EXTB[foundB];
+            extents_D[i] = extents_B[found_B];
         }
         else
         {
             std::cout << "Error: Index not found" << std::endl;
         }
-    }
-    int* EXTC = new int[IDXC];
-    std::copy(EXTD, EXTD + IDXD, EXTC);
+    }    
+    int64_t* extents_C = new int64_t[nmode_C];
+    std::copy(extents_D, extents_D + nmode_D, extents_C);
 
-    int outer_IDXA = lower_idx ? IDXA + randi(1, 4) : IDXA;
-    int outer_IDXB = lower_idx ? IDXB + randi(1, 4) : IDXB;
-    int outer_IDXC = lower_idx ? IDXC + randi(1, 4) : IDXC;
-    int outer_IDXD = lower_idx ? IDXD + randi(1, 4) : IDXD;
-    int outer_EXTA[outer_IDXA];
-    int outer_EXTB[outer_IDXB];
-    int outer_EXTC[outer_IDXC];
-    int outer_EXTD[outer_IDXD];
-    int* STRA = new int[IDXA];
-    int* STRB = new int[IDXB];
-    int* STRC = new int[IDXC];
-    int* STRD = new int[IDXD];
-    int* offsetA = new int[IDXA];
-    int* offsetB = new int[IDXB];
-    int* offsetC = new int[IDXC];
-    int* offsetD = new int[IDXD];
-    int sizeA = 1;
-    int sizeB = 1;
-    int sizeC = 1;
-    int sizeD = 1;
+    int outer_nmode_A = lower_nmode ? nmode_A + randi(1, 4) : nmode_A;
+    int outer_nmode_B = lower_nmode ? nmode_B + randi(1, 4) : nmode_B;
+    int outer_nmode_C = lower_nmode ? nmode_C + randi(1, 4) : nmode_C;
+    int outer_nmode_D = lower_nmode ? nmode_D + randi(1, 4) : nmode_D;
+    int64_t outer_extents_A[outer_nmode_A];
+    int64_t outer_extents_B[outer_nmode_B];
+    int64_t outer_extents_C[outer_nmode_C];
+    int64_t outer_extents_D[outer_nmode_D];
+    int64_t* strides_A = new int64_t[nmode_A];
+    int64_t* strides_B = new int64_t[nmode_B];
+    int64_t* strides_C = new int64_t[nmode_C];
+    int64_t* strides_D = new int64_t[nmode_D];
+    int64_t* offset_A = new int64_t[nmode_A];
+    int64_t* offset_B = new int64_t[nmode_B];
+    int64_t* offset_C = new int64_t[nmode_C];
+    int64_t* offset_D = new int64_t[nmode_D];
+    int64_t size_A = 1;
+    int64_t size_B = 1;
+    int64_t size_C = 1;
+    int64_t size_D = 1;
 
-    int str = negative_str ? -1 : 1;
+    int64_t str = negative_str ? -1 : 1;
     int idx = 0;
-    for (int i = 0; i < outer_IDXA; i++)
+    for (int i = 0; i < outer_nmode_A; i++)
     {
-        if ((randf(0, 1) < (float)IDXA/(float)outer_IDXA || outer_IDXA - i == IDXA - idx) && IDXA - idx > 0)
+        if ((randf(0, 1) < (float)nmode_A/(float)outer_nmode_A || outer_nmode_A - i == nmode_A - idx) && nmode_A - idx > 0)
         {
             int extension = randi(1, 4);
-            outer_EXTA[i] = lower_extents ? EXTA[idx] + extension : EXTA[idx];
-            offsetA[idx] = lower_extents && extension - EXTA[idx] > 0 ? randi(0, extension - EXTA[idx]) : 0;
-            STRA[idx] = str;
-            str *= outer_EXTA[i];
+            outer_extents_A[i] = lower_extents ? extents_A[idx] + extension : extents_A[idx];
+            offset_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
+            strides_A[idx] = str;
+            str *= outer_extents_A[i];
             idx++;
         }
         else
         {
-            outer_EXTA[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_EXTA[i];
+            outer_extents_A[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+            str *= outer_extents_A[i];
         }
-        sizeA *= outer_EXTA[i];
+        size_A *= outer_extents_A[i];
     }
     str = negative_str ? -1 : 1;
     idx = 0;
-    for (int i = 0; i < outer_IDXB; i++)
+    for (int i = 0; i < outer_nmode_B; i++)
     {
-        if ((randf(0, 1) < (float)IDXB/(float)outer_IDXB || outer_IDXB - i == IDXB - idx) && IDXB - idx > 0)
+        if ((randf(0, 1) < (float)nmode_B/(float)outer_nmode_B || outer_nmode_B - i == nmode_B - idx) && nmode_B - idx > 0)
         {
             int extension = randi(1, 4);
-            outer_EXTB[i] = lower_extents ? EXTB[idx] + extension : EXTB[idx];
-            offsetB[idx] = lower_extents && extension - EXTB[idx] > 0 ? randi(0, extension - EXTB[idx]) : 0;
-            STRB[idx] = str;
-            str *= outer_EXTB[i];
+            outer_extents_B[i] = lower_extents ? extents_B[idx] + extension : extents_B[idx];
+            offset_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
+            strides_B[idx] = str;
+            str *= outer_extents_B[i];
             idx++;
         }
         else
         {
-            outer_EXTB[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_EXTB[i];
+            outer_extents_B[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+            str *= outer_extents_B[i];
         }
-        sizeB *= outer_EXTB[i];
+        size_B *= outer_extents_B[i];
     }
     str = negative_str ? -1 : 1;
     idx = 0;
-    for (int i = 0; i < outer_IDXC; i++)
+    for (int i = 0; i < outer_nmode_C; i++)
     {
-        if ((randf(0, 1) < (float)IDXC/(float)outer_IDXC || outer_IDXC - i == IDXC - idx) && IDXC - idx > 0)
+        if ((randf(0, 1) < (float)nmode_C/(float)outer_nmode_C || outer_nmode_C - i == nmode_C - idx) && nmode_C - idx > 0)
         {
             int extension = randi(1, 4);
-            outer_EXTC[i] = lower_extents ? EXTC[idx] + extension : EXTC[idx];
-            offsetC[idx] = lower_extents && extension - EXTC[idx] > 0 ? randi(0, extension - EXTC[idx]) : 0;
-            STRC[idx] = str;
-            str *= outer_EXTC[i];
+            outer_extents_C[i] = lower_extents ? extents_C[idx] + extension : extents_C[idx];
+            offset_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
+            strides_C[idx] = str;
+            str *= outer_extents_C[i];
             idx++;
         }
         else
         {
-            outer_EXTC[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_EXTC[i];
+            outer_extents_C[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+            str *= outer_extents_C[i];
         }
-        sizeC *= outer_EXTC[i];
+        size_C *= outer_extents_C[i];
     }
     str = negative_str ? -1 : 1;
     idx = 0;
-    for (int i = 0; i < outer_IDXD; i++)
+    for (int i = 0; i < outer_nmode_D; i++)
     {
-        if ((randf(0, 1) < (float)IDXD/(float)outer_IDXD || outer_IDXD - i == IDXD - idx) && IDXD - idx > 0)
+        if ((randf(0, 1) < (float)nmode_D/(float)outer_nmode_D || outer_nmode_D - i == nmode_D - idx) && nmode_D - idx > 0)
         {
             int extension = randi(1, 4);
-            outer_EXTD[i] = lower_extents ? EXTD[idx] + extension : EXTD[idx];
-            offsetD[idx] = lower_extents && extension - EXTD[idx] > 0 ? randi(0, extension - EXTD[idx]) : 0;
-            STRD[idx] = str;
-            str *= outer_EXTD[i];
+            outer_extents_D[i] = lower_extents ? extents_D[idx] + extension : extents_D[idx];
+            offset_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
+            strides_D[idx] = str;
+            str *= outer_extents_D[i];
             idx++;
         }
         else
         {
-            outer_EXTD[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+            outer_extents_D[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+            str *= outer_extents_D[i];
         }
-        sizeD *= outer_EXTD[i];
+        size_D *= outer_extents_D[i];
     }
 
-    float* dataA = new float[sizeA];
-    float* dataB = new float[sizeB];
-    float* dataC = new float[sizeC];
-    float* dataD = new float[sizeD];
+    float* data_A = new float[size_A];
+    float* data_B = new float[size_B];
+    float* data_C = new float[size_C];
+    float* data_D = new float[size_D];
 
-    for (int i = 0; i < sizeA; i++)
+    for (int i = 0; i < size_A; i++)
     {
-        dataA[i] = randf(0, 1);
+        data_A[i] = randf(0, 1);
     }
-    for (int i = 0; i < sizeB; i++)
+    for (int i = 0; i < size_B; i++)
     {
-        dataB[i] = randf(0, 1);
+        data_B[i] = randf(0, 1);
     }
-    for (int i = 0; i < sizeC; i++)
+    for (int i = 0; i < size_C; i++)
     {
-        dataC[i] = randf(0, 1);
+        data_C[i] = randf(0, 1);
     }
-    for (int i = 0; i < sizeD; i++)
+    for (int i = 0; i < size_D; i++)
     {
-        dataD[i] = randf(0, 1);
-    }
-
-    float* A = negative_str ? dataA + sizeA - 1 : dataA;
-    float* B = negative_str ? dataB + sizeB - 1 : dataB;
-    float* C = negative_str ? dataC + sizeC - 1 : dataC;
-    float* D = negative_str ? dataD + sizeD - 1 : dataD;
-
-    for (int i = 0; i < IDXA; i++)
-    {
-        A += offsetA[i] * STRA[i];
-    }
-    for (int i = 0; i < IDXB; i++)
-    {
-        B += offsetB[i] * STRB[i];
-    }
-    for (int i = 0; i < IDXC; i++)
-    {
-        C += offsetC[i] * STRC[i];
-    }
-    for (int i = 0; i < IDXD; i++)
-    {
-        D += offsetD[i] * STRD[i];
+        data_D[i] = randf(0, 1);
     }
 
-    float ALPHA = randf(0, 1);
-    float BETA = randf(0, 1);
+    float* A = negative_str ? data_A + size_A - 1 : data_A;
+    float* B = negative_str ? data_B + size_B - 1 : data_B;
+    float* C = negative_str ? data_C + size_C - 1 : data_C;
+    float* D = negative_str ? data_D + size_D - 1 : data_D;
 
-    bool FA = false;
-    bool FB = false;
-    bool FC = false;
+    for (int i = 0; i < nmode_A; i++)
+    {
+        A += offset_A[i] * strides_A[i];
+    }
+    for (int i = 0; i < nmode_B; i++)
+    {
+        B += offset_B[i] * strides_B[i];
+    }
+    for (int i = 0; i < nmode_C; i++)
+    {
+        C += offset_C[i] * strides_C[i];
+    }
+    for (int i = 0; i < nmode_D; i++)
+    {
+        D += offset_D[i] * strides_D[i];
+    }
 
-    return {IDXA, EXTA, STRA, A,
-            IDXB, EXTB, STRB, B,
-            IDXC, EXTC, STRC, C,
-            IDXD, EXTD, STRD, D,
-            ALPHA, BETA, FA, FB, FC, EINSUM,
-            dataA, dataB, dataC, dataD,
-            sizeA, sizeB, sizeC, sizeD,
-            offsetA, offsetB, offsetC, offsetD};
+    float alpha = randf(0, 1);
+    float beta = randf(0, 1);
+
+    int op_A = 0;
+    int op_B = 0;
+    int op_C = 0;
+    int op_D = 0;
+
+    return {nmode_A, extents_A, strides_A, A, op_A, idx_A,
+            nmode_B, extents_B, strides_B, B, op_B, idx_B,
+            nmode_C, extents_C, strides_C, C, op_C, idx_C,
+            nmode_D, extents_D, strides_D, D, op_D, idx_D,
+            alpha, beta,
+            data_A, data_B, data_C, data_D,
+            size_A, size_B, size_C, size_D,
+            offset_A, offset_B, offset_C, offset_D};
 }
 
-std::tuple<float*, float*> copy_tensor_data(int size, float* data, int IDX, int* offset, int* STR, bool negative_str = false) {
+std::tuple<float*, float*> copy_tensor_data(int64_t size, float* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str = false) {
     float* dataA = new float[size];
     std::copy(data, data + size, dataA);
     float* A = negative_str ? dataA + size - 1 : dataA;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        A += offset[i] * STR[i];
+        A += offset[i] * strides[i];
     }
     return {A, dataA};
 }
 
-std::tuple<float*, float*> zero_tensor(int size, int IDX, int* offset, int* STR, bool negative_str = false) {
+std::tuple<float*, float*> zero_tensor(int size, int nmode, int* offset, int* strides, bool negative_str = false) {
     float* dataA = new float[size];
     for (int i = 0; i < size; i++)
     {
         dataA[i] = 0;
     }
     float* A = negative_str ? dataA + size - 1 : dataA;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        A += offset[i] * STR[i];
+        A += offset[i] * strides[i];
     }
     return {A, dataA};
 }
 
-float* copy_tensor_data(int IDX, int* EXT, float* data) {
+float* copy_tensor_data(int nmode, int64_t* extents, float* data) {
     int size = 1;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        size *= EXT[i];
+        size *= extents[i];
     }
     float* copy = new float[size];
     for (int i = 0; i < size; i++)
@@ -569,11 +548,11 @@ float* copy_tensor_data(int IDX, int* EXT, float* data) {
     return copy;
 }
 
-float* zero_tensor(int IDX, int* EXT) {
+float* zero_tensor(int nmode, int* extents) {
     int size = 1;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        size *= EXT[i];
+        size *= extents[i];
     }
     float* zero = new float[size];
     for (int i = 0; i < size; i++)
@@ -583,11 +562,11 @@ float* zero_tensor(int IDX, int* EXT) {
     return zero;
 }
 
-int calculate_tensor_size(int IDX, int* EXT) {
+int calculate_tensor_size(int nmode, int* extents) {
     int size = 1;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        size *= EXT[i];
+        size *= extents[i];
     }
     return size;
 }
@@ -628,55 +607,77 @@ char* swap_indices(char* EINSUM, int IDXA, int IDXB, int IDXD) {
     return swapped;
 }
 
-void rotate_output_indices(char* EINSUM, int IDXA, int IDXB, int IDXC, int* EXTC, int* STRC, int IDXD, int* EXTD, int* STRD) {
-    char index = EINSUM[IDXA + IDXB + 6];
-    int extent = EXTD[0];
-    STRD[0] = 1;
-    STRC[0] = 1;
-    for (int i = 0; i < IDXD - 1; i++)
+void rotate_indices(int64_t* idx, int nmode, int64_t* extents, int64_t* strides) {
+    if (nmode < 2)
     {
-        EINSUM[IDXA + IDXB + 6 + i] = EINSUM[IDXA + IDXB + 7 + i];
-        EXTD[i] = EXTD[i+1];
-        STRD[i + 1] = STRD[i] * EXTD[i];
-        EXTC[i] = EXTC[i+1];
-        STRC[i + 1] = STRC[i] * EXTC[i];
+        return;
     }
-    EINSUM[IDXA + IDXB + 6 + IDXD - 1] = index;
-    EXTD[IDXD-1] = extent;
-    EXTC[IDXD-1] = extent;
+    int64_t tmp_idx = idx[0];
+    int64_t tmp_ext = extents[0];
+    int64_t tmp_str = strides[0];
+    strides[0] = 1 + ((strides[1] / strides[0]) - extents[0]);
+    for (int i = 0; i < nmode - 1; i++)
+    {
+        idx[i] = idx[i+1];
+        if (i == 0)
+        {
+            strides[i] = 1 * (1 + ((strides[i+1] / strides[i]) - extents[i]));
+        }
+        else
+        {
+            strides[i] = strides[i-1] * (extents[i-1] + ((strides[i+1] / strides[i]) - extents[i]));
+        }
+        extents[i] = extents[i+1];
+    }
+    idx[nmode-1] = tmp_idx;
+    extents[nmode-1] = tmp_ext;
+    strides[nmode-1] = strides[nmode-2] * (extents[nmode-2] + (tmp_str - 1));
 }
 
-void print_tensor(int IDX, int* EXT, int* STR, float* data) {
-    std::cout << "IDX: " << IDX << std::endl;
-    std::cout << "EXT: ";
-    for (int i = 0; i < IDX; i++)
+void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
+    if (nmode <= 0) {
+        return;
+    }
+
+    int k = 0;
+    do
     {
-        std::cout << EXT[i] << " ";
+        coordinates[k] = (coordinates[k] + 1) % extents[k];
+        k++;
+    } while (coordinates[k - 1] == 0 && k < nmode);
+}
+
+void print_tensor(int nmode, int64_t* extents, int64_t* strides, float* data) {
+    std::cout << "ndim: " << nmode << std::endl;
+    std::cout << "extents: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << extents[i] << " ";
     }
     std::cout << std::endl;
-    std::cout << "STR: ";
-    for (int i = 0; i < IDX; i++)
+    std::cout << "strides: ";
+    for (int i = 0; i < nmode; i++)
     {
-        std::cout << STR[i] << " ";
+        std::cout << strides[i] << " ";
     }
     std::cout << std::endl;
-    int coord[IDX];
-    for (int i = 0; i < IDX; i++)
+    int coord[nmode];
+    for (int i = 0; i < nmode; i++)
     {
         coord[i] = 0;
     }
     int size = 1;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        size *= EXT[i];
+        size *= extents[i];
     }
     for (int i = 0; i < size; i++)
     {
         std::cout << data[i] << " ";
         coord[0]++;
-        for (int j = 0; j < IDX - 1; j++)
+        for (int j = 0; j < nmode - 1; j++)
         {
-            if (coord[j] == EXT[j])
+            if (coord[j] == extents[j])
             {
                 coord[j] = 0;
                 coord[j+1]++;
@@ -688,21 +689,21 @@ void print_tensor(int IDX, int* EXT, int* STR, float* data) {
 }
 
 bool test_hadamard_product() {
-    int IDX = randi(0, 4);
-    int* EXT = new int[IDX];
-    int* STR = new int[IDX];
+    int nmode = randi(0, 4);
+    int64_t* extents = new int64_t[nmode];
+    int64_t* strides = new int64_t[nmode];
     int size = 1;
-    for (int i = 0; i < IDX; i++)
+    for (int i = 0; i < nmode; i++)
     {
-        EXT[i] = randi(1, 4);
-        size *= EXT[i];
+        extents[i] = randi(1, 4);
+        size *= extents[i];
     }
-    if (IDX > 0) {
-        STR[0] = 1;
+    if (nmode > 0) {
+        strides[0] = 1;
     }
-    for (int i = 1; i < IDX; i++)
+    for (int i = 1; i < nmode; i++)
     {
-        STR[i] = STR[i-1] * EXT[i-1];
+        strides[i] = strides[i-1] * extents[i-1];
     }
     float* A = new float[size];
     float* B = new float[size];
@@ -716,593 +717,956 @@ bool test_hadamard_product() {
         D[i] = randf(0, 1);
     }
 
-    float ALPHA = randf(0, 1);
-    float BETA = randf(0, 1);
+    float alpha = randf(0, 1);
+    float beta = randf(0, 1);
 
-    char* EINSUM = new char[IDX*3 + 7];
-    for (int i = 0; i < IDX; i++)
+    int64_t* idx_A = new int64_t[nmode];
+    for (int i = 0; i < nmode; i++)
     {
-        EINSUM[i] = 'a' + i;
-        EINSUM[IDX+2+i] = 'a' + i;
-        EINSUM[IDX*2+6+i] = 'a' + i;
+        idx_A[i] = 'a' + i;
     }
-    EINSUM[IDX] = ',';
-    EINSUM[IDX+1] = ' ';
-    EINSUM[IDX*2+2] = ' ';
-    EINSUM[IDX*2+3] = '-';
-    EINSUM[IDX*2+4] = '>';
-    EINSUM[IDX*2+5] = ' ';
-    EINSUM[IDX*3+6] = '\0';
+    int64_t* idx_B = new int64_t[nmode];
+    int64_t* idx_C = new int64_t[nmode];
+    int64_t* idx_D = new int64_t[nmode];
+    std::copy(idx_A, idx_A + nmode, idx_B);
+    std::copy(idx_A, idx_A + nmode, idx_C);
+    std::copy(idx_A, idx_A + nmode, idx_D);
 
-    float* E = copy_tensor_data(IDX, EXT, D);
+    float* E = copy_tensor_data(nmode, extents, D);
 
-    PRODUCT(IDX, EXT, STR, A, IDX, EXT, STR, B, IDX, EXT, STR, C, IDX, EXT, STR, D, ALPHA, BETA, true, true, true, EINSUM);
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode, extents, strides);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode, extents, strides);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode, extents, strides);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode, extents, strides);
 
-    run_tblis_mult(IDX, EXT, STR, A, IDX, EXT, STR, B, IDX, EXT, STR, C, IDX, EXT, STR, E, ALPHA, BETA, true, true, true, EINSUM);
+    int op_A = 0;
+    int op_B = 0;
+    int op_C = 0;
+    int op_D = 0;
+
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
+
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult(nmode, extents, strides, A, op_A, idx_A,
+                   nmode, extents, strides, B, op_B, idx_B,
+                   nmode, extents, strides, C, op_C, idx_D,
+                   nmode, extents, strides, E, op_D, idx_D,
+                   alpha, beta);
 
     bool result = compare_tensors(D, E, size);
 
-    delete[] EXT;
-    delete[] STR;
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents;
+    delete[] strides;
     delete[] A;
     delete[] B;
     delete[] C;
     delete[] D;
     delete[] E;
-    delete[] EINSUM;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
 
     return result;
 }
 
 bool test_contraction() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction();
 
-    auto [E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto [E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] dataE;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_commutativity() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction();
 
-    auto [E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto [E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
 
-    auto [F, dataF] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto [F, data_F] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
 
-    auto[G, dataG] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto [G, data_G] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
 
-    auto[C1, dataC1] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
+    auto [C2, data_C2] = copy_tensor_data(size_C, data_C, nmode_C, offset_C, strides_C);
 
-    auto[C2, dataC2] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
+    auto [C3, data_C3] = copy_tensor_data(size_C, data_C, nmode_C, offset_C, strides_C);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    auto[C3, dataC3] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
+    TAPP_handle handle = 0;
+    TAPP_tensor_product planAB = 0;
+    TAPP_create_tensor_product(&planAB, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_tensor_product planBA = 0;
+    TAPP_create_tensor_product(&planBA, handle, op_B, info_B, idx_B, op_A, info_A, idx_A, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    auto[C4, dataC4] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
+    TAPP_execute_product(planAB, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    char* swapped_EINSUM = swap_indices(EINSUM, IDXA, IDXB, IDXD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C2, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
+    
+    TAPP_execute_product(planBA, 0, &status, (void*)&alpha, (void*)B, (void*)A, (void*)&beta, (void*)C, (void*)F);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C1, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    run_tblis_mult(nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_C, extents_C, strides_C, C3, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, G, op_D, idx_D,
+                   alpha, beta);
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C2, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
-
-    PRODUCT(IDXB, EXTB, STRB, B, IDXA, EXTA, STRA, A, IDXC, EXTC, STRC, C3, IDXD, EXTD, STRD, F, ALPHA, BETA, FB, FA, FC, swapped_EINSUM);
-
-    run_tblis_mult(IDXB, EXTB, STRB, B, IDXA, EXTA, STRA, A, IDXC, EXTC, STRC, C4, IDXD, EXTD, STRD, G, ALPHA, BETA, FA, FB, FC, swapped_EINSUM);
-
-    bool result = compare_tensors(dataD, dataE, sizeD) && compare_tensors(dataF, dataG, sizeD) && compare_tensors(dataD, dataF, sizeD);
-
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
-    delete[] dataF;
-    delete[] dataG;
-    delete[] dataC1;
-    delete[] dataC2;
-    delete[] dataC3;
-    delete[] dataC4;
-    delete[] swapped_EINSUM;
-
+    bool result = compare_tensors(data_D, data_E, size_D) && compare_tensors(data_F, data_G, size_D) && compare_tensors(data_D, data_F, size_D);
+    
+    TAPP_destory_tensor_product(planAB);
+    TAPP_destory_tensor_product(planBA);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_C2;
+    delete[] data_C3;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] data_F;
+    delete[] data_G;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_permutations() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction();
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction();
+          
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_status status = 0;
     
     bool result = true;
 
-    for (int i = 0; i < IDXD; i++)
+    for (int i = 0; i < nmode_D; i++)
     {
-        auto[C1, dataC1] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
-        PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C1, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
-        auto[C2, dataC2] = copy_tensor_data(sizeC, dataC, IDXC, offsetC, STRC);
-        auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
-        run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C2, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
-        result = result && compare_tensors(dataD, dataE, sizeD);
-        rotate_output_indices(EINSUM, IDXA, IDXB, IDXC, EXTC, STRC, IDXD, EXTD, STRD);
-        delete[] dataC1;
-        delete[] dataC2;
-        delete[] dataE;
+        auto [C2, copy_C2] = copy_tensor_data(size_C, data_C, nmode_C, offset_C, strides_C);
+        TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+        TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+        run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                    nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                    nmode_C, extents_C, strides_C, C2, op_C, idx_D,
+                    nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                    alpha, beta);
+        result = result && compare_tensors(data_D, data_E, size_D);
+        rotate_indices(idx_D, nmode_D, extents_D, strides_D);
+        rotate_indices(idx_C, nmode_C, extents_C, strides_C);
+        TAPP_destory_tensor_product(plan);
+        delete[] copy_C2;
     }
     
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_equal_extents() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_outer_product() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), 0);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), 0);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
     
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_full_contraction() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, 0);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, 0);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_zero_dim_tensor_contraction() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(0);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(0);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_one_dim_tensor_contraction() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(1);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(1);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_subtensor_same_idx() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_subtensor_lower_idx() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_negative_strides() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, false, false, true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, false, false, true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
 
-    return result;
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return true;
 }
 
 bool test_negative_strides_subtensor_same_idx() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, false, true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, false, true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
 
 bool test_negative_strides_subtensor_lower_idx() {
-    auto [IDXA, EXTA, STRA, A,
-          IDXB, EXTB, STRB, B,
-          IDXC, EXTC, STRC, C,
-          IDXD, EXTD, STRD, D,
-          ALPHA, BETA, FA, FB, FC, EINSUM,
-          dataA, dataB, dataC, dataD,
-          sizeA, sizeB, sizeC, sizeD,
-          offsetA, offsetB, offsetC, offsetD] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true, true);
+    auto [nmode_A, extents_A, strides_A, A, op_A, idx_A,
+          nmode_B, extents_B, strides_B, B, op_B, idx_B,
+          nmode_C, extents_C, strides_C, C, op_C, idx_C,
+          nmode_D, extents_D, strides_D, D, op_D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction(-1, -1, randi(0, 4), randi(0, 4), false, true, true, true);
     
-    auto[E, dataE] = copy_tensor_data(sizeD, dataD, IDXD, offsetD, STRD, true);
+    auto[E, data_E] = copy_tensor_data(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    
+    TAPP_tensor_info info_A = 0;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B = 0;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C = 0;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D = 0;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_tensor_product plan = 0;
+    TAPP_handle handle = 0;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status = 0;
 
-    run_tblis_mult(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, E, ALPHA, BETA, FA, FB, FC, EINSUM);
+    TAPP_execute_product(plan, 0, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    bool result = compare_tensors(dataD, dataE, sizeD);
+    run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                   nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                   nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                   nmode_D, extents_D, strides_D, E, op_D, idx_D,
+                   alpha, beta);
 
-    delete[] EXTA;
-    delete[] EXTB;
-    delete[] EXTC;
-    delete[] EXTD;
-    delete[] STRA;
-    delete[] STRB;
-    delete[] STRC;
-    delete[] STRD;
-    delete[] EINSUM;
-    delete[] dataA;
-    delete[] dataB;
-    delete[] dataC;
-    delete[] dataD;
-    delete[] offsetA;
-    delete[] offsetB;
-    delete[] offsetC;
-    delete[] offsetD;
-    delete[] dataE;
+    bool result = compare_tensors(data_D, data_E, size_D);
+
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
 
     return result;
 }
