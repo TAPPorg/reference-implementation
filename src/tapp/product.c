@@ -189,10 +189,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 index_B += coordinates_contraction[i] * contracted_strides_B[i];
             }
             calculate_alpha_A_B(alpha, A, type_A, index_A, op_A, B, type_B, index_B, op_B, prec, D, type_D, index_D);
-            calculate_op_D(D, type_D, index_D, op_D);
             //((float*)D)[index_D] += *((float*)alpha) * ((float*)A)[index_A] * ((float*)B)[index_B];
             increment_coordinates(coordinates_contraction, contractions, extents_contraction);
         }
+        calculate_op_D(D, type_D, index_D, op_D);
         increment_coordinates(coordinates_D, nmode_D, extents_D);
     }
 
