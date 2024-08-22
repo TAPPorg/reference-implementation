@@ -103,7 +103,13 @@ std::complex<double> randz();
 
 char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D);
 
-void print_tensor(int nmode, int64_t* extents, int64_t* strides, float* data);
+void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data);
+
+void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data);
+
+void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* data);
+
+void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data);
 
 std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str);
 
@@ -499,15 +505,15 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
 
     if (op_A == 1)
     {
-        conjugate_z(nmode_A, len_A, stride_A, A);
+        conjugate_z(nmode_A, extents_A, strides_A, A);
     }
     if (op_B == 1)
     {
-        conjugate_z(nmode_B, len_B, stride_B, B);
+        conjugate_z(nmode_B, extents_B, strides_B, B);
     }
     if (op_C == 1)
     {
-        conjugate_z(nmode_C, len_C, stride_C, C);
+        conjugate_z(nmode_C, extents_C, strides_C, C);
     }
 
     tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
@@ -521,10 +527,10 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
     tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
 
     tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
-    
+
     if (op_D == 1)
     {
-        conjugate_z(nmode_D, len_D, stride_D, D);
+        conjugate_z(nmode_D, extents_D, strides_D, D);
     }
 }
 
@@ -602,11 +608,12 @@ bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size)
     bool found = false;
     for (int i = 0; i < size; i++)
     {
-        std::complex<float> rel_diff = abs((A[i] - B[i]) / (A[i] > B[i] ? A[i] : B[i]));
-        if (rel_diff.imag() > 0.00005 || rel_diff.real() > 0.00005)
+        float rel_diff_r = abs((A[i].real() - B[i].real()) / (A[i].real() > B[i].real() ? A[i].real() : B[i].real()));
+        float rel_diff_i = abs((A[i].imag() - B[i].imag()) / (A[i].imag() > B[i].imag() ? A[i].imag() : B[i].imag()));
+        if (rel_diff_r > 0.00005 || rel_diff_i > 0.00005)
         {
             std::cout << "\n" << i << ": " << A[i] << " - " << B[i] << std::endl;
-            std::cout << "\n" << i << ": " << rel_diff << std::endl;
+            std::cout << "\n" << i << ": " << std::complex<float>(rel_diff_r, rel_diff_i) << std::endl;
             found = true;
         }
     }
@@ -617,11 +624,12 @@ bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int siz
     bool found = false;
     for (int i = 0; i < size; i++)
     {
-        std::complex<double> rel_diff = abs((A[i] - B[i]) / (A[i] > B[i] ? A[i] : B[i]));
-        if (rel_diff.imag() > 0.00005 || rel_diff.real() > 0.00005)
+        double rel_diff_r = abs((A[i].real() - B[i].real()) / (A[i].real() > B[i].real() ? A[i].real() : B[i].real()));
+        double rel_diff_i = abs((A[i].imag() - B[i].imag()) / (A[i].imag() > B[i].imag() ? A[i].imag() : B[i].imag()));
+        if (rel_diff_r > 0.00005 || rel_diff_i > 0.00005)
         {
             std::cout << "\n" << i << ": " << A[i] << " - " << B[i] << std::endl;
-            std::cout << "\n" << i << ": " << rel_diff << std::endl;
+            std::cout << "\n" << i << ": " << std::complex<double>(rel_diff_r, rel_diff_i) << std::endl;
             found = true;
         }
     }
@@ -2051,7 +2059,130 @@ void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
     } while (coordinates[k - 1] == 0 && k < nmode);
 }
 
-void print_tensor(int nmode, int64_t* extents, int64_t* strides, float* data) {
+void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data) {
+    std::cout << "ndim: " << nmode << std::endl;
+    std::cout << "extents: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << extents[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "strides: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << strides[i] << " ";
+    }
+    std::cout << std::endl;
+    int coord[nmode];
+    for (int i = 0; i < nmode; i++)
+    {
+        coord[i] = 0;
+    }
+    int size = 1;
+    for (int i = 0; i < nmode; i++)
+    {
+        size *= extents[i];
+    }
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << data[i] << " ";
+        coord[0]++;
+        for (int j = 0; j < nmode - 1; j++)
+        {
+            if (coord[j] == extents[j])
+            {
+                coord[j] = 0;
+                coord[j+1]++;
+                std::cout << std::endl;
+            }
+        }
+    }
+    std::cout << std::endl;
+}
+
+void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data) {
+    std::cout << "ndim: " << nmode << std::endl;
+    std::cout << "extents: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << extents[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "strides: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << strides[i] << " ";
+    }
+    std::cout << std::endl;
+    int coord[nmode];
+    for (int i = 0; i < nmode; i++)
+    {
+        coord[i] = 0;
+    }
+    int size = 1;
+    for (int i = 0; i < nmode; i++)
+    {
+        size *= extents[i];
+    }
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << data[i] << " ";
+        coord[0]++;
+        for (int j = 0; j < nmode - 1; j++)
+        {
+            if (coord[j] == extents[j])
+            {
+                coord[j] = 0;
+                coord[j+1]++;
+                std::cout << std::endl;
+            }
+        }
+    }
+    std::cout << std::endl;
+}
+
+void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* data) {
+    std::cout << "ndim: " << nmode << std::endl;
+    std::cout << "extents: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << extents[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "strides: ";
+    for (int i = 0; i < nmode; i++)
+    {
+        std::cout << strides[i] << " ";
+    }
+    std::cout << std::endl;
+    int coord[nmode];
+    for (int i = 0; i < nmode; i++)
+    {
+        coord[i] = 0;
+    }
+    int size = 1;
+    for (int i = 0; i < nmode; i++)
+    {
+        size *= extents[i];
+    }
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << data[i] << " ";
+        coord[0]++;
+        for (int j = 0; j < nmode - 1; j++)
+        {
+            if (coord[j] == extents[j])
+            {
+                coord[j] = 0;
+                coord[j+1]++;
+                std::cout << std::endl;
+            }
+        }
+    }
+    std::cout << std::endl;
+}
+
+void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data) {
     std::cout << "ndim: " << nmode << std::endl;
     std::cout << "extents: ";
     for (int i = 0; i < nmode; i++)
