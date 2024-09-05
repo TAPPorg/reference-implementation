@@ -106,28 +106,28 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	strides_A = (c_int64 * len(A.strides))(*[s // A.itemsize for s in A.strides])
 	
 	tensor_info_A = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_A), 1, nmode_A, extents_A, strides_A)
+	TAPP_create_tensor_info(byref(tensor_info_A), 1 if A.dtype == 'float64' else 3, nmode_A, extents_A, strides_A)
 
 	nmode_B = c_int(B.ndim)
 	extents_B = (c_int64 * len(B.shape))(*B.shape)
 	strides_B = (c_int64 * len(B.strides))(*[s // B.itemsize for s in B.strides])
 
 	tensor_info_B = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_B), 1, nmode_B, extents_B, strides_B)
+	TAPP_create_tensor_info(byref(tensor_info_B), 1 if A.dtype == 'float64' else 3, nmode_B, extents_B, strides_B)
 
 	nmode_C = c_int(C.ndim)
 	extents_C = (c_int64 * len(C.shape))(*C.shape)
 	strides_C = (c_int64 * len(C.strides))(*[s // C.itemsize for s in C.strides])
 
 	tensor_info_C = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_C), 1, nmode_C, extents_C, strides_C)
+	TAPP_create_tensor_info(byref(tensor_info_C), 1 if A.dtype == 'float64' else 3, nmode_C, extents_C, strides_C)
 
 	nmode_D = c_int(D.ndim)
 	extents_D = (c_int64 * len(D.shape))(*D.shape)
 	strides_D = (c_int64 * len(D.strides))(*[s // D.itemsize for s in D.strides])
 
 	tensor_info_D = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_D), 1, nmode_D, extents_D, strides_D)
+	TAPP_create_tensor_info(byref(tensor_info_D), 1 if A.dtype == 'float64' else 3, nmode_D, extents_D, strides_D)
 
 	idx_A_c = (c_int64 * len(idx_A))(*idx_A)
 	idx_B_c = (c_int64 * len(idx_B))(*idx_B)
@@ -196,10 +196,10 @@ def TestHadamardProduct():
 	nmode = random.randint(1, 4)
 	extents = list(np.random.randint(1, 4, nmode))
 
-	A = np.random.rand(*extents)
-	B = np.random.rand(*extents)
-	C = np.random.rand(*extents)
-	D = np.random.rand(*extents)
+	A = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
+	B = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
+	C = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
+	D = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
 
 	alpha = random.random()
 	beta = random.random()
@@ -208,40 +208,45 @@ def TestHadamardProduct():
 
 	E = D.copy()
 
-	Product(alpha, A, B, beta, C, D, idx, idx, idx, idx, 0, 0, 0, 0)
+	op_A = random.randint(0, 1)
+	op_B = random.randint(0, 1)
+	op_C = random.randint(0, 1)
+	op_D = random.randint(0, 1)
 
-	RunEinsum(alpha, A, B, beta, C, E, idx, idx, idx, idx, 0, 0, 0, 0)
+	Product(alpha, A, B, beta, C, D, idx, idx, idx, idx, op_A, op_B, op_C, op_D)
+
+	RunEinsum(alpha, A, B, beta, C, E, idx, idx, idx, idx, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestContration():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration()
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
 	return np.allclose(D, E)
 
 def TestCommutativity():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration()
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
 	E = D.copy()
 	F = D.copy()
 	G = D.copy()
 
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	Product(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), F if not slicing_D else np.squeeze(F[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), F if not slicing_D else np.squeeze(F[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, op_B, op_A, op_C, op_D)
 	
-	RunEinsum(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), G if not slicing_D else np.squeeze(G[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), G if not slicing_D else np.squeeze(G[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, op_B, op_A, op_C, op_D)
 
 	return np.allclose(D, E) and np.allclose(E, G) and np.allclose(F, G) and np.allclose(D, F)
 
 def TestPermutations():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration()
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
 
 	ResultsE = np.array([])
 	ResultsF = np.array([])
@@ -250,8 +255,8 @@ def TestPermutations():
 		E = D.copy()
 		F = D.copy()
 
-		Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
-		RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), F if not slicing_D else np.squeeze(F[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+		Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
+		RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), F if not slicing_D else np.squeeze(F[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
 		ResultsE = np.append(ResultsE, E)
 		ResultsF = np.append(ResultsF, F)
@@ -265,73 +270,72 @@ def TestPermutations():
 	return np.allclose(ResultsE, ResultsF)
 
 def TestEqualExtents():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(equal_extents = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(equal_extents = True)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestOuterProduct():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(contractions = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(contractions = 0)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestFullContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(nmode_D = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_D = 0)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestZeroDimTensorContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(nmode_A = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_A = 0)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestOneDimTensorContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(nmode_A = 1)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_A = 1)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestSubtensorSameIdx():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(lower_extents = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(lower_extents = True)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	
 	return np.allclose(D, E)
 
 def TestSubtensorLowerIdx():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D = GenerateContration(lower_extents = True, lower_idx = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(lower_extents = True, lower_idx = True)
 	E = D.copy()
 	
-	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 
-	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, 0, 0, 0, 0)
-	
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	return np.allclose(D, E)
 
 def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(0, 4),
@@ -446,15 +450,22 @@ def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(
 			slice_start = random.randint(0, outer_extent_D[i] - 1)
 			slicing_D.append(slice(slice_start, slice_start + 1))
 
-	A = np.array(np.random.rand(*outer_extent_A))
-	B = np.array(np.random.rand(*outer_extent_B))
-	C = np.array(np.random.rand(*outer_extent_C))
-	D = np.array(np.random.rand(*outer_extent_D))
+	is_complex = random.choice([True, False])
+
+	A = np.array(np.random.rand(*outer_extent_A) + np.random.rand(*outer_extent_A) * (1.0j if is_complex else 0))
+	B = np.array(np.random.rand(*outer_extent_B) + np.random.rand(*outer_extent_B) * (1.0j if is_complex else 0))
+	C = np.array(np.random.rand(*outer_extent_C) + np.random.rand(*outer_extent_C) * (1.0j if is_complex else 0))
+	D = np.array(np.random.rand(*outer_extent_D) + np.random.rand(*outer_extent_D) * (1.0j if is_complex else 0))
 
 	alpha = random.random()
 	beta = random.random()
 
-	return A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D
+	op_A = random.randint(0, 1)
+	op_B = random.randint(0, 1)
+	op_C = random.randint(0, 1)
+	op_D = random.randint(0, 1)
+
+	return A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D
 	
 
 if __name__ == "__main__":
