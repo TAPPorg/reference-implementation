@@ -196,10 +196,12 @@ def TestHadamardProduct():
 	nmode = random.randint(1, 4)
 	extents = list(np.random.randint(1, 4, nmode))
 
-	A = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
-	B = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
-	C = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
-	D = np.array(np.random.rand(*extents) + np.random.rand(*extents) * 1.0j)
+	is_complex = random.choice([True, False])
+
+	A = np.array(np.random.rand(*extents) + np.random.rand(*extents) * (1.0j if is_complex else 0))
+	B = np.array(np.random.rand(*extents) + np.random.rand(*extents) * (1.0j if is_complex else 0))
+	C = np.array(np.random.rand(*extents) + np.random.rand(*extents) * (1.0j if is_complex else 0))
+	D = np.array(np.random.rand(*extents) + np.random.rand(*extents) * (1.0j if is_complex else 0))
 
 	alpha = random.random()
 	beta = random.random()
