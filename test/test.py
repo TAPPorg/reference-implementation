@@ -160,11 +160,11 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 
 def RunEinsum(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D):
 	if op_A == 1:
-		np.conjugate(A, out = A)
+		A = np.conjugate(A)
 	if op_B == 1:
-		np.conjugate(B, out = B)
+		B = np.conjugate(B)
 	if op_C == 1:
-		np.conjugate(C, out = C)
+		C = np.conjugate(C)
 	
 	einsum = ''.join([chr(c) for c in idx_A]) + "," + ''.join([chr(c) for c in idx_B]) + "->" + ''.join([chr(c) for c in idx_D])
 
