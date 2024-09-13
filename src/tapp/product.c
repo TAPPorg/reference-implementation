@@ -171,8 +171,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     zero_array(coordinates_contraction, contractions);
 
     int64_t size_D = calculate_size(extents_D, nmode_D);
-    int* C_relation = malloc(nmode_D * sizeof(int));
-    C_relation_to_D(C_relation, idx_C, idx_D, nmode_D);
 
     void* val;
 
@@ -208,7 +206,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         for (int j = 0; j < nmode_D; j++) {
             index_A_free += coordinates_D[j] * free_strides_A[j];
             index_B_free += coordinates_D[j] * free_strides_B[j];
-            index_C += coordinates_D[j] * strides_C[C_relation[j]];
+            index_C += coordinates_D[j] * strides_C[j];
             index_D += coordinates_D[j] * strides_D[j];
         }
         calculate_beta_C(beta, C, type_C, index_C, op_C, prec, val, type_D);
@@ -245,7 +243,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     free(contracted_strides_B);
     free(coordinates_D);
     free(coordinates_contraction);
-    free(C_relation);
     return 0;
 }
 

@@ -244,7 +244,7 @@ def TestCommutativity():
 	Product(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), F if not slicing_D else np.squeeze(F[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, op_B, op_A, op_C, op_D)
 	
 	RunEinsum(alpha, B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), G if not slicing_D else np.squeeze(G[*slicing_D]).reshape(extents_D), idx_B, idx_A, idx_C, idx_D, op_B, op_A, op_C, op_D)
-
+	
 	return np.allclose(D, E) and np.allclose(E, G) and np.allclose(F, G) and np.allclose(D, F)
 
 def TestPermutations():
@@ -368,7 +368,7 @@ def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(
 	random.shuffle(idx_B)
 	idx_D = list(filter(lambda x: x not in idx_B or x not in idx_A, idx_A + idx_B))
 	random.shuffle(idx_D)
-	idx_C = random.sample(idx_D, nmode_D)
+	idx_C = idx_D.copy()
 
 	extents_A = []
 	extents_B = []
@@ -385,7 +385,7 @@ def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(
 		extents_A = list(np.random.randint(1, 4, nmode_A))
 		extents_B = [extents_A[idx_A.index(i)] if i in idx_A else np.random.randint(1, 4) for i in idx_B]
 		extents_D = [extents_A[idx_A.index(i)] if i in idx_A else extents_B[idx_B.index(i)] for i in idx_D]
-		extents_C = [extents_D[idx_D.index(i)] for i in idx_C]
+	extents_C = extents_D.copy()
 
 	outer_nmode_A = nmode_A + random.randint(1, 4) if lower_idx else nmode_A
 	outer_nmode_B = nmode_B + random.randint(1, 4) if lower_idx else nmode_B
