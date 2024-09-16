@@ -3,10 +3,11 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "product.h"
+#include "structs.h"
 #include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __x86_64__
     typedef _Float16 float16;
@@ -41,48 +42,51 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_tensor_info D,
                                       const int64_t* idx_D,
                                       TAPP_prectype prec) {
-    int64_t* op_A_ptr = malloc(sizeof(int64_t));
-    *op_A_ptr = (int64_t)op_A;
-    int64_t* op_B_ptr = malloc(sizeof(int64_t));
-    *op_B_ptr = (int64_t)op_B;
-    int64_t* op_C_ptr = malloc(sizeof(int64_t));
-    *op_C_ptr = (int64_t)op_C;
-    int64_t* op_D_ptr = malloc(sizeof(int64_t));
-    *op_D_ptr = (int64_t)op_D;
-    int64_t* prec_ptr = malloc(sizeof(int64_t));
-    *prec_ptr = (int64_t)prec;
+    struct plan* plan_ptr = malloc(sizeof(struct plan));
+    plan_ptr->handle = handle;
 
-    intptr_t* plan_ptr = malloc(14 * sizeof(intptr_t));
-    plan_ptr[0] = (intptr_t)handle;
-    plan_ptr[1] = (intptr_t)op_A_ptr;
-    plan_ptr[2] = (intptr_t)A;
-    plan_ptr[3] = (intptr_t)idx_A;
-    plan_ptr[4] = (intptr_t)op_B_ptr;
-    plan_ptr[5] = (intptr_t)B;
-    plan_ptr[6] = (intptr_t)idx_B;
-    plan_ptr[7] = (intptr_t)op_C_ptr;
-    plan_ptr[8] = (intptr_t)C;
-    plan_ptr[9] = (intptr_t)idx_C;
-    plan_ptr[10] = (intptr_t)op_D_ptr;
-    plan_ptr[11] = (intptr_t)D;
-    plan_ptr[12] = (intptr_t)idx_D;
-    plan_ptr[13] = (intptr_t)prec_ptr;
+    plan_ptr->op_A = op_A;
+    plan_ptr->A = A;
+    
+    plan_ptr->idx_A = malloc(((struct tensor_info*)A)->nmode * sizeof(int64_t));
+    memcpy(plan_ptr->idx_A, idx_A, ((struct tensor_info*)A)->nmode * sizeof(int64_t));
+
+
+    plan_ptr->op_B = op_B;
+    plan_ptr->B = B;
+    
+    plan_ptr->idx_B = malloc(((struct tensor_info*)B)->nmode * sizeof(int64_t));
+    memcpy(plan_ptr->idx_B, idx_B, ((struct tensor_info*)B)->nmode * sizeof(int64_t));
+    
+
+    plan_ptr->op_C = op_C;
+    plan_ptr->C = C;
+    
+    plan_ptr->idx_C = malloc(((struct tensor_info*)C)->nmode * sizeof(int64_t));
+    memcpy(plan_ptr->idx_C, idx_C, ((struct tensor_info*)C)->nmode * sizeof(int64_t));
+
+
+    plan_ptr->op_D = op_D;
+    plan_ptr->D = D;
+    
+    plan_ptr->idx_D = malloc(((struct tensor_info*)D)->nmode * sizeof(int64_t));
+    memcpy(plan_ptr->idx_D, idx_D, ((struct tensor_info*)D)->nmode * sizeof(int64_t));
+
+    plan_ptr->prec = prec;
 
     *plan = (TAPP_tensor_product)plan_ptr;
+
+    return 0;
 }
 
 TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan) {
-    int64_t* op_A_ptr = (int64_t*)((intptr_t*)plan)[1];
-    int64_t* op_B_ptr = (int64_t*)((intptr_t*)plan)[4];
-    int64_t* op_C_ptr = (int64_t*)((intptr_t*)plan)[7];
-    int64_t* op_D_ptr = (int64_t*)((intptr_t*)plan)[10];
-    int64_t* prec_ptr = (int64_t*)((intptr_t*)plan)[13];
-    free(op_A_ptr);
-    free(op_B_ptr);
-    free(op_C_ptr);
-    free(op_D_ptr);
-    free(prec_ptr);
-    free((intptr_t*)plan);
+    free(((struct plan*)plan)->idx_A);
+    free(((struct plan*)plan)->idx_B);
+    free(((struct plan*)plan)->idx_C);
+    free(((struct plan*)plan)->idx_D);
+    free((struct plan*)plan);
+
+    return 0;
 }
 
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
@@ -94,53 +98,53 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* beta,
                                 const void* C,
                                 void* D) {
-    intptr_t* plan_ptr = (intptr_t*)plan;
-    TAPP_handle handle = (TAPP_handle)plan_ptr[0];
-    int64_t* op_A_ptr = (int64_t*)plan_ptr[1];
-    TAPP_element_op op_A = (TAPP_element_op)*op_A_ptr;
-    TAPP_tensor_info A_info = (TAPP_tensor_info)plan_ptr[2];
-    intptr_t* A_info_ptr = (intptr_t*)A_info;
-    const int64_t* idx_A = (const int64_t*)plan_ptr[3];
-    int64_t* op_B_ptr = (int64_t*)plan_ptr[4];
-    TAPP_element_op op_B = (TAPP_element_op)*op_B_ptr;
-    TAPP_tensor_info B_info = (TAPP_tensor_info)plan_ptr[5];
-    intptr_t* B_info_ptr = (intptr_t*)B_info;
-    const int64_t* idx_B = (const int64_t*)plan_ptr[6];
-    int64_t* op_C_ptr = (int64_t*)plan_ptr[7];
-    TAPP_element_op op_C = (TAPP_element_op)*op_C_ptr;
-    TAPP_tensor_info C_info = (TAPP_tensor_info)plan_ptr[8];
-    intptr_t* C_info_ptr = (intptr_t*)C_info;
-    const int64_t* idx_C = (const int64_t*)plan_ptr[9];
-    int64_t* op_D_ptr = (int64_t*)plan_ptr[10];
-    TAPP_element_op op_D = (TAPP_element_op)*op_D_ptr;
-    TAPP_tensor_info D_info = (TAPP_tensor_info)plan_ptr[11];
-    intptr_t* D_info_ptr = (intptr_t*)D_info;
-    const int64_t* idx_D = (const int64_t*)plan_ptr[12];
-    int64_t* prec_ptr = (int64_t*)plan_ptr[13];
-    TAPP_prectype prec = (TAPP_prectype)*prec_ptr;
+    struct plan* plan_ptr = (struct plan*)plan;
+    TAPP_handle handle = plan_ptr->handle;
 
-    TAPP_datatype type_A = *((TAPP_datatype*)A_info_ptr[0]);
+    TAPP_element_op op_A = plan_ptr->op_A;
+    TAPP_tensor_info A_info = (TAPP_tensor_info)(plan_ptr->A);
+    struct tensor_info* A_info_ptr = (struct tensor_info*)(plan_ptr->A);
+    const int64_t* idx_A = plan_ptr->idx_A;
+
+    TAPP_element_op op_B = plan_ptr->op_B;
+    TAPP_tensor_info B_info = (TAPP_tensor_info)(plan_ptr->B);
+    struct tensor_info* B_info_ptr = (struct tensor_info*)(plan_ptr->B);
+    const int64_t* idx_B = plan_ptr->idx_B;
+
+    TAPP_element_op op_C = plan_ptr->op_C;
+    TAPP_tensor_info C_info = (TAPP_tensor_info)(plan_ptr->C);
+    struct tensor_info* C_info_ptr = (struct tensor_info*)(plan_ptr->C);
+    const int64_t* idx_C = plan_ptr->idx_C;
+
+    TAPP_element_op op_D = plan_ptr->op_D;
+    TAPP_tensor_info D_info = (TAPP_tensor_info)(plan_ptr->D);
+    struct tensor_info* D_info_ptr = (struct tensor_info*)(plan_ptr->D);
+    const int64_t* idx_D = plan_ptr->idx_D;
+    
+    TAPP_prectype prec = plan_ptr->prec;
+
+    TAPP_datatype type_A = A_info_ptr->type;
     int nmode_A = TAPP_get_nmodes(A_info);
     int64_t* extents_A = malloc(nmode_A * sizeof(int64_t));
     TAPP_get_extents(A_info, extents_A);
     int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
     TAPP_get_strides(A_info, strides_A);
 
-    TAPP_datatype type_B = *((TAPP_datatype*)B_info_ptr[0]);
+    TAPP_datatype type_B = B_info_ptr->type;
     int nmode_B = TAPP_get_nmodes(B_info);
     int64_t* extents_B = malloc(nmode_B * sizeof(int64_t));
     TAPP_get_extents(B_info, extents_B);
     int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
     TAPP_get_strides(B_info, strides_B);
 
-    TAPP_datatype type_C = *((TAPP_datatype*)C_info_ptr[0]);
+    TAPP_datatype type_C = C_info_ptr->type;
     int nmode_C = TAPP_get_nmodes(C_info);
     int64_t* extents_C = malloc(nmode_C * sizeof(int64_t));
     TAPP_get_extents(C_info, extents_C);
     int64_t* strides_C = malloc(nmode_C * sizeof(int64_t));
     TAPP_get_strides(C_info, strides_C);
 
-    TAPP_datatype type_D = *((TAPP_datatype*)D_info_ptr[0]);
+    TAPP_datatype type_D = D_info_ptr->type;
     int nmode_D = TAPP_get_nmodes(D_info);
     int64_t* extents_D = malloc(nmode_D * sizeof(int64_t));
     TAPP_get_extents(D_info, extents_D);

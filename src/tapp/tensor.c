@@ -3,81 +3,80 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "tensor.h"
+#include "structs.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_datatype type,
                                    int nmode,
                                    const int64_t* extents,
                                    const int64_t* strides) {
-    TAPP_datatype* type_ptr = malloc(sizeof(int64_t));
-    *type_ptr = type;
-    int* nmode_ptr = malloc(sizeof(int64_t));
-    *nmode_ptr = nmode;
+    struct tensor_info* info_ptr = malloc(sizeof(struct tensor_info));
 
-    intptr_t* info_ptr = malloc(4 * sizeof(intptr_t));
-    info_ptr[0] = (intptr_t)type_ptr;
-    info_ptr[1] = (intptr_t)nmode_ptr;
-    info_ptr[2] = (intptr_t)extents;
-    info_ptr[3] = (intptr_t)strides;
+    info_ptr->type = type;
+    info_ptr->nmode = nmode;
+
+    info_ptr->extents = malloc(nmode * sizeof(int64_t));
+    memcpy(info_ptr->extents, extents, nmode * sizeof(int64_t));
+
+    info_ptr->strides = malloc(nmode * sizeof(int64_t));
+    memcpy(info_ptr->strides, strides, nmode * sizeof(int64_t));
 
     *info = (TAPP_tensor_info)info_ptr;
+
+    return 0;
 }
 
 TAPP_error TAPP_destory_tensor_info(TAPP_tensor_info info) {
-    intptr_t* info_ptr = (intptr_t*)info;
-    int64_t* type_ptr = (int64_t*)(info_ptr)[0];
-    int64_t* nmode_ptr = (int64_t*)(info_ptr)[1];
-    free(type_ptr);
-    free(nmode_ptr);
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    free(info_ptr->extents);
+    free(info_ptr->strides);
     free(info_ptr);
+
+    return 0;
 }
 
 int TAPP_get_nmodes(TAPP_tensor_info info) {
-    int* nmode_ptr = (int*)((intptr_t*)info)[1];
-    return *nmode_ptr;
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    return info_ptr->nmode;
 }
 
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes) {
-    int* nmode_ptr = (int*)((intptr_t*)info)[1];
-    *nmode_ptr = (int)nmodes;
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    info_ptr->nmode = nmodes;
+    info_ptr->extents = realloc(info_ptr->extents, info_ptr->nmode * sizeof(int64_t));
+    info_ptr->strides = realloc(info_ptr->strides, info_ptr->nmode * sizeof(int64_t));
+    
+    return 0;
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
                       int64_t* extents) {
-    int64_t* extents_ptr = (int64_t*)((intptr_t*)info)[2];
-    int nmodes = TAPP_get_nmodes(info);
-    for (int i = 0; i < nmodes; i++) {
-        extents[i] = extents_ptr[i];
-    }
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    memcpy(extents, info_ptr->extents, info_ptr->nmode * sizeof(int64_t));
 }
 
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
                             const int64_t* extents) {
-    int64_t* extents_ptr = (int64_t*)((intptr_t*)info)[2];
-    int nmodes = TAPP_get_nmodes(info);
-    for (int i = 0; i < nmodes; i++) {
-        extents_ptr[i] = extents[i];
-    }
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    memcpy(info_ptr->extents, extents, info_ptr->nmode * sizeof(int64_t));
+    
+    return 0;
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
                       int64_t* strides) {
-    int64_t* strides_ptr = (int64_t*)((intptr_t*)info)[3];
-    int nmodes = TAPP_get_nmodes(info);
-    for (int i = 0; i < nmodes; i++) {
-        strides[i] = strides_ptr[i];
-    }
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    memcpy(strides, info_ptr->strides, info_ptr->nmode * sizeof(int64_t));
 }
 
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
                             const int64_t* strides) {
-    int64_t* strides_ptr = (int64_t*)((intptr_t*)info)[3];
-    int nmodes = TAPP_get_nmodes(info);
-    for (int i = 0; i < nmodes; i++) {
-        strides_ptr[i] = strides[i];
-    }
+    struct tensor_info* info_ptr = (struct tensor_info*)info;
+    memcpy(info_ptr->strides, strides, info_ptr->nmode * sizeof(int64_t));
+    
+    return 0;
 }
