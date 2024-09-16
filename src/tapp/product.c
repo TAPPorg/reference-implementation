@@ -45,46 +45,83 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     struct plan* plan_ptr = malloc(sizeof(struct plan));
     plan_ptr->handle = handle;
 
+    int nmode_A = TAPP_get_nmodes(A);
+    int64_t* extents_A = malloc(nmode_A * sizeof(int64_t));
+    TAPP_get_extents(A, extents_A);
+    int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
+    TAPP_get_strides(A, strides_A);
+
+    int nmode_B = TAPP_get_nmodes(B);
+    int64_t* extents_B = malloc(nmode_B * sizeof(int64_t));
+    TAPP_get_extents(B, extents_B);
+    int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
+    TAPP_get_strides(B, strides_B);
+
+    int nmode_C = TAPP_get_nmodes(C);
+    plan_ptr->strides_C = malloc(nmode_C * sizeof(int64_t));
+    TAPP_get_strides(C, plan_ptr->strides_C);
+
+    plan_ptr->nmode_D = TAPP_get_nmodes(D);
+    plan_ptr->extents_D = malloc(plan_ptr->nmode_D * sizeof(int64_t));
+    TAPP_get_extents(D, plan_ptr->extents_D);
+    plan_ptr->strides_D = malloc(plan_ptr->nmode_D * sizeof(int64_t));
+    TAPP_get_strides(D, plan_ptr->strides_D);
+
+    plan_ptr->contractions = (nmode_A + nmode_B - plan_ptr->nmode_D) / 2;
+    int64_t* idx_contraction = malloc(plan_ptr->contractions * sizeof(int64_t));
+    plan_ptr->contractions = calculate_contracted_indices(nmode_A, nmode_B, plan_ptr->nmode_D, idx_A, idx_B, idx_D, idx_contraction);
+    idx_contraction = (int64_t*)realloc(idx_contraction, plan_ptr->contractions * sizeof(int64_t));
+
+    plan_ptr->extents_contraction = malloc(plan_ptr->contractions * sizeof(int64_t));
+    calculate_contracted_extents(plan_ptr->contractions, idx_contraction, nmode_A, idx_A, extents_A, plan_ptr->extents_contraction);
+
+    plan_ptr->size_contraction = calculate_size(plan_ptr->extents_contraction, plan_ptr->contractions);
+
+    plan_ptr->free_strides_A = malloc(plan_ptr->nmode_D * sizeof(int64_t));
+    plan_ptr->contracted_strides_A = malloc(plan_ptr->contractions * sizeof(int64_t));
+    compile_strides(strides_A, nmode_A, idx_A, plan_ptr->nmode_D, idx_D, plan_ptr->contractions, idx_contraction, plan_ptr->free_strides_A, plan_ptr->contracted_strides_A);
+
+    plan_ptr->free_strides_B = malloc(plan_ptr->nmode_D * sizeof(int64_t));
+    plan_ptr->contracted_strides_B = malloc(plan_ptr->contractions * sizeof(int64_t));
+    compile_strides(strides_B, nmode_B, idx_B, plan_ptr->nmode_D, idx_D, plan_ptr->contractions, idx_contraction, plan_ptr->free_strides_B, plan_ptr->contracted_strides_B);
+
+    plan_ptr->size_D = calculate_size(plan_ptr->extents_D, plan_ptr->nmode_D);
+    
+    plan_ptr->type_A = ((struct tensor_info*)A)->type;
+    plan_ptr->type_B = ((struct tensor_info*)B)->type;
+    plan_ptr->type_C = ((struct tensor_info*)C)->type;
+    plan_ptr->type_D = ((struct tensor_info*)D)->type;
+
     plan_ptr->op_A = op_A;
-    plan_ptr->A = A;
-    
-    plan_ptr->idx_A = malloc(((struct tensor_info*)A)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_A, idx_A, ((struct tensor_info*)A)->nmode * sizeof(int64_t));
-
-
     plan_ptr->op_B = op_B;
-    plan_ptr->B = B;
-    
-    plan_ptr->idx_B = malloc(((struct tensor_info*)B)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_B, idx_B, ((struct tensor_info*)B)->nmode * sizeof(int64_t));
-    
-
     plan_ptr->op_C = op_C;
-    plan_ptr->C = C;
-    
-    plan_ptr->idx_C = malloc(((struct tensor_info*)C)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_C, idx_C, ((struct tensor_info*)C)->nmode * sizeof(int64_t));
-
-
     plan_ptr->op_D = op_D;
-    plan_ptr->D = D;
     
-    plan_ptr->idx_D = malloc(((struct tensor_info*)D)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_D, idx_D, ((struct tensor_info*)D)->nmode * sizeof(int64_t));
-
     plan_ptr->prec = prec;
 
     *plan = (TAPP_tensor_product)plan_ptr;
+
+    free(extents_A);
+    free(extents_B);
+    free(strides_A);
+    free(strides_B);
+    free(idx_contraction);
 
     return 0;
 }
 
 TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan) {
-    free(((struct plan*)plan)->idx_A);
-    free(((struct plan*)plan)->idx_B);
-    free(((struct plan*)plan)->idx_C);
-    free(((struct plan*)plan)->idx_D);
-    free((struct plan*)plan);
+    struct plan* plan_ptr = (struct plan*)plan;
+
+    free(plan_ptr->extents_D);
+    free(plan_ptr->extents_contraction);
+    free(plan_ptr->free_strides_A);
+    free(plan_ptr->contracted_strides_A);
+    free(plan_ptr->free_strides_B);
+    free(plan_ptr->contracted_strides_B);
+    free(plan_ptr->strides_C);
+    free(plan_ptr->strides_D);
+    free(plan_ptr);
 
     return 0;
 }
@@ -99,86 +136,15 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* C,
                                 void* D) {
     struct plan* plan_ptr = (struct plan*)plan;
-    TAPP_handle handle = plan_ptr->handle;
-
-    TAPP_element_op op_A = plan_ptr->op_A;
-    TAPP_tensor_info A_info = (TAPP_tensor_info)(plan_ptr->A);
-    struct tensor_info* A_info_ptr = (struct tensor_info*)(plan_ptr->A);
-    const int64_t* idx_A = plan_ptr->idx_A;
-
-    TAPP_element_op op_B = plan_ptr->op_B;
-    TAPP_tensor_info B_info = (TAPP_tensor_info)(plan_ptr->B);
-    struct tensor_info* B_info_ptr = (struct tensor_info*)(plan_ptr->B);
-    const int64_t* idx_B = plan_ptr->idx_B;
-
-    TAPP_element_op op_C = plan_ptr->op_C;
-    TAPP_tensor_info C_info = (TAPP_tensor_info)(plan_ptr->C);
-    struct tensor_info* C_info_ptr = (struct tensor_info*)(plan_ptr->C);
-    const int64_t* idx_C = plan_ptr->idx_C;
-
-    TAPP_element_op op_D = plan_ptr->op_D;
-    TAPP_tensor_info D_info = (TAPP_tensor_info)(plan_ptr->D);
-    struct tensor_info* D_info_ptr = (struct tensor_info*)(plan_ptr->D);
-    const int64_t* idx_D = plan_ptr->idx_D;
     
-    TAPP_prectype prec = plan_ptr->prec;
-
-    TAPP_datatype type_A = A_info_ptr->type;
-    int nmode_A = TAPP_get_nmodes(A_info);
-    int64_t* extents_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_extents(A_info, extents_A);
-    int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_strides(A_info, strides_A);
-
-    TAPP_datatype type_B = B_info_ptr->type;
-    int nmode_B = TAPP_get_nmodes(B_info);
-    int64_t* extents_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_extents(B_info, extents_B);
-    int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_strides(B_info, strides_B);
-
-    TAPP_datatype type_C = C_info_ptr->type;
-    int nmode_C = TAPP_get_nmodes(C_info);
-    int64_t* extents_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_extents(C_info, extents_C);
-    int64_t* strides_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_strides(C_info, strides_C);
-
-    TAPP_datatype type_D = D_info_ptr->type;
-    int nmode_D = TAPP_get_nmodes(D_info);
-    int64_t* extents_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_extents(D_info, extents_D);
-    int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_strides(D_info, strides_D);
-
-    int contractions = (nmode_A + nmode_B - nmode_D) / 2;
-    int64_t* idx_contraction = malloc(contractions * sizeof(int64_t));
-    contractions = calculate_contracted_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, idx_contraction);
-    idx_contraction = (int64_t*)realloc(idx_contraction, contractions * sizeof(int64_t));
-
-    int64_t* extents_contraction = malloc(contractions * sizeof(int64_t));
-    calculate_contracted_extents(contractions, idx_contraction, nmode_A, idx_A, extents_A, extents_contraction);
-
-    int size_contraction = calculate_size(extents_contraction, contractions);
-
-    int64_t* free_strides_A = malloc(nmode_D * sizeof(int64_t));
-    int64_t* contracted_strides_A = malloc(contractions * sizeof(int64_t));
-    compile_strides(strides_A, nmode_A, idx_A, nmode_D, idx_D, contractions, idx_contraction, free_strides_A, contracted_strides_A);
-
-    int64_t* free_strides_B = malloc(nmode_D * sizeof(int64_t));
-    int64_t* contracted_strides_B = malloc(contractions * sizeof(int64_t));
-    compile_strides(strides_B, nmode_B, idx_B, nmode_D, idx_D, contractions, idx_contraction, free_strides_B, contracted_strides_B);
-
-    int64_t* coordinates_D = malloc(nmode_D * sizeof(int64_t));
-    zero_array(coordinates_D, nmode_D);
-    int64_t* coordinates_contraction = malloc(contractions * sizeof(int64_t));
-    zero_array(coordinates_contraction, contractions);
-
-    int64_t size_D = calculate_size(extents_D, nmode_D);
+    int64_t* coordinates_D = malloc(plan_ptr->nmode_D * sizeof(int64_t));
+    zero_array(coordinates_D, plan_ptr->nmode_D);
+    int64_t* coordinates_contraction = malloc(plan_ptr->contractions * sizeof(int64_t));
+    zero_array(coordinates_contraction, plan_ptr->contractions);
 
     void* val;
 
-    switch (type_D)
+    switch (plan_ptr->type_D)
     {
     case TAPP_F32:
         val = malloc(sizeof(float));
@@ -202,49 +168,35 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         break;
     }
 
-    for (int i = 0; i < size_D; i++) {
+    for (int i = 0; i < plan_ptr->size_D; i++) {
         int index_A_free = 0; // Index calculated from free indices of A
         int index_B_free = 0; // Index calculated from free indices of B
         int index_C = 0;
         int index_D = 0;
-        for (int j = 0; j < nmode_D; j++) {
-            index_A_free += coordinates_D[j] * free_strides_A[j];
-            index_B_free += coordinates_D[j] * free_strides_B[j];
-            index_C += coordinates_D[j] * strides_C[j];
-            index_D += coordinates_D[j] * strides_D[j];
+        for (int j = 0; j < plan_ptr->nmode_D; j++) {
+            index_A_free += coordinates_D[j] * plan_ptr->free_strides_A[j];
+            index_B_free += coordinates_D[j] * plan_ptr->free_strides_B[j];
+            index_C += coordinates_D[j] * plan_ptr->strides_C[j];
+            index_D += coordinates_D[j] * plan_ptr->strides_D[j];
         }
-        calculate_beta_C(beta, C, type_C, index_C, op_C, prec, val, type_D);
-        for (int j = 0; j < size_contraction; j++) {
+        calculate_beta_C(beta, C, plan_ptr->type_C, index_C, plan_ptr->op_C, plan_ptr->prec, val, plan_ptr->type_D);
+        for (int j = 0; j < plan_ptr->size_contraction; j++) {
             int index_A = index_A_free;
             int index_B = index_B_free;
-            for (int i = 0; i < contractions; i++)
+            for (int i = 0; i < plan_ptr->contractions; i++)
             {
-                index_A += coordinates_contraction[i] * contracted_strides_A[i];
-                index_B += coordinates_contraction[i] * contracted_strides_B[i];
+                index_A += coordinates_contraction[i] * plan_ptr->contracted_strides_A[i];
+                index_B += coordinates_contraction[i] * plan_ptr->contracted_strides_B[i];
             }
-            calculate_alpha_A_B(alpha, A, type_A, index_A, op_A, B, type_B, index_B, op_B, prec, val, type_D);
-            increment_coordinates(coordinates_contraction, contractions, extents_contraction);
+            calculate_alpha_A_B(alpha, A, plan_ptr->type_A, index_A, plan_ptr->op_A, B, plan_ptr->type_B, index_B, plan_ptr->op_B, plan_ptr->prec, val, plan_ptr->type_D);
+            increment_coordinates(coordinates_contraction, plan_ptr->contractions, plan_ptr->extents_contraction);
         }
-        calculate_op_D(val, type_D, op_D);
-        assign_D(D, type_D, index_D, val);
-        increment_coordinates(coordinates_D, nmode_D, extents_D);
+        calculate_op_D(val, plan_ptr->type_D, plan_ptr->op_D);
+        assign_D(D, plan_ptr->type_D, index_D, val);
+        increment_coordinates(coordinates_D, plan_ptr->nmode_D, plan_ptr->extents_D);
     }
 
     free(val);
-    free(extents_A);
-    free(strides_A);
-    free(extents_B);
-    free(strides_B);
-    free(extents_C);
-    free(strides_C);
-    free(extents_D);
-    free(strides_D);
-    free(idx_contraction);
-    free(extents_contraction);
-    free(free_strides_A);
-    free(contracted_strides_A);
-    free(free_strides_B);
-    free(contracted_strides_B);
     free(coordinates_D);
     free(coordinates_contraction);
     return 0;
