@@ -167,12 +167,10 @@ def RunEinsum(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, o
 		C = np.conjugate(C)
 	
 	einsum = ''.join([chr(c) for c in idx_A]) + "," + ''.join([chr(c) for c in idx_B]) + "->" + ''.join([chr(c) for c in idx_D])
-
-	axis_order = [idx_C.index(c) for c in idx_D]
 	
 	np.einsum(einsum, A, B, out = D)
 	np.multiply(D, alpha, out = D)
-	np.add(D, np.transpose(C, axis_order) * beta, out = D)
+	np.add(D, C * beta, out = D)
 
 	if op_D == 1:
 		np.conjugate(D, out = D)
