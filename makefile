@@ -10,10 +10,10 @@ TBLIS = -ltblis -lm -L../tblis/lib/.libs -I../tblis/src/external/tci -I../tblis/
 all: obj/tensor.o obj/product.o out/test++ lib/product.so lib/tensor.so out/demo #out/test
 
 obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
-	$(CC) -c -g $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
+	$(CC) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
 
 obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
-	$(CC) -c -g $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp
+	$(CC) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp
 
 #out/test: $(TEST)/test.c $(OBJ)/product.o
 #	$(CC) -g  $(TEST)/test.c $(OBJ)/product.o $(OBJ)/tensor.o -o $(OUT)/test -I$(INC)
