@@ -18,10 +18,10 @@ obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 #out/test: $(TEST)/test.c $(OBJ)/product.o
 #	$(CC) -g  $(TEST)/test.c $(OBJ)/product.o $(OBJ)/tensor.o -o $(OUT)/test -I$(INC)
 
-out/demo:$(TEST)/demo.c $(OBJ)/product.o
+out/demo:$(TEST)/demo.c $(OBJ)/product.o $(OBJ)/tensor.o
 	$(CC) -g  $(TEST)/demo.c $(OBJ)/tensor.o $(OBJ)/product.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp $(TBLIS)
 
-out/test++: $(TEST)/test.cpp $(OBJ)/product.o
+out/test++: $(TEST)/test.cpp $(OBJ)/product.o $(OBJ)/tensor.o
 	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tensor.o $(OBJ)/product.o -o $(OUT)/test++ -I$(INC) -I$(INC)/tapp $(TBLIS)
 
 lib/product.so: $(SRC)/tapp/product.c $(INC)/tapp/product.h
