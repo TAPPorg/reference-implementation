@@ -13,41 +13,30 @@ import platform
 product_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/product.so"
 tensor_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/tensor.so"
 
-TAPP_create_tensor_product = CDLL(product_so).TAPP_create_tensor_product
-TAPP_create_tensor_product.restype = c_int
-TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # plan
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
-									   c_int, # op_A
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # A
-									   POINTER(c_int64), # idx_A
-									   c_int, # op_B
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # B
-									   POINTER(c_int64), # idx_B
-									   c_int, # op_C
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # C
-									   POINTER(c_int64), # idx_C
-									   c_int, # op_D
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # D
-									   POINTER(c_int64), # idx_D
-									   c_int, # prec
-									   ]
-
-TAPP_destory_tensor_product = CDLL(product_so).TAPP_destory_tensor_product
-TAPP_destory_tensor_product.restype = c_int
-TAPP_destory_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # plan 
-										]
-
 TAPP_execute_product = CDLL(product_so).TAPP_execute_product
 TAPP_execute_product.restype = c_int
-TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # plan
+TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
 								 POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # status
 								 c_void_p, # alpha
+								 c_int, # op_A
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info_A
 								 c_void_p, # A
+								 POINTER(c_int64), # idx_A
+								 c_int, # op_B
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info_B
 								 c_void_p, # B
+								 POINTER(c_int64), # idx_B
 								 c_void_p, # beta
+								 c_int, # op_C
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info_C
 								 c_void_p, # C
+								 POINTER(c_int64), # idx_C
+								 c_int, # op_D
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info_D
 								 c_void_p, # D
+								 POINTER(c_int64), # idx_D
+								 c_int # prec
 								 ]
 
 TAPP_create_tensor_info = CDLL(tensor_so).TAPP_create_tensor_info
@@ -133,14 +122,6 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	idx_B_c = (c_int64 * len(idx_B))(*idx_B)
 	idx_C_c = (c_int64 * len(idx_C))(*idx_C)
 	idx_D_c = (c_int64 * len(idx_D))(*idx_D)
-
-	plan = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_product(byref(plan), 0,
-							c_int(op_A), tensor_info_A, idx_A_c,
-							c_int(op_B), tensor_info_B, idx_B_c,
-							c_int(op_C), tensor_info_C, idx_C_c,
-							c_int(op_D), tensor_info_D, idx_D_c,
-							0)
 	
 	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
 	status = c_int64(0)
@@ -149,8 +130,7 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	C_ptr = C.ctypes.data_as(POINTER(c_double))
 	D_ptr = D.ctypes.data_as(POINTER(c_double))
 	
-	TAPP_execute_product(plan, exec, byref(status), byref(c_double(alpha)), A_ptr, B_ptr, byref(c_double(beta)), C_ptr, D_ptr)
-	TAPP_destory_tensor_product(plan)
+	TAPP_execute_product(0, exec, byref(status), byref(c_double(alpha)), c_int(op_A), tensor_info_A, A_ptr, idx_A_c, c_int(op_B), tensor_info_B, B_ptr, idx_B_c, byref(c_double(beta)), c_int(op_C), tensor_info_C, C_ptr, idx_C_c, c_int(op_D), tensor_info_D, D_ptr, idx_D_c, 0)
 	TAPP_destroy_tensor_info(tensor_info_A)
 	TAPP_destroy_tensor_info(tensor_info_B)
 	TAPP_destroy_tensor_info(tensor_info_C)
