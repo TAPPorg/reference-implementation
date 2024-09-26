@@ -13,6 +13,15 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    int nmode,
                                    const int64_t* extents,
                                    const int64_t* strides) {
+    if (nmode < 0) {
+        return 14;
+    }
+    for (size_t i = 0; i < nmode; i++) {
+        if (extents[i] < 0) {
+            return 15;
+        }
+    }
+    
     struct tensor_info* info_ptr = malloc(sizeof(struct tensor_info));
 
     info_ptr->type = type;
@@ -45,6 +54,9 @@ int TAPP_get_nmodes(TAPP_tensor_info info) {
 
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes) {
+    if (nmodes < 0) {
+        return 14;
+    }
     struct tensor_info* info_ptr = (struct tensor_info*)info;
     info_ptr->nmode = nmodes;
     info_ptr->extents = realloc(info_ptr->extents, info_ptr->nmode * sizeof(int64_t));
@@ -62,6 +74,14 @@ void TAPP_get_extents(TAPP_tensor_info info,
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
                             const int64_t* extents) {
     struct tensor_info* info_ptr = (struct tensor_info*)info;
+
+    for (size_t i = 0; i < info_ptr->nmode; i++)
+    {
+        if (extents[i] < 0) {
+            return 15;
+        }
+    }
+    
     memcpy(info_ptr->extents, extents, info_ptr->nmode * sizeof(int64_t));
     
     return 0;

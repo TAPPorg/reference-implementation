@@ -147,7 +147,13 @@ void contraction() {
          5,  6,  7,  8
     };
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
+    int message_len = TAPP_explain_error(error, 0, NULL);
+    char* message_buff = malloc((message_len + 1) * sizeof(char));
+    TAPP_explain_error(error, message_len + 1, message_buff);
+    printf(message_buff);
+    free(message_buff);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 

@@ -151,6 +151,203 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
     TAPP_get_strides(D_info, strides_D);
 
+    /*
+     * An identifier(idx) should only appear once in a tensor.
+     */
+
+    for (size_t i = 0; i < nmode_A; i++) {
+        int count = 0;
+        for (size_t j = 0; j < nmode_A; j++) {
+            if (idx_A[i] == idx_A[j]) {
+                count++;
+            }
+        }
+        if (count != 1) {
+            return 1;
+        }
+    }
+
+    for (size_t i = 0; i < nmode_B; i++) {
+        int count = 0;
+        for (size_t j = 0; j < nmode_B; j++) {
+            if (idx_B[i] == idx_B[j]) {
+                count++;
+            }
+        }
+        if (count != 1) {
+            return 2;
+        }
+    }
+
+    for (size_t i = 0; i < nmode_D; i++) {
+        int count = 0;
+        for (size_t j = 0; j < nmode_D; j++) {
+            if (idx_D[i] == idx_D[j]) {
+                count++;
+            }
+        }
+        if (count != 1) {
+            return 3;
+        }
+    }
+
+    /* 
+     * If hadamard all identifiers should appear in all tensors. Extents
+     * corresponding to same identifier should have the same length.
+     */
+    bool hadamard = false;
+    if (nmode_A == nmode_B && nmode_A == nmode_D) {
+        for (size_t i = 0; i < nmode_A; i++) {
+            int count_B = 0;
+            for (size_t j = 0; j < nmode_B; j++) {
+                if (idx_A[i] == idx_B[j]) {
+                    count_B++;
+                    if (extents_A[i] != extents_B[j])
+                    {
+                        return 4;
+                    }
+                }
+            }
+            int count_D = 0;
+            for (size_t j = 0; j < nmode_D; j++) {
+                if (idx_A[i] == idx_D[j]) {
+                    count_D++;
+                    if (extents_A[i] != extents_D[j])
+                    {
+                        return 5;
+                    }
+                }
+            }
+            if (count_B == nmode_A && count_D == nmode_A) {
+                hadamard = true;
+            }
+        }
+    }
+    
+    /*
+     * If contraction(not hadamard) all identifiers should appear in exactly two
+     * tensors. Extents corresponding to same identifier should have the same
+     * length.
+     */
+    if (!hadamard) {
+        for (size_t i = 0; i < nmode_A; i++) {
+            bool found_B = false;
+            for (size_t j = 0; j < nmode_B; j++)
+            {
+                if (idx_A[i] == idx_B[j]) {
+                    found_B = true;
+                    if (extents_A[i] != extents_B[j])
+                    {
+                        return 4;
+                    }
+                }
+            }
+            bool found_D = false;
+            for (size_t j = 0; j < nmode_D; j++)
+            {
+                if (idx_A[i] == idx_D[j]) {
+                    found_D = true;
+                    if (extents_A[i] != extents_D[j])
+                    {
+                        return 5;
+                    }
+                }
+            }
+            if (!found_B && !found_D) {
+                return 7;
+            }
+            else if (found_B && found_D)
+            {
+                return 10;
+            }
+            
+        }
+        
+        for (size_t i = 0; i < nmode_B; i++)
+        {
+            bool found_A = false;
+            for (size_t j = 0; j < nmode_A; j++)
+            {
+                if (idx_B[i] == idx_A[j]) {
+                    found_A = true;
+                    if (extents_B[i] != extents_A[j])
+                    {
+                        return 4;
+                    }
+                }
+            }
+            bool found_D = false;
+            for (size_t j = 0; j < nmode_D; j++)
+            {
+                if (idx_B[i] == idx_D[j]) {
+                    found_D = true;
+                    if (extents_B[i] != extents_D[j])
+                    {
+                        return 6;
+                    }
+                }
+            }
+            if (!found_A && !found_D) {
+                return 8;
+            }
+            else if (found_A && found_D)
+            {
+                return 10;
+            }
+            
+        }
+
+        for (size_t i = 0; i < nmode_D; i++)
+        {
+            bool found_A = false;
+            for (size_t j = 0; j < nmode_A; j++)
+            {
+                if (idx_D[i] == idx_A[j]) {
+                    found_A = true;
+                    if (extents_D[i] != extents_A[j])
+                    {
+                        return 5;
+                    }
+                }
+            }
+            bool found_B = false;
+            for (size_t j = 0; j < nmode_B; j++)
+            {
+                if (idx_D[i] == idx_B[j]) {
+                    found_B = true;
+                    if (extents_D[i] != extents_B[j])
+                    {
+                        return 6;
+                    }
+                }
+            }
+            if (!found_A && !found_B) {
+                return 9;
+            }
+            else if (found_A && found_B)
+            {
+                return 10;
+            }
+        }
+    }
+
+    /*
+     * Tensor C should have the same structure as tensor D.
+     */
+    if(nmode_C != nmode_D) {
+        return 11;
+    }
+
+    for (size_t i = 0; i < nmode_D; i++)
+    {
+        if (idx_D[i] != idx_C[i]) {
+            return 12;
+        }
+        if (extents_D[i] != extents_C[i]) {
+            return 13;
+        }
+    }    
+
     int contractions = (nmode_A + nmode_B - nmode_D) / 2;
     int64_t* idx_contraction = malloc(contractions * sizeof(int64_t));
     contractions = calculate_contracted_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, idx_contraction);

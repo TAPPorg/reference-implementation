@@ -12,6 +12,12 @@ typedef intptr_t TAPP_tensor_info;
  * TODO: what are the required error conditions? What is explicitly allowed (esp. regarding strides)?
  */
 
+/*
+ * Niklas: Is there a reason to allow negative extents?
+ *         Should it be error checked or just disallowed by
+ *         using unsigned values? Same with nmode.
+ */ 
+
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_datatype type,
                                    int nmode,

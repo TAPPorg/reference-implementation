@@ -10,10 +10,9 @@ from numpy.random import default_rng
 import os.path
 import platform
 
-product_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/product.so"
-tensor_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/tensor.so"
+tapp_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/tapp.so"
 
-TAPP_create_tensor_product = CDLL(product_so).TAPP_create_tensor_product
+TAPP_create_tensor_product = CDLL(tapp_so).TAPP_create_tensor_product
 TAPP_create_tensor_product.restype = c_int
 TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # plan
 									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
@@ -32,12 +31,12 @@ TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture(
 									   c_int, # prec
 									   ]
 
-TAPP_destory_tensor_product = CDLL(product_so).TAPP_destory_tensor_product
+TAPP_destory_tensor_product = CDLL(tapp_so).TAPP_destory_tensor_product
 TAPP_destory_tensor_product.restype = c_int
 TAPP_destory_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # plan 
 										]
 
-TAPP_execute_product = CDLL(product_so).TAPP_execute_product
+TAPP_execute_product = CDLL(tapp_so).TAPP_execute_product
 TAPP_execute_product.restype = c_int
 TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # plan
 								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
@@ -50,7 +49,7 @@ TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit
 								 c_void_p, # D
 								 ]
 
-TAPP_create_tensor_info = CDLL(tensor_so).TAPP_create_tensor_info
+TAPP_create_tensor_info = CDLL(tapp_so).TAPP_create_tensor_info
 TAPP_create_tensor_info.restype = c_int
 TAPP_create_tensor_info.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # info
                                     c_int, # type
@@ -59,41 +58,41 @@ TAPP_create_tensor_info.argtypes = [POINTER(c_int32 if platform.architecture()[0
                                     POINTER(c_int64), # strides
 									]
 
-TAPP_destroy_tensor_info = CDLL(tensor_so).TAPP_destory_tensor_info
+TAPP_destroy_tensor_info = CDLL(tapp_so).TAPP_destory_tensor_info
 TAPP_destroy_tensor_info.restype = c_int
 TAPP_destroy_tensor_info.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # info
 									 ]
 
-TAPP_get_nmodes = CDLL(tensor_so).TAPP_get_nmodes
+TAPP_get_nmodes = CDLL(tapp_so).TAPP_get_nmodes
 TAPP_get_nmodes.restype = c_int
 TAPP_get_nmodes.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							]
 
-TAPP_set_nmodes = CDLL(tensor_so).TAPP_set_nmodes
+TAPP_set_nmodes = CDLL(tapp_so).TAPP_set_nmodes
 TAPP_set_nmodes.restype = c_int
 TAPP_set_nmodes.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							c_int, # nmodes
 							]
 
-TAPP_get_extents = CDLL(tensor_so).TAPP_get_extents
+TAPP_get_extents = CDLL(tapp_so).TAPP_get_extents
 TAPP_get_extents.restype = None
 TAPP_get_extents.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							 POINTER(c_int64), # extents
 							 ]
 
-TAPP_set_extents = CDLL(tensor_so).TAPP_set_extents
+TAPP_set_extents = CDLL(tapp_so).TAPP_set_extents
 TAPP_set_extents.restype = c_int
 TAPP_set_extents.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							 POINTER(c_int64), # extents
 							 ]
 
-TAPP_get_strides = CDLL(tensor_so).TAPP_get_strides
+TAPP_get_strides = CDLL(tapp_so).TAPP_get_strides
 TAPP_get_strides.restype = None
 TAPP_get_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							 POINTER(c_int64), # strides
 							 ]
 
-TAPP_set_strides = CDLL(tensor_so).TAPP_set_strides
+TAPP_set_strides = CDLL(tapp_so).TAPP_set_strides
 TAPP_set_strides.restype = c_int
 TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
 							 POINTER(c_int64), # strides
