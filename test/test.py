@@ -98,6 +98,25 @@ TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' el
 							 POINTER(c_int64), # strides
 							 ]
 
+create_executor = CDLL(tapp_so).create_executor
+create_executor.restype = c_int
+create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # exec
+							]
+
+TAPP_destroy_executor = CDLL(tapp_so).TAPP_destroy_executor
+TAPP_destroy_executor.restype = c_int
+TAPP_destroy_executor.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # exec
+								  ]
+
+create_handle = CDLL(tapp_so).create_handle
+create_handle.restype = c_int
+create_handle.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # handle
+						  ]
+
+TAPP_destroy_handle = CDLL(tapp_so).TAPP_destroy_handle
+TAPP_destroy_handle.restype = c_int
+TAPP_destroy_handle.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # handle
+								]
 
 def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D):
 	nmode_A = c_int(A.ndim)
@@ -133,8 +152,11 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	idx_C_c = (c_int64 * len(idx_C))(*idx_C)
 	idx_D_c = (c_int64 * len(idx_D))(*idx_D)
 
+	handle = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
+	create_handle(byref(handle))
+
 	plan = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_product(byref(plan), 0,
+	TAPP_create_tensor_product(byref(plan), handle,
 							c_int(op_A), tensor_info_A, idx_A_c,
 							c_int(op_B), tensor_info_B, idx_B_c,
 							c_int(op_C), tensor_info_C, idx_C_c,
@@ -142,6 +164,7 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 							0)
 	
 	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
+	create_executor(byref(exec))
 	status = c_int64(0)
 	A_ptr = A.ctypes.data_as(POINTER(c_double))
 	B_ptr = B.ctypes.data_as(POINTER(c_double))
@@ -149,6 +172,9 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	D_ptr = D.ctypes.data_as(POINTER(c_double))
 	
 	TAPP_execute_product(plan, exec, byref(status), byref(c_double(alpha)), A_ptr, B_ptr, byref(c_double(beta)), C_ptr, D_ptr)
+
+	TAPP_destroy_handle(handle)
+	TAPP_destroy_executor(exec)
 	TAPP_destory_tensor_product(plan)
 	TAPP_destroy_tensor_info(tensor_info_A)
 	TAPP_destroy_tensor_info(tensor_info_B)
