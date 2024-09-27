@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "structs.h"
+#include "tapp_ex_imp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
