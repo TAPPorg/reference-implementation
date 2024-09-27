@@ -7,7 +7,7 @@ OUT = out
 INC = src
 TBLIS = -ltblis -lm -L../tblis/lib/.libs -I../tblis/src/external/tci -I../tblis/include -I../tblis/src
 
-all: obj/tapp.o obj/error.o obj/tensor.o obj/product.o out/test++ lib/tapp.so out/demo #out/test
+all: obj/tapp.o obj/error.o obj/tensor.o obj/product.o out/test++ lib/tapp.so out/demo out/test
 
 obj/tapp.o: obj/product.o obj/tensor.o obj/error.o
 	ld -relocatable obj/tensor.o obj/product.o obj/error.o -o obj/tapp.o
@@ -21,8 +21,8 @@ obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
 obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp
 
-#out/test: $(TEST)/test.c $(OBJ)/product.o
-#	$(CC) -g  $(TEST)/test.c $(OBJ)/product.o $(OBJ)/tensor.o -o $(OUT)/test -I$(INC)
+out/test: $(TEST)/test.c $(OBJ)/product.o
+	$(CC) -g  $(TEST)/test.c $(OBJ)/tapp.o -o $(OUT)/test -I$(INC) -I$(INC) -I$(INC)/tapp
 
 out/demo:$(TEST)/demo.c $(OBJ)/tapp.o
 	$(CC) -g  $(TEST)/demo.c $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp $(TBLIS)

@@ -10,182 +10,114 @@
 
 int main(int argc, char const *argv[])
 {
-    /*int EXTA[3] = {4, 2, 3};
+    int nmode_A = 3;
+    int64_t extents_A[3] = {4, 3, 3};
+    int64_t strides_A[3] = {1, 4, 12};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
 
-    int STRA[3] = {1, 4, 8};
+    int nmode_B = 4;
+    int64_t extents_B[4] = {3, 2, 2, 3};
+    int64_t strides_B[4] = {1, 3, 6, 12};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
 
-    float A[24] = {
-        1, 2, 3, 4,
-        5, 6, 7, 8,
-
-        1, 2, 3, 4,
-        5, 6, 7, 8,
-
-        1, 2, 3, 4,
-        5, 6, 7, 8
-    };
-
-
-    int EXTB[3] = {2, 3, 2};
-
-    int STRB[3] = {1, 2, 6};
-
-    float B[12] = {
-        9, 8,
-        7, 6,
-        5, 4,
-
-        3, 2,
-        9, 8,
-        7, 6
-    };
-
-
-    int EXTC[2] = {4, 2};
-
-    int STRC[2] = {1, 4};
-
-    float C[8] = {
-        1, 2, 3, 4,
-        5, 6, 7, 8
-    };
-
-
-    int EXTD[2] = {4, 2};
-
-    int STRD[2] = {1, 4};
-
-    float D[8] = {
-        0, 0, 0, 0,
-        0, 0, 0, 0
-    };*/
-
-    int IDXA = 2;
-    int EXTA[2] = {4, 3};
-    int STRA[2] = {1, 4};
-    float A[12] = {
-        1, 2, 3, 4,
-
-        5, 6, 7, 8,
-
-        9, 10, 11, 12
-    };
-
-    int IDXB = 2;
-    int EXTB[2] = {4, 3};
-    int STRB[2] = {1, 4};
-    float B[12] = {
-        1, 2, 3, 4,
-
-        5, 6, 7, 8,
-
-        9, 10, 11, 12
-    };
-
-    int IDXC = 2;
-    int EXTC[2] = {4, 3};
-    int STRC[2] = {1, 4};
-    float C[12] = {
-        1, 2, 3, 4,
-
-        5, 6, 7, 8,
-
-        9, 10, 11, 12
-    };
+    int nmode_C = 2;
+    int64_t extents_C[2] = {4, 2};
+    int64_t strides_C[2] = {1, 4};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
     
-    int IDXD = 2;
-    int EXTD[2] = {4, 3};
-    int STRD[2] = {1, 4};
-    float D[12] = {
-        0, 0, 0, 0,
+    int nmode_D = 2;
+    int64_t extents_D[2] = {4, 2};
+    int64_t strides_D[2] = {1, 4};
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-        0, 0, 0, 0,
+    TAPP_handle handle;
+    TAPP_tensor_product plan;
+    TAPP_element_op op_A = TAPP_IDENTITY;
+    TAPP_element_op op_B = TAPP_IDENTITY;
+    TAPP_element_op op_C = TAPP_IDENTITY;
+    TAPP_element_op op_D = TAPP_IDENTITY;
+    int64_t idx_A[3] = {'a', 'b', 'c'};
+    int64_t idx_B[4] = {'c', 'd', 'e', 'b'};
+    int64_t idx_C[2] = {'a', 'd'};
+    int64_t idx_D[3] = {'a', 'd'};
+    TAPP_prectype prec = TAPP_DEFAULT_PREC;
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
-        0, 0, 0, 0
+    TAPP_executor exec;
+    TAPP_status status;
+
+    float alpha = 1;
+
+    float A[36] = {
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1,
+
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1,
+
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1,
+        1,  2,  1.01, -1
     };
 
-    float ALPHA = 1;
-    float BETA = 0;
+    float B[36] = {
+        1,  1,  1,
+        2,  2,  2,
 
-    bool FA = false;
-    bool FB = false;
-    bool FC = false;
+        3,  3,  3,
+        6,  6,  6,
 
-    char EINSUM[] = "ij, ij -> ij";
 
-    /*int IDXA = 3;
+        1,  1,  1,
+        2,  2,  2,
 
-    int EXTA[3] = {4, 2, 3};
+        3,  3,  3,
+        6,  6,  6,
 
-    int STRA[3] = {1, 4, 8};
 
-    float complex A[24] = {
-        1 + 8*I, 2 + 7*I, 3 + 6*I, 4 + 5*I,
-        5 + 4*I, 6 + 3*I, 7 + 2*I, 8 + 1*I,
+        1,  1,  1,
+        2,  2,  2,
 
-        1 + 8*I, 2 + 7*I, 3 + 6*I, 4 + 5*I,
-        5 + 4*I, 6 + 3*I, 7 + 2*I, 8 + 1*I,
-
-        1 + 8*I, 2 + 7*I, 3 + 6*I, 4 + 5*I,
-        5 + 4*I, 6 + 3*I, 7 + 2*I, 8 + 1*I
+        3,  3,  3,
+        6,  6,  6
     };
 
+    float beta = 0;
 
-    int IDXB = 3;
+    float C[16] = {
+        2,  4,  6,  8,
+        2,  4,  6,  8,
 
-    int EXTB[3] = {2, 3, 2};
-
-    int STRB[3] = {1, 2, 6};
-
-    float complex B[12] = {
-        9 + 2*I, 8 + 3*I,
-        7 + 4*I, 6 + 5*I,
-        5 + 6*I, 4 + 7*I,
-
-        3 + 8*I, 2 + 9*I,
-        9 + 2*I, 8 + 3*I,
-        7 + 4*I, 6 + 5*I
+        2,  4,  6,  8,
+        2,  4,  6,  8
     };
 
-
-    int IDXC = 2;
-
-    int EXTC[2] = {4, 2};
-
-    int STRC[2] = {1, 4};
-
-    float complex C[8] = {
-        1 + 1*I, 2 + 2*I, 3 + 3*I, 4 + 4*I,
-        5 + 5*I, 6 + 6*I, 7 + 7*I, 8 + 8*I
+    float D[16] = {
+         1,  2,  3,  4,
+         5,  6,  7,  8,
+        
+         1,  2,  3,  4,
+         5,  6,  7,  8
     };
 
+    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
+    int message_len = TAPP_explain_error(error, 0, NULL);
+    char* message_buff = malloc((message_len + 1) * sizeof(char));
+    TAPP_explain_error(error, message_len + 1, message_buff);
+    printf(message_buff);
+    free(message_buff);
 
-    int IDXD = 2;
-
-    int EXTD[2] = {4, 2};
-
-    int STRD[2] = {1, 4};
-
-    float complex D[8] = {
-        0 + 0*I, 0 + 0*I, 0 + 0*I, 0 + 0*I,
-        0 + 0*I, 0 + 0*I, 0 + 0*I, 0 + 0*I
-    };
-
-    float complex ALPHA = 1 + 1*I;
-    float complex BETA = 0 + 0*I;
-
-    bool FA = false;
-    bool FB = false;
-    bool FC = false;
-
-    char EINSUM[] = "ijk, jkl -> il";*/
-
-    PRODUCT(IDXA, EXTA, STRA, A, IDXB, EXTB, STRB, B, IDXC, EXTC, STRC, C, IDXD, EXTD, STRD, D, ALPHA, BETA, FA, FB, FC, EINSUM);
-
-    for (int i = 0; i < 12; i++)
-    {
-        printf("%f\n", D[i]);
-    }
-    
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
     return 0;
 }
