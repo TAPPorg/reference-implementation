@@ -6,11 +6,12 @@ TEST = test
 OUT = out
 INC = src
 TBLIS = -ltblis -lm -L../tblis/lib/.libs -I../tblis/src/external/tci -I../tblis/include -I../tblis/src
+OBJECTS = $(filter-out obj/tapp.o, $(wildcard obj/*.o))
 
-all: obj/tapp.o obj/error.o obj/tensor.o obj/product.o out/test++ lib/tapp.so out/demo out/test
+all: obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o out/test++ lib/tapp.so out/demo out/test
 
-obj/tapp.o: obj/product.o obj/tensor.o obj/error.o
-	ld -relocatable obj/tensor.o obj/product.o obj/error.o -o obj/tapp.o
+obj/tapp.o: obj/product.o obj/tensor.o obj/error.o obj/executor.o obj/handle.o
+	ld -relocatable $(OBJECTS) -o obj/tapp.o
 
 obj/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
@@ -20,6 +21,12 @@ obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
 
 obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp
+
+obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
+	$(CC) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o -I$(INC) -I$(INC)/tapp
+
+obj/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
+	$(CC) -c -g -Wall $(SRC)/tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/tapp
 
 out/test: $(TEST)/test.c $(OBJ)/product.o
 	$(CC) -g  $(TEST)/test.c $(OBJ)/tapp.o -o $(OUT)/test -I$(INC) -I$(INC) -I$(INC)/tapp
@@ -37,6 +44,8 @@ clean:
 	rm -f obj/tensor.o
 	rm -f obj/product.o
 	rm -f obj/error.o
+	rm -f obj/executor.o
+	rm -f obj/handle.o
 	rm -f obj/tapp.o
 	rm -f out/test
 	rm -f out/test++
