@@ -10,7 +10,6 @@ bool TAPP_check_success(TAPP_error error) {
 size_t TAPP_explain_error(TAPP_error error,
                           size_t maxlen,
                           char* message) {
-    size_t message_len = 0;
     char* error_message;
     switch (error)
     {
