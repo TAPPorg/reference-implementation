@@ -42,7 +42,7 @@ size_t TAPP_explain_error(TAPP_error error,
         error_message = "Tensor B has indices shared with no other tensor.";
         break;
     case 9:
-        error_message = "Tensor C has indices not shared with tensor A or B.";
+        error_message = "Tensor D has indices not shared with tensor A or B.";
         break;
     case 10:
         error_message = "Non hadamard operation shares indices between tensor A, B and D";
