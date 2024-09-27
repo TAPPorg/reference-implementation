@@ -10,6 +10,7 @@ typedef intptr_t TAPP_executor;
 /*
  * TODO: implementation-defined creation of executors or "wrapper" to get all implementations and select one?
  *       devices probably can't be enumerated until you have a handle....
+ * Niklas: Would implementation-defined creation not reduce the ability to change implementation between libraries?
  */
 
 TAPP_error TAPP_destroy_executor(TAPP_executor exec);
