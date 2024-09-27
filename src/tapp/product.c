@@ -21,11 +21,16 @@ void compile_strides(int64_t* strides, int ndim, const int64_t* idx, int ndim_D,
 int64_t calculate_size(int64_t* extents, int nmode);
 void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
 void zero_array(int64_t* arr, int size);
-void C_relation_to_D(int* relation, const int64_t* idx_C, const int64_t* idx_D, int nmode_D);
 void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* output, TAPP_datatype type_output);
 void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A, int index_A, TAPP_element_op op_A, const void* B, TAPP_datatype type_B, int index_B, TAPP_element_op op_B, TAPP_prectype prec, void* output, TAPP_datatype type_D);
 void calculate_op_D(void* output, TAPP_datatype type_D, TAPP_element_op op_D);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* val);
+bool check_repeated_idx(int nmode, const int64_t* idx);
+int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code);
+int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D);
+int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code);
+int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
+
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_handle handle,
@@ -151,202 +156,21 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
     TAPP_get_strides(D_info, strides_D);
 
-    /*
-     * An identifier(idx) should only appear once in a tensor.
-     */
+    if (check_repeated_idx(nmode_A, idx_A)) return 1;
+    if (check_repeated_idx(nmode_B, idx_B)) return 2;
+    if (check_repeated_idx(nmode_D, idx_D)) return 3;
 
-    for (size_t i = 0; i < nmode_A; i++) {
-        int count = 0;
-        for (size_t j = 0; j < nmode_A; j++) {
-            if (idx_A[i] == idx_A[j]) {
-                count++;
-            }
-        }
-        if (count != 1) {
-            return 1;
-        }
-    }
+    int error_status = check_einsum(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D);
+    if (error_status != 0) return error_status;
+    error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 4, 5);
+    if (error_status != 0) return error_status;
+    error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 4, 6);
+    if (error_status != 0) return error_status;
+    error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 5, 6);
+    if (error_status != 0) return error_status;
+    error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 11, 12, 13);
+    if (error_status != 0) return error_status;
 
-    for (size_t i = 0; i < nmode_B; i++) {
-        int count = 0;
-        for (size_t j = 0; j < nmode_B; j++) {
-            if (idx_B[i] == idx_B[j]) {
-                count++;
-            }
-        }
-        if (count != 1) {
-            return 2;
-        }
-    }
-
-    for (size_t i = 0; i < nmode_D; i++) {
-        int count = 0;
-        for (size_t j = 0; j < nmode_D; j++) {
-            if (idx_D[i] == idx_D[j]) {
-                count++;
-            }
-        }
-        if (count != 1) {
-            return 3;
-        }
-    }
-
-    /* 
-     * If hadamard all identifiers should appear in all tensors. Extents
-     * corresponding to same identifier should have the same length.
-     */
-    bool hadamard = false;
-    if (nmode_A == nmode_B && nmode_A == nmode_D) {
-        for (size_t i = 0; i < nmode_A; i++) {
-            int count_B = 0;
-            for (size_t j = 0; j < nmode_B; j++) {
-                if (idx_A[i] == idx_B[j]) {
-                    count_B++;
-                    if (extents_A[i] != extents_B[j])
-                    {
-                        return 4;
-                    }
-                }
-            }
-            int count_D = 0;
-            for (size_t j = 0; j < nmode_D; j++) {
-                if (idx_A[i] == idx_D[j]) {
-                    count_D++;
-                    if (extents_A[i] != extents_D[j])
-                    {
-                        return 5;
-                    }
-                }
-            }
-            if (count_B == nmode_A && count_D == nmode_A) {
-                hadamard = true;
-            }
-        }
-    }
-    
-    /*
-     * If contraction(not hadamard) all identifiers should appear in exactly two
-     * tensors. Extents corresponding to same identifier should have the same
-     * length.
-     */
-    if (!hadamard) {
-        for (size_t i = 0; i < nmode_A; i++) {
-            bool found_B = false;
-            for (size_t j = 0; j < nmode_B; j++)
-            {
-                if (idx_A[i] == idx_B[j]) {
-                    found_B = true;
-                    if (extents_A[i] != extents_B[j])
-                    {
-                        return 4;
-                    }
-                }
-            }
-            bool found_D = false;
-            for (size_t j = 0; j < nmode_D; j++)
-            {
-                if (idx_A[i] == idx_D[j]) {
-                    found_D = true;
-                    if (extents_A[i] != extents_D[j])
-                    {
-                        return 5;
-                    }
-                }
-            }
-            if (!found_B && !found_D) {
-                return 7;
-            }
-            else if (found_B && found_D)
-            {
-                return 10;
-            }
-            
-        }
-        
-        for (size_t i = 0; i < nmode_B; i++)
-        {
-            bool found_A = false;
-            for (size_t j = 0; j < nmode_A; j++)
-            {
-                if (idx_B[i] == idx_A[j]) {
-                    found_A = true;
-                    if (extents_B[i] != extents_A[j])
-                    {
-                        return 4;
-                    }
-                }
-            }
-            bool found_D = false;
-            for (size_t j = 0; j < nmode_D; j++)
-            {
-                if (idx_B[i] == idx_D[j]) {
-                    found_D = true;
-                    if (extents_B[i] != extents_D[j])
-                    {
-                        return 6;
-                    }
-                }
-            }
-            if (!found_A && !found_D) {
-                return 8;
-            }
-            else if (found_A && found_D)
-            {
-                return 10;
-            }
-            
-        }
-
-        for (size_t i = 0; i < nmode_D; i++)
-        {
-            bool found_A = false;
-            for (size_t j = 0; j < nmode_A; j++)
-            {
-                if (idx_D[i] == idx_A[j]) {
-                    found_A = true;
-                    if (extents_D[i] != extents_A[j])
-                    {
-                        return 5;
-                    }
-                }
-            }
-            bool found_B = false;
-            for (size_t j = 0; j < nmode_B; j++)
-            {
-                if (idx_D[i] == idx_B[j]) {
-                    found_B = true;
-                    if (extents_D[i] != extents_B[j])
-                    {
-                        return 6;
-                    }
-                }
-            }
-            if (!found_A && !found_B) {
-                return 9;
-            }
-            else if (found_A && found_B)
-            {
-                return 10;
-            }
-        }
-    }
-
-    /*
-     * Tensor C should have the same structure as tensor D.
-     */
-    if(nmode_C != nmode_D) {
-        return 11;
-    }
-
-    for (size_t i = 0; i < nmode_D; i++)
-    {
-        if (idx_D[i] != idx_C[i]) {
-            return 12;
-        }
-        if (extents_D[i] != extents_C[i]) {
-            return 13;
-        }
-    }    
 
     int contractions = (nmode_A + nmode_B - nmode_D) / 2;
     int64_t* idx_contraction = malloc(contractions * sizeof(int64_t));
@@ -543,14 +367,115 @@ void zero_array(int64_t* arr, int size) {
     }
 }
 
-void C_relation_to_D(int* relation, const int64_t* idx_C, const int64_t* idx_D, int nmode_D) {
-    for (int i = 0; i < nmode_D; i++) {
-        for (int j = 0; j < nmode_D; j++) {
-            if (idx_D[i] == idx_C[j]) {
-                relation[i] = j;
+bool check_repeated_idx(int nmode, const int64_t* idx) {
+    for (size_t i = 0; i < nmode; i++) {
+        int count = 0;
+        for (size_t j = 0; j < nmode; j++) {
+            if (idx[i] == idx[j]) {
+                count++;
+            }
+        }
+        if (count != 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code) {
+    int double_occurrence_count = 0;
+    for (size_t i = 0; i < nmode_origin; i++) {
+        int idx_found = 0;
+        for (size_t j = 0; j < nmode_test_A; j++)
+        {
+            if (idx_origin[i] == idx_test_A[j]) {
+                idx_found++;
+                break;
+            }
+        }
+        for (size_t j = 0; j < nmode_test_B; j++)
+        {
+            if (idx_origin[i] == idx_test_B[j]) {
+                idx_found++;
+                break;
+            }
+        }
+        if (idx_found == 0) { //No other occurrence, unused idx, error
+            return no_occurrence_code;
+        }
+        else if (idx_found == 2)
+        {
+            double_occurrence_count++;
+        }
+    }
+
+    if (double_occurrence_count == 0) { //Not hadamard, no error
+        return 0;
+    }
+    else if (double_occurrence_count == nmode_origin) { //Might be hadamard, no error
+        return 1;
+    }
+    else { //Both singel and double occurrence, neither hadamard nor contraction, error
+        return unknown_operation_code;
+    }
+}
+
+int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D) {
+    int status_A = check_idx_occurrence(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D, -7, -10);
+    if (status_A < 0) {
+        return -status_A;
+    }
+
+    int status_B = check_idx_occurrence(nmode_B, idx_B, nmode_A, idx_A, nmode_D, idx_D, -8, -10);
+    if (status_B < 0) {
+        return -status_B;
+    }
+
+    int status_D = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, -9, -10);
+    if (status_D < 0) {
+        return -status_D;
+    }
+    
+    if (status_A != status_B || status_A != status_D) {
+        return 10;
+    }
+    return 0;
+}
+
+int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code) {
+    for (size_t i = 0; i < nmode_A; i++)
+    {
+        for (size_t j = 0; j < nmode_B; j++)
+        {
+            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B [j]) {
+                return missmatch_AB_code;
+            }
+        }
+        for (size_t j = 0; j < nmode_D; j++)
+        {
+            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D [j]) {
+                return missmatch_AD_code;
             }
         }
     }
+    return 0;
+}
+
+int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code) {
+    if(nmode_A != nmode_B) {
+        return nmode_code;
+    }
+
+    for (size_t i = 0; i < nmode_B; i++)
+    {
+        if (idx_B[i] != idx_A[i]) {
+            return idx_code;
+        }
+        if (extents_B[i] != extents_A[i]) {
+            return extent_code;
+        }
+    }
+    return 0;
 }
 
 void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* output, TAPP_datatype type_output) {
