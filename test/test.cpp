@@ -122,6 +122,8 @@ std::tuple<std::complex<double>*, std::complex<double>*> copy_tensor_data_z(int6
 
 float* copy_tensor_data_s(int size, float* data);
 
+void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
+
 bool test_hadamard_product();
 bool test_contraction();
 bool test_commutativity();
@@ -139,6 +141,11 @@ bool test_negative_strides_subtensor_lower_idx();
 bool test_contraction_double_precision();
 bool test_contraction_complex();
 bool test_contraction_complex_double_precision();
+bool test_error_too_many_idx();
+bool test_error_repeated_idx();
+bool test_error_non_matching_ext();
+bool test_error_C_other_structure();
+bool test_error_non_hadamard_shared_idx();
 
 int main(int argc, char const *argv[])
 {
@@ -160,6 +167,11 @@ int main(int argc, char const *argv[])
     std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
     std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
+    std::cout << "Error: Too Many Indices: " << str(test_error_too_many_idx()) << std::endl;
+    std::cout << "Error: Repeated Indices: " << str(test_error_repeated_idx()) << std::endl;
+    std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
+    std::cout << "Error: C other structure: " << str(test_error_C_other_structure()) << std::endl;
+    std::cout << "Error: Non hadamard shared indices: " << str(test_error_non_hadamard_shared_idx()) << std::endl;
     return 0;
 }
 
@@ -1972,6 +1984,10 @@ double randd(double min, double max) {
     return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max-min)));
 }
 
+int random_choice(int size, int* choices) {
+    return choices[randi(0, size - 1)];
+}
+
 std::complex<float> randc(std::complex<float> min, std::complex<float> max) {
     return std::complex<float>(min.real() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.imag()-min.imag()))));
 }
@@ -2222,6 +2238,55 @@ void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<
         }
     }
     std::cout << std::endl;
+}
+
+void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides) {
+    int nmode_tmp = *nmode + randi(1, 5);
+    int64_t* idx_tmp = new int64_t[nmode_tmp];
+    int64_t* extents_tmp = new int64_t[nmode_tmp];
+    int64_t* strides_tmp = new int64_t[nmode_tmp];
+    std::copy(*idx, *idx + *nmode, idx_tmp);
+    std::copy(*extents, *extents + *nmode, extents_tmp);
+    std::copy(*strides, *strides + *nmode, strides_tmp);
+    for (size_t i = 0; i < nmode_tmp - *nmode; i++)
+    {
+        idx_tmp[*nmode + i] = max_idx + 1 + i;
+    }
+    for (size_t i = 0; i < nmode_tmp - *nmode; i++)
+    {
+        extents_tmp[*nmode + i] = max_idx + 1 + i;
+    }
+    for (size_t i = 0; i < nmode_tmp - *nmode; i++)
+    {
+        strides_tmp[*nmode + i] = max_idx + 1 + i;
+    }
+    delete[] *idx;
+    delete[] *extents;
+    delete[] *strides;
+    *nmode = nmode_tmp;
+    *idx = idx_tmp;
+    *extents = extents_tmp;
+    *strides = strides_tmp;
+}
+
+void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, int64_t additional_idx, int64_t additional_extents, int64_t additional_strides) {
+    int nmode_tmp = *nmode + 1;
+    int64_t* idx_tmp = new int64_t[nmode_tmp];
+    int64_t* extents_tmp = new int64_t[nmode_tmp];
+    int64_t* strides_tmp = new int64_t[nmode_tmp];
+    std::copy(*idx, *idx + *nmode, idx_tmp);
+    std::copy(*extents, *extents + *nmode, extents_tmp);
+    std::copy(*strides, *strides + *nmode, strides_tmp);
+    idx_tmp[*nmode] = additional_idx;
+    extents_tmp[*nmode] = additional_extents;
+    strides_tmp[*nmode] = additional_strides;
+    delete[] *idx;
+    delete[] *extents;
+    delete[] *strides;
+    *nmode = nmode_tmp;
+    *idx = idx_tmp;
+    *extents = extents_tmp;
+    *strides = strides_tmp;
 }
 
 bool test_hadamard_product() {
@@ -3514,4 +3579,491 @@ bool test_contraction_complex_double_precision() {
     delete[] offset_D;
 
     return result;
+}
+
+bool test_error_too_many_idx() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+
+    int64_t max_idx = 0;
+    for (size_t i = 0; i < nmode_A; i++)
+    {
+        if (max_idx < idx_A[i]) {
+            max_idx = idx_A[i];
+        }
+    }
+    for (size_t i = 0; i < nmode_B; i++)
+    {
+        if (max_idx < idx_B[i]) {
+            max_idx = idx_B[i];
+        }
+    }
+    for (size_t i = 0; i < nmode_D; i++)
+    {
+        if (max_idx < idx_D[i]) {
+            max_idx = idx_D[i];
+        }
+    }
+
+    int random_skewed_tensor = randi(0, 2);
+
+    switch (random_skewed_tensor)
+    {
+    case 0:
+        add_incorrect_idx(max_idx, &nmode_A, &idx_A, &extents_A, &strides_A);
+        break;
+    case 1:
+        add_incorrect_idx(max_idx, &nmode_B, &idx_B, &extents_B, &strides_B);
+        break;
+    case 2:
+        add_incorrect_idx(max_idx, &nmode_D, &idx_D, &extents_D, &strides_D);
+        break;
+    
+    default:
+        break;
+    }
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return (random_skewed_tensor == 0 && error_status == 7) ||
+           (random_skewed_tensor == 1 && error_status == 8) ||
+           (random_skewed_tensor == 2 && error_status == 9);
+}
+
+bool test_error_repeated_idx() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
+    
+    int nr_choices = 0;
+    if (nmode_A > 0) nr_choices++;
+    if (nmode_B > 0) nr_choices++;
+    if (nmode_D > 0) nr_choices++;
+
+    int* choices = new int[nr_choices];
+    int choice_index = 0;
+
+    if (nmode_A > 0) choices[choice_index++] = 0;
+    if (nmode_B > 0) choices[choice_index++] = 1;
+    if (nmode_D > 0) choices[choice_index++] = 2;
+
+    int random_skewed_tensor = random_choice(nr_choices, choices);
+    delete[] choices;
+    int random_index = 0;
+
+    switch (random_skewed_tensor)
+    {
+    case 0:
+        if (nmode_A > 1) {
+            random_index = randi(0, nmode_A - 1);
+            idx_A[random_index] = random_index == 0 ? idx_A[random_index + 1] : idx_A[random_index - 1];
+        }
+        else {
+            add_idx(&nmode_A, &idx_A, &extents_A, &strides_A, idx_A[0], extents_A[0], strides_A[0]);
+        }
+        break;
+    case 1:
+        if (nmode_B > 1) {
+            random_index = randi(0, nmode_B - 1);
+            idx_B[random_index] = random_index == 0 ? idx_B[random_index + 1] : idx_B[random_index - 1];
+        }
+        else {
+            add_idx(&nmode_B, &idx_B, &extents_B, &strides_B, idx_B[0], extents_B[0], strides_B[0]);
+        }
+        break;
+    case 2:
+        if (nmode_D > 1) {
+            random_index = randi(0, nmode_D - 1);
+            idx_D[random_index] = random_index == 0 ? idx_D[random_index + 1] : idx_D[random_index - 1];
+        }
+        else {
+            add_idx(&nmode_D, &idx_D, &extents_D, &strides_D, idx_D[0], extents_D[0], strides_D[0]);
+        }
+        break;
+    default:
+        break;
+    }
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return (random_skewed_tensor == 0 && error_status == 1) ||
+           (random_skewed_tensor == 1 && error_status == 2) ||
+           (random_skewed_tensor == 2 && error_status == 3);
+}
+
+bool test_error_non_matching_ext() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
+    
+    int nr_choices = 0;
+    if (nmode_A > 0) nr_choices++;
+    if (nmode_B > 0) nr_choices++;
+    if (nmode_D > 0) nr_choices++;
+
+    int* choices = new int[nr_choices];
+    int choice_index = 0;
+
+    if (nmode_A > 0) choices[choice_index++] = 0;
+    if (nmode_B > 0) choices[choice_index++] = 1;
+    if (nmode_D > 0) choices[choice_index++] = 2;
+
+    int random_skewed_tensor = random_choice(nr_choices, choices);
+    delete[] choices;
+    int random_index = 0;
+
+    switch (random_skewed_tensor)
+    {
+    case 0:
+        random_index = randi(0, nmode_A - 1);
+        extents_A[random_index] += randi(1, 5);
+        break;
+    case 1:
+        random_index = randi(0, nmode_B - 1);
+        extents_B[random_index] += randi(1, 5);
+        break;
+    case 2:
+        random_index = randi(0, nmode_D - 1);
+        extents_D[random_index] += randi(1, 5);
+        break;
+    default:
+        break;
+    }
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return error_status == 4 || error_status == 5 || error_status == 6;
+}
+
+bool test_error_C_other_structure() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+
+    int64_t max_idx = 0;
+    for (size_t i = 0; i < nmode_C; i++)
+    {
+        if (max_idx < idx_C[i]) {
+            max_idx = idx_C[i];
+        }
+    }
+
+    int random_error = randi(0, 2);
+    int random_index = 0;
+
+    switch (random_error)
+    {
+    case 0:
+        add_incorrect_idx(max_idx, &nmode_C, &idx_C, &extents_C, &strides_C);
+        break;
+    case 1:
+        if (nmode_C > 1) {
+            random_index = randi(0, nmode_C - 1);
+            idx_C[random_index] = random_index == 0 ? idx_C[random_index + 1] : idx_C[random_index - 1];
+        }
+        else {
+            add_idx(&nmode_C, &idx_C, &extents_C, &strides_C, idx_C[0], extents_C[0], strides_C[0]);
+        }
+        break;
+    case 2:
+        random_index = randi(0, nmode_C - 1);
+        extents_C[random_index] += randi(1, 5);
+        break;
+    default:
+        break;
+    }
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return error_status == 11 || error_status == 12 || error_status == 13;
+}
+
+bool test_error_non_hadamard_shared_idx() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(2, 4));
+
+    int64_t max_idx = 0;
+    for (size_t i = 0; i < nmode_A; i++)
+    {
+        if (max_idx < idx_A[i]) {
+            max_idx = idx_A[i];
+        }
+    }
+    for (size_t i = 0; i < nmode_B; i++)
+    {
+        if (max_idx < idx_B[i]) {
+            max_idx = idx_B[i];
+        }
+    }
+    for (size_t i = 0; i < nmode_D; i++)
+    {
+        if (max_idx < idx_D[i]) {
+            max_idx = idx_D[i];
+        }
+    }
+
+    add_idx(&nmode_A, &idx_A, &extents_A, &strides_A, max_idx + 1, 0, 0);
+    add_idx(&nmode_B, &idx_B, &extents_B, &strides_B, max_idx + 1, 0, 0);
+    add_idx(&nmode_D, &idx_D, &extents_D, &strides_D, max_idx + 1, 0, 0);
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return error_status == 10;
 }
