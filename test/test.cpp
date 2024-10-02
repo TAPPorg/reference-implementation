@@ -141,6 +141,7 @@ bool test_negative_strides_subtensor_lower_idx();
 bool test_contraction_double_precision();
 bool test_contraction_complex();
 bool test_contraction_complex_double_precision();
+bool test_zero_stride();
 bool test_error_too_many_idx();
 bool test_error_repeated_idx();
 bool test_error_non_matching_ext();
@@ -167,6 +168,7 @@ int main(int argc, char const *argv[])
     std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
     std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
+    std::cout << "Zero stride: " << str(test_zero_stride()) << std::endl;
     std::cout << "Error: Too Many Indices: " << str(test_error_too_many_idx()) << std::endl;
     std::cout << "Error: Repeated Indices: " << str(test_error_repeated_idx()) << std::endl;
     std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
@@ -3548,6 +3550,85 @@ bool test_contraction_complex_double_precision() {
                      alpha, beta);
 
     bool result = compare_tensors_z(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return result;
+}
+
+bool test_zero_stride() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+
+    if (nmode_A > 0) {
+        strides_A[0] = 0;
+    }
+    else {
+        strides_B[0] = 0;
+    }
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
