@@ -25,7 +25,7 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
 void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A, int index_A, TAPP_element_op op_A, const void* B, TAPP_datatype type_B, int index_B, TAPP_element_op op_B, TAPP_prectype prec, void* output, TAPP_datatype type_D);
 void calculate_op_D(void* output, TAPP_datatype type_D, TAPP_element_op op_D);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* val);
-bool check_repeated_idx(int nmode, const int64_t* idx);
+int check_repeated_idx(int nmode, const int64_t* idx, int error_code);
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code);
 int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D);
 int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code);
@@ -156,20 +156,28 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
     TAPP_get_strides(D_info, strides_D);
 
-    if (check_repeated_idx(nmode_A, idx_A)) return 1;
-    if (check_repeated_idx(nmode_B, idx_B)) return 2;
-    if (check_repeated_idx(nmode_D, idx_D)) return 3;
+    int error_status = 0;
 
-    int error_status = check_einsum(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D);
-    if (error_status != 0) return error_status;
-    error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 4, 5);
-    if (error_status != 0) return error_status;
-    error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 4, 6);
-    if (error_status != 0) return error_status;
-    error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 5, 6);
-    if (error_status != 0) return error_status;
-    error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 11, 12, 13);
-    if (error_status != 0) return error_status;
+    error_status = check_repeated_idx(nmode_A, idx_A, 1);
+    error_status = error_status == 0 ? check_repeated_idx(nmode_B, idx_B, 2) : error_status;
+    error_status = error_status == 0 ? check_repeated_idx(nmode_D, idx_D, 3) : error_status;
+
+    error_status = error_status == 0 ? check_einsum(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 4, 5) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 4, 6) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 5, 6) : error_status;
+    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 11, 12, 13) : error_status;
+    if (error_status != 0) {
+        free(extents_A);
+        free(strides_A);
+        free(extents_B);
+        free(strides_B);
+        free(extents_C);
+        free(strides_C);
+        free(extents_D);
+        free(strides_D);
+        return error_status;
+    } 
 
 
     int contractions = (nmode_A + nmode_B - nmode_D) / 2;
@@ -367,7 +375,7 @@ void zero_array(int64_t* arr, int size) {
     }
 }
 
-bool check_repeated_idx(int nmode, const int64_t* idx) {
+int check_repeated_idx(int nmode, const int64_t* idx, int error_code) {
     for (size_t i = 0; i < nmode; i++) {
         int count = 0;
         for (size_t j = 0; j < nmode; j++) {
@@ -376,10 +384,10 @@ bool check_repeated_idx(int nmode, const int64_t* idx) {
             }
         }
         if (count != 1) {
-            return true;
+            return error_code;
         }
     }
-    return false;
+    return 0;
 }
 
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code) {
