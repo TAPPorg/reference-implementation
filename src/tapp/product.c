@@ -30,6 +30,9 @@ int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_
 int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D);
 int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code);
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
+int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
+void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right);
+void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right);
 
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -167,6 +170,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 4, 6) : error_status;
     error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 5, 6) : error_status;
     error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 11, 12, 13) : error_status;
+    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 14) : error_status;
     if (error_status != 0) {
         free(extents_A);
         free(strides_A);
@@ -178,7 +182,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(strides_D);
         return error_status;
     } 
-
 
     int contractions = (nmode_A + nmode_B - nmode_D) / 2;
     int64_t* idx_contraction = malloc(contractions * sizeof(int64_t));
@@ -484,6 +487,94 @@ int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* exten
         }
     }
     return 0;
+}
+
+int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code) {
+    if (nmode <= 1) {
+        return 0;
+    }
+    for (size_t i = 0; i < nmode; i++)
+    {
+        if (strides[i] == 0) {
+            return error_code;
+        }
+    }
+    
+    int64_t* sorted_strides = malloc(nmode * sizeof(int64_t));
+    int64_t* sorted_extents = malloc(nmode * sizeof(int64_t));
+    for (size_t i = 0; i < nmode; i++)
+    {
+        sorted_strides[i] = abs(strides[i]);
+        sorted_extents[i] = extents[i];
+    }
+    merge_sort_strides(sorted_strides, sorted_extents, 0, nmode - 1);
+    int status = 0;
+    for (size_t i = 0; i < nmode - 1; i++)
+    {
+        if (sorted_strides[i + 1] < sorted_strides[i] * sorted_extents[i]) {
+            status = error_code;
+            break;
+        }
+    }
+    free(sorted_strides);
+    free(sorted_extents);
+    return status;
+}
+
+void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+        
+        merge_sort_strides(strides, extents, left, mid);
+        merge_sort_strides(strides, extents, mid + 1, right);
+        
+        merge_strides(strides, extents, left, mid, right);
+    }
+}
+
+void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    int Ls[n1], Rs[n2];
+    int Le[n1], Re[n2];
+
+    for (int i = 0; i < n1; i++) {
+        Ls[i] = strides[left + i];
+        Le[i] = extents[left + i];
+    }
+    for (int j = 0; j < n2; j++) {
+        Rs[j] = strides[mid + 1 + j];
+        Re[j] = extents[mid + 1 + j];
+    }
+    
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (Ls[i] <= Rs[j]) {
+            strides[k] = Ls[i];
+            extents[k] = Le[i];
+            i++;
+        } else {
+            strides[k] = Rs[j];
+            extents[k] = Re[i];
+            j++;
+        }
+        k++;
+    }
+    
+    while (i < n1) {
+        strides[k] = Ls[i];
+        extents[k] = Le[i];
+        i++;
+        k++;
+    }
+    
+    while (j < n2) {
+        strides[k] = Rs[j];
+        extents[k] = Re[j];
+        j++;
+        k++;
+    }
 }
 
 void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* output, TAPP_datatype type_output) {

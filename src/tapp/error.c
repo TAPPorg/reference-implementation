@@ -55,6 +55,9 @@ size_t TAPP_explain_error(TAPP_error error,
     case 13:
         error_message = "The extents for the indices shared between tensor C and D does not match.";
         break;
+    case 14:
+        error_message = "Aliasing found within tensor D.";
+        break;
     default:
         break;
     }

@@ -147,6 +147,7 @@ bool test_error_repeated_idx();
 bool test_error_non_matching_ext();
 bool test_error_C_other_structure();
 bool test_error_non_hadamard_shared_idx();
+bool test_error_aliasing_within_D();
 
 int main(int argc, char const *argv[])
 {
@@ -172,8 +173,9 @@ int main(int argc, char const *argv[])
     std::cout << "Error: Too Many Indices: " << str(test_error_too_many_idx()) << std::endl;
     std::cout << "Error: Repeated Indices: " << str(test_error_repeated_idx()) << std::endl;
     std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
-    std::cout << "Error: C other structure: " << str(test_error_C_other_structure()) << std::endl;
-    std::cout << "Error: Non hadamard shared indices: " << str(test_error_non_hadamard_shared_idx()) << std::endl;
+    std::cout << "Error: C Other Structure: " << str(test_error_C_other_structure()) << std::endl;
+    std::cout << "Error: Non Hadamard Shared Indices: " << str(test_error_non_hadamard_shared_idx()) << std::endl;
+    std::cout << "Error: Non Aliasing Within D: " << str(test_error_aliasing_within_D()) << std::endl;
     return 0;
 }
 
@@ -3978,7 +3980,7 @@ bool test_error_C_other_structure() {
           alpha, beta,
           data_A, data_B, data_C, data_D,
           size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
 
     int64_t max_idx = 0;
     for (size_t i = 0; i < nmode_C; i++)
@@ -4006,7 +4008,7 @@ bool test_error_C_other_structure() {
         }
         break;
     case 2:
-        random_index = randi(0, nmode_C - 1);
+        random_index = nmode_C == 1 ? 0 : randi(0, nmode_C - 1);
         extents_C[random_index] += randi(1, 5);
         break;
     default:
@@ -4147,4 +4149,69 @@ bool test_error_non_hadamard_shared_idx() {
     delete[] offset_D;
 
     return error_status == 10;
+}
+
+bool test_error_aliasing_within_D() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(2, 4));
+
+    int scewed_index = randi(1, nmode_D);
+    int signs[2] = {-1, 1};
+    strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] + 1) * randi(1, extents_D[scewed_index - 1] - 1);
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return error_status == 14;
 }
