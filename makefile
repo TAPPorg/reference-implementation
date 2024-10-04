@@ -5,7 +5,8 @@ OBJ = obj
 TEST = test
 OUT = out
 INC = src
-TBLIS = -ltblis -lm -L../tblis/lib/.libs -I../tblis/src/external/tci -I../tblis/include -I../tblis/src
+TBLIS = ../tblis
+TBLIS_PARAM = -ltblis -lm -L$(TBLIS)/lib/.libs -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 OBJECTS = $(filter-out obj/tapp.o, $(wildcard obj/*.o))
 CFLAGS = -fPIC
 
@@ -36,10 +37,10 @@ out/test: $(TEST)/test.c $(OBJ)/product.o
 	$(CC) $(CFLAGS) -g  $(TEST)/test.c $(OBJ)/tapp.o -o $(OUT)/test -I$(INC) -I$(INC) -I$(INC)/tapp
 
 out/demo:$(TEST)/demo.c $(OBJ)/tapp.o
-	$(CC) $(CFLAGS) -g  $(TEST)/demo.c $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp $(TBLIS)
+	$(CC) $(CFLAGS) -g  $(TEST)/demo.c $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp $(TBLIS_PARAM)
 
 out/test++: $(TEST)/test.cpp $(OBJ)/tapp.o
-	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o -o $(OUT)/test++ -I$(INC) -I$(INC)/tapp $(TBLIS)
+	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o -o $(OUT)/test++ -I$(INC) -I$(INC)/tapp $(TBLIS_PARAM)
 
 lib/tapp.so: $(OBJ)/tapp.o
 	$(CC) -shared -fPIC $(OBJ)/tapp.o -o lib/tapp.so -I$(INC) -I$(INC)/tapp
