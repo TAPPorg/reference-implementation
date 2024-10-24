@@ -172,12 +172,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     int error_status = 0;
 
-    error_status = error_status == 0 ? check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 7) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 12, 4, 5) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 13, 4, 6) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 14, 5, 6) : error_status;
-    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 8, 9, 10) : error_status;
-    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 11) : error_status;
+    error_status = error_status == 0 ? check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 4) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 9, 1, 2) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 10, 1, 3) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3) : error_status;
+    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7) : error_status;
+    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 8) : error_status;
     if (error_status != 0) {
         free(idx_A);
         free(extents_A);

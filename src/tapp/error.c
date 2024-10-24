@@ -17,46 +17,37 @@ size_t TAPP_explain_error(TAPP_error error,
         error_message = "Success.";
         break;
     case 1:
-        error_message = "Tensor A uses same indices more than once.";
-        break;
-    case 2:
-        error_message = "Tensor B uses same indices more than once.";
-        break;
-    case 3:
-        error_message = "Tensor D uses same indices more than once.";
-        break;
-    case 4:
         error_message = "The extents for the indices shared between tensor A and B does not match.";
         break;
-    case 5:
+    case 2:
         error_message = "The extents for the indices shared between tensor A and D does not match.";
         break;
-    case 6:
+    case 3:
         error_message = "The extents for the indices shared between tensor B and D does not match.";
         break;
-    case 7:
-        error_message = "Tensor A has indices shared with no other tensor.";
-        break;
-    case 8:
-        error_message = "Tensor B has indices shared with no other tensor.";
-        break;
-    case 9:
+    case 4:
         error_message = "Tensor D has indices not shared with tensor A or B.";
         break;
-    case 10:
-        error_message = "Non hadamard operation shares indices between tensor A, B and D";
-        break;
-    case 11:
+    case 5:
         error_message = "The tensors C and D have different amount of dimensions.";
         break;
-    case 12:
+    case 6:
         error_message = "The indices of tensor C and D does not line up.";
         break;
-    case 13:
+    case 7:
         error_message = "The extents for the indices shared between tensor C and D does not match.";
         break;
-    case 14:
+    case 8:
         error_message = "Aliasing found within tensor D.";
+        break;
+    case 9:
+        error_message = "An idx in tensor A has two different extents.";
+        break;
+    case 10:
+        error_message = "An idx in tensor B has two different extents.";
+        break;
+    case 11:
+        error_message = "An idx in tensor D has two different extents.";
         break;
     default:
         break;
