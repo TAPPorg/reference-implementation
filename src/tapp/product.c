@@ -12,28 +12,34 @@
 #ifdef __x86_64__
     typedef _Float16 float16;
 #elif __arm__
-    typedef _fp16 float16;
+    typedef __fp16 float16;
 #endif
 
-int calculate_contracted_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t* idx_contraction);
-void calculate_contracted_extents(int contractions, int64_t* idx_contraction, int nmode, const int64_t* idx, int64_t* extents, int64_t* extents_contraction);
+int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr);
+int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);
+void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr);
 void compile_strides(int64_t* strides, int ndim, const int64_t* idx, int ndim_D, const int64_t* idx_D, int contractions, int64_t* idx_contraction, int64_t* free_strides, int64_t* contracted_strides);
 int64_t calculate_size(int64_t* extents, int nmode);
 void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
 void zero_array(int64_t* arr, int size);
+void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr);
+void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr);
+void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec);
 void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum);
-void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A, int index_A, TAPP_element_op op_A, const void* B, TAPP_datatype type_B, int index_B, TAPP_element_op op_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum);
+void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum);
 void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAPP_prectype prec);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec);
 int check_repeated_idx(int nmode, const int64_t* idx, int error_code);
-int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code);
-int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D);
-int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code);
+int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
+int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code);
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
 int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
 void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right);
 void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right);
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D);
+void* alloc_sum(TAPP_prectype prec, TAPP_datatype type);
+void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type);
+void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
 
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -113,22 +119,18 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_element_op op_A = plan_ptr->op_A;
     TAPP_tensor_info A_info = (TAPP_tensor_info)(plan_ptr->A);
     struct tensor_info* A_info_ptr = (struct tensor_info*)(plan_ptr->A);
-    const int64_t* idx_A = plan_ptr->idx_A;
 
     TAPP_element_op op_B = plan_ptr->op_B;
     TAPP_tensor_info B_info = (TAPP_tensor_info)(plan_ptr->B);
     struct tensor_info* B_info_ptr = (struct tensor_info*)(plan_ptr->B);
-    const int64_t* idx_B = plan_ptr->idx_B;
 
     TAPP_element_op op_C = plan_ptr->op_C;
     TAPP_tensor_info C_info = (TAPP_tensor_info)(plan_ptr->C);
     struct tensor_info* C_info_ptr = (struct tensor_info*)(plan_ptr->C);
-    const int64_t* idx_C = plan_ptr->idx_C;
 
     TAPP_element_op op_D = plan_ptr->op_D;
     TAPP_tensor_info D_info = (TAPP_tensor_info)(plan_ptr->D);
     struct tensor_info* D_info_ptr = (struct tensor_info*)(plan_ptr->D);
-    const int64_t* idx_D = plan_ptr->idx_D;
     
     TAPP_prectype prec = plan_ptr->prec;
 
@@ -138,6 +140,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_get_extents(A_info, extents_A);
     int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
     TAPP_get_strides(A_info, strides_A);
+    int64_t* idx_A = malloc(nmode_A * sizeof(int64_t));
+    memcpy(idx_A, plan_ptr->idx_A, nmode_A * sizeof(int64_t));
 
     TAPP_datatype type_B = B_info_ptr->type;
     int nmode_B = TAPP_get_nmodes(B_info);
@@ -145,6 +149,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_get_extents(B_info, extents_B);
     int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
     TAPP_get_strides(B_info, strides_B);
+    int64_t* idx_B = malloc(nmode_B * sizeof(int64_t));
+    memcpy(idx_B, plan_ptr->idx_B, nmode_B * sizeof(int64_t));
 
     TAPP_datatype type_C = C_info_ptr->type;
     int nmode_C = TAPP_get_nmodes(C_info);
@@ -152,6 +158,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_get_extents(C_info, extents_C);
     int64_t* strides_C = malloc(nmode_C * sizeof(int64_t));
     TAPP_get_strides(C_info, strides_C);
+    int64_t* idx_C = malloc(nmode_C * sizeof(int64_t));
+    memcpy(idx_C, plan_ptr->idx_C, nmode_C * sizeof(int64_t));
 
     TAPP_datatype type_D = D_info_ptr->type;
     int nmode_D = TAPP_get_nmodes(D_info);
@@ -159,87 +167,156 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_get_extents(D_info, extents_D);
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
     TAPP_get_strides(D_info, strides_D);
+    int64_t* idx_D = malloc(nmode_D * sizeof(int64_t));
+    memcpy(idx_D, plan_ptr->idx_D, nmode_D * sizeof(int64_t));
 
     int error_status = 0;
 
-    error_status = check_repeated_idx(nmode_A, idx_A, 1);
-    error_status = error_status == 0 ? check_repeated_idx(nmode_B, idx_B, 2) : error_status;
-    error_status = error_status == 0 ? check_repeated_idx(nmode_D, idx_D, 3) : error_status;
-
-    error_status = error_status == 0 ? check_einsum(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 4, 5) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 4, 6) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 5, 6) : error_status;
-    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 11, 12, 13) : error_status;
-    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 14) : error_status;
+    error_status = error_status == 0 ? check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 7) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 12, 4, 5) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 13, 4, 6) : error_status;
+    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 14, 5, 6) : error_status;
+    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 8, 9, 10) : error_status;
+    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 11) : error_status;
     if (error_status != 0) {
+        free(idx_A);
         free(extents_A);
         free(strides_A);
+        free(idx_B);
         free(extents_B);
         free(strides_B);
+        free(idx_C);
         free(extents_C);
         free(strides_C);
+        free(idx_D);
         free(extents_D);
         free(strides_D);
         return error_status;
     } 
 
-    int contractions = (nmode_A + nmode_B - nmode_D) / 2;
-    int64_t* idx_contraction = malloc(contractions * sizeof(int64_t));
-    contractions = calculate_contracted_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, idx_contraction);
-    idx_contraction = (int64_t*)realloc(idx_contraction, contractions * sizeof(int64_t));
+    compress_repeated_indices(&nmode_A, &idx_A, &extents_A, &strides_A);
+    compress_repeated_indices(&nmode_B, &idx_B, &extents_B, &strides_B);
+    compress_repeated_indices(&nmode_C, &idx_C, &extents_C, &strides_C);
+    compress_repeated_indices(&nmode_D, &idx_D, &extents_D, &strides_D);
 
-    int64_t* extents_contraction = malloc(contractions * sizeof(int64_t));
-    calculate_contracted_extents(contractions, idx_contraction, nmode_A, idx_A, extents_A, extents_contraction);
+    int64_t* idx_binary_contractions = NULL;
+    int binary_contractions = extract_binary_contractions_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, &idx_binary_contractions);
 
-    int size_contraction = calculate_size(extents_contraction, contractions);
+    int64_t* extents_binary_contractions = NULL;
+    extract_extents(binary_contractions, idx_binary_contractions, nmode_A, idx_A, extents_A, &extents_binary_contractions);
 
-    int64_t* free_strides_A = malloc(nmode_D * sizeof(int64_t));
-    int64_t* contracted_strides_A = malloc(contractions * sizeof(int64_t));
-    compile_strides(strides_A, nmode_A, idx_A, nmode_D, idx_D, contractions, idx_contraction, free_strides_A, contracted_strides_A);
+    int size_binary_contractions = calculate_size(extents_binary_contractions, binary_contractions);
 
-    int64_t* free_strides_B = malloc(nmode_D * sizeof(int64_t));
-    int64_t* contracted_strides_B = malloc(contractions * sizeof(int64_t));
-    compile_strides(strides_B, nmode_B, idx_B, nmode_D, idx_D, contractions, idx_contraction, free_strides_B, contracted_strides_B);
+    int64_t* idx_unary_contractions_A = NULL;
+    int unary_contractions_A = extract_unary_contracted_indices(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D, &idx_unary_contractions_A);
 
-    int64_t* coordinates_D = malloc(nmode_D * sizeof(int64_t));
-    zero_array(coordinates_D, nmode_D);
-    int64_t* coordinates_contraction = malloc(contractions * sizeof(int64_t));
-    zero_array(coordinates_contraction, contractions);
+    int64_t* extents_unary_contractions_A = NULL;
+    extract_extents(unary_contractions_A, idx_unary_contractions_A, nmode_A, idx_A, extents_A, &extents_unary_contractions_A);
 
-    int64_t size_D = calculate_size(extents_D, nmode_D);
+    int size_unary_contractions_A = calculate_size(extents_unary_contractions_A, unary_contractions_A);
+
+    int64_t* idx_unary_contractions_B = NULL;
+    int unary_contractions_B = extract_unary_contracted_indices(nmode_B, idx_B, nmode_A, idx_A, nmode_D, idx_D, &idx_unary_contractions_B);
+    
+    int64_t* extents_unary_contractions_B = NULL;
+    extract_extents(unary_contractions_B, idx_unary_contractions_B, nmode_B, idx_B, extents_B, &extents_unary_contractions_B);
+
+    int size_unary_contractions_B = calculate_size(extents_unary_contractions_B, unary_contractions_B);
+
+    int64_t* strides_free_A = NULL;
+    extract_free_strides(nmode_A, idx_A, strides_A, nmode_D, idx_D, &strides_free_A);
+
+    int64_t* strides_binary_contractions_A = NULL;
+    extract_contracted_strides(nmode_A, idx_A, strides_A, binary_contractions, idx_binary_contractions, &strides_binary_contractions_A);
+    
+    int64_t* strides_unary_contractions_A = NULL;
+    extract_contracted_strides(nmode_A, idx_A, strides_A, unary_contractions_A, idx_unary_contractions_A, &strides_unary_contractions_A);
+    
+    int64_t* strides_free_B = NULL;
+    extract_free_strides(nmode_B, idx_B, strides_B, nmode_D, idx_D, &strides_free_B);
+
+    int64_t* strides_binary_contractions_B = NULL;
+    extract_contracted_strides(nmode_B, idx_B, strides_B, binary_contractions, idx_binary_contractions, &strides_binary_contractions_B);
+    
+    int64_t* strides_unary_contractions_B = NULL;
+    extract_contracted_strides(nmode_B, idx_B, strides_B, unary_contractions_B, idx_unary_contractions_B, &strides_unary_contractions_B);
+
+    int64_t* coordinates_free = malloc(nmode_D * sizeof(int64_t));
+    zero_array(coordinates_free, nmode_D);
+
+    int64_t* coordinates_binary_contractions = malloc(binary_contractions * sizeof(int64_t));
+    zero_array(coordinates_binary_contractions, binary_contractions);
+
+    int64_t* coordinates_unary_contractions_A = malloc(unary_contractions_A * sizeof(int64_t));
+    zero_array(coordinates_unary_contractions_A, unary_contractions_A);
+    
+    int64_t* coordinates_unary_contractions_B = malloc(unary_contractions_B * sizeof(int64_t));
+    zero_array(coordinates_unary_contractions_B, unary_contractions_B);
+
+    int64_t size_free = calculate_size(extents_D, nmode_D);
 
     void* accum = alloc_accum(prec, type_D);
+    void* sum_A = alloc_sum(prec, type_A);
+    void* sum_B = alloc_sum(prec, type_B);
 
-    for (int i = 0; i < size_D; i++) {
-        int index_A_free = 0; // Index calculated from free indices of A
-        int index_B_free = 0; // Index calculated from free indices of B
+    for (int i = 0; i < size_free; i++) {
+        int index_free_A = 0; // Index calculated from free indices of A
+        int index_free_B = 0; // Index calculated from free indices of B
         int index_C = 0;
         int index_D = 0;
         for (int j = 0; j < nmode_D; j++) {
-            index_A_free += coordinates_D[j] * free_strides_A[j];
-            index_B_free += coordinates_D[j] * free_strides_B[j];
-            index_C += coordinates_D[j] * strides_C[j];
-            index_D += coordinates_D[j] * strides_D[j];
+            index_free_A += coordinates_free[j] * strides_free_A[j];
+            index_free_B += coordinates_free[j] * strides_free_B[j];
+            index_C += coordinates_free[j] * strides_C[j];
+            index_D += coordinates_free[j] * strides_D[j];
         }
         calculate_beta_C(beta, C, type_C, index_C, op_C, prec, accum, type_D);
-        for (int j = 0; j < size_contraction; j++) {
-            int index_A = index_A_free;
-            int index_B = index_B_free;
-            for (int i = 0; i < contractions; i++)
+        for (int j = 0; j < size_binary_contractions; j++) {
+            int index_binary_contractions_A = index_free_A;
+            int index_binary_contractions_B = index_free_B;
+            for (int k = 0; k < binary_contractions; k++)
             {
-                index_A += coordinates_contraction[i] * contracted_strides_A[i];
-                index_B += coordinates_contraction[i] * contracted_strides_B[i];
+                index_binary_contractions_A += coordinates_binary_contractions[k] * strides_binary_contractions_A[k];
+                index_binary_contractions_B += coordinates_binary_contractions[k] * strides_binary_contractions_B[k];
             }
-            calculate_alpha_A_B(alpha, A, type_A, index_A, op_A, B, type_B, index_B, op_B, prec, accum, type_D);
-            increment_coordinates(coordinates_contraction, contractions, extents_contraction);
+            zero_sum(sum_A, prec, type_A);
+            for (int k = 0; k < size_unary_contractions_A; k++)
+            {
+                int index_unary_contractions_A = index_binary_contractions_A;
+                for (int l = 0; l < unary_contractions_A; l++)
+                {
+                    index_unary_contractions_A += coordinates_unary_contractions_A[l] * strides_unary_contractions_A[l];
+                }
+                sum_unary_contractions(sum_A, A, index_unary_contractions_A, op_A, type_A, prec);
+                increment_coordinates(coordinates_unary_contractions_A, unary_contractions_A, extents_unary_contractions_A);
+            }
+            zero_sum(sum_B, prec, type_B);
+            for (int k = 0; k < size_unary_contractions_B; k++)
+            {
+                int index_unary_contractions_B = index_binary_contractions_B;
+                for (int l = 0; l < unary_contractions_B; l++)
+                {
+                    index_unary_contractions_B += coordinates_unary_contractions_B[l] * strides_unary_contractions_B[l];
+                }
+                sum_unary_contractions(sum_B, B, index_unary_contractions_B, op_B, type_B, prec);
+                increment_coordinates(coordinates_unary_contractions_B, unary_contractions_B, extents_unary_contractions_B);
+            }
+            
+            calculate_alpha_A_B(alpha, sum_A, type_A, sum_B, type_B, prec, accum, type_D);
+            increment_coordinates(coordinates_binary_contractions, binary_contractions, extents_binary_contractions);
         }
         calculate_op_D(accum, type_D, op_D, prec);
         assign_D(D, type_D, index_D, accum, prec);
-        increment_coordinates(coordinates_D, nmode_D, extents_D);
+        increment_coordinates(coordinates_free, nmode_D, extents_D);
     }
 
     free(accum);
+    free(sum_A);
+    free(sum_B);
+    free(idx_A);
+    free(idx_B);
+    free(idx_C);
+    free(idx_D);
     free(extents_A);
     free(strides_A);
     free(extents_B);
@@ -248,50 +325,118 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     free(strides_C);
     free(extents_D);
     free(strides_D);
-    free(idx_contraction);
-    free(extents_contraction);
-    free(free_strides_A);
-    free(contracted_strides_A);
-    free(free_strides_B);
-    free(contracted_strides_B);
-    free(coordinates_D);
-    free(coordinates_contraction);
+    free(idx_binary_contractions);
+    free(extents_binary_contractions);
+    free(strides_free_A);
+    free(strides_binary_contractions_A);
+    free(strides_unary_contractions_A);
+    free(strides_free_B);
+    free(strides_binary_contractions_B);
+    free(strides_unary_contractions_B);
+    free(coordinates_free);
+    free(coordinates_binary_contractions);
+    free(extents_unary_contractions_A);
+    free(extents_unary_contractions_B);
+    free(coordinates_unary_contractions_A);
+    free(coordinates_unary_contractions_B);
     return 0;
 }
 
-int calculate_contracted_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t* idx_contraction) {
-    int k = 0;
+int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr) {
+    int binary_contractions = 0;
+    int64_t* idx_contraction = malloc(((nmode_A + nmode_B - nmode_D) / 2)*sizeof(int64_t)); //Allocate for worst case
     for (int i = 0; i < nmode_A; i++) {
         bool index_found_in_B = false;
-        bool index_found_in_D = false;
         for (int j = 0; j < nmode_B; j++) {
             if (idx_A[i] == idx_B[j]) {
                 index_found_in_B = true;
                 break;
             }
         }
+        if (!index_found_in_B) continue;
+        bool index_found_in_D = false;
         for (int j = 0; j < nmode_D; j++) {
             if (idx_A[i] == idx_D[j]) {
                 index_found_in_D = true;
                 break;
             }
         }
-        if (index_found_in_B && !index_found_in_D) {
-            idx_contraction[k] = idx_A[i];
-            k++;
-        }
+        if (index_found_in_D) continue;
+        idx_contraction[binary_contractions] = idx_A[i];
+        binary_contractions++;
     }
-    return k;
+    idx_contraction = realloc(idx_contraction, binary_contractions * sizeof(int64_t)); //Reallocate for right amount
+    *idx_contraction_ptr = idx_contraction;
+    return binary_contractions;
 }
 
-void calculate_contracted_extents(int contractions, int64_t* idx_contraction, int nmode, const int64_t* idx, int64_t* extents, int64_t* extents_contraction) {
-    for (int i = 0; i < contractions; i++) {
+void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr) {
+    int64_t* extracted_extents = malloc(nr_extents * sizeof(int64_t));
+    for (int i = 0; i < nr_extents; i++) {
         for (int j = 0; j < nmode; j++) {
-            if (idx_contraction[i] == idx[j]) {
-                extents_contraction[i] = extents[j];
+            if (idx_extraction[i] == idx[j]) {
+                extracted_extents[i] = extents[j];
             }
         }
     }
+    *extracted_extents_ptr = extracted_extents;
+}
+
+int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr) {
+    int unary_contractions = 0;
+    int64_t* idx_unary_contractions = malloc(nmode * sizeof(int64_t));
+    for (size_t i = 0; i < nmode; i++)
+    {
+        bool found = false;
+        for (size_t j = 0; j < nmode_1; j++) {
+            if (idx[i] == idx_1[j]) {
+                found = true;
+                break;
+            }
+        }
+        if (found) continue;
+        for (size_t j = 0; j < nmode_2; j++) {
+            if (idx[i] == idx_2[j]) {
+                found = true;
+                break;
+            }
+        }
+        if (found) continue;
+        idx_unary_contractions[unary_contractions] = idx[i];
+        unary_contractions++;
+    }
+    idx_unary_contractions = realloc(idx_unary_contractions, unary_contractions * sizeof(int64_t));
+    *idx_unary_contractions_ptr = idx_unary_contractions;
+    return unary_contractions;
+}
+
+void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr) {
+    int64_t* strides_free = malloc(nmode_D * sizeof(int64_t));
+    for (int i = 0; i < nmode_D; i++) {
+        bool index_found = false;
+        for (int j = 0; j < nmode; j++) {
+            if (idx_D[i] == idx[j]) {
+                strides_free[i] = strides[j];
+                index_found = true;
+            }
+        }
+        if (!index_found) {
+            strides_free[i] = 0;
+        }
+    }
+    *strides_free_ptr = strides_free;
+}
+
+void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr) {
+    int64_t* strides_contractions = malloc(contractions * sizeof(int64_t));
+    for (int i = 0; i < contractions; i++) {
+        for (int j = 0; j < nmode; j++) {
+            if (idx_contraction[i] == idx[j]) {
+                strides_contractions[i] = strides[j];
+            }
+        }
+    }
+    *strides_contractions_ptr = strides_contractions;
 }
 
 void compile_strides(int64_t* strides, int nmode, const int64_t* idx, int nmode_D, const int64_t* idx_D, int contractions, int64_t* idx_contraction, int64_t* free_strides, int64_t* contracted_strides) {
@@ -370,8 +515,7 @@ int check_repeated_idx(int nmode, const int64_t* idx, int error_code) {
     return 0;
 }
 
-int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int no_occurrence_code, int unknown_operation_code) {
-    int double_occurrence_count = 0;
+int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code) {
     for (size_t i = 0; i < nmode_origin; i++) {
         int idx_found = 0;
         for (size_t j = 0; j < nmode_test_A; j++)
@@ -388,60 +532,31 @@ int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_
                 break;
             }
         }
-        if (idx_found == 0) { //No other occurrence, unused idx, error
-            return no_occurrence_code;
+        if (idx_found == 0) { //No other occurrence, error
+            return unique_idx_code;
         }
-        else if (idx_found == 2)
-        {
-            double_occurrence_count++;
-        }
-    }
-
-    if (double_occurrence_count == 0) { //Not hadamard, no error
-        return 0;
-    }
-    else if (double_occurrence_count == nmode_origin) { //Might be hadamard, no error
-        return 1;
-    }
-    else { //Both singel and double occurrence, neither hadamard nor contraction, error
-        return unknown_operation_code;
-    }
-}
-
-int check_einsum(int nmode_A, const int64_t* idx_A, int nmode_B, const int64_t* idx_B, int nmode_D, const int64_t* idx_D) {
-    int status_A = check_idx_occurrence(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D, -7, -10);
-    if (status_A < 0) {
-        return -status_A;
-    }
-
-    int status_B = check_idx_occurrence(nmode_B, idx_B, nmode_A, idx_A, nmode_D, idx_D, -8, -10);
-    if (status_B < 0) {
-        return -status_B;
-    }
-
-    int status_D = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, -9, -10);
-    if (status_D < 0) {
-        return -status_D;
-    }
-    
-    if (status_A != status_B || status_A != status_D) {
-        return 10;
     }
     return 0;
 }
 
-int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AB_code, int missmatch_AD_code) {
+int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code) {
     for (size_t i = 0; i < nmode_A; i++)
     {
+        for (size_t j = 0; j < nmode_A; j++)
+        {
+            if (idx_A[i] == idx_A[j] && extents_A[i] != extents_A[j]) {
+                return missmatch_AA_code;
+            }
+        }
         for (size_t j = 0; j < nmode_B; j++)
         {
-            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B [j]) {
+            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B[j]) {
                 return missmatch_AB_code;
             }
         }
         for (size_t j = 0; j < nmode_D; j++)
         {
-            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D [j]) {
+            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D[j]) {
                 return missmatch_AD_code;
             }
         }
@@ -527,14 +642,27 @@ void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int ri
     
     int i = 0, j = 0, k = left;
     while (i < n1 && j < n2) {
-        if (Ls[i] <= Rs[j]) {
+        if (Ls[i] < Rs[j]) {
             strides[k] = Ls[i];
             extents[k] = Le[i];
             i++;
-        } else {
+        }
+        else if (Ls[i] > Rs[j]) {
             strides[k] = Rs[j];
-            extents[k] = Re[i];
+            extents[k] = Re[j];
             j++;
+        }
+        else {
+            if (Le[i] <= Re[j]) {
+                strides[k] = Ls[i];
+                extents[k] = Le[i];
+                i++;
+            }
+            else {
+                strides[k] = Rs[j];
+                extents[k] = Re[j];
+                j++;
+            }
         }
         k++;
     }
@@ -552,6 +680,45 @@ void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int ri
         j++;
         k++;
     }
+}
+
+void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides) {
+    int new_nmode = 0;
+    int64_t* new_idx = malloc(*nmode * sizeof(int64_t));
+    int64_t* new_extents = malloc(*nmode * sizeof(int64_t));
+    int64_t* new_strides = malloc(*nmode * sizeof(int64_t));
+    for (size_t i = 0; i < *nmode; i++)
+    {
+        bool found = false;
+        for (size_t j = 0; j < new_nmode; j++)
+        {
+            if ((*idx)[i] == new_idx[j]) {
+                found = true;
+            }
+        }
+        if (!found) {
+            new_idx[new_nmode] = (*idx)[i];
+            new_extents[new_nmode] = (*extents)[i];
+            new_strides[new_nmode] = 0;
+            for (size_t j = 0; j < *nmode; j++)
+            {
+                if ((*idx)[i] == (*idx)[j]) {
+                    new_strides[new_nmode] += (*strides)[j];
+                }
+            }
+            new_nmode++;
+        }
+    }
+    new_idx = realloc(new_idx, new_nmode * sizeof(int64_t));
+    new_extents = realloc(new_extents, new_nmode * sizeof(int64_t));
+    new_strides = realloc(new_strides, new_nmode * sizeof(int64_t));
+    free(*idx);
+    free(*extents);
+    free(*strides);
+    *nmode = new_nmode;
+    *idx = new_idx;
+    *extents = new_extents;
+    *strides = new_strides;
 }
 
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D) {
@@ -627,6 +794,336 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D) {
     return NULL;
 }
 
+void* alloc_sum(TAPP_prectype prec, TAPP_datatype type) {
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
+        switch (type)
+        {
+        case TAPP_F32:
+            return malloc(sizeof(float));
+            break;
+        case TAPP_F64:
+            return malloc(sizeof(double));
+            break;
+        case TAPP_C32:
+            return malloc(sizeof(float complex));
+            break;
+        case TAPP_C64:
+            return malloc(sizeof(double complex));
+            break;
+        case TAPP_F16:
+            return malloc(sizeof(float16));
+            break;
+        case TAPP_BF16:
+            //return malloc(sizeof(__bf16));
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F32F32_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+        case TAPP_F64:
+        case TAPP_F16:
+        case TAPP_BF16:
+            return malloc(sizeof(float));
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            return malloc(sizeof(float complex));
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        switch (type)
+        {
+        case TAPP_F32:
+        case TAPP_F64:
+        case TAPP_F16:
+        case TAPP_BF16:
+            return malloc(sizeof(double));
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            return malloc(sizeof(double complex));
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+    case TAPP_F16F16_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+        case TAPP_F64:
+        case TAPP_F16:
+        case TAPP_BF16:
+            return malloc(sizeof(float16));
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*switch (type)
+        {
+        case TAPP_F32:
+        case TAPP_F64:
+        case TAPP_F16:
+        case TAPP_BF16:
+            return malloc(sizeof(__bf16));
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        default:
+            break;
+        }*/
+        break;
+    default:
+        break;
+    }
+    return NULL;
+}
+
+void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type) {
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
+        switch (type)
+        {
+        case TAPP_F32:
+            *((float*)sum) = 0;
+            break;
+        case TAPP_F64:
+            *((double*)sum) = 0;
+            break;
+        case TAPP_C32:
+            *((float complex*)sum) = 0;
+            break;
+        case TAPP_C64:
+            *((double complex*)sum) = 0;
+            break;
+        case TAPP_F16:
+            *((float16*)sum) = 0;
+            break;
+        case TAPP_BF16:
+            //*((__bf16*)sum) = 0;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F32F32_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F16:
+        case TAPP_BF16:
+        case TAPP_F32:
+        case TAPP_F64:
+            *((float*)sum) = 0;
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            *((float complex*)sum) = 0;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        switch (type)
+        {
+        case TAPP_F16:
+        case TAPP_BF16:
+        case TAPP_F32:
+        case TAPP_F64:
+            *((double*)sum) = 0;
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            *((double complex*)sum) = 0;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+    case TAPP_F16F16_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F16:
+        case TAPP_BF16:
+        case TAPP_F32:
+        case TAPP_F64:
+            *((float16*)sum) = 0;
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*switch (type)
+        {
+        case TAPP_F16:
+        case TAPP_BF16:
+        case TAPP_F32:
+        case TAPP_F64:
+            *((__bf16*)sum) = 0;
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        default:
+            break;
+        }*/
+        break;
+    default:
+        break;
+    }
+}
+
+void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec) {
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(float*)sum += ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(double*)sum += ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(float complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(double complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(float16*)sum += ((float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(__bf16*)sum += ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F32F32_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(float*)sum += ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(float*)sum += ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(float complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(float complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(float*)sum += ((float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(float*)sum += ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(double*)sum += ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(double*)sum += ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(double complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(double complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(double*)sum += ((float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(double*)sum += ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+    case TAPP_F16F16_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(float16*)sum += ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(float16*)sum += ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        case TAPP_F16:
+            *(float16*)sum += ((float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(float16*)sum += ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*switch (type)
+        {
+        case TAPP_F32:
+            *(__bf16*)sum += ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(__bf16*)sum += ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+        case TAPP_C64:
+            break;
+        case TAPP_F16:
+            *(__bf16*)sum += ((float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            *(__bf16*)sum += ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }*/
+        break;
+    
+    default:
+        break;
+    }
+}
+
 void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum) {
     switch (prec)
     {
@@ -637,10 +1134,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float*)accum) = *((float*)beta) * ((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((float*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -649,10 +1146,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((float*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((float*)accum) = *((float16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -662,10 +1159,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((double*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((double*)accum) = *((float*)beta) * ((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((double*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((double*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((double*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -674,10 +1171,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((double*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((double*)accum) = *((float16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((double*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((double*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((double*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -687,10 +1184,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float complex*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float complex*)accum) = *((float*)beta) *((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float complex*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float complex*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((float complex*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -699,10 +1196,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((float complex*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((float complex*)accum) = *((float16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float complex*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float complex*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float complex*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -712,10 +1209,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((double complex*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((double complex*)accum) = *((float*)beta) * ((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((double complex*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((double complex*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((double complex*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -724,10 +1221,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((double complex*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((double complex*)accum) = *((float16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((double complex*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((double complex*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((double complex*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -737,10 +1234,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float16*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float16*)accum) = *((float*)beta) * ((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float16*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float16*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((float16*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -749,10 +1246,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((float16*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((float16*)accum) = *((float16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float16*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((__fp16*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((__fp16*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -762,10 +1259,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             /*switch (type_C)
             {
             case TAPP_F32:
-                *((__bf16*)accum) = *((float*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((__bf16*)accum) = *((float*)beta) * ((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((__bf16*)accum) = *((double*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((__bf16*)accum) = *((double*)beta) * ((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((__bf16*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -774,10 +1271,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((__bf16*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((__bf16*)accum) = *((__fp16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__fp16*)C)[index_C]) : ((__fp16*)C)[index_C]);
+                *((__bf16*)accum) = *((__fp16*)beta) * ((__fp16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                *((__bf16*)accum) = *((__bf16*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                *((__bf16*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -797,10 +1294,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float*)accum) = (float)*((float*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float*)accum) = (float)*((float*)beta) * (float)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float*)accum) = (float)*((double*)beta) * (float)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float*)accum) = (float)*((double*)beta) * (float)((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((float*)accum) = (float complex)*((float complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -809,10 +1306,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((float*)accum) = (float complex)*((double complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((float*)accum) = (float)*((float16*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float*)accum) = (float)*((float16*)beta) * (float)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float*)accum) = (float)*((__bf16*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float*)accum) = (float)*((__bf16*)beta) * (float)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -823,10 +1320,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float complex*)accum) = (float)*((float*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float complex*)accum) = (float)*((float*)beta) * (float)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float complex*)accum) = (float)*((double*)beta) * (float)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float complex*)accum) = (float)*((double*)beta) * (float)((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((float complex*)accum) = (float complex)*((float complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -835,10 +1332,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((float complex*)accum) = (float complex)*((double complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((float complex*)accum) = (float)*((float16*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float complex*)accum) = (float)*((float16*)beta) * (float)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float complex*)accum) = (float)*((__bf16*)beta) * (float)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float complex*)accum) = (float)*((__bf16*)beta) * (float)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -858,10 +1355,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((double*)accum) = (double)*((float*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((double*)accum) = (double)*((float*)beta) * (double)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((double*)accum) = (double)*((double*)beta) * (double)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((double*)accum) = (double)*((double*)beta) * (double)((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((double*)accum) = (double complex)*((float complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -870,10 +1367,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((double*)accum) = (double complex)*((double complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((double*)accum) = (double)*((float16*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((double*)accum) = (double)*((float16*)beta) * (double)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((double*)accum) = (double)*((__bf16*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((double*)accum) = (double)*((__bf16*)beta) * (double)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -884,10 +1381,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((double complex*)accum) = (double)*((float*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((double complex*)accum) = (double)*((float*)beta) * (double)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((double complex*)accum) = (double)*((double*)beta) * (double)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((double complex*)accum) = (double)*((double*)beta) * (double)((double*)C)[index_C];
                 break;
             case TAPP_C32:
                 *((double complex*)accum) = (double complex)*((float complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
@@ -896,10 +1393,10 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
                 *((double complex*)accum) = (double complex)*((double complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
                 break;
             case TAPP_F16:
-                *((double complex*)accum) = (double)*((float16*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((double complex*)accum) = (double)*((float16*)beta) * (double)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((double complex*)accum) = (double)*((__bf16*)beta) * (double)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((double complex*)accum) = (double)*((__bf16*)beta) * (double)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -919,16 +1416,16 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float16*)accum) = (float16)*((float*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float16*)accum) = (float16)*((float*)beta) * (float16)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float16*)accum) = (float16)*((double*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float16*)accum) = (float16)*((double*)beta) * (float16)((double*)C)[index_C];
                 break;
             case TAPP_F16:
-                *((float16*)accum) = (float16)*((float16*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float16*)accum) = (float16)*((float16*)beta) * (float16)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float16*)accum) = (float16)*((__bf16*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float16*)accum) = (float16)*((__bf16*)beta) * (float16)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -948,16 +1445,16 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             switch (type_C)
             {
             case TAPP_F32:
-                *((float*)accum) = (float16)*((float*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float*)accum) = (float16)*((float*)beta) * (float16)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float*)accum) = (float16)*((double*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float*)accum) = (float16)*((double*)beta) * (float16)((double*)C)[index_C];
                 break;
             case TAPP_F16:
-                *((float*)accum) = (float16)*((float16*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float*)accum) = (float16)*((float16*)beta) * (float16)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                //*((float*)accum) = (float16)*((__bf16*)beta) * (float16)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                //*((float*)accum) = (float16)*((__bf16*)beta) * (float16)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -977,16 +1474,16 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
             /*switch (type_C)
             {
             case TAPP_F32:
-                *((float*)accum) = (__bf16)*((float*)beta) * (__bf16)(op_C == TAPP_CONJUGATE ? conjf(((float*)C)[index_C]) : ((float*)C)[index_C]);
+                *((float*)accum) = (__bf16)*((float*)beta) * (__bf16)((float*)C)[index_C];
                 break;
             case TAPP_F64:
-                *((float*)accum) = (__bf16)*((double*)beta) * (__bf16)(op_C == TAPP_CONJUGATE ? conj(((double*)C)[index_C]) : ((double*)C)[index_C]);
+                *((float*)accum) = (__bf16)*((double*)beta) * (__bf16)((double*)C)[index_C];
                 break;
             case TAPP_F16:
-                *((float*)accum) = (__bf16)*((float16*)beta) * (__bf16)(op_C == TAPP_CONJUGATE ? conjf(((float16*)C)[index_C]) : ((float16*)C)[index_C]);
+                *((float*)accum) = (__bf16)*((float16*)beta) * (__bf16)((float16*)C)[index_C];
                 break;
             case TAPP_BF16:
-                *((float*)accum) = (__bf16)*((__bf16*)beta) * (__bf16)(op_C == TAPP_CONJUGATE ? conjf(((__bf16*)C)[index_C]) : ((__bf16*)C)[index_C]);
+                *((float*)accum) = (__bf16)*((__bf16*)beta) * (__bf16)((__bf16*)C)[index_C];
                 break;
             default:
                 break;
@@ -1001,7 +1498,7 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
     }
 }
 
-void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A, int index_A, TAPP_element_op op_A, const void* B, TAPP_datatype type_B, int index_B, TAPP_element_op op_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum) {
+void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum) {
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -1014,22 +1511,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1039,22 +1536,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1064,22 +1561,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1089,22 +1586,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1114,22 +1611,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((__fp16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1139,26 +1636,27 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 /*switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
                 break;
                 case TAPP_C64:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((float*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
+               break;
             default:
                 break;
             }
@@ -1170,22 +1668,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1195,22 +1693,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1220,22 +1718,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1245,22 +1743,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1270,22 +1768,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((__fp16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1295,27 +1793,27 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 /*switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                    break;
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
+                break;
                 case TAPP_C64:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((double*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-                break;
+               break;
             default:
                 break;
             }
@@ -1327,22 +1825,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1352,22 +1850,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1377,22 +1875,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1402,22 +1900,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1427,22 +1925,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((__fp16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1452,27 +1950,27 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 /*switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                    break;
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
+                break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((float complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-                break;
+               break;
             default:
                 break;
             }
@@ -1484,22 +1982,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1509,22 +2007,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1534,22 +2032,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1559,22 +2057,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1584,22 +2082,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((__fp16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1609,27 +2107,27 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 /*switch (type_B)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                    break;
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
+                break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((double complex*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-                break;
+               break;
             default:
                 break;
             }
@@ -1641,22 +2139,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((__fp16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1666,22 +2164,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((__fp16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1691,22 +2189,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((__fp16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1716,22 +2214,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((__fp16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1741,26 +2239,53 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((__fp16*)accum) += *((__fp16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    //*((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }
+                break;
+            case TAPP_BF16:
+                /*switch (type_B)
+                {
+                case TAPP_F32:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
+                break;
+                case TAPP_C64:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+               break;
+            default:
                 break;
             }
             break;
@@ -1771,22 +2296,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((float*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1796,22 +2321,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((double*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1821,22 +2346,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((float complex*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1846,22 +2371,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((double complex*)alpha) * (op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1871,22 +2396,22 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -1896,27 +2421,27 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
                 switch (type_B)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                    break;
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
+                break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * (op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }
-                break;
+               break;
             default:
                 break;
             }*/
@@ -1926,619 +2451,487 @@ void calculate_alpha_A_B(const void* alpha, const void* A, TAPP_datatype type_A,
         }
         break;
     case TAPP_F32F32_ACCUM_F32:
-        switch (type_A)
+        switch (type_accum)
         {
         case TAPP_F32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float)*((float*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_F64:
-            switch (type_B)
+        case TAPP_F16:
+        case TAPP_BF16:
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                *((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
             case TAPP_C64:
-                *((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float)*((double*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float complex)*((float complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_C64:
-            switch (type_B)
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                *((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
             case TAPP_C64:
-                *((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float complex)*((double complex*)alpha) * (float complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
-        case TAPP_F16:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float)*((float16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float)*((float16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((float*)accum) += (float)*((float16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((float*)accum) += (float)*((float16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float)*((float16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float)*((__fp16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
-        case TAPP_BF16:
-            /*switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-            break;
-            case TAPP_C64:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                *((float*)accum) += (float)*((__bf16*)alpha) * (float)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }*/
         default:
             break;
         }
         break;
     case TAPP_F64F64_ACCUM_F64:
-        switch (type_A)
+        switch (type_accum)
         {
         case TAPP_F32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((double*)accum) += (double)*((float*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_F64:
-            switch (type_B)
+        case TAPP_F16:
+        case TAPP_BF16:
+            switch (type_A)
             {
             case TAPP_F32:
-                *((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                *((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
             case TAPP_C64:
-                *((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((double*)accum) += (double)*((double*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((double*)accum) += (double complex)*((float complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conjf(((float complex*)A)[index_A]) : ((float complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_C64:
-            switch (type_B)
+            switch (type_A)
             {
             case TAPP_F32:
-                *((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                *((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
             case TAPP_C64:
-                *((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((double*)accum) += (double complex)*((double complex*)alpha) * (double complex)(op_A == TAPP_CONJUGATE ? conj(((double complex*)A)[index_A]) : ((double complex*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
-        case TAPP_F16:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((double*)accum) += (double)*((float16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((double*)accum) += (double)*((float16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((double*)accum) += (double)*((float16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-                break;
-            case TAPP_C64:
-                *((double*)accum) += (double)*((float16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double)*((float16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (double)*((__fp16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
-        case TAPP_BF16:
-            /*switch (type_B)
-            {
-            case TAPP_F32:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conjf(((float complex*)B)[index_B]) : ((float complex*)B)[index_B]);
-            break;
-            case TAPP_C64:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double complex)(op_B == TAPP_CONJUGATE ? conj(((double complex*)B)[index_B]) : ((double complex*)B)[index_B]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                *((double*)accum) += (double)*((__bf16*)alpha) * (double)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (double)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }*/
         default:
             break;
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
-        switch (type_A)
+        switch (type_accum)
         {
         case TAPP_F32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float16*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float16*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float16*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float16*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_F64:
-            switch (type_B)
+        case TAPP_F16:
+        case TAPP_BF16:
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float16*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float16*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float16*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float16*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            break;
         case TAPP_C64:
-            break;
-        case TAPP_F16:
-            switch (type_B)
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float16*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float16*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float16*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float16*)accum) += (float16)*((__fp16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
-        case TAPP_BF16:
-            /*switch (type_B)
-            {
-            case TAPP_F32:
-                *((float16*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float16*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float16*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                *((float16*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }*/
         default:
             break;
         }
         break;
     case TAPP_F16F16_ACCUM_F32:
-        switch (type_A)
+        switch (type_accum)
         {
         case TAPP_F32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float16)*((float*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_F64:
-            switch (type_B)
+        case TAPP_F16:
+        case TAPP_BF16:
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float16)*((double*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            break;
         case TAPP_C64:
-            break;
-        case TAPP_F16:
-            switch (type_B)
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float16)*((float16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (float16)*((__fp16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
-        case TAPP_BF16:
-            /*switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                *((float*)accum) += (float16)*((__bf16*)alpha) * (float16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (float16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }*/
         default:
             break;
         }
         break;
     case TAPP_BF16BF16_ACCUM_F32:
-        /*switch (type_A)
+        /*switch (type_accum)
         {
         case TAPP_F32:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (__bf16)*((float*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (__bf16)*((float*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (__bf16)*((float*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (__bf16)*((float*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float*)A)[index_A]) : ((float*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
-            break;
         case TAPP_F64:
-            switch (type_B)
+        case TAPP_F16:
+        case TAPP_BF16:
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (__bf16)*((double*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (__bf16)*((double*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (__bf16)*((double*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (__bf16)*((double*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conj(((double*)A)[index_A]) : ((double*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            break;
         case TAPP_C64:
-            break;
-        case TAPP_F16:
-            switch (type_B)
+            switch (type_A)
             {
             case TAPP_F32:
-                *((float*)accum) += (__bf16)*((float16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
             case TAPP_F64:
-                *((float*)accum) += (__bf16)*((float16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
+            case TAPP_F16:
+            case TAPP_BF16:
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case TAPP_C32:
-                break;
             case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (__bf16)*((float16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((float16*)A)[index_A]) : ((float16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float16*)B)[index_B]) : ((float16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) += (__bf16)*((__fp16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((__fp16*)A)[index_A]) : ((__fp16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
+                switch (type_B)
+                {
+                case TAPP_F32:
+                case TAPP_F64:
+                case TAPP_F16:
+                case TAPP_BF16:
+                    break;
+                case TAPP_C32:
+                case TAPP_C64:
+                    break;
+                default:
+                    break;
+                }
                 break;
             default:
                 break;
             }
             break;
-        case TAPP_BF16:
-            switch (type_B)
-            {
-            case TAPP_F32:
-                *((float*)accum) += (__bf16)*((__bf16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((float*)B)[index_B]) : ((float*)B)[index_B]);
-                break;
-            case TAPP_F64:
-                *((float*)accum) += (__bf16)*((__bf16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conj(((double*)B)[index_B]) : ((double*)B)[index_B]);
-                break;
-            case TAPP_C32:
-                break;
-            case TAPP_C64:
-                break;
-            case TAPP_F16:
-                *((float*)accum) += (__bf16)*((__bf16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((__fp16*)B)[index_B]) : ((__fp16*)B)[index_B]);
-                break;
-            case TAPP_BF16:
-                *((float*)accum) += (__bf16)*((__bf16*)alpha) * (__bf16)(op_A == TAPP_CONJUGATE ? conjf(((__bf16*)A)[index_A]) : ((__bf16*)A)[index_A]) * (__bf16)(op_B == TAPP_CONJUGATE ? conjf(((__bf16*)B)[index_B]) : ((__bf16*)B)[index_B]);
-                break;
-            default:
-                break;
-            }
         default:
             break;
         }*/
@@ -2555,14 +2948,7 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         switch (type_D)
         {
         case TAPP_F32:
-            if (op_D == TAPP_CONJUGATE) {
-                *((float*)accum) = conjf(*((float*)accum));
-            }
-            break;
         case TAPP_F64:
-            if (op_D == TAPP_CONJUGATE) {
-                *((double*)accum) = conj(*((double*)accum));
-            }
             break;
         case TAPP_C32:
             if (op_D == TAPP_CONJUGATE) {
@@ -2575,14 +2961,7 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
             }
             break;
         case TAPP_F16:
-            if (op_D == TAPP_CONJUGATE) {
-                *((float16*)accum) = conjf(*((float16*)accum));
-            }
-            break;
         case TAPP_BF16:
-            /*if (op_D == TAPP_CONJUGATE) {
-                *((__bf16*)accum) = conjf(*((__bf16*)accum));
-            }*/
             break;
         default:
             break;
@@ -2597,9 +2976,6 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_F64:
         case TAPP_F16:
         case TAPP_BF16:
-            if (op_D == TAPP_CONJUGATE) {
-                *((float*)accum) = conjf(*((float*)accum));
-            }
             break;
         case TAPP_C32:
         case TAPP_C64:
@@ -2618,9 +2994,6 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_F64:
         case TAPP_F16:
         case TAPP_BF16:
-            if (op_D == TAPP_CONJUGATE) {
-                *((double*)accum) = conjf(*((double*)accum));
-            }
             break;
         case TAPP_C32:
         case TAPP_C64:
@@ -2633,7 +3006,6 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
-            *((float16*)accum) = conjf(*((float16*)accum));
         break;
     default:
         break;
