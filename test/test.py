@@ -9,6 +9,7 @@ import random
 from numpy.random import default_rng
 import os.path
 import platform
+from datetime import datetime
 
 tapp_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/tapp.so"
 
@@ -161,7 +162,7 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 							c_int(op_B), tensor_info_B, idx_B_c,
 							c_int(op_C), tensor_info_C, idx_C_c,
 							c_int(op_D), tensor_info_D, idx_D_c,
-							0)
+							-1)
 	
 	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
 	create_executor(byref(exec))
@@ -204,7 +205,7 @@ def RunEinsum(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, o
 
 def main():
 	print("Hadamard Product:", TestHadamardProduct())
-	print("Contration:", TestContration())
+	print("Contraction:", TestContraction())
 	print("Commutativity:", TestCommutativity())
 	print("Permutations:", TestPermutations())
 	print("Equal Extents:", TestEqualExtents())
@@ -214,6 +215,8 @@ def main():
 	print("One Dim Tensor Contraction:", TestOneDimTensorContraction())
 	print("Subtensor Same Idx:", TestSubtensorSameIdx())
 	print("Subtensor Lower Idx:", TestSubtensorLowerIdx())
+	print("Unique Idx:", TestUniqueIdx())
+	print("Repeated Idx:", TestRepeatedIdx())
 
 def TestHadamardProduct():
 	nmode = random.randint(1, 4)
@@ -241,11 +244,13 @@ def TestHadamardProduct():
 	Product(alpha, A, B, beta, C, D, idx, idx, idx, idx, op_A, op_B, op_C, op_D)
 
 	RunEinsum(alpha, A, B, beta, C, E, idx, idx, idx, idx, op_A, op_B, op_C, op_D)
-	
-	return np.allclose(D, E)
 
-def TestContration():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
+	result = np.allclose(D, E)
+	
+	return result
+
+def TestContraction():
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction()
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -255,7 +260,7 @@ def TestContration():
 	return np.allclose(D, E)
 
 def TestCommutativity():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction()
 	E = D.copy()
 	F = D.copy()
 	G = D.copy()
@@ -271,7 +276,7 @@ def TestCommutativity():
 	return np.allclose(D, E) and np.allclose(E, G) and np.allclose(F, G) and np.allclose(D, F)
 
 def TestPermutations():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration()
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction()
 
 	ResultsE = np.array([])
 	ResultsF = np.array([])
@@ -295,7 +300,7 @@ def TestPermutations():
 	return np.allclose(ResultsE, ResultsF)
 
 def TestEqualExtents():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(equal_extents = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(equal_extents = True)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -305,7 +310,7 @@ def TestEqualExtents():
 	return np.allclose(D, E)
 
 def TestOuterProduct():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(contractions = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(contractions = 0)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -315,7 +320,7 @@ def TestOuterProduct():
 	return np.allclose(D, E)
 
 def TestFullContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_D = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(nmode_D = 0)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -325,7 +330,7 @@ def TestFullContraction():
 	return np.allclose(D, E)
 
 def TestZeroDimTensorContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_A = 0)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(nmode_A = 0)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -335,7 +340,7 @@ def TestZeroDimTensorContraction():
 	return np.allclose(D, E)
 
 def TestOneDimTensorContraction():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(nmode_A = 1)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(nmode_A = 1)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -345,7 +350,7 @@ def TestOneDimTensorContraction():
 	return np.allclose(D, E)
 
 def TestSubtensorSameIdx():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(lower_extents = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(lower_extents = True)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -355,7 +360,7 @@ def TestSubtensorSameIdx():
 	return np.allclose(D, E)
 
 def TestSubtensorLowerIdx():
-	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContration(lower_extents = True, lower_idx = True)
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(lower_extents = True, lower_idx = True)
 	E = D.copy()
 	
 	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
@@ -363,33 +368,75 @@ def TestSubtensorLowerIdx():
 	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
 	return np.allclose(D, E)
 
-def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(0, 4),
+def TestUniqueIdx():
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(unique_idx=True)
+	E = D.copy()
+	
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
+
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
+
+	return np.allclose(D, E)
+
+def TestRepeatedIdx():
+	A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D = GenerateContraction(repeated_idx=True)
+	E = D.copy()
+	
+	Product(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), D if not slicing_D else np.squeeze(D[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
+
+	RunEinsum(alpha, A if not slicing_A else np.squeeze(A[*slicing_A]).reshape(extents_A), B if not slicing_B else np.squeeze(B[*slicing_B]).reshape(extents_B), beta, C if not slicing_C else np.squeeze(C[*slicing_C]).reshape(extents_C), E if not slicing_D else np.squeeze(E[*slicing_D]).reshape(extents_D), idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D)
+
+	return np.allclose(D, E)
+
+def GenerateContraction(nmode_A = None, nmode_B = None, nmode_D = random.randint(0, 4),
 					   contractions = random.randint(0, 4), equal_extents = False,
-					   lower_extents = False, lower_idx = False):
+					   lower_extents = False, lower_idx = False, unique_idx = False, repeated_idx = False):
+	if (repeated_idx and nmode_D < 2):
+		nmode_D = random.randint(2, 4)
 	if nmode_A is None and nmode_B is None:
-		nmode_A = random.randint(0, nmode_D)
+		nmode_A = random.randint(1, nmode_D - 1) if repeated_idx else random.randint(0, nmode_D)
 		nmode_B = nmode_D - nmode_A
 		nmode_A = nmode_A + contractions
 		nmode_B = nmode_B + contractions
 	elif nmode_A is None:
-		contractions = random.randint(0, nmode_B) if contractions > nmode_B else contractions
-		nmode_D = nmode_B - contractions + random.randint(0, 4) if nmode_D < nmode_B - contractions else nmode_D
+		contractions = (random.randint(0, nmode_B - 1) if repeated_idx else random.randint(0, nmode_B)) if contractions > nmode_B else contractions
+		nmode_D = nmode_B - contractions + (random.randint(1, 4) if repeated_idx else random.randint(0, 4)) if nmode_D < nmode_B - contractions else nmode_D
 		nmode_A = nmode_D - nmode_B + contractions * 2
 	elif nmode_B is None:
-		contractions = random.randint(0, nmode_A) if contractions > nmode_A else contractions
-		nmode_D = nmode_A - contractions + random.randint(0, 4) if nmode_D < nmode_A - contractions else nmode_D
+		contractions = (random.randint(0, nmode_A - 1) if repeated_idx else random.randint(0, nmode_A)) if contractions > nmode_A else contractions
+		nmode_D = nmode_A - contractions + (random.randint(1, 4) if repeated_idx else random.randint(0, 4)) if nmode_D < nmode_A - contractions else nmode_D
 		nmode_B = nmode_D - nmode_A + contractions * 2
 	else:
 		contractions = random.randint(0, min(nmode_A, nmode_B))
 		nmode_D = nmode_A + nmode_B - contractions * 2
 
+	unique_idx_A = random.randint(1, 3) if unique_idx else 0
+	unique_idx_B = random.randint(1, 3) if unique_idx else 0
+
+	nmode_A += unique_idx_A
+	nmode_B += unique_idx_B
+
+	repeated_idx_A = random.randint(1, 4) if repeated_idx else 0
+	repeated_idx_B = random.randint(1, 4) if repeated_idx else 0
+	#repeated_idx_D = random.randint(1, 4) if repeated_idx else 0 #Seems to not be allowed for np.einsum
+
+	nmode_A += repeated_idx_A
+	nmode_B += repeated_idx_B
+	#nmode_D += repeated_idx_D #Seems to not be allowed for np.einsum
+
 	nmode_C = nmode_D
 
-	idx_A = [i for i in range(97, 97 + nmode_A)]
+	idx_A = [i for i in range(97, 97 + nmode_A - repeated_idx_A)]
 	random.shuffle(idx_A)
-	idx_B = random.sample(idx_A, contractions) + [i for i in range(97 + nmode_A, 97 + nmode_A + nmode_B - contractions)]
+	idx_B = random.sample(idx_A, contractions) + [i for i in range(97 + nmode_A - repeated_idx_A, 97 + nmode_A - repeated_idx_A + nmode_B - contractions - repeated_idx_B)]
 	random.shuffle(idx_B)
-	idx_D = list(filter(lambda x: x not in idx_B or x not in idx_A, idx_A + idx_B))
+	idx_D = sorted(list(filter(lambda x: x not in idx_B, idx_A)), key=lambda k: random.random())[:nmode_A - repeated_idx_A - unique_idx_A - contractions] + sorted(list(filter(lambda x: x not in idx_A, idx_B)), key=lambda k: random.random())[:nmode_B - repeated_idx_B - unique_idx_B - contractions]
+	#idx_D = list(filter(lambda x: x not in idx_B or x not in idx_A, idx_A + idx_B))
+	idx_A = idx_A + random.choices(idx_A, k = repeated_idx_A)
+	idx_B = idx_B + random.choices(idx_B, k = repeated_idx_B)
+	#idx_D = idx_D + random.choices(idx_D, k = repeated_idx_D) #Seems to not be allowed for np.einsum
+	random.shuffle(idx_A)
+	random.shuffle(idx_B)
 	random.shuffle(idx_D)
 	idx_C = idx_D.copy()
 
@@ -405,9 +452,10 @@ def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(
 		extents_C = [extent] * nmode_C
 		extents_D = [extent] * nmode_D
 	else:
-		extents_A = list(np.random.randint(1, 4, nmode_A))
-		extents_B = [extents_A[idx_A.index(i)] if i in idx_A else np.random.randint(1, 4) for i in idx_B]
-		extents_D = [extents_A[idx_A.index(i)] if i in idx_A else extents_B[idx_B.index(i)] for i in idx_D]
+		time_seed = datetime.now().timestamp()
+		extents_A = list(map(lambda x: GenerateExtent(x, time_seed, 1, 4), idx_A))# list(np.random.randint(1, 4, nmode_A))
+		extents_B = list(map(lambda x: GenerateExtent(x, time_seed, 1, 4), idx_B))# [extents_A[idx_A.index(i)] if i in idx_A else np.random.randint(1, 4) for i in idx_B]
+		extents_D = list(map(lambda x: GenerateExtent(x, time_seed, 1, 4), idx_D))# [extents_A[idx_A.index(i)] if i in idx_A else extents_B[idx_B.index(i)] for i in idx_D]
 	extents_C = extents_D.copy()
 
 	outer_nmode_A = nmode_A + random.randint(1, 4) if lower_idx else nmode_A
@@ -491,7 +539,11 @@ def GenerateContration(nmode_A = None, nmode_B = None, nmode_D = random.randint(
 	op_D = random.randint(0, 1)
 
 	return A, B, C, D, extents_A, extents_B, extents_C, extents_D, idx_A, idx_B, idx_C, idx_D, alpha, beta, slicing_A, slicing_B, slicing_C, slicing_D, op_A, op_B, op_C, op_D
-	
+
+def GenerateExtent(idx, time_seed, min, max):
+	random.seed(time_seed + idx)
+	return random.randint(min, max)
+
 
 if __name__ == "__main__":
 	main()

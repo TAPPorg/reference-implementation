@@ -44,7 +44,8 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
            int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_s(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
-                                                                       bool negative_str);
+                                                                       bool negative_str, bool unique_idx,
+                                                                       bool repeated_idx);
 
 std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
            int, int64_t*, int64_t*, double*, int64_t*,
@@ -142,11 +143,10 @@ bool test_contraction_double_precision();
 bool test_contraction_complex();
 bool test_contraction_complex_double_precision();
 bool test_zero_stride();
-bool test_error_too_many_idx();
-bool test_error_repeated_idx();
+bool test_unique_idx();
+bool test_repeated_idx();
 bool test_error_non_matching_ext();
 bool test_error_C_other_structure();
-bool test_error_non_hadamard_shared_idx();
 bool test_error_aliasing_within_D();
 
 int main(int argc, char const *argv[])
@@ -170,12 +170,11 @@ int main(int argc, char const *argv[])
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
     std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
     std::cout << "Zero stride: " << str(test_zero_stride()) << std::endl;
-    std::cout << "Error: Too Many Indices: " << str(test_error_too_many_idx()) << std::endl;
-    std::cout << "Error: Repeated Indices: " << str(test_error_repeated_idx()) << std::endl;
+    //std::cout << "Unique Index: " << str(test_unique_idx()) << std::endl; Must update the run_tblis function to support this
+    std::cout << "Repeated Index: " << str(test_repeated_idx()) << std::endl;
     std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
     std::cout << "Error: C Other Structure: " << str(test_error_C_other_structure()) << std::endl;
-    std::cout << "Error: Non Hadamard Shared Indices: " << str(test_error_non_hadamard_shared_idx()) << std::endl;
-    std::cout << "Error: Non Aliasing Within D: " << str(test_error_aliasing_within_D()) << std::endl;
+    std::cout << "Error: Aliasing Within D: " << str(test_error_aliasing_within_D()) << std::endl;
     return 0;
 }
 
@@ -663,24 +662,28 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
            int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_s(int nmode_A = -1, int nmode_B = -1,
                                                         int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
-                                                        bool lower_nmode = false, bool negative_str = false) {
+                                                        bool lower_nmode = false, bool negative_str = false,
+                                                        bool unique_idx = false, bool repeated_idx = false) {
+    if (repeated_idx && nmode_D < 2) {
+        nmode_D = randi(2, 4);
+    }
     if (nmode_A == -1 && nmode_B == -1)
     {
-        nmode_A = randi(0, nmode_D);
+        nmode_A = repeated_idx ? randi(1, nmode_D - 1) : randi(0, nmode_D);
         nmode_B = nmode_D - nmode_A;
         nmode_A = nmode_A + contractions;
         nmode_B = nmode_B + contractions;
     }
     else if (nmode_A == -1)
     {
-        contractions = contractions > nmode_B ? randi(0, nmode_B) : contractions;
-        nmode_D = nmode_D < nmode_B - contractions ? nmode_B - contractions + randi(0, 4) : nmode_D;
+        contractions = contractions > nmode_B ? (repeated_idx ? randi(0, nmode_B - 1) : randi(0, nmode_B)) : contractions;
+        nmode_D = nmode_D < nmode_B - contractions ? nmode_B - contractions + (repeated_idx ? randi(1, 4) : randi(0, 4)) : nmode_D;
         nmode_A = contractions*2 + nmode_D - nmode_B;
     }
     else if (nmode_B == -1)
     {
-        contractions = contractions > nmode_A ? randi(0, nmode_A) : contractions;
-        nmode_D = nmode_D < nmode_A - contractions ? nmode_A - contractions + randi(0, 4) : nmode_D;
+        contractions = contractions > nmode_A ? (repeated_idx ? randi(0, nmode_A - 1) : randi(0, nmode_A)) : contractions;
+        nmode_D = nmode_D < nmode_A - contractions ? nmode_A - contractions + (repeated_idx ? randi(1, 4) : randi(0, 4)) : nmode_D;
         nmode_B = contractions*2 + nmode_D - nmode_A;
     }
     else
@@ -688,16 +691,34 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         contractions = contractions > std::min(nmode_A, nmode_B) ? randi(0, std::min(nmode_A, nmode_B)) : contractions;
         nmode_D = nmode_A + nmode_B - contractions * 2;
     }
-    int nmode_C = nmode_D;    
+
+    int unique_idx_A = unique_idx ? randi(1, 3) : 0;
+
+    int unique_idx_B = unique_idx ? randi(1, 3) : 0;
+
+    nmode_A += unique_idx_A;
+    nmode_B += unique_idx_B;
+
+    int repeated_idx_A = repeated_idx ? randi(1, 4) : 0;
+    int repeated_idx_B = repeated_idx ? randi(1, 4) : 0;
+    int repeated_idx_D = repeated_idx ? randi(1, 4) : 0;
+
+    nmode_A += repeated_idx_A;
+    nmode_B += repeated_idx_B;
+    nmode_D += repeated_idx_D;
+    
+    int nmode_C = nmode_D;
 
     int64_t* idx_A = new int64_t[nmode_A];
-    for (int i = 0; i < nmode_A; i++)
+    for (int i = 0; i < nmode_A - repeated_idx_A; i++)
     {
         idx_A[i] = 'a' + i;
     }
+    
     if (nmode_A > 0) {
-        std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
+        std::shuffle(idx_A, idx_A + nmode_A - repeated_idx_A, std::default_random_engine());
     }
+
     
     int64_t* idx_B = new int64_t[nmode_B];
     int idx_contracted[contractions];
@@ -706,37 +727,90 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         idx_B[i] = idx_A[i];
         idx_contracted[i] = idx_A[i];
     }
-    for (int i = 0; i < nmode_B - contractions; i++)
+    for (int i = 0; i < nmode_B - contractions - repeated_idx_B; i++)
     {
-        idx_B[i + contractions] = 'a' + nmode_A + i;
+        idx_B[i + contractions] = 'a' + nmode_A - repeated_idx_A + i;
     }
+
     if (nmode_B > 0) {
-        std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
+        std::shuffle(idx_B, idx_B + nmode_B - repeated_idx_B, std::default_random_engine());
     }
     if (nmode_A > 0) {
-        std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
+        std::shuffle(idx_A, idx_A + nmode_A - repeated_idx_A, std::default_random_engine());
     }
 
     int64_t* idx_C = new int64_t[nmode_C];
     int64_t* idx_D = new int64_t[nmode_D];
     int index = 0;
-    for (int j = 0; j < nmode_A + nmode_B - contractions; j++)
+    int index_origin = 0;
+    for (int i = 0; i < nmode_A - repeated_idx_A - unique_idx_A - contractions; i++)
     {
-        int64_t idx = 'a' + j;
-        bool found = false;
-        for (int i = 0; i < contractions; i++)
+        for (int j = index_origin; j < nmode_A - repeated_idx_A; j++)
         {
-            if (idx == idx_contracted[i])
+            bool is_contracted = false;
+            for (int k = 0; k < contractions; k++)
             {
-                found = true;
+                if (idx_A[j] == idx_contracted[k])
+                {
+                    is_contracted = true;
+                    break;
+                }
+            }
+            if (!is_contracted)
+            {
+                index_origin = j;
                 break;
             }
         }
-        if (!found)
+        idx_D[index] = idx_A[index_origin];
+        index_origin++;
+        index++;
+    }
+    index_origin = 0;
+    for (int i = 0; i < nmode_B - repeated_idx_B - unique_idx_B - contractions; i++)
+    {
+        for (int j = index_origin; j < nmode_B - repeated_idx_B; j++)
         {
-            idx_D[index] = idx;
-            index++;
+            bool is_contracted = false;
+            for (int k = 0; k < contractions; k++)
+            {
+                if (idx_B[j] == idx_contracted[k])
+                {
+                    is_contracted = true;
+                    break;
+                }
+            }
+            if (!is_contracted)
+            {
+                index_origin = j;
+                break;
+            }
         }
+        idx_D[index] = idx_B[index_origin];
+        index_origin++;
+        index++;
+    }
+    
+    //Add repeated idx
+    for (int i = 0; i < repeated_idx_A; i++)
+    {
+        idx_A[i + nmode_A - repeated_idx_A] = idx_A[randi(0, nmode_A - repeated_idx_A - 1)];
+    }
+    for (int i = 0; i < repeated_idx_B; i++)
+    {
+        idx_B[i + nmode_B - repeated_idx_B] = idx_B[randi(0, nmode_B - repeated_idx_B - 1)];
+    }
+    for (int i = 0; i < repeated_idx_D; i++)
+    {
+        idx_D[i + nmode_D - repeated_idx_D] = idx_D[randi(0, nmode_D - repeated_idx_D - 1)];
+    }
+    
+    //Randomize order of idx
+    if (nmode_A > 0) {
+        std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
+    }
+    if (nmode_B > 0) {
+        std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
     if (nmode_D > 0) {
         std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
@@ -749,27 +823,50 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
     int64_t extent = randi(1, 4);
     for (int i = 0; i < nmode_A; i++)
     {
+        int repeated_idx = -1;
+        for (int j = 0; j < i - 1; j++)
+        {
+            if (idx_A[i] == idx_A[j]) {
+                repeated_idx = j;
+                break;
+            }
+        }
+        if (repeated_idx != -1) {
+            extents_A[i] = extents_A[repeated_idx];
+            continue;
+        }
         extents_A[i] = equal_extents ? randi(1, 4) : extent;
     }
     for (int i = 0; i < nmode_B; i++)
     {
-        int found = -1;
+        int contracted_idx = -1;
         for (int j = 0; j < nmode_A; j++)
         {
             if (idx_B[i] == idx_A[j])
             {
-                found = j;
+                contracted_idx = j;
                 break;
             }
         }
-        if (found != -1)
+        if (contracted_idx != -1)
         {
-            extents_B[i] = extents_A[found];
+            extents_B[i] = extents_A[contracted_idx];
+            continue;
         }
-        else
+
+        int repeated_idx = -1;
+        for (int j = 0; j < i - 1; j++)
         {
-            extents_B[i] = equal_extents ? randi(1, 4) : extent;
+            if (idx_B[i] == idx_B[j]) {
+                repeated_idx = j;
+                break;
+            }
         }
+        if (repeated_idx != -1) {
+            extents_B[i] = extents_A[repeated_idx];
+            continue;
+        }
+        extents_B[i] = equal_extents ? randi(1, 4) : extent;
     }
     for (int i = 0; i < nmode_D; i++)
     {
@@ -957,7 +1054,7 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
 
     float alpha = randf();
     float beta = randf();
-
+    
     return {nmode_A, extents_A, strides_A, A, idx_A,
             nmode_B, extents_B, strides_B, B, idx_B,
             nmode_C, extents_C, strides_C, C, idx_C,
@@ -3664,7 +3761,155 @@ bool test_zero_stride() {
     return result;
 }
 
-bool test_error_too_many_idx() {
+bool test_unique_idx() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, true, false);
+
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return result;
+}
+
+bool test_repeated_idx() {
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D,
+          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, false, true);
+
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+    delete[] offset_A;
+    delete[] offset_B;
+    delete[] offset_C;
+    delete[] offset_D;
+
+    return result;
+}
+
+bool test_hadamard_and_contraction() {
+    return false;
+}
+
+bool test_error_too_many_idx_D() {
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
@@ -3694,23 +3939,7 @@ bool test_error_too_many_idx() {
         }
     }
 
-    int random_skewed_tensor = randi(0, 2);
-
-    switch (random_skewed_tensor)
-    {
-    case 0:
-        add_incorrect_idx(max_idx, &nmode_A, &idx_A, &extents_A, &strides_A);
-        break;
-    case 1:
-        add_incorrect_idx(max_idx, &nmode_B, &idx_B, &extents_B, &strides_B);
-        break;
-    case 2:
-        add_incorrect_idx(max_idx, &nmode_D, &idx_D, &extents_D, &strides_D);
-        break;
-    
-    default:
-        break;
-    }
+    add_incorrect_idx(max_idx, &nmode_D, &idx_D, &extents_D, &strides_D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3760,121 +3989,7 @@ bool test_error_too_many_idx() {
     delete[] offset_C;
     delete[] offset_D;
 
-    return (random_skewed_tensor == 0 && error_status == 7) ||
-           (random_skewed_tensor == 1 && error_status == 8) ||
-           (random_skewed_tensor == 2 && error_status == 9);
-}
-
-bool test_error_repeated_idx() {
-    auto [nmode_A, extents_A, strides_A, A, idx_A,
-          nmode_B, extents_B, strides_B, B, idx_B,
-          nmode_C, extents_C, strides_C, C, idx_C,
-          nmode_D, extents_D, strides_D, D, idx_D,
-          alpha, beta,
-          data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
-    
-    int nr_choices = 0;
-    if (nmode_A > 0) nr_choices++;
-    if (nmode_B > 0) nr_choices++;
-    if (nmode_D > 0) nr_choices++;
-
-    int* choices = new int[nr_choices];
-    int choice_index = 0;
-
-    if (nmode_A > 0) choices[choice_index++] = 0;
-    if (nmode_B > 0) choices[choice_index++] = 1;
-    if (nmode_D > 0) choices[choice_index++] = 2;
-
-    int random_skewed_tensor = random_choice(nr_choices, choices);
-    delete[] choices;
-    int random_index = 0;
-
-    switch (random_skewed_tensor)
-    {
-    case 0:
-        if (nmode_A > 1) {
-            random_index = randi(0, nmode_A - 1);
-            idx_A[random_index] = random_index == 0 ? idx_A[random_index + 1] : idx_A[random_index - 1];
-        }
-        else {
-            add_idx(&nmode_A, &idx_A, &extents_A, &strides_A, idx_A[0], extents_A[0], strides_A[0]);
-        }
-        break;
-    case 1:
-        if (nmode_B > 1) {
-            random_index = randi(0, nmode_B - 1);
-            idx_B[random_index] = random_index == 0 ? idx_B[random_index + 1] : idx_B[random_index - 1];
-        }
-        else {
-            add_idx(&nmode_B, &idx_B, &extents_B, &strides_B, idx_B[0], extents_B[0], strides_B[0]);
-        }
-        break;
-    case 2:
-        if (nmode_D > 1) {
-            random_index = randi(0, nmode_D - 1);
-            idx_D[random_index] = random_index == 0 ? idx_D[random_index + 1] : idx_D[random_index - 1];
-        }
-        else {
-            add_idx(&nmode_D, &idx_D, &extents_D, &strides_D, idx_D[0], extents_D[0], strides_D[0]);
-        }
-        break;
-    default:
-        break;
-    }
-
-    TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
-    TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
-    TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-
-    TAPP_tensor_product plan;
-    TAPP_handle handle;
-    create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
-    TAPP_executor exec;
-    create_executor(&exec);
-
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-
-    TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
-    delete[] extents_A;
-    delete[] extents_B;
-    delete[] extents_C;
-    delete[] extents_D;
-    delete[] strides_A;
-    delete[] strides_B;
-    delete[] strides_C;
-    delete[] strides_D;
-    delete[] idx_A;
-    delete[] idx_B;
-    delete[] idx_C;
-    delete[] idx_D;
-    delete[] data_A;
-    delete[] data_B;
-    delete[] data_C;
-    delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
-
-    return (random_skewed_tensor == 0 && error_status == 1) ||
-           (random_skewed_tensor == 1 && error_status == 2) ||
-           (random_skewed_tensor == 2 && error_status == 3);
+    return error_status == 7;
 }
 
 bool test_error_non_matching_ext() {
@@ -3969,7 +4084,7 @@ bool test_error_non_matching_ext() {
     delete[] offset_C;
     delete[] offset_D;
 
-    return error_status == 4 || error_status == 5 || error_status == 6;
+    return error_status == 1 || error_status == 2 || error_status == 3;
 }
 
 bool test_error_C_other_structure() {
@@ -4063,92 +4178,7 @@ bool test_error_C_other_structure() {
     delete[] offset_C;
     delete[] offset_D;
 
-    return error_status == 11 || error_status == 12 || error_status == 13;
-}
-
-bool test_error_non_hadamard_shared_idx() {
-    auto [nmode_A, extents_A, strides_A, A, idx_A,
-          nmode_B, extents_B, strides_B, B, idx_B,
-          nmode_C, extents_C, strides_C, C, idx_C,
-          nmode_D, extents_D, strides_D, D, idx_D,
-          alpha, beta,
-          data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(2, 4));
-
-    int64_t max_idx = 0;
-    for (size_t i = 0; i < nmode_A; i++)
-    {
-        if (max_idx < idx_A[i]) {
-            max_idx = idx_A[i];
-        }
-    }
-    for (size_t i = 0; i < nmode_B; i++)
-    {
-        if (max_idx < idx_B[i]) {
-            max_idx = idx_B[i];
-        }
-    }
-    for (size_t i = 0; i < nmode_D; i++)
-    {
-        if (max_idx < idx_D[i]) {
-            max_idx = idx_D[i];
-        }
-    }
-
-    add_idx(&nmode_A, &idx_A, &extents_A, &strides_A, max_idx + 1, 0, 0);
-    add_idx(&nmode_B, &idx_B, &extents_B, &strides_B, max_idx + 1, 0, 0);
-    add_idx(&nmode_D, &idx_D, &extents_D, &strides_D, max_idx + 1, 0, 0);
-
-    TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
-    TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
-    TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-
-    TAPP_tensor_product plan;
-    TAPP_handle handle;
-    create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
-    TAPP_executor exec;
-    create_executor(&exec);
-
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-
-    TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
-    delete[] extents_A;
-    delete[] extents_B;
-    delete[] extents_C;
-    delete[] extents_D;
-    delete[] strides_A;
-    delete[] strides_B;
-    delete[] strides_C;
-    delete[] strides_D;
-    delete[] idx_A;
-    delete[] idx_B;
-    delete[] idx_C;
-    delete[] idx_D;
-    delete[] data_A;
-    delete[] data_B;
-    delete[] data_C;
-    delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
-
-    return error_status == 10;
+    return error_status == 5 || error_status == 6 || error_status == 7;
 }
 
 bool test_error_aliasing_within_D() {
@@ -4161,7 +4191,7 @@ bool test_error_aliasing_within_D() {
           size_A, size_B, size_C, size_D,
           offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(2, 4));
 
-    int scewed_index = randi(1, nmode_D);
+    int scewed_index = randi(1, nmode_D - 1);
     int signs[2] = {-1, 1};
     strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] + 1) * randi(1, extents_D[scewed_index - 1] - 1);
 
@@ -4213,5 +4243,5 @@ bool test_error_aliasing_within_D() {
     delete[] offset_C;
     delete[] offset_D;
 
-    return error_status == 14;
+    return error_status == 8;
 }
