@@ -56,7 +56,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_element_op op_D,
                                       TAPP_tensor_info D,
                                       const int64_t* idx_D,
-                                      TAPP_prectype prec) {
+                                      TAPP_prectype prec)
+{
     struct plan* plan_ptr = malloc(sizeof(struct plan));
     plan_ptr->handle = handle;
 
@@ -94,7 +95,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     return 0;
 }
 
-TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan) {
+TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan)
+{
     free(((struct plan*)plan)->idx_A);
     free(((struct plan*)plan)->idx_B);
     free(((struct plan*)plan)->idx_C);
@@ -112,7 +114,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* B,
                                 const void* beta,
                                 const void* C,
-                                void* D) {
+                                void* D)
+{
     struct plan* plan_ptr = (struct plan*)plan;
     TAPP_handle handle = plan_ptr->handle;
 
@@ -178,7 +181,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3) : error_status;
     error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7) : error_status;
     error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 8) : error_status;
-    if (error_status != 0) {
+    if (error_status != 0)
+    {
         free(idx_A);
         free(extents_A);
         free(strides_A);
@@ -259,19 +263,22 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     void* sum_A = alloc_sum(prec, type_A);
     void* sum_B = alloc_sum(prec, type_B);
 
-    for (int i = 0; i < size_free; i++) {
+    for (int i = 0; i < size_free; i++)
+    {
         int index_free_A = 0; // Index calculated from free indices of A
         int index_free_B = 0; // Index calculated from free indices of B
         int index_C = 0;
         int index_D = 0;
-        for (int j = 0; j < nmode_D; j++) {
+        for (int j = 0; j < nmode_D; j++)
+        {
             index_free_A += coordinates_free[j] * strides_free_A[j];
             index_free_B += coordinates_free[j] * strides_free_B[j];
             index_C += coordinates_free[j] * strides_C[j];
             index_D += coordinates_free[j] * strides_D[j];
         }
         calculate_beta_C(beta, C, type_C, index_C, op_C, prec, accum, type_D);
-        for (int j = 0; j < size_binary_contractions; j++) {
+        for (int j = 0; j < size_binary_contractions; j++)
+        {
             int index_binary_contractions_A = index_free_A;
             int index_binary_contractions_B = index_free_B;
             for (int k = 0; k < binary_contractions; k++)
@@ -330,9 +337,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     free(strides_free_A);
     free(strides_binary_contractions_A);
     free(strides_unary_contractions_A);
+    free(idx_unary_contractions_A);
     free(strides_free_B);
     free(strides_binary_contractions_B);
     free(strides_unary_contractions_B);
+    free(idx_unary_contractions_B);
     free(coordinates_free);
     free(coordinates_binary_contractions);
     free(extents_unary_contractions_A);
@@ -342,21 +351,27 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     return 0;
 }
 
-int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr) {
+int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr)
+{
     int binary_contractions = 0;
     int64_t* idx_contraction = malloc(((nmode_A + nmode_B - nmode_D) / 2)*sizeof(int64_t)); //Allocate for worst case
-    for (int i = 0; i < nmode_A; i++) {
+    for (int i = 0; i < nmode_A; i++)
+    {
         bool index_found_in_B = false;
-        for (int j = 0; j < nmode_B; j++) {
-            if (idx_A[i] == idx_B[j]) {
+        for (int j = 0; j < nmode_B; j++)
+        {
+            if (idx_A[i] == idx_B[j]) 
+            {
                 index_found_in_B = true;
                 break;
             }
         }
         if (!index_found_in_B) continue;
         bool index_found_in_D = false;
-        for (int j = 0; j < nmode_D; j++) {
-            if (idx_A[i] == idx_D[j]) {
+        for (int j = 0; j < nmode_D; j++)
+        {
+            if (idx_A[i] == idx_D[j])
+            {
                 index_found_in_D = true;
                 break;
             }
@@ -370,11 +385,15 @@ int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, c
     return binary_contractions;
 }
 
-void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr) {
+void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr)
+{
     int64_t* extracted_extents = malloc(nr_extents * sizeof(int64_t));
-    for (int i = 0; i < nr_extents; i++) {
-        for (int j = 0; j < nmode; j++) {
-            if (idx_extraction[i] == idx[j]) {
+    for (int i = 0; i < nr_extents; i++)
+    {
+        for (int j = 0; j < nmode; j++)
+        {
+            if (idx_extraction[i] == idx[j])
+            {
                 extracted_extents[i] = extents[j];
             }
         }
@@ -382,21 +401,26 @@ void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const i
     *extracted_extents_ptr = extracted_extents;
 }
 
-int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr) {
+int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr)
+{
     int unary_contractions = 0;
     int64_t* idx_unary_contractions = malloc(nmode * sizeof(int64_t));
     for (size_t i = 0; i < nmode; i++)
     {
         bool found = false;
-        for (size_t j = 0; j < nmode_1; j++) {
-            if (idx[i] == idx_1[j]) {
+        for (size_t j = 0; j < nmode_1; j++)
+        {
+            if (idx[i] == idx_1[j])
+            {
                 found = true;
                 break;
             }
         }
         if (found) continue;
-        for (size_t j = 0; j < nmode_2; j++) {
-            if (idx[i] == idx_2[j]) {
+        for (size_t j = 0; j < nmode_2; j++)
+        {
+            if (idx[i] == idx_2[j])
+            {
                 found = true;
                 break;
             }
@@ -410,28 +434,37 @@ int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64
     return unary_contractions;
 }
 
-void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr) {
+void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr)
+{
     int64_t* strides_free = malloc(nmode_D * sizeof(int64_t));
-    for (int i = 0; i < nmode_D; i++) {
+    for (int i = 0; i < nmode_D; i++)
+    {
         bool index_found = false;
-        for (int j = 0; j < nmode; j++) {
-            if (idx_D[i] == idx[j]) {
+        for (int j = 0; j < nmode; j++)
+        {
+            if (idx_D[i] == idx[j])
+            {
                 strides_free[i] = strides[j];
                 index_found = true;
             }
         }
-        if (!index_found) {
+        if (!index_found)
+        {
             strides_free[i] = 0;
         }
     }
     *strides_free_ptr = strides_free;
 }
 
-void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr) {
+void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr)
+{
     int64_t* strides_contractions = malloc(contractions * sizeof(int64_t));
-    for (int i = 0; i < contractions; i++) {
-        for (int j = 0; j < nmode; j++) {
-            if (idx_contraction[i] == idx[j]) {
+    for (int i = 0; i < contractions; i++)
+    {
+        for (int j = 0; j < nmode; j++)
+        {
+            if (idx_contraction[i] == idx[j])
+            {
                 strides_contractions[i] = strides[j];
             }
         }
@@ -439,41 +472,53 @@ void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides,
     *strides_contractions_ptr = strides_contractions;
 }
 
-void compile_strides(int64_t* strides, int nmode, const int64_t* idx, int nmode_D, const int64_t* idx_D, int contractions, int64_t* idx_contraction, int64_t* free_strides, int64_t* contracted_strides) {
+void compile_strides(int64_t* strides, int nmode, const int64_t* idx, int nmode_D, const int64_t* idx_D, int contractions, int64_t* idx_contraction, int64_t* free_strides, int64_t* contracted_strides)
+{
     // Calculate strides for free indices
-    for (int i = 0; i < nmode_D; i++) {
+    for (int i = 0; i < nmode_D; i++)
+    {
         bool index_found = false;
-        for (int j = 0; j < nmode; j++) {
-            if (idx_D[i] == idx[j]) {
+        for (int j = 0; j < nmode; j++)
+        {
+            if (idx_D[i] == idx[j])
+            {
                 free_strides[i] = strides[j];
                 index_found = true;
             }
         }
-        if (!index_found) {
+        if (!index_found)
+        {
             free_strides[i] = 0;
         }
     }
 
     // Calculate strides for contracted indices
-    for (int i = 0; i < contractions; i++) {
-        for (int j = 0; j < nmode; j++) {
-            if (idx_contraction[i] == idx[j]) {
+    for (int i = 0; i < contractions; i++)
+    {
+        for (int j = 0; j < nmode; j++)
+        {
+            if (idx_contraction[i] == idx[j])
+            {
                 contracted_strides[i] = strides[j];
             }
         }
     }
 }
 
-int64_t calculate_size(int64_t* extents, int nmode) {
+int64_t calculate_size(int64_t* extents, int nmode)
+{
     int size = 1;
-    for (int i = 0; i < nmode; i++) {
+    for (int i = 0; i < nmode; i++)
+    {
         size *= extents[i];
     }
     return size;
 }
 
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
-    if (nmode <= 0) {
+void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents)
+{
+    if (nmode <= 0)
+    {
         return;
     }
 
@@ -485,78 +530,97 @@ void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
     } while (coordinates[k - 1] == 0 && k < nmode);
 }
 
-bool compare_arrays(int* arr_a, int* arr_b, int size) {
-    for (int i = 0; i < size; i++) {
-        if (arr_a[i] != arr_b[i]) {
+bool compare_arrays(int* arr_a, int* arr_b, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        if (arr_a[i] != arr_b[i])
+        {
             return false;
         }
     }
     return true;
 }
 
-void zero_array(int64_t* arr, int size) {
-    for (int i = 0; i < size; i++) {
+void zero_array(int64_t* arr, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
         arr[i] = 0;
     }
 }
 
-int check_repeated_idx(int nmode, const int64_t* idx, int error_code) {
-    for (size_t i = 0; i < nmode; i++) {
+int check_repeated_idx(int nmode, const int64_t* idx, int error_code)
+{
+    for (size_t i = 0; i < nmode; i++)
+    {
         int count = 0;
-        for (size_t j = 0; j < nmode; j++) {
-            if (idx[i] == idx[j]) {
+        for (size_t j = 0; j < nmode; j++)
+        {
+            if (idx[i] == idx[j])
+            {
                 count++;
             }
         }
-        if (count != 1) {
+        if (count != 1)
+        {
             return error_code;
         }
     }
     return 0;
 }
 
-int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code) {
-    for (size_t i = 0; i < nmode_origin; i++) {
+int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code)
+{
+    for (size_t i = 0; i < nmode_origin; i++)
+    {
         int idx_found = 0;
         for (size_t j = 0; j < nmode_test_A; j++)
         {
-            if (idx_origin[i] == idx_test_A[j]) {
+            if (idx_origin[i] == idx_test_A[j])
+            {
                 idx_found++;
                 break;
             }
         }
         for (size_t j = 0; j < nmode_test_B; j++)
         {
-            if (idx_origin[i] == idx_test_B[j]) {
+            if (idx_origin[i] == idx_test_B[j])
+            {
                 idx_found++;
                 break;
             }
         }
-        if (idx_found == 0) { //No other occurrence, error
+        if (idx_found == 0)
+        { //No other occurrence, error
             return unique_idx_code;
         }
     }
     return 0;
 }
 
-int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code) {
+int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code)
+{
     for (size_t i = 0; i < nmode_A; i++)
     {
         for (size_t j = 0; j < nmode_A; j++)
         {
-            if (idx_A[i] == idx_A[j] && extents_A[i] != extents_A[j]) {
+            if (idx_A[i] == idx_A[j] && extents_A[i] != extents_A[j])
+            {
                 return missmatch_AA_code;
             }
         }
         for (size_t j = 0; j < nmode_B; j++)
         {
-            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B[j]) {
+            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B[j])
+            {
                 return missmatch_AB_code;
             }
         }
         for (size_t j = 0; j < nmode_D; j++)
         {
-            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D[j]) {
+            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D[j])
+            {
                 return missmatch_AD_code;
             }
         }
@@ -564,30 +628,37 @@ int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, i
     return 0;
 }
 
-int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code) {
-    if(nmode_A != nmode_B) {
+int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code)
+{
+    if(nmode_A != nmode_B)
+    {
         return nmode_code;
     }
 
     for (size_t i = 0; i < nmode_B; i++)
     {
-        if (idx_B[i] != idx_A[i]) {
+        if (idx_B[i] != idx_A[i])
+        {
             return idx_code;
         }
-        if (extents_B[i] != extents_A[i]) {
+        if (extents_B[i] != extents_A[i])
+        {
             return extent_code;
         }
     }
     return 0;
 }
 
-int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code) {
-    if (nmode <= 1) {
+int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code)
+{
+    if (nmode <= 1)
+    {
         return 0;
     }
     for (size_t i = 0; i < nmode; i++)
     {
-        if (strides[i] == 0) {
+        if (strides[i] == 0)
+        {
             return error_code;
         }
     }
@@ -603,7 +674,8 @@ int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* stride
     int status = 0;
     for (size_t i = 0; i < nmode - 1; i++)
     {
-        if (sorted_strides[i + 1] < sorted_strides[i] * sorted_extents[i]) {
+        if (sorted_strides[i + 1] < sorted_strides[i] * sorted_extents[i])
+        {
             status = error_code;
             break;
         }
@@ -613,8 +685,10 @@ int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* stride
     return status;
 }
 
-void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right) {
-    if (left < right) {
+void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right)
+{
+    if (left < right)
+    {
         int mid = left + (right - left) / 2;
         
         merge_sort_strides(strides, extents, left, mid);
@@ -624,41 +698,50 @@ void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right) 
     }
 }
 
-void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right) {
+void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right)
+{
     int n1 = mid - left + 1;
     int n2 = right - mid;
     
     int Ls[n1], Rs[n2];
     int Le[n1], Re[n2];
 
-    for (int i = 0; i < n1; i++) {
+    for (int i = 0; i < n1; i++)
+    {
         Ls[i] = strides[left + i];
         Le[i] = extents[left + i];
     }
-    for (int j = 0; j < n2; j++) {
+    for (int j = 0; j < n2; j++)
+    {
         Rs[j] = strides[mid + 1 + j];
         Re[j] = extents[mid + 1 + j];
     }
     
     int i = 0, j = 0, k = left;
-    while (i < n1 && j < n2) {
-        if (Ls[i] < Rs[j]) {
+    while (i < n1 && j < n2)
+    {
+        if (Ls[i] < Rs[j])
+        {
             strides[k] = Ls[i];
             extents[k] = Le[i];
             i++;
         }
-        else if (Ls[i] > Rs[j]) {
+        else if (Ls[i] > Rs[j])
+        {
             strides[k] = Rs[j];
             extents[k] = Re[j];
             j++;
         }
-        else {
-            if (Le[i] <= Re[j]) {
+        else
+        {
+            if (Le[i] <= Re[j])
+            {
                 strides[k] = Ls[i];
                 extents[k] = Le[i];
                 i++;
             }
-            else {
+            else
+            {
                 strides[k] = Rs[j];
                 extents[k] = Re[j];
                 j++;
@@ -667,14 +750,16 @@ void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int ri
         k++;
     }
     
-    while (i < n1) {
+    while (i < n1)
+    {
         strides[k] = Ls[i];
         extents[k] = Le[i];
         i++;
         k++;
     }
     
-    while (j < n2) {
+    while (j < n2)
+    {
         strides[k] = Rs[j];
         extents[k] = Re[j];
         j++;
@@ -682,7 +767,8 @@ void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int ri
     }
 }
 
-void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides) {
+void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides)
+{
     int new_nmode = 0;
     int64_t* new_idx = malloc(*nmode * sizeof(int64_t));
     int64_t* new_extents = malloc(*nmode * sizeof(int64_t));
@@ -692,17 +778,20 @@ void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int
         bool found = false;
         for (size_t j = 0; j < new_nmode; j++)
         {
-            if ((*idx)[i] == new_idx[j]) {
+            if ((*idx)[i] == new_idx[j])
+            {
                 found = true;
             }
         }
-        if (!found) {
+        if (!found)
+        {
             new_idx[new_nmode] = (*idx)[i];
             new_extents[new_nmode] = (*extents)[i];
             new_strides[new_nmode] = 0;
             for (size_t j = 0; j < *nmode; j++)
             {
-                if ((*idx)[i] == (*idx)[j]) {
+                if ((*idx)[i] == (*idx)[j])
+                {
                     new_strides[new_nmode] += (*strides)[j];
                 }
             }
@@ -721,7 +810,8 @@ void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int
     *strides = new_strides;
 }
 
-void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D) {
+void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -794,7 +884,8 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D) {
     return NULL;
 }
 
-void* alloc_sum(TAPP_prectype prec, TAPP_datatype type) {
+void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -895,7 +986,8 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type) {
     return NULL;
 }
 
-void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type) {
+void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -995,7 +1087,8 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type) {
     }
 }
 
-void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec) {
+void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -1124,7 +1217,8 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
     }
 }
 
-void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum) {
+void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -1498,7 +1592,8 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
     }
 }
 
-void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum) {
+void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -2700,7 +2795,7 @@ void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype typ
                 break;
             }
             break;
-        case TAPP_C32:
+        case TAPP_C32: //There is no half-precision complex
         case TAPP_C64:
             switch (type_A)
             {
@@ -2941,7 +3036,8 @@ void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype typ
     }
 }
 
-void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAPP_prectype prec) {
+void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAPP_prectype prec)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -2951,12 +3047,14 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_F64:
             break;
         case TAPP_C32:
-            if (op_D == TAPP_CONJUGATE) {
+            if (op_D == TAPP_CONJUGATE)
+            {
                 *((float complex*)accum) = conjf(*((float complex*)accum));
             }
             break;
         case TAPP_C64:
-            if (op_D == TAPP_CONJUGATE) {
+            if (op_D == TAPP_CONJUGATE)
+            {
                 *((double complex*)accum) = conj(*((double complex*)accum));
             }
             break;
@@ -2979,7 +3077,8 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
             break;
         case TAPP_C32:
         case TAPP_C64:
-            if (op_D == TAPP_CONJUGATE) {
+            if (op_D == TAPP_CONJUGATE)
+            {
                 *((float complex*)accum) = conjf(*((float complex*)accum));
             }
             break;
@@ -2997,7 +3096,8 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
             break;
         case TAPP_C32:
         case TAPP_C64:
-            if (op_D == TAPP_CONJUGATE) {
+            if (op_D == TAPP_CONJUGATE)
+            {
                 *((double complex*)accum) = conjf(*((double complex*)accum));
             }
             break;
@@ -3012,7 +3112,8 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
     }
 }
 
-void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec) {
+void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec)
+{
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
