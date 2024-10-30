@@ -40,12 +40,11 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
            int, int64_t*, int64_t*, float*, int64_t*,
            float, float,
            float*, float*, float*, float*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_s(int nmode_A, int nmode_B, int nmode_D, 
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_s(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
                                                                        bool negative_str, bool unique_idx,
-                                                                       bool repeated_idx);
+                                                                       bool repeated_idx, bool mixed_str);
 
 std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
            int, int64_t*, int64_t*, double*, int64_t*,
@@ -53,8 +52,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
            int, int64_t*, int64_t*, double*, int64_t*,
            double, double,
            double*, double*, double*, double*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_d(int nmode_A, int nmode_B, int nmode_D, 
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_d(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
                                                                        bool negative_str);
@@ -65,8 +63,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
            int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
            std::complex<float>, std::complex<float>,
            std::complex<float>*, std::complex<float>*, std::complex<float>*, std::complex<float>*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_c(int nmode_A, int nmode_B, int nmode_D, 
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_c(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
                                                                        bool negative_str);
@@ -77,8 +74,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
            int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
            std::complex<double>, std::complex<double>,
            std::complex<double>*, std::complex<double>*, std::complex<double>*, std::complex<double>*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_z(int nmode_A, int nmode_B, int nmode_D, 
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_z(int nmode_A, int nmode_B, int nmode_D, 
                                                                        int contractions, bool equal_extents,
                                                                        bool lower_extents, bool lower_idx,
                                                                        bool negative_str);
@@ -113,7 +109,7 @@ void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<
 
 void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data);
 
-std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str);
+std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, float* pointer);
 
 std::tuple<double*, double*> copy_tensor_data_d(int64_t size, double* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str);
 
@@ -124,6 +120,32 @@ std::tuple<std::complex<double>*, std::complex<double>*> copy_tensor_data_z(int6
 float* copy_tensor_data_s(int size, float* data);
 
 void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+
+tblis::len_type* translate_extents_to_tblis(int nmode, int64_t* extents);
+
+tblis::stride_type* translate_strides_to_tblis(int nmode, int64_t* strides);
+
+tblis::label_type* translate_idx_to_tblis(int nmode, int64_t* idx);
+
+void free_tblis_tensor(tblis::tblis_tensor* tensor, bool tensor_struct, bool len, bool stride, bool data);
+
+int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str);
+bool* choose_subtensor_dims(int nmode, int outer_nmode);
+int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents);
+int64_t* calculate_offsets(int nmode, int outer_nmode, int64_t* extents, int64_t* outer_extents, bool* subtensor_dims, bool lower_extents);
+int64_t* calculate_strides(int nmode, int outer_nmode, int64_t* outer_extents, int* stride_signs, bool* subtensor_dims);
+int calculate_size(int nmode, int64_t* extents);
+float* create_tensor_data_s(int64_t size);
+void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size);
+float* calculate_tensor_pointer_s(float* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, int64_t size, bool negative_str);
 
 bool test_hadamard_product();
 bool test_contraction();
@@ -139,6 +161,9 @@ bool test_subtensor_lower_idx();
 bool test_negative_strides();
 bool test_negative_strides_subtensor_same_idx();
 bool test_negative_strides_subtensor_lower_idx();
+bool test_mixed_strides();
+bool test_mixed_strides_subtensor_same_idx();
+bool test_mixed_strides_subtensor_lower_idx();
 bool test_contraction_double_precision();
 bool test_contraction_complex();
 bool test_contraction_complex_double_precision();
@@ -153,7 +178,7 @@ int main(int argc, char const *argv[])
 {
     srand(time(NULL));
     std::cout << "Hadamard Product: " << str(test_hadamard_product()) << std::endl;
-    std::cout << "Contration: " << str(test_contraction()) << std::endl;
+    std::cout << "Contraction: " << str(test_contraction()) << std::endl;
     std::cout << "Commutativity: " << str(test_commutativity()) << std::endl;
     std::cout << "Permutations: " << str(test_permutations()) << std::endl;
     std::cout << "Equal Extents: " << str(test_equal_extents()) << std::endl;
@@ -166,11 +191,14 @@ int main(int argc, char const *argv[])
     std::cout << "Negative Strides: " << str(test_negative_strides()) << std::endl;
     std::cout << "Negative Strides Subtensor Same Index: " << str(test_negative_strides_subtensor_same_idx()) << std::endl;
     std::cout << "Negative Strides Subtensor Lower Index: " << str(test_negative_strides_subtensor_lower_idx()) << std::endl;
+    std::cout << "Mixed Strides: " << str(test_mixed_strides()) << std::endl;
+    std::cout << "Mixed Strides Subtensor Same Index: " << str(test_mixed_strides_subtensor_same_idx()) << std::endl;
+    std::cout << "Mixed Strides Subtensor Lower Index: " << str(test_mixed_strides_subtensor_lower_idx()) << std::endl;
     std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
     std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
     std::cout << "Zero stride: " << str(test_zero_stride()) << std::endl;
-    //std::cout << "Unique Index: " << str(test_unique_idx()) << std::endl; Must update the run_tblis function to support this
+    std::cout << "Unique Index: " << str(test_unique_idx()) << std::endl;
     std::cout << "Repeated Index: " << str(test_repeated_idx()) << std::endl;
     std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
     std::cout << "Error: C Other Structure: " << str(test_error_C_other_structure()) << std::endl;
@@ -182,415 +210,510 @@ void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, float* B, int op_B, int64_t* idx_B,
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, float* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, float* D, int op_D, int64_t* idx_D,
-                    float alpha, float beta) {
+                    float alpha, float beta)
+{
+    tblis::len_type* tblis_len_A = translate_extents_to_tblis(nmode_A, extents_A);
+    tblis::stride_type* tblis_stride_A = translate_strides_to_tblis(nmode_A, strides_A);
     tblis::tblis_tensor tblis_A;
-    tblis::len_type len_A[nmode_A];
-    tblis::stride_type stride_A[nmode_A];
-    for (int i = 0; i < nmode_A; i++)
-    {
-        len_A[i] = extents_A[i];
-        stride_A[i] = strides_A[i];
-    }
+    tblis::tblis_init_tensor_scaled_s(&tblis_A, alpha, nmode_A, tblis_len_A, A, tblis_stride_A);
+    tblis::label_type* tblis_idx_A = translate_idx_to_tblis(nmode_A, idx_A);
 
+    tblis::len_type* tblis_len_B = translate_extents_to_tblis(nmode_B, extents_B);
+    tblis::stride_type* tblis_stride_B = translate_strides_to_tblis(nmode_B, strides_B);
     tblis::tblis_tensor tblis_B;
-    tblis::len_type len_B[nmode_B];
-    tblis::stride_type stride_B[nmode_B];
-    for (int i = 0; i < nmode_B; i++)
-    {
-        len_B[i] = extents_B[i];
-        stride_B[i] = strides_B[i];
-    }
+    tblis::tblis_init_tensor_s(&tblis_B, nmode_B, tblis_len_B, B, tblis_stride_B);
+    tblis::label_type* tblis_idx_B = translate_idx_to_tblis(nmode_B, idx_B);
 
+    tblis::len_type* tblis_len_C = translate_extents_to_tblis(nmode_C, extents_C);
+    tblis::stride_type* tblis_stride_C = translate_strides_to_tblis(nmode_C, strides_C);
     tblis::tblis_tensor tblis_C;
-    tblis::len_type len_C[nmode_C];
-    tblis::stride_type stride_C[nmode_C];
-    for (int i = 0; i < nmode_C; i++)
-    {
-        len_C[i] = extents_C[i];
-        stride_C[i] = strides_C[i];
-    }
-
+    tblis::tblis_init_tensor_scaled_s(&tblis_C, beta, nmode_C, tblis_len_C, C, tblis_stride_C);
+    tblis::label_type* tblis_idx_C = translate_idx_to_tblis(nmode_C, idx_C);
+    
+    tblis::len_type* tblis_len_D = translate_extents_to_tblis(nmode_D, extents_D);
+    tblis::stride_type* tblis_stride_D = translate_strides_to_tblis(nmode_D, strides_D);
     tblis::tblis_tensor tblis_D;
-    tblis::len_type len_D[nmode_D];
-    tblis::stride_type stride_D[nmode_D];
-    for (int i = 0; i < nmode_D; i++)
+    tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
+    tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
+
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_s(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_s(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+
+    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+
+    delete[] tblis_idx_A;
+    delete[] tblis_len_A;
+    delete[] tblis_stride_A;
+
+    delete[] tblis_idx_B;
+    delete[] tblis_len_B;
+    delete[] tblis_stride_B;
+
+    delete[] tblis_idx_C;
+    delete[] tblis_len_C;
+    delete[] tblis_stride_C;
+
+    delete[] tblis_idx_D;
+    delete[] tblis_len_D;
+    delete[] tblis_stride_D;
+
+    delete[] tblis_idx_A_reduced;
+    delete[] tblis_len_A_reduced;
+    delete[] tblis_stride_A_reduced;
+    delete[] tblis_data_A_reduced;
+    delete tblis_A_reduced;
+
+    delete[] tblis_idx_B_reduced;
+    delete[] tblis_len_B_reduced;
+    delete[] tblis_stride_B_reduced;
+    delete[] tblis_data_B_reduced;
+    delete tblis_B_reduced;
+}
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+{
+    int nmode_reduced = 0;
+    int64_t size_reduced = 1;
+    tblis::tblis_tensor* tblis_reduced = new tblis::tblis_tensor;
+    tblis::len_type* len_reduced = new tblis::len_type[tensor->ndim];
+    tblis::stride_type* stride_reduced = new tblis::stride_type[tensor->ndim];
+    tblis::label_type* idx_reduced = new tblis::label_type[tensor->ndim+1];
+    for (size_t i = 0; i < tensor->ndim; i++)
     {
-        len_D[i] = extents_D[i];
-        stride_D[i] = strides_D[i];
+        bool found = false;
+        for (size_t j = 0; j < nmode_1; j++)
+        {
+            if (idx[i] == idx_1[j]) 
+            {
+                found = true;
+            }
+        }
+        for (size_t j = 0; j < nmode_2; j++)
+        {
+            if (idx[i] == idx_2[j]) 
+            {
+                found = true;
+            }
+        }
+        
+        if (found)
+        {
+            len_reduced[nmode_reduced] = tensor->len[i];
+            stride_reduced[nmode_reduced] = nmode_reduced == 0 ? 1 : stride_reduced[nmode_reduced - 1] * tensor->len[nmode_reduced - 1];
+            idx_reduced[nmode_reduced] = idx[i];
+            size_reduced *= len_reduced[nmode_reduced];
+            nmode_reduced++;
+        }
     }
+    idx_reduced[nmode_reduced] = '\0';
 
-    tblis::tblis_init_tensor_s(&tblis_A, nmode_A, len_A, A, stride_A);
-    tblis::tblis_init_tensor_s(&tblis_B, nmode_B, len_B, B, stride_B);
-    tblis::tblis_init_tensor_scaled_s(&tblis_C, beta, nmode_C, len_C, C, stride_C);
-    tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, nmode_D, len_D, D, stride_D);
-
-    tblis::label_type indices_A[nmode_A + 1];
-    tblis::label_type indices_B[nmode_B + 1];
-    tblis::label_type indices_C[nmode_C + 1];
-    tblis::label_type indices_D[nmode_D + 1];
-    indices_A[nmode_A] = '\0';
-    indices_B[nmode_B] = '\0';
-    indices_C[nmode_C] = '\0';
-    indices_D[nmode_D] = '\0';
-    for (int i = 0; i < nmode_A; i++)
+    float* data_reduced = new float[size_reduced];
+    for (size_t i = 0; i < size_reduced; i++)
     {
-        indices_A[i] = idx_A[i];
+        data_reduced[i] = 0;
     }
-    for (int i = 0; i < nmode_B; i++)
-    {
-        indices_B[i] = idx_B[i];
-    }
-    for (int i = 0; i < nmode_C; i++)
-    {
-        indices_C[i] = idx_C[i];
-    }
-    for (int i = 0; i < nmode_D; i++)
-    {
-        indices_D[i] = idx_D[i];
-    }
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, indices_A, &tblis_B, indices_B, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, indices_C);
-
-    tblis::tblis_init_tensor_scaled_s(&tblis_D, alpha, nmode_D, len_D, D, stride_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
+    tblis::tblis_init_tensor_s(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
 void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, double* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, double* B, int op_B, int64_t* idx_B,
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, double* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, double* D, int op_D, int64_t* idx_D,
-                    double alpha, double beta) {
+                    double alpha, double beta)
+{
+    tblis::len_type* tblis_len_A = translate_extents_to_tblis(nmode_A, extents_A);
+    tblis::stride_type* tblis_stride_A = translate_strides_to_tblis(nmode_A, strides_A);
     tblis::tblis_tensor tblis_A;
-    tblis::len_type len_A[nmode_A];
-    tblis::stride_type stride_A[nmode_A];
-    for (int i = 0; i < nmode_A; i++)
-    {
-        len_A[i] = extents_A[i];
-        stride_A[i] = strides_A[i];
-    }
+    tblis::tblis_init_tensor_scaled_d(&tblis_A, alpha, nmode_A, tblis_len_A, A, tblis_stride_A);
+    tblis::label_type* tblis_idx_A = translate_idx_to_tblis(nmode_A, idx_A);
 
+    tblis::len_type* tblis_len_B = translate_extents_to_tblis(nmode_B, extents_B);
+    tblis::stride_type* tblis_stride_B = translate_strides_to_tblis(nmode_B, strides_B);
     tblis::tblis_tensor tblis_B;
-    tblis::len_type len_B[nmode_B];
-    tblis::stride_type stride_B[nmode_B];
-    for (int i = 0; i < nmode_B; i++)
-    {
-        len_B[i] = extents_B[i];
-        stride_B[i] = strides_B[i];
-    }
+    tblis::tblis_init_tensor_d(&tblis_B, nmode_B, tblis_len_B, B, tblis_stride_B);
+    tblis::label_type* tblis_idx_B = translate_idx_to_tblis(nmode_B, idx_B);
 
+    tblis::len_type* tblis_len_C = translate_extents_to_tblis(nmode_C, extents_C);
+    tblis::stride_type* tblis_stride_C = translate_strides_to_tblis(nmode_C, strides_C);
     tblis::tblis_tensor tblis_C;
-    tblis::len_type len_C[nmode_C];
-    tblis::stride_type stride_C[nmode_C];
-    for (int i = 0; i < nmode_C; i++)
-    {
-        len_C[i] = extents_C[i];
-        stride_C[i] = strides_C[i];
-    }
-
+    tblis::tblis_init_tensor_scaled_d(&tblis_C, beta, nmode_C, tblis_len_C, C, tblis_stride_C);
+    tblis::label_type* tblis_idx_C = translate_idx_to_tblis(nmode_C, idx_C);
+    
+    tblis::len_type* tblis_len_D = translate_extents_to_tblis(nmode_D, extents_D);
+    tblis::stride_type* tblis_stride_D = translate_strides_to_tblis(nmode_D, strides_D);
     tblis::tblis_tensor tblis_D;
-    tblis::len_type len_D[nmode_D];
-    tblis::stride_type stride_D[nmode_D];
-    for (int i = 0; i < nmode_D; i++)
+    tblis::tblis_init_tensor_scaled_d(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
+    tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
+
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_d(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_d(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+
+    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+
+    delete[] tblis_idx_A;
+    delete[] tblis_len_A;
+    delete[] tblis_stride_A;
+
+    delete[] tblis_idx_B;
+    delete[] tblis_len_B;
+    delete[] tblis_stride_B;
+
+    delete[] tblis_idx_C;
+    delete[] tblis_len_C;
+    delete[] tblis_stride_C;
+
+    delete[] tblis_idx_D;
+    delete[] tblis_len_D;
+    delete[] tblis_stride_D;
+
+    delete[] tblis_idx_A_reduced;
+    delete[] tblis_len_A_reduced;
+    delete[] tblis_stride_A_reduced;
+    delete[] tblis_data_A_reduced;
+    delete tblis_A_reduced;
+
+    delete[] tblis_idx_B_reduced;
+    delete[] tblis_len_B_reduced;
+    delete[] tblis_stride_B_reduced;
+    delete[] tblis_data_B_reduced;
+    delete tblis_B_reduced;
+}
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+{
+    int nmode_reduced = 0;
+    int64_t size_reduced = 1;
+    tblis::tblis_tensor* tblis_reduced = new tblis::tblis_tensor;
+    tblis::len_type* len_reduced = new tblis::len_type[tensor->ndim];
+    tblis::stride_type* stride_reduced = new tblis::stride_type[tensor->ndim];
+    tblis::label_type* idx_reduced = new tblis::label_type[tensor->ndim+1];
+    for (size_t i = 0; i < tensor->ndim; i++)
     {
-        len_D[i] = extents_D[i];
-        stride_D[i] = strides_D[i];
+        bool found = false;
+        for (size_t j = 0; j < nmode_1; j++)
+        {
+            if (idx[i] == idx_1[j]) 
+            {
+                found = true;
+            }
+        }
+        for (size_t j = 0; j < nmode_2; j++)
+        {
+            if (idx[i] == idx_2[j]) 
+            {
+                found = true;
+            }
+        }
+        
+        if (found)
+        {
+            len_reduced[nmode_reduced] = tensor->len[i];
+            stride_reduced[nmode_reduced] = nmode_reduced == 0 ? 1 : stride_reduced[nmode_reduced - 1] * tensor->len[nmode_reduced - 1];
+            idx_reduced[nmode_reduced] = idx[i];
+            size_reduced *= len_reduced[nmode_reduced];
+            nmode_reduced++;
+        }
+    }
+    idx_reduced[nmode_reduced] = '\0';
+
+    double* data_reduced = new double[size_reduced];
+    for (size_t i = 0; i < size_reduced; i++)
+    {
+        data_reduced[i] = 0;
     }
 
-    tblis::tblis_init_tensor_d(&tblis_A, nmode_A, len_A, A, stride_A);
-    tblis::tblis_init_tensor_d(&tblis_B, nmode_B, len_B, B, stride_B);
-    tblis::tblis_init_tensor_scaled_d(&tblis_C, beta, nmode_C, len_C, C, stride_C);
-    tblis::tblis_init_tensor_scaled_d(&tblis_D, 0, nmode_D, len_D, D, stride_D);
-
-    tblis::label_type indices_A[nmode_A + 1];
-    tblis::label_type indices_B[nmode_B + 1];
-    tblis::label_type indices_C[nmode_C + 1];
-    tblis::label_type indices_D[nmode_D + 1];
-    indices_A[nmode_A] = '\0';
-    indices_B[nmode_B] = '\0';
-    indices_C[nmode_C] = '\0';
-    indices_D[nmode_D] = '\0';
-    for (int i = 0; i < nmode_A; i++)
-    {
-        indices_A[i] = idx_A[i];
-    }
-    for (int i = 0; i < nmode_B; i++)
-    {
-        indices_B[i] = idx_B[i];
-    }
-    for (int i = 0; i < nmode_C; i++)
-    {
-        indices_C[i] = idx_C[i];
-    }
-    for (int i = 0; i < nmode_D; i++)
-    {
-        indices_D[i] = idx_D[i];
-    }
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, indices_A, &tblis_B, indices_B, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, indices_C);
-
-    tblis::tblis_init_tensor_scaled_d(&tblis_D, alpha, nmode_D, len_D, D, stride_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
+    tblis::tblis_init_tensor_d(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
 void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::complex<float>* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, std::complex<float>* B, int op_B, int64_t* idx_B,
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, std::complex<float>* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, std::complex<float>* D, int op_D, int64_t* idx_D,
-                    std::complex<float> alpha, std::complex<float> beta) {
+                    std::complex<float> alpha, std::complex<float> beta)
+{
+    tblis::len_type* tblis_len_A = translate_extents_to_tblis(nmode_A, extents_A);
+    tblis::stride_type* tblis_stride_A = translate_strides_to_tblis(nmode_A, strides_A);
     tblis::tblis_tensor tblis_A;
-    tblis::len_type len_A[nmode_A];
-    tblis::stride_type stride_A[nmode_A];
-    for (int i = 0; i < nmode_A; i++)
-    {
-        len_A[i] = extents_A[i];
-        stride_A[i] = strides_A[i];
-    }
+    tblis::tblis_init_tensor_scaled_c(&tblis_A, alpha, nmode_A, tblis_len_A, A, tblis_stride_A);
+    tblis::label_type* tblis_idx_A = translate_idx_to_tblis(nmode_A, idx_A);
+    tblis_A.conj = op_A;
 
+    tblis::len_type* tblis_len_B = translate_extents_to_tblis(nmode_B, extents_B);
+    tblis::stride_type* tblis_stride_B = translate_strides_to_tblis(nmode_B, strides_B);
     tblis::tblis_tensor tblis_B;
-    tblis::len_type len_B[nmode_B];
-    tblis::stride_type stride_B[nmode_B];
-    for (int i = 0; i < nmode_B; i++)
-    {
-        len_B[i] = extents_B[i];
-        stride_B[i] = strides_B[i];
-    }
+    tblis::tblis_init_tensor_c(&tblis_B, nmode_B, tblis_len_B, B, tblis_stride_B);
+    tblis::label_type* tblis_idx_B = translate_idx_to_tblis(nmode_B, idx_B);
+    tblis_B.conj = op_B;
 
+    tblis::len_type* tblis_len_C = translate_extents_to_tblis(nmode_C, extents_C);
+    tblis::stride_type* tblis_stride_C = translate_strides_to_tblis(nmode_C, strides_C);
     tblis::tblis_tensor tblis_C;
-    tblis::len_type len_C[nmode_C];
-    tblis::stride_type stride_C[nmode_C];
-    for (int i = 0; i < nmode_C; i++)
-    {
-        len_C[i] = extents_C[i];
-        stride_C[i] = strides_C[i];
-    }
-
+    tblis::tblis_init_tensor_scaled_c(&tblis_C, beta, nmode_C, tblis_len_C, C, tblis_stride_C);
+    tblis::label_type* tblis_idx_C = translate_idx_to_tblis(nmode_C, idx_C);
+    
+    tblis::len_type* tblis_len_D = translate_extents_to_tblis(nmode_D, extents_D);
+    tblis::stride_type* tblis_stride_D = translate_strides_to_tblis(nmode_D, strides_D);
     tblis::tblis_tensor tblis_D;
-    tblis::len_type len_D[nmode_D];
-    tblis::stride_type stride_D[nmode_D];
-    for (int i = 0; i < nmode_D; i++)
+    tblis::tblis_init_tensor_scaled_c(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
+    tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
+
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_c(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_c(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+
+    tblis_C.conj = op_C;
+
+    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+
+    tblis_D.conj = op_D;
+
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, tblis_idx_D);
+
+    delete[] tblis_idx_A;
+    delete[] tblis_len_A;
+    delete[] tblis_stride_A;
+
+    delete[] tblis_idx_B;
+    delete[] tblis_len_B;
+    delete[] tblis_stride_B;
+
+    delete[] tblis_idx_C;
+    delete[] tblis_len_C;
+    delete[] tblis_stride_C;
+
+    delete[] tblis_idx_D;
+    delete[] tblis_len_D;
+    delete[] tblis_stride_D;
+
+    delete[] tblis_idx_A_reduced;
+    delete[] tblis_len_A_reduced;
+    delete[] tblis_stride_A_reduced;
+    delete[] tblis_data_A_reduced;
+    delete tblis_A_reduced;
+
+    delete[] tblis_idx_B_reduced;
+    delete[] tblis_len_B_reduced;
+    delete[] tblis_stride_B_reduced;
+    delete[] tblis_data_B_reduced;
+    delete tblis_B_reduced;
+}
+
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+{
+    int nmode_reduced = 0;
+    int64_t size_reduced = 1;
+    tblis::tblis_tensor* tblis_reduced = new tblis::tblis_tensor;
+    tblis::len_type* len_reduced = new tblis::len_type[tensor->ndim];
+    tblis::stride_type* stride_reduced = new tblis::stride_type[tensor->ndim];
+    tblis::label_type* idx_reduced = new tblis::label_type[tensor->ndim+1];
+    for (size_t i = 0; i < tensor->ndim; i++)
     {
-        len_D[i] = extents_D[i];
-        stride_D[i] = strides_D[i];
+        bool found = false;
+        for (size_t j = 0; j < nmode_1; j++)
+        {
+            if (idx[i] == idx_1[j]) 
+            {
+                found = true;
+            }
+        }
+        for (size_t j = 0; j < nmode_2; j++)
+        {
+            if (idx[i] == idx_2[j]) 
+            {
+                found = true;
+            }
+        }
+        
+        if (found)
+        {
+            len_reduced[nmode_reduced] = tensor->len[i];
+            stride_reduced[nmode_reduced] = nmode_reduced == 0 ? 1 : stride_reduced[nmode_reduced - 1] * tensor->len[nmode_reduced - 1];
+            idx_reduced[nmode_reduced] = idx[i];
+            size_reduced *= len_reduced[nmode_reduced];
+            nmode_reduced++;
+        }
+    }
+    idx_reduced[nmode_reduced] = '\0';
+
+    std::complex<float>* data_reduced = new std::complex<float>[size_reduced];
+    for (size_t i = 0; i < size_reduced; i++)
+    {
+        data_reduced[i] = 0;
     }
 
-    tblis::label_type indices_A[nmode_A + 1];
-    tblis::label_type indices_B[nmode_B + 1];
-    tblis::label_type indices_C[nmode_C + 1];
-    tblis::label_type indices_D[nmode_D + 1];
-    indices_A[nmode_A] = '\0';
-    indices_B[nmode_B] = '\0';
-    indices_C[nmode_C] = '\0';
-    indices_D[nmode_D] = '\0';
-    for (int i = 0; i < nmode_A; i++)
-    {
-        indices_A[i] = idx_A[i];
-    }
-    for (int i = 0; i < nmode_B; i++)
-    {
-        indices_B[i] = idx_B[i];
-    }
-    for (int i = 0; i < nmode_C; i++)
-    {
-        indices_C[i] = idx_C[i];
-    }
-    for (int i = 0; i < nmode_D; i++)
-    {
-        indices_D[i] = idx_D[i];
-    }
-
-    tblis::tblis_init_tensor_c(&tblis_A, nmode_A, len_A, A, stride_A);
-    tblis::tblis_init_tensor_c(&tblis_B, nmode_B, len_B, B, stride_B);
-    tblis::tblis_init_tensor_scaled_c(&tblis_C, beta, nmode_C, len_C, C, stride_C);
-    tblis::tblis_init_tensor_scaled_c(&tblis_D, 0, nmode_D, len_D, D, stride_D);
-
-    if (op_A == 1)
-    {
-        conjugate_c(nmode_A, len_A, stride_A, A);
-    }
-    if (op_B == 1)
-    {
-        conjugate_c(nmode_B, len_B, stride_B, B);
-    }
-    if (op_C == 1)
-    {
-        conjugate_c(nmode_C, len_C, stride_C, C);
-    }
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, indices_A, &tblis_B, indices_B, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, indices_C);
-
-    tblis::tblis_init_tensor_scaled_c(&tblis_D, alpha, nmode_D, len_D, D, stride_D);
-
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
-
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
-
-    if (op_D == 1)
-    {
-        conjugate_c(nmode_D, len_D, stride_D, D);
-    }
+    tblis::tblis_init_tensor_c(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
 void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::complex<double>* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, std::complex<double>* B, int op_B, int64_t* idx_B,
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, std::complex<double>* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, std::complex<double>* D, int op_D, int64_t* idx_D,
-                    std::complex<double> alpha, std::complex<double> beta) {
+                    std::complex<double> alpha, std::complex<double> beta)
+{
+    tblis::len_type* tblis_len_A = translate_extents_to_tblis(nmode_A, extents_A);
+    tblis::stride_type* tblis_stride_A = translate_strides_to_tblis(nmode_A, strides_A);
     tblis::tblis_tensor tblis_A;
-    tblis::len_type len_A[nmode_A];
-    tblis::stride_type stride_A[nmode_A];
-    for (int i = 0; i < nmode_A; i++)
-    {
-        len_A[i] = extents_A[i];
-        stride_A[i] = strides_A[i];
-    }
+    tblis::tblis_init_tensor_scaled_z(&tblis_A, alpha, nmode_A, tblis_len_A, A, tblis_stride_A);
+    tblis::label_type* tblis_idx_A = translate_idx_to_tblis(nmode_A, idx_A);
+    tblis_A.conj = op_A;
 
+    tblis::len_type* tblis_len_B = translate_extents_to_tblis(nmode_B, extents_B);
+    tblis::stride_type* tblis_stride_B = translate_strides_to_tblis(nmode_B, strides_B);
     tblis::tblis_tensor tblis_B;
-    tblis::len_type len_B[nmode_B];
-    tblis::stride_type stride_B[nmode_B];
-    for (int i = 0; i < nmode_B; i++)
-    {
-        len_B[i] = extents_B[i];
-        stride_B[i] = strides_B[i];
-    }
+    tblis::tblis_init_tensor_z(&tblis_B, nmode_B, tblis_len_B, B, tblis_stride_B);
+    tblis::label_type* tblis_idx_B = translate_idx_to_tblis(nmode_B, idx_B);
+    tblis_B.conj = op_B;
 
+    tblis::len_type* tblis_len_C = translate_extents_to_tblis(nmode_C, extents_C);
+    tblis::stride_type* tblis_stride_C = translate_strides_to_tblis(nmode_C, strides_C);
     tblis::tblis_tensor tblis_C;
-    tblis::len_type len_C[nmode_C];
-    tblis::stride_type stride_C[nmode_C];
-    for (int i = 0; i < nmode_C; i++)
-    {
-        len_C[i] = extents_C[i];
-        stride_C[i] = strides_C[i];
-    }
-
+    tblis::tblis_init_tensor_scaled_z(&tblis_C, beta, nmode_C, tblis_len_C, C, tblis_stride_C);
+    tblis::label_type* tblis_idx_C = translate_idx_to_tblis(nmode_C, idx_C);
+    
+    tblis::len_type* tblis_len_D = translate_extents_to_tblis(nmode_D, extents_D);
+    tblis::stride_type* tblis_stride_D = translate_strides_to_tblis(nmode_D, strides_D);
     tblis::tblis_tensor tblis_D;
-    tblis::len_type len_D[nmode_D];
-    tblis::stride_type stride_D[nmode_D];
-    for (int i = 0; i < nmode_D; i++)
-    {
-        len_D[i] = extents_D[i];
-        stride_D[i] = strides_D[i];
-    }
+    tblis::tblis_init_tensor_scaled_z(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
+    tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
 
-    tblis::label_type indices_A[nmode_A + 1];
-    tblis::label_type indices_B[nmode_B + 1];
-    tblis::label_type indices_C[nmode_C + 1];
-    tblis::label_type indices_D[nmode_D + 1];
-    indices_A[nmode_A] = '\0';
-    indices_B[nmode_B] = '\0';
-    indices_C[nmode_C] = '\0';
-    indices_D[nmode_D] = '\0';
-    for (int i = 0; i < nmode_A; i++)
-    {
-        indices_A[i] = idx_A[i];
-    }
-    for (int i = 0; i < nmode_B; i++)
-    {
-        indices_B[i] = idx_B[i];
-    }
-    for (int i = 0; i < nmode_C; i++)
-    {
-        indices_C[i] = idx_C[i];
-    }
-    for (int i = 0; i < nmode_D; i++)
-    {
-        indices_D[i] = idx_D[i];
-    }
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_z(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_z(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
 
-    tblis::tblis_init_tensor_z(&tblis_A, nmode_A, len_A, A, stride_A);
-    tblis::tblis_init_tensor_z(&tblis_B, nmode_B, len_B, B, stride_B);
-    tblis::tblis_init_tensor_scaled_z(&tblis_C, beta, nmode_C, len_C, C, stride_C);
-    tblis::tblis_init_tensor_scaled_z(&tblis_D, 0, nmode_D, len_D, D, stride_D);
+    tblis_C.conj = op_C;
 
-    if (op_A == 1)
-    {
-        conjugate_z(nmode_A, extents_A, strides_A, A);
-    }
-    if (op_B == 1)
-    {
-        conjugate_z(nmode_B, extents_B, strides_B, B);
-    }
-    if (op_C == 1)
-    {
-        conjugate_z(nmode_C, extents_C, strides_C, C);
-    }
+    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_mult(tblis_single, NULL, &tblis_A, indices_A, &tblis_B, indices_B, &tblis_D, indices_D);
+    tblis_D.conj = op_D;
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_C, indices_C);
+    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_init_tensor_scaled_z(&tblis_D, alpha, nmode_D, len_D, D, stride_D);
+    delete[] tblis_idx_A;
+    delete[] tblis_len_A;
+    delete[] tblis_stride_A;
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, indices_D);
+    delete[] tblis_idx_B;
+    delete[] tblis_len_B;
+    delete[] tblis_stride_B;
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, indices_C, &tblis_D, indices_D);
+    delete[] tblis_idx_C;
+    delete[] tblis_len_C;
+    delete[] tblis_stride_C;
 
-    if (op_D == 1)
-    {
-        conjugate_z(nmode_D, extents_D, strides_D, D);
-    }
+    delete[] tblis_idx_D;
+    delete[] tblis_len_D;
+    delete[] tblis_stride_D;
+
+    delete[] tblis_idx_A_reduced;
+    delete[] tblis_len_A_reduced;
+    delete[] tblis_stride_A_reduced;
+    delete[] tblis_data_A_reduced;
+    delete tblis_A_reduced;
+
+    delete[] tblis_idx_B_reduced;
+    delete[] tblis_len_B_reduced;
+    delete[] tblis_stride_B_reduced;
+    delete[] tblis_data_B_reduced;
+    delete tblis_B_reduced;
 }
 
-void conjugate_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* T) {
-    int64_t coords[nmode];
-    int64_t size = 1;
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+{
+    int nmode_reduced = 0;
+    int64_t size_reduced = 1;
+    tblis::tblis_tensor* tblis_reduced = new tblis::tblis_tensor;
+    tblis::len_type* len_reduced = new tblis::len_type[tensor->ndim];
+    tblis::stride_type* stride_reduced = new tblis::stride_type[tensor->ndim];
+    tblis::label_type* idx_reduced = new tblis::label_type[tensor->ndim+1];
+    for (size_t i = 0; i < tensor->ndim; i++)
+    {
+        bool found = false;
+        for (size_t j = 0; j < nmode_1; j++)
+        {
+            if (idx[i] == idx_1[j]) 
+            {
+                found = true;
+            }
+        }
+        for (size_t j = 0; j < nmode_2; j++)
+        {
+            if (idx[i] == idx_2[j]) 
+            {
+                found = true;
+            }
+        }
+        
+        if (found)
+        {
+            len_reduced[nmode_reduced] = tensor->len[i];
+            stride_reduced[nmode_reduced] = nmode_reduced == 0 ? 1 : stride_reduced[nmode_reduced - 1] * tensor->len[nmode_reduced - 1];
+            idx_reduced[nmode_reduced] = idx[i];
+            size_reduced *= len_reduced[nmode_reduced];
+            nmode_reduced++;
+        }
+    }
+    idx_reduced[nmode_reduced] = '\0';
+
+    std::complex<double>* data_reduced = new std::complex<double>[size_reduced];
+    for (size_t i = 0; i < size_reduced; i++)
+    {
+        data_reduced[i] = 0;
+    }
+
+    tblis::tblis_init_tensor_z(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
+}
+
+tblis::len_type* translate_extents_to_tblis(int nmode, int64_t* extents)
+{
+    tblis::len_type* tblis_len = new tblis::len_type[nmode];
     for (int i = 0; i < nmode; i++)
     {
-        coords[i] = 0;
-        size *= extents[i];
+        tblis_len[i] = extents[i];
     }
-    for (int i = 0; i < size; i++)
-    {
-        int64_t index = 0;
-        for (int i = 0; i < nmode; i++)
-        {
-            index += coords[i]*strides[i];
-        }
-        T[index] = std::conj(T[index]);
-        increment_coordinates(coords, nmode, extents);
-    }
+    return tblis_len;
 }
 
-void conjugate_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* T) {
-    int64_t coords[nmode];
-    int64_t size = 1;
+tblis::stride_type* translate_strides_to_tblis(int nmode, int64_t* strides)
+{
+    tblis::stride_type* tblis_stride = new tblis::stride_type[nmode];
     for (int i = 0; i < nmode; i++)
     {
-        coords[i] = 0;
-        size *= extents[i];
+        tblis_stride[i] = strides[i];
     }
-    for (int i = 0; i < size; i++)
-    {
-        int64_t index = 0;
-        for (int i = 0; i < nmode; i++)
-        {
-            index += coords[i]*strides[i];
-        }
-        T[index] = std::conj(T[index]);
-        increment_coordinates(coords, nmode, extents);
-    }
+    return tblis_stride;
 }
 
-bool compare_tensors_s(float* A, float* B, int size) {
+tblis::label_type* translate_idx_to_tblis(int nmode, int64_t* idx)
+{
+    tblis::label_type* tblis_idx = new tblis::label_type[nmode + 1];
+    for (int i = 0; i < nmode; i++)
+    {
+        tblis_idx[i] = idx[i];
+    }
+    tblis_idx[nmode] = '\0';
+    return tblis_idx;
+}
+
+bool compare_tensors_s(float* A, float* B, int size)
+{
     bool found = false;
     for (int i = 0; i < size; i++)
     {
@@ -605,7 +728,8 @@ bool compare_tensors_s(float* A, float* B, int size) {
     return !found;
 }
 
-bool compare_tensors_d(double* A, double* B, int size) {
+bool compare_tensors_d(double* A, double* B, int size)
+{
     bool found = false;
     for (int i = 0; i < size; i++)
     {
@@ -620,7 +744,8 @@ bool compare_tensors_d(double* A, double* B, int size) {
     return !found;
 }
 
-bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size) {
+bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size)
+{
     bool found = false;
     for (int i = 0; i < size; i++)
     {
@@ -636,7 +761,8 @@ bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size)
     return !found;
 }
 
-bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int size) {
+bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int size)
+{
     bool found = false;
     for (int i = 0; i < size; i++)
     {
@@ -658,13 +784,15 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
            int, int64_t*, int64_t*, float*, int64_t*,
            float, float,
            float*, float*, float*, float*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_s(int nmode_A = -1, int nmode_B = -1,
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_s(int nmode_A = -1, int nmode_B = -1,
                                                         int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
                                                         bool lower_nmode = false, bool negative_str = false,
-                                                        bool unique_idx = false, bool repeated_idx = false) {
-    if (repeated_idx && nmode_D < 2) {
+                                                        bool unique_idx = false, bool repeated_idx = false,
+                                                        bool mixed_str = false)
+{
+    if (repeated_idx && nmode_D < 2)
+    {
         nmode_D = randi(2, 4);
     }
     if (nmode_A == -1 && nmode_B == -1)
@@ -715,7 +843,8 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         idx_A[i] = 'a' + i;
     }
     
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A - repeated_idx_A, std::default_random_engine());
     }
 
@@ -732,10 +861,12 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         idx_B[i + contractions] = 'a' + nmode_A - repeated_idx_A + i;
     }
 
-    if (nmode_B > 0) {
+    if (nmode_B > 0)
+    {
         std::shuffle(idx_B, idx_B + nmode_B - repeated_idx_B, std::default_random_engine());
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A - repeated_idx_A, std::default_random_engine());
     }
 
@@ -806,13 +937,16 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
     }
     
     //Randomize order of idx
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
-    if (nmode_B > 0) {
+    if (nmode_B > 0)
+    {
         std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
-    if (nmode_D > 0) {
+    if (nmode_D > 0)
+    {
         std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
     }
     std::copy(idx_D, idx_D + nmode_D, idx_C);
@@ -826,12 +960,14 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         int repeated_idx = -1;
         for (int j = 0; j < i - 1; j++)
         {
-            if (idx_A[i] == idx_A[j]) {
+            if (idx_A[i] == idx_A[j])
+            {
                 repeated_idx = j;
                 break;
             }
         }
-        if (repeated_idx != -1) {
+        if (repeated_idx != -1)
+        {
             extents_A[i] = extents_A[repeated_idx];
             continue;
         }
@@ -857,12 +993,14 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
         int repeated_idx = -1;
         for (int j = 0; j < i - 1; j++)
         {
-            if (idx_B[i] == idx_B[j]) {
+            if (idx_B[i] == idx_B[j])
+            {
                 repeated_idx = j;
                 break;
             }
         }
-        if (repeated_idx != -1) {
+        if (repeated_idx != -1)
+        {
             extents_B[i] = extents_A[repeated_idx];
             continue;
         }
@@ -910,150 +1048,69 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
     int outer_nmode_B = lower_nmode ? nmode_B + randi(1, 4) : nmode_B;
     int outer_nmode_C = lower_nmode ? nmode_C + randi(1, 4) : nmode_C;
     int outer_nmode_D = lower_nmode ? nmode_D + randi(1, 4) : nmode_D;
-    int64_t outer_extents_A[outer_nmode_A];
-    int64_t outer_extents_B[outer_nmode_B];
-    int64_t outer_extents_C[outer_nmode_C];
-    int64_t outer_extents_D[outer_nmode_D];
-    int64_t* strides_A = new int64_t[nmode_A];
-    int64_t* strides_B = new int64_t[nmode_B];
-    int64_t* strides_C = new int64_t[nmode_C];
-    int64_t* strides_D = new int64_t[nmode_D];
-    int64_t* offset_A = new int64_t[nmode_A];
-    int64_t* offset_B = new int64_t[nmode_B];
-    int64_t* offset_C = new int64_t[nmode_C];
-    int64_t* offset_D = new int64_t[nmode_D];
-    int64_t size_A = 1;
-    int64_t size_B = 1;
-    int64_t size_C = 1;
-    int64_t size_D = 1;
 
-    int64_t str = negative_str ? -1 : 1;
-    int idx = 0;
-    for (int i = 0; i < outer_nmode_A; i++)
-    {
-        if ((randf(0, 1) < (float)nmode_A/(float)outer_nmode_A || outer_nmode_A - i == nmode_A - idx) && nmode_A - idx > 0)
-        {
-            int extension = randi(1, 4);
-            outer_extents_A[i] = lower_extents ? extents_A[idx] + extension : extents_A[idx];
-            offset_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
-            strides_A[idx] = str;
-            str *= outer_extents_A[i];
-            idx++;
-        }
-        else
-        {
-            outer_extents_A[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_extents_A[i];
-        }
-        size_A *= outer_extents_A[i];
-    }
-    str = negative_str ? -1 : 1;
-    idx = 0;
-    for (int i = 0; i < outer_nmode_B; i++)
-    {
-        if ((randf(0, 1) < (float)nmode_B/(float)outer_nmode_B || outer_nmode_B - i == nmode_B - idx) && nmode_B - idx > 0)
-        {
-            int extension = randi(1, 4);
-            outer_extents_B[i] = lower_extents ? extents_B[idx] + extension : extents_B[idx];
-            offset_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
-            strides_B[idx] = str;
-            str *= outer_extents_B[i];
-            idx++;
-        }
-        else
-        {
-            outer_extents_B[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_extents_B[i];
-        }
-        size_B *= outer_extents_B[i];
-    }
-    str = negative_str ? -1 : 1;
-    idx = 0;
-    for (int i = 0; i < outer_nmode_C; i++)
-    {
-        if ((randf(0, 1) < (float)nmode_C/(float)outer_nmode_C || outer_nmode_C - i == nmode_C - idx) && nmode_C - idx > 0)
-        {
-            int extension = randi(1, 4);
-            outer_extents_C[i] = lower_extents ? extents_C[idx] + extension : extents_C[idx];
-            offset_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
-            strides_C[idx] = str;
-            str *= outer_extents_C[i];
-            idx++;
-        }
-        else
-        {
-            outer_extents_C[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_extents_C[i];
-        }
-        size_C *= outer_extents_C[i];
-    }
-    str = negative_str ? -1 : 1;
-    idx = 0;
-    for (int i = 0; i < outer_nmode_D; i++)
-    {
-        if ((randf(0, 1) < (float)nmode_D/(float)outer_nmode_D || outer_nmode_D - i == nmode_D - idx) && nmode_D - idx > 0)
-        {
-            int extension = randi(1, 4);
-            outer_extents_D[i] = lower_extents ? extents_D[idx] + extension : extents_D[idx];
-            offset_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
-            strides_D[idx] = str;
-            str *= outer_extents_D[i];
-            idx++;
-        }
-        else
-        {
-            outer_extents_D[i] = lower_extents ? randi(1, 8) : randi(1, 4);
-            str *= outer_extents_D[i];
-        }
-        size_D *= outer_extents_D[i];
-    }
+    int* stride_signs_A = choose_stride_signs(nmode_A, negative_str, mixed_str);
+    int* stride_signs_B = choose_stride_signs(nmode_B, negative_str, mixed_str);
+    int* stride_signs_C = choose_stride_signs(nmode_C, negative_str, mixed_str);
+    int* stride_signs_D = choose_stride_signs(nmode_D, negative_str, mixed_str);
 
-    float* data_A = new float[size_A];
-    float* data_B = new float[size_B];
-    float* data_C = new float[size_C];
-    float* data_D = new float[size_D];
+    bool* subtensor_dims_A = choose_subtensor_dims(nmode_A, outer_nmode_A);
+    bool* subtensor_dims_B = choose_subtensor_dims(nmode_B, outer_nmode_B);
+    bool* subtensor_dims_C = choose_subtensor_dims(nmode_C, outer_nmode_C);
+    bool* subtensor_dims_D = choose_subtensor_dims(nmode_D, outer_nmode_D);
 
-    for (int i = 0; i < size_A; i++)
-    {
-        data_A[i] = randf();
-    }
-    for (int i = 0; i < size_B; i++)
-    {
-        data_B[i] = randf();
-    }
-    for (int i = 0; i < size_C; i++)
-    {
-        data_C[i] = randf();
-    }
-    for (int i = 0; i < size_D; i++)
-    {
-        data_D[i] = randf();
-    }
+    int64_t* outer_extents_A = calculate_outer_extents(outer_nmode_A, extents_A, subtensor_dims_A, lower_extents);
+    int64_t* outer_extents_B = calculate_outer_extents(outer_nmode_B, extents_B, subtensor_dims_B, lower_extents);
+    int64_t* outer_extents_C = calculate_outer_extents(outer_nmode_C, extents_C, subtensor_dims_C, lower_extents);
+    int64_t* outer_extents_D = calculate_outer_extents(outer_nmode_D, extents_D, subtensor_dims_D, lower_extents);
 
-    float* A = negative_str ? data_A + size_A - 1 : data_A;
-    float* B = negative_str ? data_B + size_B - 1 : data_B;
-    float* C = negative_str ? data_C + size_C - 1 : data_C;
-    float* D = negative_str ? data_D + size_D - 1 : data_D;
+    int64_t* offsets_A = calculate_offsets(nmode_A, outer_nmode_A, extents_A, outer_extents_A, subtensor_dims_A, lower_extents);
+    int64_t* offsets_B = calculate_offsets(nmode_B, outer_nmode_B, extents_B, outer_extents_B, subtensor_dims_B, lower_extents);
+    int64_t* offsets_C = calculate_offsets(nmode_C, outer_nmode_C, extents_C, outer_extents_C, subtensor_dims_C, lower_extents);
+    int64_t* offsets_D = calculate_offsets(nmode_D, outer_nmode_D, extents_D, outer_extents_D, subtensor_dims_D, lower_extents);
 
-    for (int i = 0; i < nmode_A; i++)
-    {
-        A += offset_A[i] * strides_A[i];
-    }
-    for (int i = 0; i < nmode_B; i++)
-    {
-        B += offset_B[i] * strides_B[i];
-    }
-    for (int i = 0; i < nmode_C; i++)
-    {
-        C += offset_C[i] * strides_C[i];
-    }
-    for (int i = 0; i < nmode_D; i++)
-    {
-        D += offset_D[i] * strides_D[i];
-    }
+    int64_t* strides_A = calculate_strides(nmode_A, outer_nmode_A, outer_extents_A, stride_signs_A, subtensor_dims_A);
+    int64_t* strides_B = calculate_strides(nmode_B, outer_nmode_B, outer_extents_B, stride_signs_B, subtensor_dims_B);
+    int64_t* strides_C = calculate_strides(nmode_C, outer_nmode_C, outer_extents_C, stride_signs_C, subtensor_dims_C);
+    int64_t* strides_D = calculate_strides(nmode_D, outer_nmode_D, outer_extents_D, stride_signs_D, subtensor_dims_D);
+    
+    int64_t size_A = calculate_size(outer_nmode_A, outer_extents_A);
+    int64_t size_B = calculate_size(outer_nmode_B, outer_extents_B);
+    int64_t size_C = calculate_size(outer_nmode_C, outer_extents_C);
+    int64_t size_D = calculate_size(outer_nmode_D, outer_extents_D);
+
+    float* data_A = create_tensor_data_s(size_A);
+    float* data_B = create_tensor_data_s(size_B);
+    float* data_C = create_tensor_data_s(size_C);
+    float* data_D = create_tensor_data_s(size_D);
+
+    float* A = (float*)calculate_tensor_pointer_s(data_A, nmode_A, extents_A, offsets_A, strides_A, size_A, negative_str);
+    float* B = (float*)calculate_tensor_pointer_s(data_B, nmode_B, extents_B, offsets_B, strides_B, size_B, negative_str);
+    float* C = (float*)calculate_tensor_pointer_s(data_C, nmode_C, extents_C, offsets_C, strides_C, size_C, negative_str);
+    float* D = (float*)calculate_tensor_pointer_s(data_D, nmode_D, extents_D, offsets_D, strides_D, size_D, negative_str);
 
     float alpha = randf();
     float beta = randf();
+
+    delete[] subtensor_dims_A;
+    delete[] subtensor_dims_B;
+    delete[] subtensor_dims_C;
+    delete[] subtensor_dims_D;
+
+    delete[] outer_extents_A;
+    delete[] outer_extents_B;
+    delete[] outer_extents_C;
+    delete[] outer_extents_D;
+
+    delete[] stride_signs_A;
+    delete[] stride_signs_B;
+    delete[] stride_signs_C;
+    delete[] stride_signs_D;
+
+    delete[] offsets_A;
+    delete[] offsets_B;
+    delete[] offsets_C;
+    delete[] offsets_D;
     
     return {nmode_A, extents_A, strides_A, A, idx_A,
             nmode_B, extents_B, strides_B, B, idx_B,
@@ -1061,8 +1118,7 @@ std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
             nmode_D, extents_D, strides_D, D, idx_D,
             alpha, beta,
             data_A, data_B, data_C, data_D,
-            size_A, size_B, size_C, size_D,
-            offset_A, offset_B, offset_C, offset_D};
+            size_A, size_B, size_C, size_D};
 }
 
 std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
@@ -1071,11 +1127,11 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
            int, int64_t*, int64_t*, double*, int64_t*,
            double, double,
            double*, double*, double*, double*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_d(int nmode_A = -1, int nmode_B = -1,
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_d(int nmode_A = -1, int nmode_B = -1,
                                                         int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
-                                                        bool lower_nmode = false, bool negative_str = false) {
+                                                        bool lower_nmode = false, bool negative_str = false)
+{
     if (nmode_A == -1 && nmode_B == -1)
     {
         nmode_A = randi(0, nmode_D);
@@ -1107,7 +1163,8 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
     {
         idx_A[i] = 'a' + i;
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
     
@@ -1122,10 +1179,12 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
     {
         idx_B[i + contractions] = 'a' + nmode_A + i;
     }
-    if (nmode_B > 0) {
+    if (nmode_B > 0)
+    {
         std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
 
@@ -1150,7 +1209,8 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
             index++;
         }
     }
-    if (nmode_D > 0) {
+    if (nmode_D > 0)
+    {
         std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
     }
     std::copy(idx_D, idx_D + nmode_D, idx_C);
@@ -1233,10 +1293,10 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
     int64_t* strides_B = new int64_t[nmode_B];
     int64_t* strides_C = new int64_t[nmode_C];
     int64_t* strides_D = new int64_t[nmode_D];
-    int64_t* offset_A = new int64_t[nmode_A];
-    int64_t* offset_B = new int64_t[nmode_B];
-    int64_t* offset_C = new int64_t[nmode_C];
-    int64_t* offset_D = new int64_t[nmode_D];
+    int64_t* offsets_A = new int64_t[nmode_A];
+    int64_t* offsets_B = new int64_t[nmode_B];
+    int64_t* offsets_C = new int64_t[nmode_C];
+    int64_t* offsets_D = new int64_t[nmode_D];
     int64_t size_A = 1;
     int64_t size_B = 1;
     int64_t size_C = 1;
@@ -1250,7 +1310,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_A[i] = lower_extents ? extents_A[idx] + extension : extents_A[idx];
-            offset_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
+            offsets_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
             strides_A[idx] = str;
             str *= outer_extents_A[i];
             idx++;
@@ -1270,7 +1330,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_B[i] = lower_extents ? extents_B[idx] + extension : extents_B[idx];
-            offset_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
+            offsets_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
             strides_B[idx] = str;
             str *= outer_extents_B[i];
             idx++;
@@ -1290,7 +1350,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_C[i] = lower_extents ? extents_C[idx] + extension : extents_C[idx];
-            offset_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
+            offsets_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
             strides_C[idx] = str;
             str *= outer_extents_C[i];
             idx++;
@@ -1310,7 +1370,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_D[i] = lower_extents ? extents_D[idx] + extension : extents_D[idx];
-            offset_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
+            offsets_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
             strides_D[idx] = str;
             str *= outer_extents_D[i];
             idx++;
@@ -1352,23 +1412,28 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
 
     for (int i = 0; i < nmode_A; i++)
     {
-        A += offset_A[i] * strides_A[i];
+        A += offsets_A[i] * strides_A[i];
     }
     for (int i = 0; i < nmode_B; i++)
     {
-        B += offset_B[i] * strides_B[i];
+        B += offsets_B[i] * strides_B[i];
     }
     for (int i = 0; i < nmode_C; i++)
     {
-        C += offset_C[i] * strides_C[i];
+        C += offsets_C[i] * strides_C[i];
     }
     for (int i = 0; i < nmode_D; i++)
     {
-        D += offset_D[i] * strides_D[i];
+        D += offsets_D[i] * strides_D[i];
     }
 
     double alpha = randd();
     double beta = randd();
+
+    delete[] offsets_A;
+    delete[] offsets_B;
+    delete[] offsets_C;
+    delete[] offsets_D;
 
     return {nmode_A, extents_A, strides_A, A, idx_A,
             nmode_B, extents_B, strides_B, B, idx_B,
@@ -1376,8 +1441,7 @@ std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
             nmode_D, extents_D, strides_D, D, idx_D,
             alpha, beta,
             data_A, data_B, data_C, data_D,
-            size_A, size_B, size_C, size_D,
-            offset_A, offset_B, offset_C, offset_D};
+            size_A, size_B, size_C, size_D};
 }
 
 std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
@@ -1386,11 +1450,11 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
            int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
            std::complex<float>, std::complex<float>,
            std::complex<float>*, std::complex<float>*, std::complex<float>*, std::complex<float>*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_c(int nmode_A = -1, int nmode_B = -1,
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_c(int nmode_A = -1, int nmode_B = -1,
                                                         int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
-                                                        bool lower_nmode = false, bool negative_str = false) {
+                                                        bool lower_nmode = false, bool negative_str = false)
+{
     if (nmode_A == -1 && nmode_B == -1)
     {
         nmode_A = randi(0, nmode_D);
@@ -1422,7 +1486,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
     {
         idx_A[i] = 'a' + i;
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
     
@@ -1437,10 +1502,12 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
     {
         idx_B[i + contractions] = 'a' + nmode_A + i;
     }
-    if (nmode_B > 0) {
+    if (nmode_B > 0)
+    {
         std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
 
@@ -1465,7 +1532,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
             index++;
         }
     }
-    if (nmode_D > 0) {
+    if (nmode_D > 0)
+    {
         std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
     }
     std::copy(idx_D, idx_D + nmode_D, idx_C);
@@ -1548,10 +1616,10 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
     int64_t* strides_B = new int64_t[nmode_B];
     int64_t* strides_C = new int64_t[nmode_C];
     int64_t* strides_D = new int64_t[nmode_D];
-    int64_t* offset_A = new int64_t[nmode_A];
-    int64_t* offset_B = new int64_t[nmode_B];
-    int64_t* offset_C = new int64_t[nmode_C];
-    int64_t* offset_D = new int64_t[nmode_D];
+    int64_t* offsets_A = new int64_t[nmode_A];
+    int64_t* offsets_B = new int64_t[nmode_B];
+    int64_t* offsets_C = new int64_t[nmode_C];
+    int64_t* offsets_D = new int64_t[nmode_D];
     int64_t size_A = 1;
     int64_t size_B = 1;
     int64_t size_C = 1;
@@ -1565,7 +1633,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_A[i] = lower_extents ? extents_A[idx] + extension : extents_A[idx];
-            offset_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
+            offsets_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
             strides_A[idx] = str;
             str *= outer_extents_A[i];
             idx++;
@@ -1585,7 +1653,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_B[i] = lower_extents ? extents_B[idx] + extension : extents_B[idx];
-            offset_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
+            offsets_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
             strides_B[idx] = str;
             str *= outer_extents_B[i];
             idx++;
@@ -1605,7 +1673,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_C[i] = lower_extents ? extents_C[idx] + extension : extents_C[idx];
-            offset_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
+            offsets_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
             strides_C[idx] = str;
             str *= outer_extents_C[i];
             idx++;
@@ -1625,7 +1693,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_D[i] = lower_extents ? extents_D[idx] + extension : extents_D[idx];
-            offset_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
+            offsets_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
             strides_D[idx] = str;
             str *= outer_extents_D[i];
             idx++;
@@ -1667,23 +1735,28 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
 
     for (int i = 0; i < nmode_A; i++)
     {
-        A += offset_A[i] * strides_A[i];
+        A += offsets_A[i] * strides_A[i];
     }
     for (int i = 0; i < nmode_B; i++)
     {
-        B += offset_B[i] * strides_B[i];
+        B += offsets_B[i] * strides_B[i];
     }
     for (int i = 0; i < nmode_C; i++)
     {
-        C += offset_C[i] * strides_C[i];
+        C += offsets_C[i] * strides_C[i];
     }
     for (int i = 0; i < nmode_D; i++)
     {
-        D += offset_D[i] * strides_D[i];
+        D += offsets_D[i] * strides_D[i];
     }
 
     std::complex<float> alpha = randc();
     std::complex<float> beta = randc();
+
+    delete[] offsets_A;
+    delete[] offsets_B;
+    delete[] offsets_C;
+    delete[] offsets_D;
 
     return {nmode_A, extents_A, strides_A, A, idx_A,
             nmode_B, extents_B, strides_B, B, idx_B,
@@ -1691,8 +1764,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
             nmode_D, extents_D, strides_D, D, idx_D,
             alpha, beta,
             data_A, data_B, data_C, data_D,
-            size_A, size_B, size_C, size_D,
-            offset_A, offset_B, offset_C, offset_D};
+            size_A, size_B, size_C, size_D};
 }
 
 std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
@@ -1701,11 +1773,11 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
            int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
            std::complex<double>, std::complex<double>,
            std::complex<double>*, std::complex<double>*, std::complex<double>*, std::complex<double>*,
-           int64_t, int64_t, int64_t, int64_t,
-           int64_t*, int64_t*, int64_t*, int64_t*> generate_contraction_z(int nmode_A = -1, int nmode_B = -1,
+           int64_t, int64_t, int64_t, int64_t> generate_contraction_z(int nmode_A = -1, int nmode_B = -1,
                                                         int nmode_D = randi(0, 4), int contractions = randi(0, 4),
                                                         bool equal_extents = false, bool lower_extents = false,
-                                                        bool lower_nmode = false, bool negative_str = false) {
+                                                        bool lower_nmode = false, bool negative_str = false)
+{
     if (nmode_A == -1 && nmode_B == -1)
     {
         nmode_A = randi(0, nmode_D);
@@ -1737,7 +1809,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     {
         idx_A[i] = 'a' + i;
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
     
@@ -1752,10 +1825,12 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     {
         idx_B[i + contractions] = 'a' + nmode_A + i;
     }
-    if (nmode_B > 0) {
+    if (nmode_B > 0)
+    {
         std::shuffle(idx_B, idx_B + nmode_B, std::default_random_engine());
     }
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         std::shuffle(idx_A, idx_A + nmode_A, std::default_random_engine());
     }
 
@@ -1780,7 +1855,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
             index++;
         }
     }
-    if (nmode_D > 0) {
+    if (nmode_D > 0)
+    {
         std::shuffle(idx_D, idx_D + nmode_D, std::default_random_engine());
     }
     std::copy(idx_D, idx_D + nmode_D, idx_C);
@@ -1863,10 +1939,10 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     int64_t* strides_B = new int64_t[nmode_B];
     int64_t* strides_C = new int64_t[nmode_C];
     int64_t* strides_D = new int64_t[nmode_D];
-    int64_t* offset_A = new int64_t[nmode_A];
-    int64_t* offset_B = new int64_t[nmode_B];
-    int64_t* offset_C = new int64_t[nmode_C];
-    int64_t* offset_D = new int64_t[nmode_D];
+    int64_t* offsets_A = new int64_t[nmode_A];
+    int64_t* offsets_B = new int64_t[nmode_B];
+    int64_t* offsets_C = new int64_t[nmode_C];
+    int64_t* offsets_D = new int64_t[nmode_D];
     int64_t size_A = 1;
     int64_t size_B = 1;
     int64_t size_C = 1;
@@ -1880,7 +1956,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_A[i] = lower_extents ? extents_A[idx] + extension : extents_A[idx];
-            offset_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
+            offsets_A[idx] = lower_extents && outer_extents_A[i] - extents_A[idx] > 0 ? randi(0, outer_extents_A[i] - extents_A[idx]) : 0;
             strides_A[idx] = str;
             str *= outer_extents_A[i];
             idx++;
@@ -1900,7 +1976,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_B[i] = lower_extents ? extents_B[idx] + extension : extents_B[idx];
-            offset_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
+            offsets_B[idx] = lower_extents && outer_extents_B[i] - extents_B[idx] > 0 ? randi(0, outer_extents_B[i] - extents_B[idx]) : 0;
             strides_B[idx] = str;
             str *= outer_extents_B[i];
             idx++;
@@ -1920,7 +1996,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_C[i] = lower_extents ? extents_C[idx] + extension : extents_C[idx];
-            offset_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
+            offsets_C[idx] = lower_extents && outer_extents_C[i] - extents_C[idx] > 0 ? randi(0, outer_extents_C[i] - extents_C[idx]) : 0;
             strides_C[idx] = str;
             str *= outer_extents_C[i];
             idx++;
@@ -1940,7 +2016,7 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
         {
             int extension = randi(1, 4);
             outer_extents_D[i] = lower_extents ? extents_D[idx] + extension : extents_D[idx];
-            offset_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
+            offsets_D[idx] = lower_extents && outer_extents_D[i] - extents_D[idx] > 0 ? randi(0, outer_extents_D[i] - extents_D[idx]) : 0;
             strides_D[idx] = str;
             str *= outer_extents_D[i];
             idx++;
@@ -1982,23 +2058,28 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
 
     for (int i = 0; i < nmode_A; i++)
     {
-        A += offset_A[i] * strides_A[i];
+        A += offsets_A[i] * strides_A[i];
     }
     for (int i = 0; i < nmode_B; i++)
     {
-        B += offset_B[i] * strides_B[i];
+        B += offsets_B[i] * strides_B[i];
     }
     for (int i = 0; i < nmode_C; i++)
     {
-        C += offset_C[i] * strides_C[i];
+        C += offsets_C[i] * strides_C[i];
     }
     for (int i = 0; i < nmode_D; i++)
     {
-        D += offset_D[i] * strides_D[i];
+        D += offsets_D[i] * strides_D[i];
     }
 
     std::complex<double> alpha = randz();
     std::complex<double> beta = randz();
+
+    delete[] offsets_A;
+    delete[] offsets_B;
+    delete[] offsets_C;
+    delete[] offsets_D;
 
     return {nmode_A, extents_A, strides_A, A, idx_A,
             nmode_B, extents_B, strides_B, B, idx_B,
@@ -2006,61 +2087,208 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
             nmode_D, extents_D, strides_D, D, idx_D,
             alpha, beta,
             data_A, data_B, data_C, data_D,
-            size_A, size_B, size_C, size_D,
-            offset_A, offset_B, offset_C, offset_D};
+            size_A, size_B, size_C, size_D};
 }
 
-std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str = false) {
-    float* dataA = new float[size];
-    std::copy(data, data + size, dataA);
-    float* A = negative_str ? dataA + size - 1 : dataA;
+int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str)
+{
+    int* stride_signs = new int[nmode];
+    int negative_str_count = 0;
+
+    for (size_t i = 0; i < nmode; i++)
+    {
+        if (negative_str)
+        {
+            stride_signs[i] = -1;
+        }
+        else if (mixed_str)
+        {
+            if ((randi(0, 1) == 0 && negative_str_count < nmode/2) || (negative_str_count < (i - nmode/2)))
+            {
+                stride_signs[i] = -1;
+            }
+            else
+            {
+                stride_signs[i] = 1;
+            }
+        }
+        else
+        {
+            stride_signs[i] = 1;
+        }
+    }
+    return stride_signs;
+}
+
+bool* choose_subtensor_dims(int nmode, int outer_nmode)
+{
+    bool* subtensor_dims = new bool[outer_nmode];
+    int idx = 0;
+    for (int i = 0; i < outer_nmode; i++)
+    {
+        if ((randf(0, 1) < (float)nmode/(float)outer_nmode || outer_nmode - i == nmode - idx) && nmode - idx > 0)
+        {
+            subtensor_dims[i] = true;
+            idx++;
+        }
+        else
+        {
+            subtensor_dims[i] = false;
+        }
+    }
+    return subtensor_dims;
+}
+
+int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents)
+{
+    int64_t* outer_extents = new int64_t[outer_nmode];
+    int idx = 0;
+    for (int i = 0; i < outer_nmode; i++)
+    {
+        if (subtensor_dims[i])
+        {
+            int extension = randi(1, 4);
+            outer_extents[i] = lower_extents ? extents[idx] + extension : extents[idx];
+            idx++;
+        }
+        else
+        {
+            outer_extents[i] = lower_extents ? randi(1, 8) : randi(1, 4);
+        }
+    }
+    return outer_extents;
+}
+
+int64_t* calculate_offsets(int nmode, int outer_nmode, int64_t* extents, int64_t* outer_extents, bool* subtensor_dims, bool lower_extents)
+{
+    int64_t* offsets = new int64_t[nmode];
+    int idx = 0;
+    for (int i = 0; i < outer_nmode; i++)
+    {
+        if (subtensor_dims[i])
+        {
+            offsets[idx] = lower_extents && outer_extents[i] - extents[idx] > 0 ? randi(0, outer_extents[i] - extents[idx]) : 0;
+            idx++;
+        }
+    }
+    return offsets;
+}
+
+int64_t* calculate_strides(int nmode, int outer_nmode, int64_t* outer_extents, int* stride_signs, bool* subtensor_dims)
+{
+    int64_t* strides = new int64_t[nmode];
+    int64_t str = 1;
+    int idx = 0;
+    for (int i = 0; i < outer_nmode; i++)
+    {
+        if (subtensor_dims[i])
+        {
+            strides[idx] = str * stride_signs[idx];
+            str *= outer_extents[i];
+            idx++;
+        }
+        else
+        {
+            str *= outer_extents[i];
+        }
+    }
+    return strides;
+}
+
+int calculate_size(int nmode, int64_t* extents)
+{
+    int size = 1;
+    for (size_t i = 0; i < nmode; i++)
+    {
+        size *= extents[i];
+    }
+    return size;
+}
+
+float* create_tensor_data_s(int64_t size)
+{
+    float* data = new float[size];
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = randf();
+    }
+    return data;
+}
+
+void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size)
+{
+    intptr_t new_pointer = (intptr_t)pointer;
+    for (size_t i = 0; i < nmode; i++)
+    {
+        if (strides[i] < 0)
+        {
+            new_pointer += extents[i] * strides[i] * data_size;
+        }
+        new_pointer += offsets[i] * strides[i] * data_size;
+    }
+    return (void*)new_pointer;
+}
+
+float* calculate_tensor_pointer_s(float* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, int64_t size, bool negative_str)
+{
+    float* new_pointer = pointer;
+
     for (int i = 0; i < nmode; i++)
     {
-        A += offset[i] * strides[i];
+        if (strides[i] < 0)
+        {
+            new_pointer -= (extents[i] - 1) * strides[i];
+            new_pointer -= offsets[i] * strides[i];
+        }
+        else {
+            new_pointer += offsets[i] * strides[i];
+        }
     }
-    return {A, dataA};
+
+    return new_pointer;
 }
 
-std::tuple<double*, double*> copy_tensor_data_d(int64_t size, double* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str = false) {
-    double* dataA = new double[size];
-    std::copy(data, data + size, dataA);
-    double* A = negative_str ? dataA + size - 1 : dataA;
-    for (int i = 0; i < nmode; i++)
-    {
-        A += offset[i] * strides[i];
-    }
-    return {A, dataA};
+std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, float* pointer)
+{
+    float* new_data = new float[size];
+    std::copy(data, data + size, new_data);
+    float* new_pointer = (float*)((intptr_t)new_data + (intptr_t)pointer - (intptr_t)data);
+    return {new_pointer, new_data};
 }
 
-std::tuple<std::complex<float>*, std::complex<float>*> copy_tensor_data_c(int64_t size, std::complex<float>* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str = false) {
-    std::complex<float>* dataA = new std::complex<float>[size];
-    std::copy(data, data + size, dataA);
-    std::complex<float>* A = negative_str ? dataA + size - 1 : dataA;
-    for (int i = 0; i < nmode; i++)
-    {
-        A += offset[i] * strides[i];
-    }
-    return {A, dataA};
+std::tuple<double*, double*> copy_tensor_data_d(int64_t size, double* data, double* pointer)
+{
+    double* new_data = new double[size];
+    std::copy(data, data + size, new_data);
+    double* new_pointer = (double*)((intptr_t)new_data + (intptr_t)pointer - (intptr_t)data);
+    return {new_pointer, new_data};
 }
 
-std::tuple<std::complex<double>*, std::complex<double>*> copy_tensor_data_z(int64_t size, std::complex<double>* data, int nmode, int64_t* offset, int64_t* strides, bool negative_str = false) {
-    std::complex<double>* dataA = new std::complex<double>[size];
-    std::copy(data, data + size, dataA);
-    std::complex<double>* A = negative_str ? dataA + size - 1 : dataA;
-    for (int i = 0; i < nmode; i++)
-    {
-        A += offset[i] * strides[i];
-    }
-    return {A, dataA};
+std::tuple<std::complex<float>*, std::complex<float>*> copy_tensor_data_c(int64_t size, std::complex<float>* data, std::complex<float>* pointer)
+{
+    std::complex<float>* new_data = new std::complex<float>[size];
+    std::copy(data, data + size, new_data);
+    std::complex<float>* new_pointer = (std::complex<float>*)((intptr_t)new_data + (intptr_t)pointer - (intptr_t)data);
+    return {new_pointer, new_data};
 }
 
-float* copy_tensor_data_s(int size, float* data) {
+std::tuple<std::complex<double>*, std::complex<double>*> copy_tensor_data_z(int64_t size, std::complex<double>* data, std::complex<double>* pointer)
+{
+    std::complex<double>* new_data = new std::complex<double>[size];
+    std::copy(data, data + size, new_data);
+    std::complex<double>* new_pointer = (std::complex<double>*)((intptr_t)new_data + (intptr_t)pointer - (intptr_t)data);
+    return {new_pointer, new_data};
+}
+
+float* copy_tensor_data_s(int size, float* data)
+{
     float* dataA = new float[size];
     std::copy(data, data + size, dataA);
     return dataA;
 }
 
-int calculate_tensor_size(int nmode, int* extents) {
+int calculate_tensor_size(int nmode, int* extents)
+{
     int size = 1;
     for (int i = 0; i < nmode; i++)
     {
@@ -2069,51 +2297,63 @@ int calculate_tensor_size(int nmode, int* extents) {
     return size;
 }
 
-std::string str(bool b) {
+std::string str(bool b)
+{
     return b ? "true" : "false";
 }
 
-int randi(int min, int max) {
+int randi(int min, int max)
+{
     return rand() % (max - min + 1) + min;
 }
 
-float randf(float min, float max) {
+float randf(float min, float max)
+{
     return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max-min)));
 }
 
-double randd(double min, double max) {
+double randd(double min, double max)
+{
     return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max-min)));
 }
 
-int random_choice(int size, int* choices) {
+int random_choice(int size, int* choices)
+{
     return choices[randi(0, size - 1)];
 }
 
-std::complex<float> randc(std::complex<float> min, std::complex<float> max) {
+std::complex<float> randc(std::complex<float> min, std::complex<float> max)
+{
     return std::complex<float>(min.real() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.imag()-min.imag()))));
 }
 
-std::complex<double> randz(std::complex<double> min, std::complex<double> max) {
+std::complex<double> randz(std::complex<double> min, std::complex<double> max)
+{
     return std::complex<double>(min.real() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.imag()-min.imag()))));
 }
 
-float randf() {
+float randf()
+{
     return (rand() + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) * (rand() % 2 == 0 ? 1 : -1);
 }
 
-double randd() {
+double randd()
+{
     return (rand() + static_cast <double> (rand()) / static_cast <double> (RAND_MAX)) * (rand() % 2 == 0 ? 1 : -1);
 }
 
-std::complex<float> randc() {
+std::complex<float> randc()
+{
     return std::complex<float>(randf(), randf());
 }
 
-std::complex<double> randz() {
+std::complex<double> randz()
+{
     return std::complex<double>(randd(), randd());
 }
 
-char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D) {
+char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D)
+{
     char* swapped = new char[nmode_A + nmode_B + nmode_D + 7];
     for (int i = 0; i < nmode_B; i++)
     {
@@ -2137,7 +2377,8 @@ char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D) {
     return swapped;
 }
 
-void rotate_indices(int64_t* idx, int nmode, int64_t* extents, int64_t* strides) {
+void rotate_indices(int64_t* idx, int nmode, int64_t* extents, int64_t* strides)
+{
     if (nmode < 2)
     {
         return;
@@ -2164,8 +2405,10 @@ void rotate_indices(int64_t* idx, int nmode, int64_t* extents, int64_t* strides)
     strides[nmode-1] = strides[nmode-2] * (extents[nmode-2] + (tmp_str - 1));
 }
 
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
-    if (nmode <= 0) {
+void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents)
+{
+    if (nmode <= 0)
+    {
         return;
     }
 
@@ -2177,7 +2420,8 @@ void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents) {
     } while (coordinates[k - 1] == 0 && k < nmode);
 }
 
-void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data) {
+void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data)
+{
     std::cout << "ndim: " << nmode << std::endl;
     std::cout << "extents: ";
     for (int i = 0; i < nmode; i++)
@@ -2218,7 +2462,8 @@ void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data) 
     std::cout << std::endl;
 }
 
-void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data) {
+void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data)
+{
     std::cout << "ndim: " << nmode << std::endl;
     std::cout << "extents: ";
     for (int i = 0; i < nmode; i++)
@@ -2259,7 +2504,8 @@ void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data)
     std::cout << std::endl;
 }
 
-void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* data) {
+void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* data)
+{
     std::cout << "ndim: " << nmode << std::endl;
     std::cout << "extents: ";
     for (int i = 0; i < nmode; i++)
@@ -2300,7 +2546,8 @@ void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<
     std::cout << std::endl;
 }
 
-void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data) {
+void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data)
+{
     std::cout << "ndim: " << nmode << std::endl;
     std::cout << "extents: ";
     for (int i = 0; i < nmode; i++)
@@ -2341,7 +2588,8 @@ void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<
     std::cout << std::endl;
 }
 
-void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides) {
+void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides)
+{
     int nmode_tmp = *nmode + randi(1, 5);
     int64_t* idx_tmp = new int64_t[nmode_tmp];
     int64_t* extents_tmp = new int64_t[nmode_tmp];
@@ -2370,7 +2618,8 @@ void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** ext
     *strides = strides_tmp;
 }
 
-void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, int64_t additional_idx, int64_t additional_extents, int64_t additional_strides) {
+void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, int64_t additional_idx, int64_t additional_extents, int64_t additional_strides)
+{
     int nmode_tmp = *nmode + 1;
     int64_t* idx_tmp = new int64_t[nmode_tmp];
     int64_t* extents_tmp = new int64_t[nmode_tmp];
@@ -2390,7 +2639,8 @@ void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, in
     *strides = strides_tmp;
 }
 
-bool test_hadamard_product() {
+bool test_hadamard_product()
+{
     int nmode = randi(0, 4);
     int64_t* extents = new int64_t[nmode];
     int64_t* strides = new int64_t[nmode];
@@ -2400,7 +2650,8 @@ bool test_hadamard_product() {
         extents[i] = randi(1, 4);
         size *= extents[i];
     }
-    if (nmode > 0) {
+    if (nmode > 0)
+    {
         strides[0] = 1;
     }
     for (int i = 1; i < nmode; i++)
@@ -2491,17 +2742,17 @@ bool test_hadamard_product() {
     return result;
 }
 
-bool test_contraction() {
+bool test_contraction()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          size_A, size_B, size_C, size_D] = generate_contraction_s();
 
-    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2555,34 +2806,26 @@ bool test_contraction() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_commutativity() {
+bool test_commutativity()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          size_A, size_B, size_C, size_D] = generate_contraction_s();
 
-    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
-    auto [F, data_F] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [F, data_F] = copy_tensor_data_s(size_D, data_D, D);
 
-    auto [G, data_G] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [G, data_G] = copy_tensor_data_s(size_D, data_D, D);
 
-    auto [C2, data_C2] = copy_tensor_data_s(size_C, data_C, nmode_C, offset_C, strides_C);
-
-    auto [C3, data_C3] = copy_tensor_data_s(size_C, data_C, nmode_C, offset_C, strides_C);
-    
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2607,7 +2850,7 @@ bool test_commutativity() {
 
     run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
-                   nmode_C, extents_C, strides_C, C2, 0, idx_D,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
                    nmode_D, extents_D, strides_D, E, 0, idx_D,
                    alpha, beta);
 
@@ -2615,7 +2858,7 @@ bool test_commutativity() {
 
     run_tblis_mult_s(nmode_B, extents_B, strides_B, B, 0, idx_B,
                    nmode_A, extents_A, strides_A, A, 0, idx_A,
-                   nmode_C, extents_C, strides_C, C3, 0, idx_D,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
                    nmode_D, extents_D, strides_D, G, 0, idx_D,
                    alpha, beta);
 
@@ -2644,31 +2887,25 @@ bool test_commutativity() {
     delete[] data_A;
     delete[] data_B;
     delete[] data_C;
-    delete[] data_C2;
-    delete[] data_C3;
     delete[] data_D;
     delete[] data_E;
     delete[] data_F;
     delete[] data_G;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_permutations() {
+bool test_permutations()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          size_A, size_B, size_C, size_D] = generate_contraction_s();
           
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2691,19 +2928,17 @@ bool test_permutations() {
 
     for (int i = 0; i < nmode_D; i++)
     {
-        auto [C2, copy_C2] = copy_tensor_data_s(size_C, data_C, nmode_C, offset_C, strides_C);
         TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
         TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
         run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
                     nmode_B, extents_B, strides_B, B, 0, idx_B,
-                    nmode_C, extents_C, strides_C, C2, 0, idx_D,
+                    nmode_C, extents_C, strides_C, C, 0, idx_D,
                     nmode_D, extents_D, strides_D, E, 0, idx_D,
                     alpha, beta);
         result = result && compare_tensors_s(data_D, data_E, size_D);
         rotate_indices(idx_D, nmode_D, extents_D, strides_D);
         rotate_indices(idx_C, nmode_C, extents_C, strides_C);
         TAPP_destory_tensor_product(plan);
-        delete[] copy_C2;
     }
     
     TAPP_destroy_executor(exec);
@@ -2729,25 +2964,21 @@ bool test_permutations() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_equal_extents() {
+bool test_equal_extents()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2801,25 +3032,21 @@ bool test_equal_extents() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_outer_product() {
+bool test_outer_product()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), 0);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), 0);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2873,25 +3100,21 @@ bool test_outer_product() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_full_contraction() {
+bool test_full_contraction()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, 0);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, 0);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2945,25 +3168,21 @@ bool test_full_contraction() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_zero_dim_tensor_contraction() {
+bool test_zero_dim_tensor_contraction()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(0);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(0);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3017,25 +3236,21 @@ bool test_zero_dim_tensor_contraction() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_one_dim_tensor_contraction() {
+bool test_one_dim_tensor_contraction()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(1);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(1);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3089,25 +3304,21 @@ bool test_one_dim_tensor_contraction() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_subtensor_same_idx() {
+bool test_subtensor_same_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3161,25 +3372,21 @@ bool test_subtensor_same_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_subtensor_lower_idx() {
+bool test_subtensor_lower_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3233,25 +3440,21 @@ bool test_subtensor_lower_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_negative_strides() {
+bool test_negative_strides()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3304,25 +3507,21 @@ bool test_negative_strides() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return true;
 }
 
-bool test_negative_strides_subtensor_same_idx() {
+bool test_negative_strides_subtensor_same_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, false, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, false, true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3376,25 +3575,21 @@ bool test_negative_strides_subtensor_same_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_negative_strides_subtensor_lower_idx() {
+bool test_negative_strides_subtensor_lower_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, true, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, true, true);
     
-    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D, true);
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3448,25 +3643,224 @@ bool test_negative_strides_subtensor_lower_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_contraction_double_precision() {
+bool test_mixed_strides()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_d();
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, false, false, true);
+    
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
+    
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    auto [E, data_E] = copy_tensor_data_d(size_D, data_D, nmode_D, offset_D, strides_D);
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+
+    return true;
+}
+
+bool test_mixed_strides_subtensor_same_idx()
+{
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, false, false, false, false, true);
+    
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
+    
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+
+    return result;
+}
+
+bool test_mixed_strides_subtensor_lower_idx()
+{
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, true, true, false, false, false, true);
+    
+    auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
+    
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_tensor_product plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
+
+    TAPP_executor exec;
+    create_executor(&exec);
+
+    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+
+    run_tblis_mult_s(nmode_A, extents_A, strides_A, A, 0, idx_A,
+                   nmode_B, extents_B, strides_B, B, 0, idx_B,
+                   nmode_C, extents_C, strides_C, C, 0, idx_D,
+                   nmode_D, extents_D, strides_D, E, 0, idx_D,
+                   alpha, beta);
+
+    bool result = compare_tensors_s(data_D, data_E, size_D);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destory_tensor_product(plan);
+    TAPP_destory_tensor_info(info_A);
+    TAPP_destory_tensor_info(info_B);
+    TAPP_destory_tensor_info(info_C);
+    TAPP_destory_tensor_info(info_D);
+    delete[] extents_A;
+    delete[] extents_B;
+    delete[] extents_C;
+    delete[] extents_D;
+    delete[] strides_A;
+    delete[] strides_B;
+    delete[] strides_C;
+    delete[] strides_D;
+    delete[] idx_A;
+    delete[] idx_B;
+    delete[] idx_C;
+    delete[] idx_D;
+    delete[] data_A;
+    delete[] data_B;
+    delete[] data_C;
+    delete[] data_D;
+    delete[] data_E;
+
+    return result;
+}
+
+bool test_contraction_double_precision()
+{
+    auto [nmode_A, extents_A, strides_A, A, idx_A,
+          nmode_B, extents_B, strides_B, B, idx_B,
+          nmode_C, extents_C, strides_C, C, idx_C,
+          nmode_D, extents_D, strides_D, D, idx_D,
+          alpha, beta,
+          data_A, data_B, data_C, data_D,
+          size_A, size_B, size_C, size_D] = generate_contraction_d();
+
+    auto [E, data_E] = copy_tensor_data_d(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
@@ -3520,25 +3914,21 @@ bool test_contraction_double_precision() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_contraction_complex() {
+bool test_contraction_complex()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_c();
+          size_A, size_B, size_C, size_D] = generate_contraction_c();
 
-    auto [E, data_E] = copy_tensor_data_c(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_c(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
@@ -3597,25 +3987,21 @@ bool test_contraction_complex() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
         
     return result;
 }
 
-bool test_contraction_complex_double_precision() {
+bool test_contraction_complex_double_precision()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_z();
+          size_A, size_B, size_C, size_D] = generate_contraction_z();
 
-    auto [E, data_E] = copy_tensor_data_z(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_z(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_C64, nmode_A, extents_A, strides_A);
@@ -3674,27 +4060,24 @@ bool test_contraction_complex_double_precision() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_zero_stride() {
+bool test_zero_stride()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(1, 4));
 
-    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
-    if (nmode_A > 0) {
+    if (nmode_A > 0)
+    {
         strides_A[0] = 0;
     }
     else {
@@ -3753,25 +4136,21 @@ bool test_zero_stride() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_unique_idx() {
+bool test_unique_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, true, false);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, true, false);
 
-    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3825,25 +4204,21 @@ bool test_unique_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_repeated_idx() {
+bool test_repeated_idx()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, false, true);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(0, 4), randi(0, 4), false, false, false, false, false, true);
 
-    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, nmode_D, offset_D, strides_D);
+    auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3897,44 +4272,44 @@ bool test_repeated_idx() {
     delete[] data_C;
     delete[] data_D;
     delete[] data_E;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return result;
 }
 
-bool test_hadamard_and_contraction() {
+bool test_hadamard_and_contraction()
+{
     return false;
 }
 
-bool test_error_too_many_idx_D() {
+bool test_error_too_many_idx_D()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s();
+          size_A, size_B, size_C, size_D] = generate_contraction_s();
 
     int64_t max_idx = 0;
     for (size_t i = 0; i < nmode_A; i++)
     {
-        if (max_idx < idx_A[i]) {
+        if (max_idx < idx_A[i])
+        {
             max_idx = idx_A[i];
         }
     }
     for (size_t i = 0; i < nmode_B; i++)
     {
-        if (max_idx < idx_B[i]) {
+        if (max_idx < idx_B[i])
+        {
             max_idx = idx_B[i];
         }
     }
     for (size_t i = 0; i < nmode_D; i++)
     {
-        if (max_idx < idx_D[i]) {
+        if (max_idx < idx_D[i])
+        {
             max_idx = idx_D[i];
         }
     }
@@ -3984,23 +4359,19 @@ bool test_error_too_many_idx_D() {
     delete[] data_B;
     delete[] data_C;
     delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return error_status == 7;
 }
 
-bool test_error_non_matching_ext() {
+bool test_error_non_matching_ext()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(1, 4));
     
     int nr_choices = 0;
     if (nmode_A > 0) nr_choices++;
@@ -4079,28 +4450,25 @@ bool test_error_non_matching_ext() {
     delete[] data_B;
     delete[] data_C;
     delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return error_status == 1 || error_status == 2 || error_status == 3;
 }
 
-bool test_error_C_other_structure() {
+bool test_error_C_other_structure()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(1, 4));
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(1, 4));
 
     int64_t max_idx = 0;
     for (size_t i = 0; i < nmode_C; i++)
     {
-        if (max_idx < idx_C[i]) {
+        if (max_idx < idx_C[i])
+        {
             max_idx = idx_C[i];
         }
     }
@@ -4114,7 +4482,8 @@ bool test_error_C_other_structure() {
         add_incorrect_idx(max_idx, &nmode_C, &idx_C, &extents_C, &strides_C);
         break;
     case 1:
-        if (nmode_C > 1) {
+        if (nmode_C > 1)
+        {
             random_index = randi(0, nmode_C - 1);
             idx_C[random_index] = random_index == 0 ? idx_C[random_index + 1] : idx_C[random_index - 1];
         }
@@ -4173,23 +4542,19 @@ bool test_error_C_other_structure() {
     delete[] data_B;
     delete[] data_C;
     delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return error_status == 5 || error_status == 6 || error_status == 7;
 }
 
-bool test_error_aliasing_within_D() {
+bool test_error_aliasing_within_D()
+{
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
           nmode_C, extents_C, strides_C, C, idx_C,
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D,
-          offset_A, offset_B, offset_C, offset_D] = generate_contraction_s(-1, -1, randi(2, 4));
+          size_A, size_B, size_C, size_D] = generate_contraction_s(-1, -1, randi(2, 4));
 
     int scewed_index = randi(1, nmode_D - 1);
     int signs[2] = {-1, 1};
@@ -4238,10 +4603,6 @@ bool test_error_aliasing_within_D() {
     delete[] data_B;
     delete[] data_C;
     delete[] data_D;
-    delete[] offset_A;
-    delete[] offset_B;
-    delete[] offset_C;
-    delete[] offset_D;
 
     return error_status == 8;
 }
