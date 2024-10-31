@@ -49,6 +49,9 @@ size_t TAPP_explain_error(TAPP_error error,
     case 11:
         error_message = "An idx in tensor D has two different extents.";
         break;
+    case 12:
+        error_message = "C should not be NULL while beta is not zero.";
+        break;
     default:
         break;
     }
