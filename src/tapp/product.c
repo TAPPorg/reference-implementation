@@ -9,12 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __x86_64__
-    typedef _Float16 float16;
-#elif __arm__
-    typedef __fp16 float16;
-#endif
-
 int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr);
 int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);
 void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr);
@@ -25,20 +19,32 @@ void zero_array(int64_t* arr, int size);
 void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr);
 void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr);
 void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec);
-void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum);
-void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum);
+void calculate_beta_C(const void* beta, TAPP_datatype type_beta, bool is_complex_beta, const void* val_C, TAPP_datatype type_C, bool is_complex_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum);
+void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const void* val_C, TAPP_datatype type_C, TAPP_element_op op_C, void* accum, TAPP_datatype type_accum);
+void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* val_C, bool is_complex_C, TAPP_prectype prec, void* accum, bool is_complex_accum);
+void calculate_alpha_A_B(const void* alpha, TAPP_datatype type_alpha, bool is_complex_alpha, const void* sum_A, TAPP_datatype type_A, bool is_complex_A, const void* sum_B, TAPP_datatype type_B, bool is_complex_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum);
+void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, void* accum, TAPP_datatype type_accum);
+void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const void* sum_A, bool is_complex_A, const void* sum_B, bool is_complex_B, TAPP_prectype prec, void* accum, bool is_complex_accum);
 void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAPP_prectype prec);
+void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, TAPP_prectype prec);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec);
 int check_repeated_idx(int nmode, const int64_t* idx, int error_code);
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
 int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code);
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
 int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
+int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code);
 void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right);
 void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right);
-void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D);
-void* alloc_sum(TAPP_prectype prec, TAPP_datatype type);
-void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type);
+void* alloc_accum(TAPP_prectype prec, TAPP_datatype type);
+void* alloc_val(TAPP_prectype prec, TAPP_datatype type);
+void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype prec);
+void* alloc_alpha(TAPP_prectype prec, TAPP_datatype type);
+void* alloc_beta(TAPP_prectype prec, TAPP_datatype type);
+bool is_complex(TAPP_datatype type);
+void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
+void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
+bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_datatype comp_type);
 void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
 
 
@@ -175,12 +181,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     int error_status = 0;
 
-    error_status = error_status == 0 ? check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 4) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 9, 1, 2) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 10, 1, 3) : error_status;
-    error_status = error_status == 0 ? check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3) : error_status;
-    error_status = error_status == 0 ? check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7) : error_status;
-    error_status = error_status == 0 ? check_self_aliasing(nmode_D, extents_D, strides_D, 8) : error_status;
+    if (error_status == 0) error_status = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 4);
+    if (error_status == 0) error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 9, 1, 2);
+    if (error_status == 0) error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 10, 1, 3);
+    if (error_status == 0) error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3);
+    if (error_status == 0) error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7);
+    if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, 8);
+    if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, 12);
     if (error_status != 0)
     {
         free(idx_A);
@@ -196,7 +203,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(extents_D);
         free(strides_D);
         return error_status;
-    } 
+    }
 
     compress_repeated_indices(&nmode_A, &idx_A, &extents_A, &strides_A);
     compress_repeated_indices(&nmode_B, &idx_B, &extents_B, &strides_B);
@@ -260,8 +267,16 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int64_t size_free = calculate_size(extents_D, nmode_D);
 
     void* accum = alloc_accum(prec, type_D);
-    void* sum_A = alloc_sum(prec, type_A);
-    void* sum_B = alloc_sum(prec, type_B);
+    void* sum_A = alloc_val(prec, type_A);
+    void* sum_B = alloc_val(prec, type_B);
+    void* val_C = alloc_val(prec, type_C);
+    void* prec_alpha = create_prec_scalar(alpha, type_D, prec);
+    void* prec_beta = create_prec_scalar(beta, type_D, prec);
+
+    bool is_complex_A = is_complex(type_A);
+    bool is_complex_B = is_complex(type_B);
+    bool is_complex_C = is_complex(type_C);
+    bool is_complex_D = is_complex(type_D);
 
     for (int i = 0; i < size_free; i++)
     {
@@ -276,7 +291,16 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
             index_C += coordinates_free[j] * strides_C[j];
             index_D += coordinates_free[j] * strides_D[j];
         }
-        calculate_beta_C(beta, C, type_C, index_C, op_C, prec, accum, type_D);
+        float val_zero = 0;
+        if (!is_equal(beta, type_D, &val_zero, TAPP_F32))
+        {
+            get_val(val_C, C, index_C, type_C, prec);
+            calculate_beta_C(prec_beta, type_D, is_complex_D, val_C, type_C, is_complex_C, op_C, prec, accum, type_D, is_complex_D);
+        }
+        else
+        {
+            zero_accum(accum, prec, type_D, is_complex_D);
+        }
         for (int j = 0; j < size_binary_contractions; j++)
         {
             int index_binary_contractions_A = index_free_A;
@@ -286,7 +310,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 index_binary_contractions_A += coordinates_binary_contractions[k] * strides_binary_contractions_A[k];
                 index_binary_contractions_B += coordinates_binary_contractions[k] * strides_binary_contractions_B[k];
             }
-            zero_sum(sum_A, prec, type_A);
+            zero_sum(sum_A, prec, type_A, is_complex_A);
             for (int k = 0; k < size_unary_contractions_A; k++)
             {
                 int index_unary_contractions_A = index_binary_contractions_A;
@@ -297,7 +321,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 sum_unary_contractions(sum_A, A, index_unary_contractions_A, op_A, type_A, prec);
                 increment_coordinates(coordinates_unary_contractions_A, unary_contractions_A, extents_unary_contractions_A);
             }
-            zero_sum(sum_B, prec, type_B);
+            zero_sum(sum_B, prec, type_B, is_complex_A);
             for (int k = 0; k < size_unary_contractions_B; k++)
             {
                 int index_unary_contractions_B = index_binary_contractions_B;
@@ -309,7 +333,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 increment_coordinates(coordinates_unary_contractions_B, unary_contractions_B, extents_unary_contractions_B);
             }
             
-            calculate_alpha_A_B(alpha, sum_A, type_A, sum_B, type_B, prec, accum, type_D);
+            calculate_alpha_A_B(prec_alpha, type_D, is_complex_D, sum_A, type_A, is_complex_A, sum_B, type_B, is_complex_B, prec, accum, type_D, is_complex_D);
             increment_coordinates(coordinates_binary_contractions, binary_contractions, extents_binary_contractions);
         }
         calculate_op_D(accum, type_D, op_D, prec);
@@ -320,6 +344,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     free(accum);
     free(sum_A);
     free(sum_B);
+    free(val_C);
+    free(prec_alpha);
+    free(prec_beta);
     free(idx_A);
     free(idx_B);
     free(idx_C);
@@ -685,6 +712,12 @@ int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* stride
     return status;
 }
 
+int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code)
+{
+    float val_zero = 0;
+    return tensor == NULL && !is_equal(scalar, type, &val_zero, TAPP_F32) ? error_code : 0;
+}
+
 void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right)
 {
     if (left < right)
@@ -810,12 +843,12 @@ void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int
     *strides = new_strides;
 }
 
-void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
+void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 {
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
-        switch (type_D)
+        switch (type)
         {
         case TAPP_F32:
             return malloc(sizeof(float));
@@ -824,13 +857,13 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
             return malloc(sizeof(double));
             break;
         case TAPP_C32:
-            return malloc(sizeof(float complex));
+            return malloc(sizeof(complex float));
             break;
         case TAPP_C64:
-            return malloc(sizeof(double complex));
+            return malloc(sizeof(complex double));
             break;
         case TAPP_F16:
-            return malloc(sizeof(float16));
+            return malloc(sizeof(_Float16));
             break;
         case TAPP_BF16:
             //return malloc(sizeof(__bf16));
@@ -842,7 +875,7 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
     case TAPP_F32F32_ACCUM_F32:
     case TAPP_F16F16_ACCUM_F32:
     case TAPP_BF16BF16_ACCUM_F32:
-        switch (type_D)
+        switch (type)
         {
         case TAPP_F32:
         case TAPP_F64:
@@ -852,14 +885,14 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
             break;
         case TAPP_C32:
         case TAPP_C64:
-            return malloc(sizeof(float complex));
+            return malloc(sizeof(complex float));
             break;
         default:
             break;
         }
         break;
     case TAPP_F64F64_ACCUM_F64:
-        switch (type_D)
+        switch (type)
         {
         case TAPP_F32:
         case TAPP_F64:
@@ -869,14 +902,14 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
             break;
         case TAPP_C32:
         case TAPP_C64:
-            return malloc(sizeof(double complex));
+            return malloc(sizeof(complex double));
             break;
         default:
             break;
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
-        return malloc(sizeof(float16));
+        return malloc(sizeof(_Float16));
         break;
     default:
         break;
@@ -884,7 +917,7 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type_D)
     return NULL;
 }
 
-void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
+void* alloc_val(TAPP_prectype prec, TAPP_datatype type)
 {
     switch (prec)
     {
@@ -898,13 +931,13 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
             return malloc(sizeof(double));
             break;
         case TAPP_C32:
-            return malloc(sizeof(float complex));
+            return malloc(sizeof(complex float));
             break;
         case TAPP_C64:
-            return malloc(sizeof(double complex));
+            return malloc(sizeof(complex double));
             break;
         case TAPP_F16:
-            return malloc(sizeof(float16));
+            return malloc(sizeof(_Float16));
             break;
         case TAPP_BF16:
             //return malloc(sizeof(__bf16));
@@ -924,7 +957,7 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
             break;
         case TAPP_C32:
         case TAPP_C64:
-            return malloc(sizeof(float complex));
+            return malloc(sizeof(complex float));
             break;
         default:
             break;
@@ -941,7 +974,7 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
             break;
         case TAPP_C32:
         case TAPP_C64:
-            return malloc(sizeof(double complex));
+            return malloc(sizeof(complex double));
             break;
         default:
             break;
@@ -955,10 +988,11 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
         case TAPP_F64:
         case TAPP_F16:
         case TAPP_BF16:
-            return malloc(sizeof(float16));
+            return malloc(sizeof(_Float16));
             break;
         case TAPP_C32:
         case TAPP_C64:
+            return malloc(sizeof(complex _Float16));
             break;
         default:
             break;
@@ -975,6 +1009,7 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
             break;
         case TAPP_C32:
         case TAPP_C64:
+            return malloc(sizeof(complex __bf16));
             break;
         default:
             break;
@@ -986,7 +1021,259 @@ void* alloc_sum(TAPP_prectype prec, TAPP_datatype type)
     return NULL;
 }
 
-void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type)
+void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype prec)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+        switch (prec)
+        {
+        case TAPP_DEFAULT_PREC:
+        case TAPP_F32F32_ACCUM_F32:
+        {
+            float* prec_scalar = malloc(sizeof(float));
+            *prec_scalar = *(float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            double* prec_scalar = malloc(sizeof(double));
+            *prec_scalar = *(float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            *prec_scalar = *(float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            /*__bf16* prec_alpha = malloc(sizeof(__bf16));
+            *prec_scalar = *(float*)scalar;
+            return prec_scalar;*/
+            break;
+        }
+        default:
+            break;
+        }
+    case TAPP_F64:
+        switch (prec)
+        {
+        case TAPP_F32F32_ACCUM_F32:
+        {
+            float* prec_scalar = malloc(sizeof(float));
+            *prec_scalar = *(double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_DEFAULT_PREC:
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            double* prec_scalar = malloc(sizeof(double));
+            *prec_scalar = *(double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            *prec_scalar = *(double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            /*__bf16* prec_alpha = malloc(sizeof(__bf16));
+            *prec_scalar = *(double*)scalar;
+            return prec_scalar;*/
+        }
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C32:
+        switch (prec)
+        {
+        case TAPP_DEFAULT_PREC:
+        case TAPP_F32F32_ACCUM_F32:
+        {
+            complex float* prec_scalar = malloc(sizeof(complex float));
+            *prec_scalar = *(complex float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            complex double* prec_scalar = malloc(sizeof(complex double));
+            *prec_scalar = *(complex float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            complex _Float16* prec_scalar = malloc(sizeof(complex _Float16));
+            *prec_scalar = *(complex float*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            /*complex __bf16* prec_alpha = malloc(sizeof(complex __bf16));
+            *prec_scalar = *(complex float*)scalar;
+            return prec_scalar;*/
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    case TAPP_C64:
+        switch (prec)
+        {
+        case TAPP_F32F32_ACCUM_F32:
+        {
+            complex float* prec_scalar = malloc(sizeof(complex float));
+            *prec_scalar = *(complex double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_DEFAULT_PREC:
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            complex double* prec_scalar = malloc(sizeof(complex double));
+            *prec_scalar = *(complex double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            complex _Float16* prec_scalar = malloc(sizeof(complex _Float16));
+            *prec_scalar = *(complex double*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            /*complex __bf16* prec_alpha = malloc(sizeof(complex __bf16));
+            *prec_scalar = *(complex double*)scalar;
+            return prec_scalar;*/
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16:
+        switch (prec)
+        {
+        case TAPP_F32F32_ACCUM_F32:
+        {
+            float* prec_scalar = malloc(sizeof(float));
+            *prec_scalar = *(_Float16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            double* prec_scalar = malloc(sizeof(double));
+            *prec_scalar = *(_Float16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_DEFAULT_PREC:
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            *prec_scalar = *(_Float16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            /*__bf16* prec_alpha = malloc(sizeof(__bf16));
+            *prec_scalar = *(_Float16*)scalar;
+            return prec_scalar;*/
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16:
+        switch (prec)
+        {
+        /*case TAPP_F32F32_ACCUM_F32:
+        {
+            float* prec_scalar = malloc(sizeof(float));
+            *prec_scalar = *(__bf16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F64F64_ACCUM_F64:
+        {
+            double* prec_scalar = malloc(sizeof(double));
+            *prec_scalar = *(__bf16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_F16F16_ACCUM_F16:
+        case TAPP_F16F16_ACCUM_F32:
+        {
+            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            *prec_scalar = *(__bf16*)scalar;
+            return prec_scalar;
+            break;
+        }
+        case TAPP_DEFAULT_PREC:
+        case TAPP_BF16BF16_ACCUM_F32:
+        {
+            __bf16* prec_alpha = malloc(sizeof(__bf16));
+            *prec_scalar = *(__bf16*)scalar;
+            return prec_scalar;
+            break;
+        }*/
+        default:
+            break;
+        }
+        break;
+    default:
+        return false;
+        break;
+    }
+    return NULL;
+}
+
+bool is_complex(TAPP_datatype type)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+    case TAPP_F64:
+    case TAPP_F16:
+    case TAPP_BF16:
+        return false;
+        break;
+    case TAPP_C32:
+    case TAPP_C64:
+        return true;
+        break;
+    default:
+        return false;
+        break;
+    }
+}
+
+void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex)
 {
     switch (prec)
     {
@@ -1000,13 +1287,13 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type)
             *((double*)sum) = 0;
             break;
         case TAPP_C32:
-            *((float complex*)sum) = 0;
+            *((complex float*)sum) = 0;
             break;
         case TAPP_C64:
-            *((double complex*)sum) = 0;
+            *((complex double*)sum) = 0;
             break;
         case TAPP_F16:
-            *((float16*)sum) = 0;
+            *((_Float16*)sum) = 0;
             break;
         case TAPP_BF16:
             //*((__bf16*)sum) = 0;
@@ -1016,67 +1303,266 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type)
         }
         break;
     case TAPP_F32F32_ACCUM_F32:
-        switch (type)
+        if (is_complex)
         {
-        case TAPP_F16:
-        case TAPP_BF16:
-        case TAPP_F32:
-        case TAPP_F64:
-            *((float*)sum) = 0;
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            *((float complex*)sum) = 0;
-            break;
-        default:
-            break;
+            *(complex float*)sum = 0;
+        }
+        else
+        {
+            *(float*)sum = 0;
         }
         break;
     case TAPP_F64F64_ACCUM_F64:
-        switch (type)
+        if (is_complex)
         {
-        case TAPP_F16:
-        case TAPP_BF16:
-        case TAPP_F32:
-        case TAPP_F64:
-            *((double*)sum) = 0;
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            *((double complex*)sum) = 0;
-            break;
-        default:
-            break;
+            *(complex double*)sum = 0;
+        }
+        else
+        {
+            *(double*)sum = 0;
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
     case TAPP_F16F16_ACCUM_F32:
+        if (is_complex)
+        {
+            *(complex _Float16*)sum = 0;
+        }
+        else
+        {
+            *(_Float16*)sum = 0;
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*if (is_complex)
+        {
+            *(complex__bf16*)sum = 0;
+        }
+        else
+        {
+            *(__bf16*)sum = 0;
+        }*/
+        break;
+    default:
+        break;
+    }
+}
+
+void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_complex)
+{
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
         switch (type)
         {
-        case TAPP_F16:
-        case TAPP_BF16:
         case TAPP_F32:
+            *((float*)accum) = 0;
+            break;
         case TAPP_F64:
-            *((float16*)sum) = 0;
+            *((double*)accum) = 0;
             break;
         case TAPP_C32:
+            *((complex float*)accum) = 0;
+            break;
         case TAPP_C64:
+            *((complex double*)accum) = 0;
+            break;
+        case TAPP_F16:
+            *((_Float16*)accum) = 0;
+            break;
+        case TAPP_BF16:
+            //*((__bf16*)accum) = 0;
             break;
         default:
             break;
         }
         break;
+    case TAPP_F32F32_ACCUM_F32:
+    case TAPP_F16F16_ACCUM_F32:
     case TAPP_BF16BF16_ACCUM_F32:
-        /*switch (type)
+        if (is_complex)
         {
-        case TAPP_F16:
-        case TAPP_BF16:
+            *(complex float*)accum = 0;
+        }
+        else
+        {
+            *(float*)accum = 0;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        if (is_complex)
+        {
+            *(complex double*)accum = 0;
+        }
+        else
+        {
+            *(double*)accum = 0;
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+        if (is_complex)
+        {
+            *(complex _Float16*)accum = 0;
+        }
+        else
+        {
+            *(_Float16*)accum = 0;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_datatype comp_type)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+        switch (comp_type)
+        {
         case TAPP_F32:
+            return *(float*)val == *(float*)comp_val;
+            break;
         case TAPP_F64:
-            *((__bf16*)sum) = 0;
+            return *(float*)val == *(double*)comp_val;
             break;
         case TAPP_C32:
+            return *(float*)val == *(complex float*)comp_val;
+            break;
         case TAPP_C64:
+            return *(float*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(float*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(float*)val == *(__bf16*)comp_val;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F64:
+        switch (comp_type)
+        {
+        case TAPP_F32:
+            return *(double*)val == *(float*)comp_val;
+            break;
+        case TAPP_F64:
+            return *(double*)val == *(double*)comp_val;
+            break;
+        case TAPP_C32:
+            return *(double*)val == *(complex float*)comp_val;
+            break;
+        case TAPP_C64:
+            return *(double*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(double*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(double*)val == *(__bf16*)comp_val;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C32:
+        switch (comp_type)
+        {
+        case TAPP_F32:
+            return *(complex float*)val == *(float*)comp_val;
+            break;
+        case TAPP_F64:
+            return *(complex float*)val == *(double*)comp_val;
+            break;
+        case TAPP_C32:
+            return *(complex float*)val == *(complex float*)comp_val;
+            break;
+        case TAPP_C64:
+            return *(complex float*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(complex float*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(complex float*)val == *(__bf16*)comp_val;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C64:
+        switch (comp_type)
+        {
+        case TAPP_F32:
+            return *(complex double*)val == *(float*)comp_val;
+            break;
+        case TAPP_F64:
+            return *(complex double*)val == *(double*)comp_val;
+            break;
+        case TAPP_C32:
+            return *(complex double*)val == *(complex float*)comp_val;
+            break;
+        case TAPP_C64:
+            return *(complex double*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(complex double*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(complex double*)val == *(__bf16*)comp_val;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16:
+        switch (comp_type)
+        {
+        case TAPP_F32:
+            return *(_Float16*)val == *(float*)comp_val;
+            break;
+        case TAPP_F64:
+            return *(_Float16*)val == *(double*)comp_val;
+            break;
+        case TAPP_C32:
+            return *(_Float16*)val == *(complex float*)comp_val;
+            break;
+        case TAPP_C64:
+            return *(_Float16*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(_Float16*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(_Float16*)val == *(__bf16*)comp_val;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16:
+        /*switch (comp_type)
+        {
+        case TAPP_F32:
+            return *(__bf16*)val == *(float*)comp_val;
+            break;
+        case TAPP_F64:
+            return *(__bf16*)val == *(double*)comp_val;
+            break;
+        case TAPP_C32:
+            return *(__bf16*)val == *(complex float*)comp_val;
+            break;
+        case TAPP_C64:
+            return *(__bf16*)val == *(complex double*)comp_val;
+            break;
+        case TAPP_F16:
+            return *(__bf16*)val == *(_Float16*)comp_val;
+            break;
+        case TAPP_BF16:
+            //return *(__bf16*)val == *(__bf16*)comp_val;
             break;
         default:
             break;
@@ -1085,6 +1571,7 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type)
     default:
         break;
     }
+    return false;
 }
 
 void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
@@ -1101,13 +1588,13 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(double*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
-            *(float complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            *(complex float*)sum += op == TAPP_CONJUGATE ? conjf(((complex float*)tensor)[index]) : ((complex float*)tensor)[index];
             break;
         case TAPP_C64:
-            *(double complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            *(complex double*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(float16*)sum += ((float16*)tensor)[index];
+            *(_Float16*)sum += ((_Float16*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(__bf16*)sum += ((__bf16*)tensor)[index];
@@ -1126,13 +1613,13 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(float*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
-            *(float complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            *(complex float*)sum += op == TAPP_CONJUGATE ? conjf(((complex float*)tensor)[index]) : ((complex float*)tensor)[index];
             break;
         case TAPP_C64:
-            *(float complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            *(complex float*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(float*)sum += ((float16*)tensor)[index];
+            *(float*)sum += ((_Float16*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(float*)sum += ((__bf16*)tensor)[index];
@@ -1151,13 +1638,13 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(double*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
-            *(double complex*)sum += op == TAPP_CONJUGATE ? conjf(((float complex*)tensor)[index]) : ((float complex*)tensor)[index];
+            *(complex double*)sum += op == TAPP_CONJUGATE ? conjf(((complex float*)tensor)[index]) : ((complex float*)tensor)[index];
             break;
         case TAPP_C64:
-            *(double complex*)sum += op == TAPP_CONJUGATE ? conj(((double complex*)tensor)[index]) : ((double complex*)tensor)[index];
+            *(complex double*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(double*)sum += ((float16*)tensor)[index];
+            *(double*)sum += ((_Float16*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(double*)sum += ((__bf16*)tensor)[index];
@@ -1171,19 +1658,22 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
         switch (type)
         {
         case TAPP_F32:
-            *(float16*)sum += ((float*)tensor)[index];
+            *(_Float16*)sum += ((float*)tensor)[index];
             break;
         case TAPP_F64:
-            *(float16*)sum += ((double*)tensor)[index];
+            *(_Float16*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
+            *(complex _Float16*)sum += ((complex float*)tensor)[index];
+            break;
         case TAPP_C64:
+            *(complex _Float16*)sum += ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(float16*)sum += ((float16*)tensor)[index];
+            *(_Float16*)sum += ((_Float16*)tensor)[index];
             break;
         case TAPP_BF16:
-            //*(float16*)sum += ((__bf16*)tensor)[index];
+            //*(_Float16*)sum += ((__bf16*)tensor)[index];
             break;
         default:
             break;
@@ -1199,10 +1689,13 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(__bf16*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
+            *(complex __bf16*)sum += ((complex float*)tensor)[index];
+            break;
         case TAPP_C64:
+            *(complex __bf16*)sum += ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(__bf16*)sum += ((float16*)tensor)[index];
+            *(__bf16*)sum += ((_Float16*)tensor)[index];
             break;
         case TAPP_BF16:
             *(__bf16*)sum += ((__bf16*)tensor)[index];
@@ -1217,367 +1710,170 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
     }
 }
 
-void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int index_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum)
+void calculate_beta_C(const void* beta, TAPP_datatype type_beta, bool is_complex_beta, const void* val_C, TAPP_datatype type_C, bool is_complex_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum)
 {
-    switch (prec)
+    if (prec == TAPP_DEFAULT_PREC)
     {
-    case TAPP_DEFAULT_PREC:
-        switch (type_accum)
+        calculate_beta_C_default(beta, type_beta, val_C, type_C, op_C, accum, type_accum);
+    }
+    else
+    {
+        calculate_beta_C_prec(beta, is_complex_beta, val_C, is_complex_C, prec, accum, is_complex_accum);
+    }
+}
+
+void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const void* val_C, TAPP_datatype type_C, TAPP_element_op op_C, void* accum, TAPP_datatype type_accum)
+{
+    switch (type_accum)
+    {
+    case TAPP_F32:
+        switch (type_C)
         {
         case TAPP_F32:
-            switch (type_C)
+            switch (type_beta)
             {
             case TAPP_F32:
-                *((float*)accum) = *((float*)beta) * ((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *((float*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *((float*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *((float*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *((float*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*((float*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
+                //*(float*)accum = *(__bf16*)beta * *(float*)val_C;
                 break;
             default:
                 break;
             }
             break;
         case TAPP_F64:
-            switch (type_C)
+            switch (type_beta)
             {
             case TAPP_F32:
-                *((double*)accum) = *((float*)beta) * ((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_F64:
-                *((double*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * *(double*)val_C;
                 break;
             case TAPP_C32:
-                *((double*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * *(double*)val_C;
                 break;
             case TAPP_C64:
-                *((double*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *((double*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
-                //*((double*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
+                //*(float*)accum = *(__bf16*)beta * *(double*)val_C;
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            switch (type_C)
+            switch (type_beta)
             {
             case TAPP_F32:
-                *((float complex*)accum) = *((float*)beta) *((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F64:
-                *((float complex*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_C32:
-                *((float complex*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_C64:
-                *((float complex*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *((float complex*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
-                //*((float complex*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
+                //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             default:
                 break;
             }
             break;
         case TAPP_C64:
-            switch (type_C)
+            switch (type_beta)
             {
             case TAPP_F32:
-                *((double complex*)accum) = *((float*)beta) * ((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F64:
-                *((double complex*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_C32:
-                *((double complex*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_C64:
-                *((double complex*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *((double complex*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
-                //*((double complex*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
+                //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             default:
                 break;
             }
             break;
         case TAPP_F16:
-            switch (type_C)
+            switch (type_beta)
             {
             case TAPP_F32:
-                *((float16*)accum) = *((float*)beta) * ((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * *(_Float16*)val_C;
                 break;
             case TAPP_F64:
-                *((float16*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * *(_Float16*)val_C;
                 break;
             case TAPP_C32:
-                *((float16*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * *(_Float16*)val_C;
                 break;
             case TAPP_C64:
-                *((float16*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * *(_Float16*)val_C;
                 break;
             case TAPP_F16:
-                *((float16*)accum) = *((float16*)beta) * ((float16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
                 break;
             case TAPP_BF16:
-                //*((__fp16*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
+                //*(float*)accum = *(__bf16*)beta * *(_Float16*)val_C);
                 break;
             default:
                 break;
             }
             break;
         case TAPP_BF16:
-            /*switch (type_C)
+            /*switch (type_beta)
             {
             case TAPP_F32:
-                *((__bf16*)accum) = *((float*)beta) * ((float*)C)[index_C];
+                *(float*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F64:
-                *((__bf16*)accum) = *((double*)beta) * ((double*)C)[index_C];
+                *(float*)accum = *(double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_C32:
-                *((__bf16*)accum) = *((float complex*)beta) * (op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
+                *(float*)accum = *(complex float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_C64:
-                *((__bf16*)accum) = *((double complex*)beta) * (op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
+                *(float*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *((__bf16*)accum) = *((__fp16*)beta) * ((__fp16*)C)[index_C];
+                *(float*)accum = *(_Float16*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
-                *((__bf16*)accum) = *((__bf16*)beta) * ((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;*/
-        default:
-            break;
-        }
-        break;
-    case TAPP_F32F32_ACCUM_F32:
-        switch (type_accum)
-        {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((float*)accum) = (float)*((float*)beta) * (float)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((float*)accum) = (float)*((double*)beta) * (float)((double*)C)[index_C];
-                break;
-            case TAPP_C32:
-                *((float*)accum) = (float complex)*((float complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
-                break;
-            case TAPP_C64:
-                *((float*)accum) = (float complex)*((double complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
-                break;
-            case TAPP_F16:
-                *((float*)accum) = (float)*((float16*)beta) * (float)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) = (float)*((__bf16*)beta) * (float)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((float complex*)accum) = (float)*((float*)beta) * (float)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((float complex*)accum) = (float)*((double*)beta) * (float)((double*)C)[index_C];
-                break;
-            case TAPP_C32:
-                *((float complex*)accum) = (float complex)*((float complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
-                break;
-            case TAPP_C64:
-                *((float complex*)accum) = (float complex)*((double complex*)beta) * (float complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
-                break;
-            case TAPP_F16:
-                *((float complex*)accum) = (float)*((float16*)beta) * (float)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((float complex*)accum) = (float)*((__bf16*)beta) * (float)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    case TAPP_F64F64_ACCUM_F64:
-        switch (type_accum)
-        {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((double*)accum) = (double)*((float*)beta) * (double)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((double*)accum) = (double)*((double*)beta) * (double)((double*)C)[index_C];
-                break;
-            case TAPP_C32:
-                *((double*)accum) = (double complex)*((float complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
-                break;
-            case TAPP_C64:
-                *((double*)accum) = (double complex)*((double complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
-                break;
-            case TAPP_F16:
-                *((double*)accum) = (double)*((float16*)beta) * (double)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((double*)accum) = (double)*((__bf16*)beta) * (double)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((double complex*)accum) = (double)*((float*)beta) * (double)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((double complex*)accum) = (double)*((double*)beta) * (double)((double*)C)[index_C];
-                break;
-            case TAPP_C32:
-                *((double complex*)accum) = (double complex)*((float complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conjf(((float complex*)C)[index_C]) : ((float complex*)C)[index_C]);
-                break;
-            case TAPP_C64:
-                *((double complex*)accum) = (double complex)*((double complex*)beta) * (double complex)(op_C == TAPP_CONJUGATE ? conj(((double complex*)C)[index_C]) : ((double complex*)C)[index_C]);
-                break;
-            case TAPP_F16:
-                *((double complex*)accum) = (double)*((float16*)beta) * (double)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((double complex*)accum) = (double)*((__bf16*)beta) * (double)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    case TAPP_F16F16_ACCUM_F16:
-        switch (type_accum)
-        {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((float16*)accum) = (float16)*((float*)beta) * (float16)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((float16*)accum) = (float16)*((double*)beta) * (float16)((double*)C)[index_C];
-                break;
-            case TAPP_F16:
-                *((float16*)accum) = (float16)*((float16*)beta) * (float16)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((float16*)accum) = (float16)*((__bf16*)beta) * (float16)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    case TAPP_F16F16_ACCUM_F32:
-        switch (type_accum)
-        {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_C)
-            {
-            case TAPP_F32:
-                *((float*)accum) = (float16)*((float*)beta) * (float16)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((float*)accum) = (float16)*((double*)beta) * (float16)((double*)C)[index_C];
-                break;
-            case TAPP_F16:
-                *((float*)accum) = (float16)*((float16*)beta) * (float16)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                //*((float*)accum) = (float16)*((__bf16*)beta) * (float16)((__bf16*)C)[index_C];
-                break;
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    case TAPP_BF16BF16_ACCUM_F32:
-        switch (type_accum)
-        {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            /*switch (type_C)
-            {
-            case TAPP_F32:
-                *((float*)accum) = (__bf16)*((float*)beta) * (__bf16)((float*)C)[index_C];
-                break;
-            case TAPP_F64:
-                *((float*)accum) = (__bf16)*((double*)beta) * (__bf16)((double*)C)[index_C];
-                break;
-            case TAPP_F16:
-                *((float*)accum) = (__bf16)*((float16*)beta) * (__bf16)((float16*)C)[index_C];
-                break;
-            case TAPP_BF16:
-                *((float*)accum) = (__bf16)*((__bf16*)beta) * (__bf16)((__bf16*)C)[index_C];
+                *(float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
                 break;
             default:
                 break;
@@ -1586,957 +1882,2022 @@ void calculate_beta_C(const void* beta, const void* C, TAPP_datatype type_C, int
         default:
             break;
         }
+        break;
+    case TAPP_F64:
+        switch (type_C)
+        {
+        case TAPP_F32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * *(float*)val_C;
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * *(float*)val_C;
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * *(float*)val_C;
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * *(float*)val_C;
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * *(float*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(double*)accum = *(__bf16*)beta * *(float*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * *(double*)val_C;
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * *(double*)val_C;
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * *(double*)val_C;
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * *(double*)val_C;
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * *(double*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(double*)accum = *(__bf16*)beta * *(double*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(double*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_beta)
+            {
+            case TAPP_F32:
+                *(double*)accum = *(float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F64:
+                *(double*)accum = *(double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C32:
+                *(double*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C64:
+                *(double*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F16:
+                *(double*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(double*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C32:
+        switch (type_C)
+        {
+        case TAPP_F32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * *(float*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * *(float*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * *(float*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * *(float*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * *(float*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex float*)accum = *(__bf16*)beta * *(float*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * *(double*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * *(double*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * *(double*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * *(double*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * *(double*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex float*)accum = *(__bf16*)beta * *(double*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(complex float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(complex float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex float*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex float*)accum = *(float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex float*)accum = *(double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex float*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex float*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex float*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(complex float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C64:
+        switch (type_C)
+        {
+        case TAPP_F32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * *(float*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * *(float*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * *(float*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * *(float*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * *(float*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex double*)accum = *(__bf16*)beta * *(float*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * *(double*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * *(double*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * *(double*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * *(double*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * *(double*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex double*)accum = *(__bf16*)beta * *(double*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(complex double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(complex double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(complex double*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_beta)
+            {
+            case TAPP_F32:
+                *(complex double*)accum = *(float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F64:
+                *(complex double*)accum = *(double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C32:
+                *(complex double*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C64:
+                *(complex double*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F16:
+                *(complex double*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(complex double*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+    case TAPP_F16:
+        switch (type_C)
+        {
+        case TAPP_F32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * *(float*)val_C;
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * *(float*)val_C;
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * *(float*)val_C;
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * *(float*)val_C;
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * *(float*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(_Float16*)accum = *(__bf16*)beta * *(float*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * *(double*)val_C;
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * *(double*)val_C;
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * *(double*)val_C;
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * *(double*)val_C;
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * *(double*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(_Float16*)accum = *(__bf16*)beta * *(double*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(_Float16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_BF16:
+                //*(_Float16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_BF16:
+                //*(_Float16*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_beta)
+            {
+            case TAPP_F32:
+                *(_Float16*)accum = *(float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F64:
+                *(_Float16*)accum = *(double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C32:
+                *(_Float16*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C64:
+                *(_Float16*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F16:
+                *(_Float16*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(_Float16*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16:
+        /*switch (type_C)
+        {
+        case TAPP_F32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * *(float*)val_C;
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * *(float*)val_C;
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * *(float*)val_C;
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * *(float*)val_C;
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * *(float*)val_C;
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * *(float*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * *(double*)val_C;
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * *(double*)val_C;
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * *(double*)val_C;
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * *(double*)val_C;
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * *(double*)val_C;
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * *(double*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            switch (type_beta)
+            {
+            case TAPP_F32:
+                *(__bf16*)accum = *(float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F64:
+                *(__bf16*)accum = *(double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C32:
+                *(__bf16*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_C64:
+                *(__bf16*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_F16:
+                *(__bf16*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                break;
+            case TAPP_BF16:
+                *(__bf16*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                break;
+            default:
+                break;
+            }
+            break;
+        default:
+            break;
+        }*/
         break;
     default:
         break;
     }
 }
 
-void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum)
+void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* val_C, bool is_complex_C, TAPP_prectype prec, void* accum, bool is_complex_accum)
 {
     switch (prec)
     {
-    case TAPP_DEFAULT_PREC:
-        switch (type_accum)
+    case TAPP_F32F32_ACCUM_F32:
+        if (is_complex_accum)
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex float*)beta * *(complex float*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(float*)beta * *(complex float*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex float*)beta * *(float*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(float*)beta * *(float*)val_C;
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex float*)beta * *(complex float*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(float*)beta * *(complex float*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex float*)beta * *(float*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(float*)beta * *(float*)val_C;
+                }
+            }
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        if (is_complex_accum)
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(complex double*)accum += *(complex double*)beta * *(complex double*)val_C;
+                }
+                else
+                {
+                    *(complex double*)accum += *(double*)beta * *(complex double*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(complex double*)accum += *(complex double*)beta * *(double*)val_C;
+                }
+                else
+                {
+                    *(complex double*)accum += *(double*)beta * *(double*)val_C;
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(double*)accum += *(complex double*)beta * *(complex double*)val_C;
+                }
+                else
+                {
+                    *(double*)accum += *(double*)beta * *(complex double*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(double*)accum += *(complex double*)beta * *(double*)val_C;
+                }
+                else
+                {
+                    *(double*)accum += *(double*)beta * *(double*)val_C;
+                }
+            }
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+        if (is_complex_accum)
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                }
+                else
+                {
+                    *(complex _Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                }
+                else
+                {
+                    *(complex _Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(_Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                }
+                else
+                {
+                    *(_Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(_Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                }
+                else
+                {
+                    *(_Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                }
+            }
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F32:
+        if (is_complex_accum)
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                }
+            }
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*if (is_complex_accum)
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex __bf16*)beta * *(complex __bf16*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(__bf16*)beta * *(complex __bf16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(complex float*)accum += *(complex __bf16*)beta * *(__bf16*)val_C;
+                }
+                else
+                {
+                    *(complex float*)accum += *(__bf16*)beta * *(__bf16*)val_C;
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_C)
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex __bf16*)beta * *(complex __bf16*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(__bf16*)beta * *(complex __bf16*)val_C;
+                }
+            }
+            else
+            {
+                if (is_complex_beta)
+                {
+                    *(float*)accum += *(complex __bf16*)beta * *(__bf16*)val_C;
+                }
+                else
+                {
+                    *(float*)accum += *(__bf16*)beta * *(__bf16*)val_C;
+                }
+            }
+        }*/
+        break;
+    default:
+        break;
+    }
+}
+
+void calculate_alpha_A_B(const void* alpha, TAPP_datatype type_alpha, bool is_complex_alpha, const void* sum_A, TAPP_datatype type_A, bool is_complex_A, const void* sum_B, TAPP_datatype type_B, bool is_complex_B, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum)
+{
+    if (prec == TAPP_DEFAULT_PREC)
+    {
+        calculate_alpha_A_B_default(alpha, type_alpha, sum_A, type_A, sum_B, type_B, accum, type_accum);
+    }
+    else 
+    {
+        calculate_alpha_A_B_prec(alpha, is_complex_alpha, sum_A, is_complex_A, sum_B, is_complex_B, prec, accum, is_complex_accum);
+    }
+}
+
+void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, void* accum, TAPP_datatype type_accum)
+{
+    switch (type_accum)
+    {
+    case TAPP_F32:
+        switch (type_A)
         {
         case TAPP_F32:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                /*switch (type_B)
+                /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-               break;
+                break;
             default:
                 break;
             }
             break;
         case TAPP_F64:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                /*switch (type_B)
+                /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((double*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-               break;
+                break;
             default:
                 break;
             }
             break;
         case TAPP_C32:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                /*switch (type_B)
+                /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-               break;
+                break;
             default:
                 break;
             }
             break;
         case TAPP_C64:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((double complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                /*switch (type_B)
+                /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((double complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-               break;
+                break;
             default:
                 break;
             }
             break;
         case TAPP_F16:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float16*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float16*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                /*switch (type_B)
+                /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((float16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }*/
-               break;
+                break;
             default:
                 break;
             }
             break;
         case TAPP_BF16:
-            /*switch (type_A)
+            /*switch (type_B)
             {
             case TAPP_F32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((float*)alpha) * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((double*)alpha) * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_F16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float complex*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_BF16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float complex*)sum_B;
-                break;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(double complex*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(float16*)sum_B;
+                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *((__bf16*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
                 }
-               break;
+                break;
             default:
                 break;
             }*/
@@ -2545,48 +3906,4110 @@ void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype typ
             break;
         }
         break;
-    case TAPP_F32F32_ACCUM_F32:
-        switch (type_accum)
+    case TAPP_F64:
+        switch (type_A)
         {
         case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
                 case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
                 case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C32:
+        switch (type_A)
+        {
+        case TAPP_F32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_C64:
+        switch (type_A)
+        {
+        case TAPP_F32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16:
+        switch (type_A)
+        {
+        case TAPP_F32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                /*switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }*/
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            /*switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }*/
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16:
+        /*switch (type_A)
+        {
+        case TAPP_F32:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -2597,42 +8020,624 @@ void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype typ
             }
             break;
         case TAPP_C32:
-        case TAPP_C64:
-            switch (type_A)
+            switch (type_B)
             {
             case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
                 case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float*)alpha) * *(float*)sum_A * *(float complex*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
                 }
                 break;
             case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                switch (type_alpha)
                 {
                 case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
                 case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
                 case TAPP_C64:
-                    *((float complex*)accum) += *((float complex*)alpha) * *(float complex*)sum_A * *(float complex*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_C64:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_F16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case TAPP_BF16:
+            switch (type_B)
+            {
+            case TAPP_F32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C32:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_C64:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_F16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case TAPP_BF16:
+                switch (type_alpha)
+                {
+                case TAPP_F32:
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F64:
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C32:
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_C64:
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_F16:
+                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    break;
+                case TAPP_BF16:
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -2644,391 +8649,555 @@ void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype typ
             break;
         default:
             break;
+        }*/
+        break;
+    default:
+        break;
+    }
+}
+
+void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const void* sum_A, bool is_complex_A, const void* sum_B, bool is_complex_B, TAPP_prectype prec, void* accum, bool is_complex_accum)
+{
+    switch (prec)
+    {
+    case TAPP_F32F32_ACCUM_F32:
+        if (is_complex_accum)
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    }
+                }
+            }
         }
         break;
     case TAPP_F64F64_ACCUM_F64:
-        switch (type_accum)
+        if (is_complex_accum)
         {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_A)
+            if (is_complex_A)
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    *((double*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    *((double*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            switch (type_A)
+            else 
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    *((double complex*)accum) += *((double*)alpha) * *(double*)sum_A * *(double complex*)sum_B;
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    *((double complex*)accum) += *((double complex*)alpha) * *(double complex*)sum_A * *(double complex*)sum_B;
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        default:
-            break;
+        }
+        else
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    }
+                    else
+                    {
+                        *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    }
+                    else
+                    {
+                        *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    }
+                    else
+                    {
+                        *(double*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    }
+                    else
+                    {
+                        *(double*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    }
+                }
+            }
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
-        switch (type_accum)
+        if (is_complex_accum)
         {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_A)
+            if (is_complex_A)
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float16*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex _Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex _Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        case TAPP_C32: //There is no half-precision complex
-        case TAPP_C64:
-            switch (type_A)
+            else 
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex _Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex _Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        default:
-            break;
+        }
+        else
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(_Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(_Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(_Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(_Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(_Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(_Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                }
+            }
         }
         break;
     case TAPP_F16F16_ACCUM_F32:
-        switch (type_accum)
+        if (is_complex_accum)
         {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_A)
+            if (is_complex_A)
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            switch (type_A)
+            else 
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float complex*)accum) += *((float16*)alpha) * *(float16*)sum_A * *(float16*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        default:
-            break;
+        }
+        else
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    }
+                }
+            }
         }
         break;
     case TAPP_BF16BF16_ACCUM_F32:
-        /*switch (type_accum)
+        /*if (is_complex_accum)
         {
-        case TAPP_F32:
-        case TAPP_F64:
-        case TAPP_F16:
-        case TAPP_BF16:
-            switch (type_A)
+            if (is_complex_A)
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex __bf16*)alpha * *(complex __bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(__bf16*)alpha * *(complex __bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex __bf16*)alpha * *(complex __bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(__bf16*)alpha * *(complex __bf16*)sum_A * *(__bf16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        case TAPP_C32:
-        case TAPP_C64:
-            switch (type_A)
+            else 
             {
-            case TAPP_F32:
-            case TAPP_F64:
-            case TAPP_F16:
-            case TAPP_BF16:
-                switch (type_B)
+                if (is_complex_B)
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    *((float complex*)accum) += *((__bf16*)alpha) * *(__bf16*)sum_A * *(__bf16*)sum_B;
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex __bf16*)alpha * *(__bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
                 }
-                break;
-            case TAPP_C32:
-            case TAPP_C64:
-                switch (type_B)
+                else
                 {
-                case TAPP_F32:
-                case TAPP_F64:
-                case TAPP_F16:
-                case TAPP_BF16:
-                    break;
-                case TAPP_C32:
-                case TAPP_C64:
-                    break;
-                default:
-                    break;
+                    if (is_complex_alpha)
+                    {
+                        *(complex float*)accum += *(complex __bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    }
                 }
-                break;
-            default:
-                break;
             }
-            break;
-        default:
-            break;
+        }
+        else
+        {
+            if (is_complex_A)
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex __bf16*)alpha * *(complex __bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(__bf16*)alpha * *(complex __bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex __bf16*)alpha * *(complex __bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(__bf16*)alpha * *(complex __bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                }
+            }
+            else 
+            {
+                if (is_complex_B)
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex __bf16*)alpha * *(__bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex __bf16*)sum_B;
+                    }
+                }
+                else
+                {
+                    if (is_complex_alpha)
+                    {
+                        *(float*)accum += *(complex __bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                    else
+                    {
+                        *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    }
+                }
+            }
         }*/
         break;
     default:
@@ -3049,13 +9218,13 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_C32:
             if (op_D == TAPP_CONJUGATE)
             {
-                *((float complex*)accum) = conjf(*((float complex*)accum));
+                *(complex float*)accum = conjf(*(complex float*)accum);
             }
             break;
         case TAPP_C64:
             if (op_D == TAPP_CONJUGATE)
             {
-                *((double complex*)accum) = conj(*((double complex*)accum));
+                *(complex double*)accum = conj(*(complex double*)accum);
             }
             break;
         case TAPP_F16:
@@ -3079,7 +9248,7 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_C64:
             if (op_D == TAPP_CONJUGATE)
             {
-                *((float complex*)accum) = conjf(*((float complex*)accum));
+                *(complex float*)accum = conjf(*(complex float*)accum);
             }
             break;
         default:
@@ -3098,7 +9267,7 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
         case TAPP_C64:
             if (op_D == TAPP_CONJUGATE)
             {
-                *((double complex*)accum) = conjf(*((double complex*)accum));
+                *(complex double*)accum = conjf(*(complex double*)accum);
             }
             break;
         default:
@@ -3112,6 +9281,142 @@ void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAP
     }
 }
 
+void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, TAPP_prectype prec)
+{
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(float*)val = ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(double*)val = ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(complex float*)val = ((complex float*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(complex double*)val = ((complex double*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(_Float16*)val = ((_Float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(__bf16*)val = ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F32F32_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(float*)val = ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(float*)val = ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(complex float*)val = ((complex float*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(complex float*)val = ((complex double*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(float*)val = ((_Float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(float*)val = ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(double*)val = ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(double*)val = ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(complex double*)val = ((complex float*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(complex double*)val = ((complex double*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(double*)val = ((_Float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(double*)val = ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_F16F16_ACCUM_F16:
+    case TAPP_F16F16_ACCUM_F32:
+        switch (type)
+        {
+        case TAPP_F32:
+            *(_Float16*)val = ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(_Float16*)val = ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(complex _Float16*)val = ((complex float*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(complex _Float16*)val = ((complex double*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(_Float16*)val = ((_Float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            //*(_Float16*)val = ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }
+        break;
+    case TAPP_BF16BF16_ACCUM_F32:
+        /*switch (type)
+        {
+        case TAPP_F32:
+            *(__bf16*)val = ((float*)tensor)[index];
+            break;
+        case TAPP_F64:
+            *(__bf16*)val = ((double*)tensor)[index];
+            break;
+        case TAPP_C32:
+            *(complex __bf16*)val = ((complex float*)tensor)[index];
+            break;
+        case TAPP_C64:
+            *(complex __bf16*)val = ((complex double*)tensor)[index];
+            break;
+        case TAPP_F16:
+            *(__bf16*)val = ((_Float16*)tensor)[index];
+            break;
+        case TAPP_BF16:
+            *(__bf16*)val = ((__bf16*)tensor)[index];
+            break;
+        default:
+            break;
+        }*/
+        break;
+    
+    default:
+        break;
+    }
+}
+
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec)
 {
     switch (prec)
@@ -3120,22 +9425,22 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
         switch (type_D)
         {
         case TAPP_F32:
-            ((float*)D)[index_D] = *((float*)accum);
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_F64:
-            ((double*)D)[index_D] = *((double*)accum);
+            ((double*)D)[index_D] = *(double*)accum;
             break;
         case TAPP_C32:
-            ((float complex*)D)[index_D] = *((float complex*)accum);
+            ((complex float*)D)[index_D] = *(complex float*)accum;
             break;
         case TAPP_C64:
-            ((double complex*)D)[index_D] = *((double complex*)accum);
+            ((complex double*)D)[index_D] = *(complex double*)accum;
             break;
         case TAPP_F16:
-            ((float16*)D)[index_D] = *((float16*)accum);
+            ((_Float16*)D)[index_D] = *(_Float16*)accum;
             break;
         case TAPP_BF16:
-            //((__bf16*)D)[index_D] = *((__bf16*)accum);
+            //((__bf16*)D)[index_D] = *(__bf16*)accum;
             break;
         default:
             break;
@@ -3147,22 +9452,22 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
         switch (type_D)
         {
         case TAPP_F32:
-            ((float*)D)[index_D] = *((float*)accum);
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_F64:
-            ((double*)D)[index_D] = *((float*)accum);
+            ((double*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_C32:
-            ((float complex*)D)[index_D] = *((float complex*)accum);
+            ((complex float*)D)[index_D] = *(complex float*)accum;
             break;
         case TAPP_C64:
-            ((double complex*)D)[index_D] = *((float complex*)accum);
+            ((complex double*)D)[index_D] = *(complex float*)accum;
             break;
         case TAPP_F16:
-            ((float16*)D)[index_D] = *((float*)accum);
+            ((_Float16*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_BF16:
-            //((__bf16*)D)[index_D] = *((float*)accum);
+            //((__bf16*)D)[index_D] = *(float*)accum;
             break;
         default:
             break;
@@ -3172,22 +9477,22 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
         switch (type_D)
         {
         case TAPP_F32:
-            ((float*)D)[index_D] = *((double*)accum);
+            ((float*)D)[index_D] = *(double*)accum;
             break;
         case TAPP_F64:
-            ((double*)D)[index_D] = *((double*)accum);
+            ((double*)D)[index_D] = *(double*)accum;
             break;
         case TAPP_C32:
-            ((float complex*)D)[index_D] = *((double complex*)accum);
+            ((complex float*)D)[index_D] = *(complex double*)accum;
             break;
         case TAPP_C64:
-            ((double complex*)D)[index_D] = *((double complex*)accum);
+            ((complex double*)D)[index_D] = *(complex double*)accum;
             break;
         case TAPP_F16:
-            ((float16*)D)[index_D] = *((double*)accum);
+            ((_Float16*)D)[index_D] = *(double*)accum;
             break;
         case TAPP_BF16:
-            //((__bf16*)D)[index_D] = *((double*)accum);
+            //((__bf16*)D)[index_D] = *(double*)accum;
             break;
         default:
             break;
@@ -3197,20 +9502,20 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
         switch (type_D)
         {
         case TAPP_F32:
-            ((float*)D)[index_D] = *((float16*)accum);
+            ((float*)D)[index_D] = *(_Float16*)accum;
             break;
         case TAPP_F64:
-            ((double*)D)[index_D] = *((float16*)accum);
+            ((double*)D)[index_D] = *(_Float16*)accum;
             break;
         case TAPP_C32:
             break;
         case TAPP_C64:
             break;
         case TAPP_F16:
-            ((float16*)D)[index_D] = *((float16*)accum);
+            ((_Float16*)D)[index_D] = *(_Float16*)accum;
             break;
         case TAPP_BF16:
-            //((__bf16*)D)[index_D] = *((float16*)accum);
+            //((__bf16*)D)[index_D] = *(_Float16*)accum;
             break;
         default:
             break;
