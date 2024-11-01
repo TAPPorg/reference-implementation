@@ -1,3 +1,8 @@
+/*
+ * Niklas Hörnblad
+ * Paolo Bientinesi
+ * Umeå University - October 2024
+ */
 #include "tapp_ex_imp.h"
 #include <string.h>
 
@@ -51,6 +56,12 @@ size_t TAPP_explain_error(TAPP_error error,
         break;
     case 12:
         error_message = "C should not be NULL while beta is not zero.";
+        break;
+    case 13:
+        error_message = "Nmode can not be negative.";
+        break;
+    case 14:
+        error_message = "Extents can not be negative.";
         break;
     default:
         break;

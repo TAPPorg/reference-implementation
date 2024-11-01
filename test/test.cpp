@@ -2073,17 +2073,13 @@ void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data)
     {
         std::cout << strides[i] << " ";
     }
-    /*std::cout << std::endl;
+    std::cout << std::endl;
     int coord[nmode];
     for (int i = 0; i < nmode; i++)
     {
         coord[i] = 0;
     }
-    int size = 1;
-    for (int i = 0; i < nmode; i++)
-    {
-        size *= extents[i];
-    }
+    int size = calculate_size(nmode, extents);
     for (int i = 0; i < size; i++)
     {
         std::cout << data[i] << " ";
@@ -2097,7 +2093,7 @@ void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data)
                 std::cout << std::endl;
             }
         }
-    }*/
+    }
     std::cout << std::endl;
 }
 
