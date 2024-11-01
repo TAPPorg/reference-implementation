@@ -40,7 +40,7 @@ out/demo:$(TEST)/demo.c $(OBJ)/tapp.o
 	$(CC) $(CFLAGS) -g  $(TEST)/demo.c $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp $(TBLIS_PARAM)
 
 out/test++: $(TEST)/test.cpp $(OBJ)/tapp.o
-	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o -o $(OUT)/test++ -I$(INC) -I$(INC)/tapp $(TBLIS_PARAM)
+	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp $(TBLIS_PARAM)
 
 lib/tapp.so: $(OBJ)/tapp.o
 	$(CC) -shared -fPIC $(OBJ)/tapp.o -o lib/tapp.so -I$(INC) -I$(INC)/tapp
