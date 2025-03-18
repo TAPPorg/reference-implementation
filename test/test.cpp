@@ -188,9 +188,9 @@ void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, doubl
     
     auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_d(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     delete[] tblis_idx_A;
     delete[] tblis_len_A;
@@ -307,9 +307,9 @@ void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
 
     tblis_C.conj = op_C;
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
@@ -430,9 +430,10 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
 
     tblis_C.conj = op_C;
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
