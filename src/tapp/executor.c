@@ -8,7 +8,7 @@
 
 TAPP_error create_executor(TAPP_executor* exec) {
     *exec = (TAPP_executor)malloc(sizeof(int));
-    int ex = 1;
+    int ex = 2;
     *((int*)(*exec)) = ex;
     // exec = (intptr_t)&ex;
     return 0;

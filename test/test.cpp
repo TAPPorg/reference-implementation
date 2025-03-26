@@ -9,6 +9,7 @@
 int main(int argc, char const *argv[])
 {
     srand(time(NULL)); 
+    std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
     std::cout << "Hadamard Product: " << str(test_hadamard_product()) << std::endl;
     std::cout << "Contraction: " << str(test_contraction()) << std::endl;
     std::cout << "Commutativity: " << str(test_commutativity()) << std::endl;
@@ -30,7 +31,6 @@ int main(int argc, char const *argv[])
     std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
     //for(int i=0;i<1;i++)
-    std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
     std::cout << "Zero stride: " << str(test_zero_stride()) << std::endl;
     std::cout << "Unique Index: " << str(test_unique_idx()) << std::endl;
     std::cout << "Repeated Index: " << str(test_repeated_idx()) << std::endl;

@@ -14,7 +14,7 @@
 #include <complex>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include "tblis.h"
+#include <ctf.hpp>
 #pragma GCC diagnostic pop
 
 extern "C" {

@@ -1,0 +1,3 @@
+0 out/test++
+1 out/worker.x -n 1000
+2 out/worker.x -n 1000
