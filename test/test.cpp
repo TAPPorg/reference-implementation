@@ -8,7 +8,7 @@
 
 int main(int argc, char const *argv[])
 {
-    srand(time(NULL));
+    srand(time(NULL)); 
     std::cout << "Hadamard Product: " << str(test_hadamard_product()) << std::endl;
     std::cout << "Contraction: " << str(test_contraction()) << std::endl;
     std::cout << "Commutativity: " << str(test_commutativity()) << std::endl;
@@ -16,6 +16,7 @@ int main(int argc, char const *argv[])
     std::cout << "Equal Extents: " << str(test_equal_extents()) << std::endl;
     std::cout << "Outer Product: " << str(test_outer_product()) << std::endl;
     std::cout << "Full Contraction: " << str(test_full_contraction()) << std::endl;
+    //for(int i=0;i<0;i++)
     std::cout << "Zero Dim Tensor Contraction: " << str(test_zero_dim_tensor_contraction()) << std::endl;
     std::cout << "One Dim Tensor Contraction: " << str(test_one_dim_tensor_contraction()) << std::endl;
     std::cout << "Subtensor Same Index: " << str(test_subtensor_same_idx()) << std::endl;
@@ -28,6 +29,7 @@ int main(int argc, char const *argv[])
     std::cout << "Mixed Strides Subtensor Lower Index: " << str(test_mixed_strides_subtensor_lower_idx()) << std::endl;
     std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
     std::cout << "Contraction Complex: " << str(test_contraction_complex()) << std::endl;
+    //for(int i=0;i<1;i++)
     std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
     std::cout << "Zero stride: " << str(test_zero_stride()) << std::endl;
     std::cout << "Unique Index: " << str(test_unique_idx()) << std::endl;
@@ -188,9 +190,9 @@ void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, doubl
     
     auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_d(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     delete[] tblis_idx_A;
     delete[] tblis_len_A;
@@ -307,9 +309,9 @@ void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
 
     tblis_C.conj = op_C;
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
@@ -430,9 +432,10 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
 
     tblis_C.conj = op_C;
 
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+
     tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
@@ -602,7 +605,7 @@ bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int siz
     {
         double rel_diff_r = abs((A[i].real() - B[i].real()) / (A[i].real() > B[i].real() ? A[i].real() : B[i].real()));
         double rel_diff_i = abs((A[i].imag() - B[i].imag()) / (A[i].imag() > B[i].imag() ? A[i].imag() : B[i].imag()));
-        if (rel_diff_r > 0.00005 || rel_diff_i > 0.00005)
+        if (rel_diff_r > 0.0000000005 || rel_diff_i > 0.0000000005) //0.00005
         {
             std::cout << "\n" << i << ": " << A[i] << " - " << B[i] << std::endl;
             std::cout << "\n" << i << ": " << std::complex<double>(rel_diff_r, rel_diff_i) << std::endl;
@@ -1671,9 +1674,10 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     std::complex<double>* B = (std::complex<double>*)calculate_tensor_pointer(data_B, nmode_B, extents_B, offsets_B, strides_B, sizeof(std::complex<double>));
     std::complex<double>* C = (std::complex<double>*)calculate_tensor_pointer(data_C, nmode_C, extents_C, offsets_C, strides_C, sizeof(std::complex<double>));
     std::complex<double>* D = (std::complex<double>*)calculate_tensor_pointer(data_D, nmode_D, extents_D, offsets_D, strides_D, sizeof(std::complex<double>));
-
-    std::complex<double> alpha = rand_z();
-    std::complex<double> beta = rand_z();
+    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
+    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+    std::complex<double> alpha = rand_z(zmi,zma);
+    std::complex<double> beta = rand_z(zmi,zma);
 
     delete[] subtensor_dims_A;
     delete[] subtensor_dims_B;
@@ -1861,10 +1865,13 @@ std::complex<float>* create_tensor_data_c(int64_t size)
 
 std::complex<double>* create_tensor_data_z(int64_t size)
 {
+    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
+    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+
     std::complex<double>* data = new std::complex<double>[size];
     for (size_t i = 0; i < size; i++)
     {
-        data[i] = rand_z();
+        data[i] = rand_z(zmi, zma);
     }
     return data;
 }
@@ -2817,7 +2824,7 @@ bool test_zero_dim_tensor_contraction()
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D] = generate_contraction_s(0);
+          size_A, size_B, size_C, size_D] = generate_contraction_s(0);//2,2,0,2);
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
     
@@ -3636,7 +3643,7 @@ bool test_contraction_complex_double_precision()
           nmode_D, extents_D, strides_D, D, idx_D,
           alpha, beta,
           data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D] = generate_contraction_z();
+          size_A, size_B, size_C, size_D] = generate_contraction_z(2,2,0,2);//2,2,0,2);
 
     auto [E, data_E] = copy_tensor_data_z(size_D, data_D, D);
 
@@ -3663,14 +3670,15 @@ bool test_contraction_complex_double_precision()
     TAPP_executor exec;
     create_executor(&exec);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int terr = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult_z(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                      nmode_B, extents_B, strides_B, B, op_B, idx_B,
                      nmode_C, extents_C, strides_C, C, op_C, idx_D,
                      nmode_D, extents_D, strides_D, E, op_D, idx_D,
                      alpha, beta);
-
+    // std::complex<double> zma = 1.0+1.0e-12;
+    // data_D[0] = data_D[0]*zma;
     bool result = compare_tensors_z(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);

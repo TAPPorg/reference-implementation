@@ -1,13 +1,7 @@
-/*
- * Niklas Hörnblad
- * Paolo Bientinesi
- * Umeå University - September 2024
- */
-
-#include "product.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <complex.h>
+#include "tapp.h"
 
 void contraction();
 void hadamard();
