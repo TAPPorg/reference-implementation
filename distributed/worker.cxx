@@ -217,11 +217,20 @@ int createTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& t
         if(std::abs(init_val) != 0.0) {
           *tens = init_val;
         }
-        if(dw.rank == 0) std::cout << "create " ;
         tensorC[uuid] = std::move(tens);
 
-        printCTensor(*(tensorC[uuid]), dw);
+        std::unique_ptr<Tensor<>> tensr = std::make_unique<Tensor<>>(nmodes, extents_, shape, dw);
+        if(init_val != 0.0) {
+          *tensr = init_val.real();
+        }
+        tensorR[uuid+std::string("_r")] = std::move(tensr);
 
+        std::unique_ptr<Tensor<>> tensi = std::make_unique<Tensor<>>(nmodes, extents_, shape, dw);
+        if(init_val != 0.0) {
+          *tensi = init_val.imag();
+        }
+        tensorR[uuid+std::string("_i")] = std::move(tensi);
+        
       }
       break;
   }
@@ -290,6 +299,26 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
       else {
         distributeArrayDataPart2(full_dat, numel, indices, valuesC, datatype_tapp);
         tensorC[uuid]->write(numel, indices, valuesC);
+        
+        int64_t  numelr, * indicesr;
+        double * valuesr;
+        tensorR[uuid+std::string("_r")]->get_local_data(&numelr, &indicesr, &valuesr);
+        if(numel != numelr) {
+          std::cout << "ERROR: numel != numelr " << std::endl;
+          exit(404);
+        }
+        for(int64_t i = 0; i<numel; i++) valuesr[i] = valuesC[i].real(); 
+        tensorR[uuid+std::string("_r")]->write(numelr, indicesr, valuesr);
+
+        int64_t  numeli, * indicesi;
+        double * valuesi;
+        tensorR[uuid+std::string("_i")]->get_local_data(&numeli, &indicesi, &valuesi);
+        if(numel != numeli) {
+          std::cout << "ERROR: numel != numeli " << std::endl;
+          exit(404);
+        }
+        for(int64_t i = 0; i<numel; i++) valuesi[i] = valuesC[i].imag(); 
+        tensorR[uuid+std::string("_i")]->write(numeli, indicesi, valuesi);
       }
       // for(int i=0;i<numel;i++) std::cout << "Aw " << valuesC[i] << std::endl;
       if(dw.rank == 0){
@@ -362,9 +391,11 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
   if(dw.rank == 0)
     std::cout << "contract: D[" << idx_D << "] = " << alpha << " A[" << idx_A << "]*B[" << idx_B << "] + " << beta << " C[" << idx_C << "]" << std::endl;
   
+  double alpha_ = alpha.real();
+  double beta_ = beta.real();
+  double alphai = alpha.imag();
+  double betai = beta.imag();
   if(datatype_D == 1){
-    double alpha_ = alpha.real();
-    double beta_ = beta.real();
 
     if(uuid_C != uuid_D){
       (*(tensorR[uuid_D]))[idx_D] = (*(tensorR[uuid_C]))[idx_C]; 
@@ -376,6 +407,42 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
       (*(tensorC[uuid_D]))[idx_D] = (*(tensorC[uuid_C]))[idx_C]; 
     }
     tensorC[uuid_D]->contract(alpha,  *(tensorC[uuid_A]), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+
+
+  //} 
+  //else if(datatype_D == 3){
+    /* if(uuid_C != uuid_D){
+      (*(tensorR[uuid_D+std::string("_r")]))[idx_D] = beta_ * (*(tensorR[uuid_C+std::string("_r")]))[idx_C] - betai * (*(tensorR[uuid_C+std::string("_i")]))[idx_C]; 
+      (*(tensorR[uuid_D+std::string("_i")]))[idx_D] = beta_ * (*(tensorR[uuid_C+std::string("_i")]))[idx_C] + betai * (*(tensorR[uuid_C+std::string("_r")]))[idx_C]; 
+    }
+    
+    tensorR[uuid_D+std::string("_r")]->contract(alpha_,  *(tensorR[uuid_A+std::string("_r")]), idx_A, *(tensorR[uuid_B+std::string("_r")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_i")]->contract(alpha_,  *(tensorR[uuid_A+std::string("_r")]), idx_A, *(tensorR[uuid_B+std::string("_i")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_i")]->contract(alpha_,  *(tensorR[uuid_A+std::string("_i")]), idx_A, *(tensorR[uuid_B+std::string("_r")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_r")]->contract(-alpha_,  *(tensorR[uuid_A+std::string("_i")]), idx_A, *(tensorR[uuid_B+std::string("_i")]), idx_B, 1.0, idx_D);
+
+    tensorR[uuid_D+std::string("_i")]->contract(alphai,  *(tensorR[uuid_A+std::string("_r")]), idx_A, *(tensorR[uuid_B+std::string("_r")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_r")]->contract(-alphai,  *(tensorR[uuid_A+std::string("_r")]), idx_A, *(tensorR[uuid_B+std::string("_i")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_r")]->contract(-alphai,  *(tensorR[uuid_A+std::string("_i")]), idx_A, *(tensorR[uuid_B+std::string("_r")]), idx_B, 1.0, idx_D);
+    tensorR[uuid_D+std::string("_i")]->contract(-alphai,  *(tensorR[uuid_A+std::string("_i")]), idx_A, *(tensorR[uuid_B+std::string("_i")]), idx_B, 1.0, idx_D);
+
+    int64_t  numel, * indices;
+    std::complex<double> * values;
+    tensorC[uuid_D]->get_local_data(&numel, &indices, &values);
+    int64_t  numelr, * indicesr;
+    double * valuesr;
+    // *tensorR[uuid_D+std::string("_r")] = 1.0;
+    tensorR[uuid_D+std::string("_r")]->get_local_data(&numelr, &indicesr, &valuesr);
+    int64_t  numeli, * indicesi;
+    double * valuesi;
+    tensorR[uuid_D+std::string("_i")]->get_local_data(&numeli, &indicesi, &valuesi);
+    // for(int64_t i = 0; i<numel; i++) values[i] = std::complex<double>(valuesr[i], valuesi[i]); 
+    // tensorC[uuid_D]->write(numel, indices, values);
+    for(int64_t i = 0; i<numel; i++) if (std::abs(values[i] - std::complex<double>(valuesr[i], valuesi[i])) > 0.000005){
+      std::cout << "Difference: " << values[i] << " " << std::complex<double>(valuesr[i], valuesi[i])  << std::endl;
+      exit(431);
+    }
+    */ 
   } 
   
   delete[] idx_A;

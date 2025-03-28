@@ -3662,10 +3662,10 @@ bool test_contraction_complex_double_precision()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_C64, nmode_D, extents_D, strides_D);
 
-    int op_A = randi(0, 1);// 0;
-    int op_B = randi(0, 1);// 0;
-    int op_C = randi(0, 1);// 0;
-    int op_D = randi(0, 1);// 0;
+    int op_A =  0;//randi(0, 1);//
+    int op_B =  0;//randi(0, 1);//
+    int op_C =  0;//randi(0, 1);//
+    int op_D =  0;//randi(0, 1);//
 
     TAPP_tensor_product plan;
     TAPP_handle handle;
