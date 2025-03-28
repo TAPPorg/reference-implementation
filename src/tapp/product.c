@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tblis_bind.h"
+#include "ctf-bind.h"
 
 int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr);
 int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);
@@ -112,6 +112,11 @@ TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan)
     free(((struct plan*)plan)->idx_D);
     free((struct plan*)plan);
 
+    return 0;
+}
+
+TAPP_error TAPP_finalize(){
+    finalizeWork();
     return 0;
 }
 
@@ -238,7 +243,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
  
-      bind_tblis_execute_product(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+      ctf_bind_execute_product(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                        nmode_B, extents_B, strides_B, B, op_B, idx_B,
                        nmode_C, extents_C, strides_C, C, op_C, idx_D,
                        nmode_D, extents_D, strides_D, E_, op_D, idx_D,

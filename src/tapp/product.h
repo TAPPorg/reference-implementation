@@ -47,6 +47,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
 TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan);
 
+TAPP_error TAPP_finalize();
+
 //TODO: in-place operation: set C = NULL or TAPP_IN_PLACE?
 
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
