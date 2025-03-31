@@ -12,6 +12,8 @@ struct tensor_info
     int nmode;
     int64_t* extents;
     int64_t* strides;
+    int uuid_len;
+    char* uuid;
 };
 
 struct plan

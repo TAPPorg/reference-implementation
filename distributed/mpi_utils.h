@@ -347,6 +347,29 @@ int gatherDistributedArrayDataPart2(void* full_data, int64_t local_numel, int64_
   return 0;
 }
 
+int tensorSetName(std::string& uuid, std::string& name){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(rank == rootRank){
+    std::string message = "tensorSetName";
+    mpiBroadcastString(message);
+  }
+
+  mpiBroadcastString(uuid);
+  
+  int isName = 0;
+  if(rank == rootRank && !name.empty()) isName = 1;
+  mpiBroadcastInt(isName);
+  if(isName == 1) mpiBroadcastString(name);
+  else if(rank != rootRank) name = "";
+  
+  //worker sets tensor name
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
 int destructTensor(std::string& uuid){
   int rootRank = 0;
   int rank;

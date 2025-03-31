@@ -219,7 +219,7 @@ int createTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& t
         }
         tensorC[uuid] = std::move(tens);
 
-        std::unique_ptr<Tensor<>> tensr = std::make_unique<Tensor<>>(nmodes, extents_, shape, dw);
+        /*std::unique_ptr<Tensor<>> tensr = std::make_unique<Tensor<>>(nmodes, extents_, shape, dw);
         if(init_val != 0.0) {
           *tensr = init_val.real();
         }
@@ -229,7 +229,7 @@ int createTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& t
         if(init_val != 0.0) {
           *tensi = init_val.imag();
         }
-        tensorR[uuid+std::string("_i")] = std::move(tensi);
+        tensorR[uuid+std::string("_i")] = std::move(tensi);*/
         
       }
       break;
@@ -300,7 +300,7 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
         distributeArrayDataPart2(full_dat, numel, indices, valuesC, datatype_tapp);
         tensorC[uuid]->write(numel, indices, valuesC);
         
-        int64_t  numelr, * indicesr;
+        /*int64_t  numelr, * indicesr;
         double * valuesr;
         tensorR[uuid+std::string("_r")]->get_local_data(&numelr, &indicesr, &valuesr);
         if(numel != numelr) {
@@ -318,7 +318,7 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
           exit(404);
         }
         for(int64_t i = 0; i<numel; i++) valuesi[i] = valuesC[i].imag(); 
-        tensorR[uuid+std::string("_i")]->write(numeli, indicesi, valuesi);
+        tensorR[uuid+std::string("_i")]->write(numeli, indicesi, valuesi); */
       }
       // for(int i=0;i<numel;i++) std::cout << "Aw " << valuesC[i] << std::endl;
       if(dw.rank == 0){
@@ -327,6 +327,33 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
       }
       printCTensor(*(tensorC[uuid]), dw);
   } 
+
+  waitWorkersFinished();
+  return 0;
+}
+
+int tensorSetName_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
+  int datatype_tapp;
+  std::string uuid;
+  std::string name;
+
+  tensorSetName(uuid, name);
+
+  if(tensorR.find(uuid) != tensorR.end()) datatype_tapp = 1;
+  else if(tensorC.find(uuid) != tensorC.end()) datatype_tapp = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << uuid<< std::endl;
+    exit(404);
+  }
+
+  switch (datatype_tapp) { // tapp_datatype
+    case 1://TAPP_R64:
+      tensorR[uuid]->set_name(name.c_str());
+      break;
+    case 3://TAPP_C64:
+      tensorC[uuid]->set_name(name.c_str());
+      break;
+  }
 
   waitWorkersFinished();
   return 0;
@@ -341,7 +368,7 @@ int destructTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
 
   if(tensorR.find(uuid) != tensorR.end()) datatype = 1;
   else if(tensorC.find(uuid) != tensorC.end()) datatype = 3; 
-  else { std::cout << "ERROR: Tensor not found. uuid: " << uuid << std::endl; exit(404); }
+  else { std::cout << "ERROR: Attempting to destruct nonexisting tensor. uuid: " << uuid << std::endl; exit(404); }
   
   if(datatype == 1){
     tensorR[uuid]->free_self();
@@ -495,6 +522,9 @@ int main(int argc, char ** argv){
       }
       else if(message == "gatherDistributedArrayData"){
         ierr = distributeArrayData(dw, tensorR, tensorC, true);
+      }
+      else if(message == "tensorSetName"){
+        ierr = tensorSetName_(dw, tensorR, tensorC);
       }
       else if(message == "destructTensor"){
         ierr = destructTensor_(dw, tensorR, tensorC);

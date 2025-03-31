@@ -30,7 +30,7 @@ obj/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
 
 obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
 obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp -I$(TBL)

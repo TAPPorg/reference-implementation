@@ -243,11 +243,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
  
-      ctf_bind_execute_product(nmode_A, extents_A, strides_A, A, op_A, idx_A,
-                       nmode_B, extents_B, strides_B, B, op_B, idx_B,
-                       nmode_C, extents_C, strides_C, C, op_C, idx_D,
-                       nmode_D, extents_D, strides_D, E_, op_D, idx_D,
-                       alpha, beta, type_D);
+      int ierr = ctf_bind_execute_product(A_info, A, op_A, idx_A,
+                    B_info, B, op_B, idx_B,
+                    C_info, C, op_C, idx_C,
+                    D_info, D, op_D, idx_D, alpha, beta);
     }
      
     if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check

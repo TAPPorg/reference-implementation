@@ -24,6 +24,12 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    const int64_t* extents,
                                    const int64_t* strides);
 
+TAPP_error TAPP_create_tensor(TAPP_tensor_info* info,
+                                   TAPP_datatype type,
+                                   int nmode,
+                                   const int64_t* extents,
+                                   const int64_t* strides, void* init_val);
+
 TAPP_error TAPP_destory_tensor_info(TAPP_tensor_info info);
 
 int TAPP_get_nmodes(TAPP_tensor_info info);
@@ -42,5 +48,12 @@ void TAPP_get_strides(TAPP_tensor_info info,
 
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
                             const int64_t* strides);
+
+int TAPP_get_uuid_len(TAPP_tensor_info info); 
+
+TAPP_error TAPP_get_uuid(TAPP_tensor_info info,
+                      char * uuid, const int uuid_len);
+
+TAPP_datatype TAPP_get_datatype(TAPP_tensor_info info);
 
 #endif /* TAPP_TENSOR_H_ */
