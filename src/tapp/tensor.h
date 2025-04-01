@@ -30,6 +30,8 @@ TAPP_error TAPP_create_tensor(TAPP_tensor_info* info,
                                    const int64_t* extents,
                                    const int64_t* strides, void* init_val);
 
+TAPP_error TAPP_initialize_tensor(TAPP_tensor_info info, void* init_val);
+
 TAPP_error TAPP_destory_tensor_info(TAPP_tensor_info info);
 
 int TAPP_get_nmodes(TAPP_tensor_info info);
@@ -55,5 +57,17 @@ TAPP_error TAPP_get_uuid(TAPP_tensor_info info,
                       char * uuid, const int uuid_len);
 
 TAPP_datatype TAPP_get_datatype(TAPP_tensor_info info);
+
+TAPP_error TAPP_broadcast_tensor_body_data(TAPP_tensor_info info, void* data);
+
+TAPP_error TAPP_gather_tensor_body_data(TAPP_tensor_info info, void* data);
+
+TAPP_error TAPP_tensor_set_name(TAPP_tensor_info info,
+                      const int64_t* name, const int name_len);
+
+TAPP_error TAPP_copy_tensor(TAPP_tensor_info dest, TAPP_tensor_info src); 
+
+TAPP_error TAPP_scale_with_denominators(TAPP_tensor_info info, 
+		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk);
 
 #endif /* TAPP_TENSOR_H_ */

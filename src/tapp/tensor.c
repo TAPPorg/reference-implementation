@@ -17,7 +17,6 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    const int64_t* extents,
                                    const int64_t* strides) {
  
-    // printf("running TAPP_create_tensor_info \n");
     void* init_val;
     switch (type) { // tapp_datatype
     case TAPP_F32:
@@ -37,7 +36,6 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
       init_val = &init_val_z;
       break;
     } 
-    printf("running TAPP_create_tensor \n");
     return TAPP_create_tensor(info, type, nmode, extents, strides, init_val);
 }
 
@@ -67,24 +65,16 @@ TAPP_error TAPP_create_tensor(TAPP_tensor_info* info,
     info_ptr->strides = malloc(nmode * sizeof(int64_t));
     memcpy(info_ptr->strides, strides, nmode * sizeof(int64_t));
     
-    printf("running distributed_get_uuid_len \n");
     info_ptr->uuid_len = distributed_get_uuid_len();
-    printf("uuid_len: %d \n", info_ptr->uuid_len);
-    fflush(stdout);
 
     info_ptr->uuid = malloc((info_ptr->uuid_len + 1) * sizeof(char));
     int ierr = distributed_get_uuid(info_ptr->uuid, info_ptr->uuid_len);
      
-    printf("%s\n", info_ptr->uuid);
-    fflush(stdout);
 
     *info = (TAPP_tensor_info)info_ptr;
-
     
     ierr = distributed_create_tensor(*info, init_val); //this should be made separate in a way that is appears as a call to a 2nd underlying tapp
 
-    printf("finished distributed_create_tensor \n");
-    fflush(stdout);
     return 0;
 }
 
@@ -172,4 +162,30 @@ TAPP_error TAPP_get_uuid(TAPP_tensor_info info,
 TAPP_datatype TAPP_get_datatype(TAPP_tensor_info info){
     struct tensor_info* info_ptr = (struct tensor_info*)info;
     return info_ptr->type;
+}
+
+TAPP_error TAPP_broadcast_tensor_body_data(TAPP_tensor_info info, void* data){
+    return distributed_broadcast_tensor_body_data(info, data);
+}
+
+TAPP_error TAPP_gather_tensor_body_data(TAPP_tensor_info info, void* data){
+    return distributed_gather_tensor_body_data(info, data);
+}
+
+TAPP_error TAPP_tensor_set_name(TAPP_tensor_info info,
+                      const int64_t* name, const int name_len){
+    return distributed_tensor_set_name(info, name, name_len);
+}
+
+TAPP_error TAPP_initialize_tensor(TAPP_tensor_info info, void* init_val){
+    return distributed_initialize_tensor(info, init_val);
+}
+
+TAPP_error TAPP_copy_tensor(TAPP_tensor_info dest, TAPP_tensor_info src){
+    return distributed_copy_tensor(dest, src);
+}
+
+TAPP_error TAPP_scale_with_denominators(TAPP_tensor_info info, 
+		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk){
+    return distributed_scale_with_denominators(info, n_occ, n_vir, eps_occ, eps_vir, eps_ijk);
 }

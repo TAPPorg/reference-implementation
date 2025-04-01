@@ -187,16 +187,22 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int64_t* idx_D = malloc(nmode_D * sizeof(int64_t));
     memcpy(idx_D, plan_ptr->idx_D, nmode_D * sizeof(int64_t));
 
+
     int error_status = 0;
+
+    intptr_t* exec_ptr= &exec; //pointer to intptr_t (TAPP_executor)
+    int* exec_int_ptr = (int*) *exec_ptr;//dereference to get the int pointer
+    if (error_status == 0) error_status = check_executor_existence(exec, 33);
 
     if (error_status == 0) error_status = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 4);
     if (error_status == 0) error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 9, 1, 2);
     if (error_status == 0) error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 10, 1, 3);
     if (error_status == 0) error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3);
     if (error_status == 0) error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7);
-    if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, 8);
-    if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, 12);
-    if (error_status == 0) error_status = check_executor_existence(exec, 33);
+    if((*exec_int_ptr) != 2 ) {
+        if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, 8);
+        if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, 12);
+    }
     if (error_status != 0)
     {
         free(idx_A);
@@ -215,8 +221,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     int64_t size_D;
 
-    intptr_t* exec_ptr= &exec; //pointer to intptr_t (TAPP_executor)
-    int* exec_int_ptr = (int*) *exec_ptr;//dereference to get the int pointer
 
     void* E_ = D;
     if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
@@ -243,10 +247,30 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
  
-      int ierr = ctf_bind_execute_product(A_info, A, op_A, idx_A,
-                    B_info, B, op_B, idx_B,
-                    C_info, C, op_C, idx_C,
-                    D_info, D, op_D, idx_D, alpha, beta);
+    	int64_t name;
+    	int ierr;
+
+    	name = 'A';
+    	ierr = distributed_tensor_set_name(A_info, &name, 1);
+    	if(A != NULL) ierr = distributed_broadcast_tensor_body_data(A_info, A);
+   	 
+    	name = 'B';
+    	ierr = distributed_tensor_set_name(B_info, &name, 1);
+    	if(B != NULL) ierr = distributed_broadcast_tensor_body_data(B_info, B);
+   	 
+    	name = 'C';
+    	ierr = distributed_tensor_set_name(C_info, &name, 1);
+    	if(C != NULL) ierr = distributed_broadcast_tensor_body_data(C_info, C);
+   	 
+    	name = 'D';
+    	if(C_info_ptr->uuid != D_info_ptr->uuid) ierr = distributed_tensor_set_name(D_info, &name, 1);
+        bool is_dptr = (D != NULL);
+      ierr = ctf_bind_execute_product(A_info, A, op_A, idx_A,
+                  B_info, B, op_B, idx_B,
+                  C_info, C, op_C, idx_C,
+                  D_info, D, op_D, idx_D, alpha, beta);
+
+      if(ierr == 0 && is_dptr) ierr = distributed_gather_tensor_body_data(D_info, D);
     }
      
     if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check

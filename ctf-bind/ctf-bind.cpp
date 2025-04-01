@@ -95,15 +95,10 @@ bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int siz
 } // end of namespace
 
 int initialize(){
-  int rank, np, n, pass;
-  int  in_num = 3;
-  char ** input_str = new char*[in_num];;
 
-  input_str[0] = "test++";
-  input_str[1] = "-n";
-  input_str[2] = "1000";
-  n = 1000;
-  int initialized, finalized;
+  //input_str[1] = "-n";
+  //input_str[2] = "1000";
+  int initialized;
 
   MPI_Initialized(&initialized);
 
@@ -121,11 +116,19 @@ int initialize(){
     MPI_Group_excl(world_group, num_ranks_to_exclude, ranks_to_exclude, &new_group);
 
     MPI_Comm_create(MPI_COMM_WORLD, new_group, &new_comm);
-    {
-      CTF::World dw0(in_num, input_str);
-    }
+
+		// create CTF::World
+  	int  in_num = 1;
+  	char ** input_str = new char*[in_num];
+    input_str[0] = new char[1] {'\0'};
+
+    CTF::World dw0(in_num, input_str);
+
+		delete[] input_str[0];
+		delete[] input_str;
   //MPI_Group_free(&new_group);
   }
+  // delete input str
   return 0;
 }
 
@@ -204,6 +207,67 @@ extern "C" {
     return 0;
   }
 
+  int distributed_initialize_tensor(TAPP_tensor_info info, void* init_val){
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+
+    std::complex<double> init_val_ = 0.0;
+    if(datatype_tapp == TAPP_F64){
+      init_val_ = std::complex<double>(*static_cast<double*>(init_val));
+    }
+    else if(datatype_tapp == TAPP_C64){
+      init_val_ = *static_cast<std::complex<double>*>(init_val);
+    }
+    else {
+      std::cout << "Error: distributed_initialize_tensor with the requested datatype not implemented with Cyclops CTF. " <<  std::endl;
+      exit(489);
+    }
+    
+    initializeTensor(uuid, init_val_);
+
+    delete[] uuid_;
+    return 0;
+  }
+
+  int distributed_copy_tensor(TAPP_tensor_info dest, TAPP_tensor_info src){
+    int uuid_len = TAPP_get_uuid_len(src); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr;
+
+    ierr = TAPP_get_uuid(dest, uuid_, uuid_len);
+    std::string uuid_dest(uuid_);
+   
+    ierr = TAPP_get_uuid(src, uuid_, uuid_len);
+    std::string uuid_src(uuid_);
+
+    copyTensor(uuid_dest, uuid_src);
+
+    delete[] uuid_;
+    return 0;
+  }
+
+  int distributed_scale_with_denominators(TAPP_tensor_info info, 
+		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk){
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+    
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+    int n_occ_ = n_occ;
+    int n_vir_ = n_vir;
+
+    scaleWithDenominatorsPart1(uuid, n_occ_, n_vir_);
+    scaleWithDenominatorsPart2(n_occ_, n_vir_, eps_occ, eps_vir, eps_ijk, datatype_tapp);
+
+    delete[] uuid_;
+    return 0;
+  }
+
   int distributed_create_tensor(TAPP_tensor_info info, void* init_val){
     initialize();
 
@@ -220,7 +284,7 @@ extern "C" {
     int nmodes = TAPP_get_nmodes(info);
 
     int64_t* extents = new int64_t[nmodes]; 
-    TAPP_get_extents(info, extents);
+    if(nmodes > 0) TAPP_get_extents(info, extents);
 
     std::complex<double> init_val_ = 0.0;
     if(datatype_tapp == TAPP_F64){
@@ -255,15 +319,74 @@ extern "C" {
     return 0;
   }
 
+  int distributed_broadcast_tensor_body_data(TAPP_tensor_info info, void* data){
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+
+    distributeArrayDataPart1(uuid);
+    distributeArrayDataPart2(data, 0, nullptr, nullptr, datatype_tapp);
+
+    delete[] uuid_;
+    return 0;
+  }
+
+  int distributed_gather_tensor_body_data(TAPP_tensor_info info, void* data){
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+
+    gatherDistributedArrayDataPart1(uuid);
+    gatherDistributedArrayDataPart2(data, 0, nullptr, nullptr, datatype_tapp);
+
+    delete[] uuid_;
+    return 0;
+
+  }
+
+  int distributed_tensor_set_name(TAPP_tensor_info info, const int64_t* name, const int name_len){
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+
+    int64_t* buffi = new int64_t[name_len];
+
+    std::memcpy(buffi, name, sizeof(buffi));
+
+    char* buffc = new char[name_len + 1];
+    for (int i = 0; i < name_len; i++) {
+    	buffc[i] = static_cast<char>(buffi[i]); 
+    }
+    buffc[name_len] = '\0'; // null terminator
+
+    std::string name_(buffc);
+
+    tensorSetName(uuid, name_);
+
+    delete[] uuid_;
+    delete[] buffi;
+    delete[] buffc;
+    return 0;
+  }
+
   int finalizeWork(){
     return finalize();
   }
 
   int ctf_bind_execute_product(TAPP_tensor_info info_A, void* A, int op_A, int64_t* idx_A,
-                    TAPP_tensor_info info_B, void* B, int op_B, int64_t* idx_B,
-                    TAPP_tensor_info info_C, void* C, int op_C, int64_t* idx_C,
-                    TAPP_tensor_info info_D, void* D, int op_D, int64_t* idx_D,
-                    void* alpha, void* beta){
+  			TAPP_tensor_info info_B, void* B, int op_B, int64_t* idx_B,
+  			TAPP_tensor_info info_C, void* C, int op_C, int64_t* idx_C,
+  			TAPP_tensor_info info_D, void* D, int op_D, int64_t* idx_D,
+  			void* alpha, void* beta){
     initialize();
 
 
@@ -288,31 +411,21 @@ extern "C" {
 
     int uuid_len = TAPP_get_uuid_len(info_A); 
     char* uuid_ = new char[uuid_len + 1];
-    std::string name;
     int ierr;
 
-    name = "A";
+    //name = 'A';
     ierr = TAPP_get_uuid(info_A, uuid_, uuid_len);
     std::string uuid_A(uuid_);
-    tensorSetName(uuid_A, name);
-    distributeArrayDataPart1(uuid_A);
-    distributeArrayDataPart2(A, 0, nullptr, nullptr, datatype_tapp);
    
-    name = "B";
+    //name = 'B';
     ierr = TAPP_get_uuid(info_B, uuid_, uuid_len);
     std::string uuid_B(uuid_);
-    tensorSetName(uuid_B, name);
-    distributeArrayDataPart1(uuid_B);
-    distributeArrayDataPart2(B, 0, nullptr, nullptr, datatype_tapp);
    
-    name = "C";
+    //name = 'C';
     ierr = TAPP_get_uuid(info_C, uuid_, uuid_len);
     std::string uuid_C(uuid_);
-    tensorSetName(uuid_C, name);
-    distributeArrayDataPart1(uuid_C);
-    distributeArrayDataPart2(C, 0, nullptr, nullptr, datatype_tapp);
    
-    name = "D";
+    //name = 'D';
     ierr = TAPP_get_uuid(info_D, uuid_, uuid_len);
     std::string uuid_D(uuid_);
    
@@ -341,8 +454,6 @@ extern "C" {
     executeProduct(uuid_A, nmodes_A, idx_A, uuid_B, nmodes_B, idx_B, 
                    uuid_C, nmodes_C, idx_C, uuid_D, nmodes_D, idx_D, alpha_, beta_);
    
-    gatherDistributedArrayDataPart1(uuid_D);
-    gatherDistributedArrayDataPart2(D, 0, nullptr, nullptr, datatype_tapp);
    
     /* //comm test
     int64_t numel = 1;

@@ -135,6 +135,24 @@ int createTensor(std::string& uuid, int& nmodes, int64_t*& extents, int& datatyp
   return 0;
 }
 
+int initializeTensor(std::string& uuid, std::complex<double>& init_val){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(rank == rootRank){
+    std::string message = "initializeTensor";
+    mpiBroadcastString(message);
+  }
+
+  mpiBroadcastString(uuid);
+  mpiBroadcastC64(init_val);
+
+  //worker initializes tensor
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
 int distributeArrayDataPart1(std::string& uuid){ // int64_t& numel, int& datatype_tapp, void*& data
   int rootRank = 0;
   int rank;
@@ -366,6 +384,80 @@ int tensorSetName(std::string& uuid, std::string& name){
   else if(rank != rootRank) name = "";
   
   //worker sets tensor name
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
+int copyTensor(std::string& dest, std::string& src){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(rank == rootRank){
+    std::string message = "copyTensor";
+    mpiBroadcastString(message);
+  }
+
+  mpiBroadcastString(dest);
+  mpiBroadcastString(src);
+  
+  //worker copies tensor
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
+int scaleWithDenominatorsPart1(std::string& uuid, int& eps_len){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(rank == rootRank){
+    std::string message = "scaleWithDenominators";
+    mpiBroadcastString(message);
+  }
+
+  mpiBroadcastString(uuid);
+  mpiBroadcastInt(eps_len);
+  
+  //worker prepares to receive denominators
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
+int scaleWithDenominatorsPart2(int& n_occ, int& n_vir, void* eps_occ, void* eps_vir, void* eps_ijk, int& datatype){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  mpiBroadcastInt(n_occ);
+  mpiBroadcastInt(n_vir);
+  mpiBroadcastInt(datatype);
+	if(datatype == 1){ 
+	  if(n_occ > 0){ 
+			double* data1 = static_cast<double*>(eps_occ);
+      MPI_Bcast(data1, n_occ, MPI_DOUBLE, rootRank, MPI_COMM_WORLD);
+    }
+	  if(n_vir > 0){ 
+			double* data2 = static_cast<double*>(eps_vir);
+      MPI_Bcast(data2, n_vir, MPI_DOUBLE, rootRank, MPI_COMM_WORLD);
+    }
+		double* data3 = static_cast<double*>(eps_ijk);
+    MPI_Bcast(data3, 1, MPI_DOUBLE, rootRank, MPI_COMM_WORLD);
+	}
+	else if(datatype == 3){ 
+	  if(n_occ > 0){ 
+			std::complex<double>* data1 = static_cast<std::complex<double>*>(eps_occ);
+      MPI_Bcast(data1, n_occ, MPI_DOUBLE_COMPLEX, rootRank, MPI_COMM_WORLD);
+    }
+	  if(n_vir > 0){ 
+			std::complex<double>* data2 = static_cast<std::complex<double>*>(eps_vir);
+      MPI_Bcast(data2, n_vir, MPI_DOUBLE_COMPLEX, rootRank, MPI_COMM_WORLD);
+		}
+		std::complex<double>* data3 = static_cast<std::complex<double>*>(eps_ijk);
+    MPI_Bcast(data3, 1, MPI_DOUBLE_COMPLEX, rootRank, MPI_COMM_WORLD);
+	}
+  
+  //worker scales tensor with denominators
   if(rank == rootRank) waitWorkersFinished();
   return 0;
 }

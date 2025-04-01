@@ -183,14 +183,7 @@ int createTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& t
 
   createTensor(uuid, nmodes, extents, datatype_tapp, name, init_val);
 
-  // all data transmitted
-  if(dw.rank == 0){
-    // std::cout << "nmodes: " << nmodes << std::endl;
-    // for (int i = 0; i < nmodes; ++i) std::cout << "val " << extents[i] << std::endl;
-    // std::cout << "uuid: " << uuid << std::endl;
-  }
   int* extents_ = int64ToIntArray(extents, nmodes);
-  
 
   //int shape[] = {NS,NS,NS,NS};
   int* shape = new int[nmodes];
@@ -243,6 +236,32 @@ int createTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& t
   return 0;
 }
 
+int initializeTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
+  int datatype_tapp;
+  std::string uuid;
+  std::complex<double> init_val;
+
+  initializeTensor(uuid, init_val);
+  
+  if(tensorR.find(uuid) != tensorR.end()) datatype_tapp = 1;
+  else if(tensorC.find(uuid) != tensorC.end()) datatype_tapp = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << uuid<< std::endl;
+    exit(404);
+  }
+
+  switch (datatype_tapp) { // tapp_datatype
+    case 1://TAPP_R64:
+      *tensorR[uuid] = init_val.real();
+      break;
+    case 3://TAPP_C64:
+      *tensorC[uuid] = init_val;
+      break;
+  }
+
+  waitWorkersFinished();
+  return 0;
+}
 
 int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC, bool gather){
   std::string uuid;
@@ -332,6 +351,42 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
   return 0;
 }
 
+int copyTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
+  int datatype_dest, datatype_src;
+  std::string dest, src;
+
+  copyTensor(dest, src);
+
+  if(tensorR.find(dest) != tensorR.end()) datatype_dest = 1;
+  else if(tensorC.find(dest) != tensorC.end()) datatype_dest = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << dest << std::endl;
+    exit(404);
+  }
+  if(tensorR.find(src) != tensorR.end()) datatype_src = 1;
+  else if(tensorC.find(src) != tensorC.end()) datatype_src = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << src << std::endl;
+    exit(404);
+  }
+  if (datatype_dest != datatype_src){
+    std::cout << "ERROR: Copied tensors cannot have different datatypes. " << std::endl;
+    exit(403);
+  }
+
+  switch (datatype_src) { // tapp_datatype
+    case 1://TAPP_R64:
+      *tensorR[dest] = *tensorR[src];
+      break;
+    case 3://TAPP_C64:
+      *tensorC[dest] = *tensorC[src];
+      break;
+  }
+
+  waitWorkersFinished();
+  return 0;
+}
+
 int tensorSetName_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
   int datatype_tapp;
   std::string uuid;
@@ -378,6 +433,203 @@ int destructTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
     tensorC[uuid]->free_self();
     tensorC.erase(uuid);
   } 
+
+  waitWorkersFinished();
+  return 0;
+}
+
+int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
+  std::string uuid;
+  int datatype_tapp, n_occ, n_vir;
+
+  scaleWithDenominatorsPart1(uuid, n_occ, n_vir);
+
+  if(tensorR.find(uuid) != tensorR.end()) datatype_tapp = 1;
+  else if(tensorC.find(uuid) != tensorC.end()) datatype_tapp = 3; 
+  else { std::cout << "ERROR: Attempting to destruct nonexisting tensor. uuid: " << uuid << std::endl; exit(404); }
+
+  int64_t* extentso = new int64_t[1];
+  extentso[0] = n_occ;
+  int64_t* extentsv = new int64_t[1];
+  extentso[0] = n_vir;
+  int* shape = new int[1];
+  shape[0] = NS;
+  //* Creates a distributed tensor initialized to zero
+  switch (datatype_tapp) { // tapp_datatype
+    case 1://TAPP_R64:
+      {
+        Tensor<> eps_occ_t = Tensor<>(1, extentso, shape, dw);
+        Tensor<> eps_vir_t = Tensor<>(1, extentsv, shape, dw);
+        eps_occ_t.set_name("eps_occ_t");
+        eps_vir_t.set_name("eps_vir_t");
+ 	      double* eps_occ = new double[n_occ];
+ 	      double* eps_vir = new double[n_vir];
+ 	      double* eps_ijk = new double[1];
+        waitWorkersFinished();
+        scaleWithDenominatorsPart2(n_occ, n_vir, eps_occ, eps_vir, eps_ijk, datatype_tapp);
+    
+        int64_t  numelo, * indiceso;
+        double * valueso;
+        int64_t  numelv, * indicesv;
+        double * valuesv;
+        eps_occ_t.get_local_data(&numelo, &indiceso, &valueso);
+        eps_vir_t.get_local_data(&numelv, &indicesv, &valuesv);
+        for(int i = 0; i<numelo, i++) valueso[i] = eps_occ[indiceso[i]];
+        for(int i = 0; i<numelv, i++) valuesv[i] = eps_vir[indicesv[i]];
+        eps_occ_t.write(numelo, indiceso, valueso);
+        eps_vir_t.write(numelv, indicesv, valuesv);
+        
+  	    Tensor<> denom(*tensorR[uuid]);
+        denom = 0.0;
+
+        CTF::Scalar<> eps_ijk_t(dw);
+        eps_ijk_t = eps_ijk[0];
+        CTF::Scalar<> one_t(dw);
+        one_t = 1.0;
+
+        double divide(double a, double b){
+          return a/b;
+        }
+  	    Function<> fctr(&divide);
+
+				std::string idx_ = "";
+				int order = denom.order;
+				if(order == 2) {
+					idx_ = "ai";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"];
+  	      denom[idx] -= eps_vir_t["a"];
+				}
+				else if(order == 4) {
+					idx_ = "abij";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
+				}
+				else if(order == 6) {
+					idx_ = "abcijk";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"]; denom[idx] -= eps_vir_t["c"];
+				}
+				else if(order == 8) {
+					idx_ = "abcdijkl";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
+  	      denom[idx] += eps_occ_t["k"]; denom[idx] += eps_occ_t["l"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
+  	      denom[idx] -= eps_vir_t["c"]; denom[idx] -= eps_vir_t["d"];
+				}
+				else if(order == 10) {
+					idx_ ="abcdeijklm";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
+  	      denom[idx] += eps_occ_t["l"]; denom[idx] += eps_occ_t["m"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
+  	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
+				}
+  	      denom[idx_.c_str()] += eps_ijk_t;
+  	      tensorR[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
+
+        denom->free_self();
+        one_t->free_self();
+        eps_occ_t->free_self();
+        eps_vir_t->free_self();
+        delete[] eps_occ;
+        delete[] eps_vir;
+        delete[] eps_ijk;
+      }
+    break;
+    case 3://TAPP_C64:
+      {
+       
+        Tensor<std::complex<double>> eps_occ_t = Tensor<std::complex<double>>(1, extentso, shape, dw);
+        Tensor<std::complex<double>> eps_vir_t = Tensor<std::complex<double>>(1, extentsv, shape, dw);
+        eps_occ_t.set_name("eps_occ_t");
+        eps_vir_t.set_name("eps_vir_t");
+ 	      std::complex<double>* eps_occ = new std::complex<double>[n_occ];
+ 	      std::complex<double>* eps_vir = new std::complex<double>[n_vir];
+ 	      std::complex<double>* eps_ijk = new std::complex<double>[1];
+        waitWorkersFinished();
+        scaleWithDenominatorsPart2(n_occ, n_vir, eps_occ, eps_vir, eps_ijk, datatype_tapp);
+    
+        int64_t  numelo, * indiceso;
+        std::complex<double> * valueso;
+        int64_t  numelv, * indicesv;
+        std::complex<double> * valuesv;
+        eps_occ_t.get_local_data(&numelo, &indiceso, &valueso);
+        eps_vir_t.get_local_data(&numelv, &indicesv, &valuesv);
+        for(int i = 0; i<numelo, i++) valueso[i] = eps_occ[indiceso[i]];
+        for(int i = 0; i<numelv, i++) valuesv[i] = eps_vir[indicesv[i]];
+        eps_occ_t.write(numelo, indiceso, valueso);
+        eps_vir_t.write(numelv, indicesv, valuesv);
+        
+  	    Tensor<std::complex<double>> denom(*tensorC[uuid]);
+        denom = std::complex<double>(0.0, 0.0);
+
+        CTF::Scalar<std::complex<double>> eps_ijk_t(dw);
+        eps_ijk_t = eps_ijk[0];
+        CTF::Scalar<std::complex<double>> one_t(dw);
+        one_t = std::complex<double>(1.0, 0.0);
+
+        std::complex<double> divide(std::complex<double> a, std::complex<double> b){
+          return a/b;
+        }
+  	    Function<std::complex<double>> fctr(&divide);
+
+				std::string idx_ = "";
+				int order = denom.order;
+				if(order == 2) {
+					idx_ = "ai";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"];
+  	      denom[idx] -= eps_vir_t["a"];
+				}
+				else if(order == 4) {
+					idx_ = "abij";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
+				}
+				else if(order == 6) {
+					idx_ = "abcijk";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"]; denom[idx] -= eps_vir_t["c"];
+				}
+				else if(order == 8) {
+					idx_ = "abcdijkl";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
+  	      denom[idx] += eps_occ_t["k"]; denom[idx] += eps_occ_t["l"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
+  	      denom[idx] -= eps_vir_t["c"]; denom[idx] -= eps_vir_t["d"];
+				}
+				else if(order == 10) {
+					idx_ ="abcdeijklm";
+                    const char * idx = idx_.c_str();
+  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
+  	      denom[idx] += eps_occ_t["l"]; denom[idx] += eps_occ_t["m"];
+  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
+  	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
+				}
+  	      denom[idx_.c_str()] += eps_ijk_t;
+  	      tensorC[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
+
+        denom->free_self();
+        one_t->free_self();
+        eps_occ_t->free_self();
+        eps_vir_t->free_self();
+        delete[] eps_occ;
+        delete[] eps_vir;
+        delete[] eps_ijk;
+      }
+    break;
+  } 
+
+  delete[] shape;
+  delete[] extentso;
+  delete[] extentsv;
 
   waitWorkersFinished();
   return 0;
@@ -490,14 +742,15 @@ int main(int argc, char ** argv){
 
   { 
     // printf("got to dw \n");
-    int  in_num = 3;
-    char ** input_str = new char*[in_num];;
-    input_str[0] = "test++";
-    input_str[1] = "-n";
-    input_str[2] = "1000";
+  	int  in_num = 1;
+  	char ** input_str = new char*[in_num];
+    input_str[0] = new char[1] {'\0'};
 
     World dw0(in_num, input_str);
-    World dw(new_comm, in_num, input_str);
+    World dw(new_comm, in_num, input_str); // communicator excluding rank 0 (master)
+
+		delete[] input_str[0];
+		delete[] input_str;
 
     std::map<std::string, std::unique_ptr<Tensor<>>> tensorR;
     std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>> tensorC;
@@ -514,6 +767,9 @@ int main(int argc, char ** argv){
       else if(message == "createTensor"){
         ierr = createTensor_(dw, tensorR, tensorC);
       }
+      else if(message == "initializeTensor"){
+        ierr = initializeTensor_(dw, tensorR, tensorC);
+      }
       else if(message == "distributeArrayData"){
         ierr = distributeArrayData(dw, tensorR, tensorC, false);
       }
@@ -526,8 +782,14 @@ int main(int argc, char ** argv){
       else if(message == "tensorSetName"){
         ierr = tensorSetName_(dw, tensorR, tensorC);
       }
+      else if(message == "copyTensor"){
+        ierr = copyTensor_(dw, tensorR, tensorC);
+      }
       else if(message == "destructTensor"){
         ierr = destructTensor_(dw, tensorR, tensorC);
+      }
+      else if(message == "scaleWithDenominators"){
+        ierr = scaleWithDenominators_(dw, tensorR, tensorC);
       }
       else if(message == "stopWorker"){
         run = false;
