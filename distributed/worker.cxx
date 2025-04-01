@@ -480,10 +480,8 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
         eps_vir_t.write(numelv, indicesv, valuesv);
         
   	    Tensor<> denom(*tensorR[uuid]);
-        denom = 0.0;
+        denom = eps_ijk[0];
 
-        CTF::Scalar<> eps_ijk_t(dw);
-        eps_ijk_t = eps_ijk[0];
         CTF::Scalar<> one_t(dw);
         one_t = 1.0;
 
@@ -528,7 +526,6 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
   	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
   	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
 				}
-  	      denom[idx_.c_str()] += eps_ijk_t;
   	      tensorR[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
 
         denom->free_self();
@@ -565,10 +562,10 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
         eps_vir_t.write(numelv, indicesv, valuesv);
         
   	    Tensor<std::complex<double>> denom(*tensorC[uuid]);
-        denom = std::complex<double>(0.0, 0.0);
+        denom = eps_ijk[0];
 
-        CTF::Scalar<std::complex<double>> eps_ijk_t(dw);
-        eps_ijk_t = eps_ijk[0];
+        // CTF::Scalar<std::complex<double>> eps_ijk_t(dw);
+        // eps_ijk_t = eps_ijk[0];
         CTF::Scalar<std::complex<double>> one_t(dw);
         one_t = std::complex<double>(1.0, 0.0);
 
@@ -613,7 +610,6 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
   	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
   	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
 				}
-  	      denom[idx_.c_str()] += eps_ijk_t;
   	      tensorC[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
 
         denom->free_self();
