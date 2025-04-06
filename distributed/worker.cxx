@@ -2,9 +2,29 @@
 #include "mpi_utils.h"
 #include <ctf.hpp>
 #include <memory>
+
+//wait
+#include <chrono>
+#include <thread>
+
 using namespace CTF;
 
 
+bool myStrCmp(const char* str1, const char* str2) {
+  if (str1 == nullptr || str2 == nullptr) {
+    return str1 == str2; // Handle null cases: both null = true, one null = false
+  }
+
+  while (*str1 != '\0' && *str2 != '\0') {
+    if (*str1 != *str2) {
+      return false; // Characters don't match
+    }
+    str1++;
+    str2++;
+  }
+
+  return *str1 == *str2; // Check if both ended at the null terminator
+}
 
 // compute a single Jacobi iteration to get new x, elementwise: x_i <== d_i*(b_i-sum_j R_ij*x_j)
 // solves Ax=b where R_ij=A_ij for i!=j, while R_ii=0, and d_i=1/A_ii
@@ -141,6 +161,9 @@ void printCTensor(Tensor<std::complex<double>>& tens, World& dw){
   tens.get_local_data(&numel, &indices, &values);
   if(dw.rank == 0) std::cout << "Printing tensor " << tens.get_name() << ":"<< std::endl;
   for (int i=0; i<numel; i++ ) std::cout << values[i] << std::endl;
+
+  free(indices);
+  delete[] values;
 }
 
 int initializeMPIandWorkerGroup(MPI_Group& new_group, MPI_Comm& new_comm, int& new_rank){
@@ -294,6 +317,24 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
       tensorR[uuid]->get_local_data(&numel, &indices, &valuesR);
   }
   else if(datatype_tapp == 3){
+      /*if(myStrCmp(tensorC[uuid]->get_name(), "NLYO04")){ //test, remove!
+        std::cout << "get_local_data. name: " << tensorC[uuid]->get_name() << " uuid: " << uuid << std::endl;
+        std::cout << "lens:";
+        for (int i =0; i<tensorC[uuid]->order; i++) std::cout << " " << tensorC[uuid]->lens[i];
+        std::cout  << std::endl;
+      	
+      	int64_t num_ = 1687345968LL;
+        std::cout << "will try: " << num_<< std::endl;
+           std::complex<double> * valuesC2 = new std::complex<double>[num_];
+           if(valuesC2 != nullptr)
+             std::cout << "allocated the big thing: " << num_<< std::endl;
+           else
+             std::cout << "fail!! ...  "<<  std::endl;
+           valuesC2[1687345965LL] = 1.0;
+             std::cout << "valuesC2 the big thing: " << valuesC2[1687345965LL]<< std::endl;
+
+      }*/
+
       tensorC[uuid]->get_local_data(&numel, &indices, &valuesC);
   } 
   waitWorkersFinished();
@@ -340,12 +381,16 @@ int distributeArrayData(World& dw, std::map<std::string, std::unique_ptr<Tensor<
         tensorR[uuid+std::string("_i")]->write(numeli, indicesi, valuesi); */
       }
       // for(int i=0;i<numel;i++) std::cout << "Aw " << valuesC[i] << std::endl;
-      if(dw.rank == 0){
+      /* if(dw.rank == 0){
         if(gather) std::cout << "gather " ;
         else std::cout << "distribute " ;
       }
-      printCTensor(*(tensorC[uuid]), dw);
+      printCTensor(*(tensorC[uuid]), dw); */
   } 
+
+  free(indices);
+  if(datatype_tapp == 1) delete[] valuesR;
+  else if(datatype_tapp == 3) delete[] valuesC;
 
   waitWorkersFinished();
   return 0;
@@ -443,15 +488,52 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
   int datatype_tapp, n_occ, n_vir;
 
   scaleWithDenominatorsPart1(uuid, n_occ, n_vir);
-
-  if(tensorR.find(uuid) != tensorR.end()) datatype_tapp = 1;
-  else if(tensorC.find(uuid) != tensorC.end()) datatype_tapp = 3; 
+  
+  int order = 0;
+  bool lambda = true;
+  if(tensorR.find(uuid) != tensorR.end()) {
+  	datatype_tapp = 1; 
+  	order = tensorR[uuid]->order;
+    if(tensorR[uuid]->lens[order-1] == n_occ) lambda = false;
+  }
+  else if(tensorC.find(uuid) != tensorC.end()) {
+  	datatype_tapp = 3;  
+  	order = tensorC[uuid]->order;
+    if(tensorC[uuid]->lens[order-1] == n_occ) lambda = false;
+  }
   else { std::cout << "ERROR: Attempting to destruct nonexisting tensor. uuid: " << uuid << std::endl; exit(404); }
+
+  if(dw.rank == 0)
+    std::cout << "Using scaleWithDenominators."  << std::endl;
+
+	std::string idx_ = "";
+	if(order == 2) {
+		if(!lambda) idx_ = "ai";
+		else idx_ = "ia"; //lambda
+	}
+	else if(order == 4) {
+		if(!lambda) idx_ = "abij";
+		else idx_ = "ijab"; //lambda
+	}
+	else if(order == 6) {
+		if(!lambda) idx_ = "abcijk";
+		else idx_ = "ijkabc"; //lambda
+	}
+	else if(order == 8) {
+		if(!lambda) idx_ = "abcdijkl";
+		else idx_ = "ijklabcd"; //lambda
+	}
+	else if(order == 10) {
+		if(!lambda) idx_ = "abcdeijklm";
+		else idx_ = "ijklmabcde"; //lambda
+	} 
 
   int64_t* extentso = new int64_t[1];
   extentso[0] = n_occ;
+  //std::cout << "n_occ: " << n_occ << std::endl;
   int64_t* extentsv = new int64_t[1];
-  extentso[0] = n_vir;
+  extentsv[0] = n_vir;
+  //std::cout << "n_vir: " << n_vir << std::endl;
   int* shape = new int[1];
   shape[0] = NS;
   //* Creates a distributed tensor initialized to zero
@@ -474,67 +556,33 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
         double * valuesv;
         eps_occ_t.get_local_data(&numelo, &indiceso, &valueso);
         eps_vir_t.get_local_data(&numelv, &indicesv, &valuesv);
-        for(int i = 0; i<numelo, i++) valueso[i] = eps_occ[indiceso[i]];
-        for(int i = 0; i<numelv, i++) valuesv[i] = eps_vir[indicesv[i]];
+        for(int i = 0; i<numelo; i++) valueso[i] = eps_occ[indiceso[i]];
+        for(int i = 0; i<numelv; i++) valuesv[i] = eps_vir[indicesv[i]];
         eps_occ_t.write(numelo, indiceso, valueso);
         eps_vir_t.write(numelv, indicesv, valuesv);
         
   	    Tensor<> denom(*tensorR[uuid]);
         denom = eps_ijk[0];
 
-        CTF::Scalar<> one_t(dw);
-        one_t = 1.0;
+        const char * idx = idx_.c_str();
+				for(int i=0;i<order/2;i++){
+          denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
+          denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+				}
+        Transform<> div([](double & b){ b=1./b; });
+        div(denom[idx]);
+        (*tensorR[uuid])[idx] = (*tensorR[uuid])[idx] * denom[idx];
 
-        double divide(double a, double b){
-          return a/b;
-        }
-  	    Function<> fctr(&divide);
-
-				std::string idx_ = "";
-				int order = denom.order;
-				if(order == 2) {
-					idx_ = "ai";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"];
-  	      denom[idx] -= eps_vir_t["a"];
-				}
-				else if(order == 4) {
-					idx_ = "abij";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
-				}
-				else if(order == 6) {
-					idx_ = "abcijk";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"]; denom[idx] -= eps_vir_t["c"];
-				}
-				else if(order == 8) {
-					idx_ = "abcdijkl";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
-  	      denom[idx] += eps_occ_t["k"]; denom[idx] += eps_occ_t["l"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
-  	      denom[idx] -= eps_vir_t["c"]; denom[idx] -= eps_vir_t["d"];
-				}
-				else if(order == 10) {
-					idx_ ="abcdeijklm";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
-  	      denom[idx] += eps_occ_t["l"]; denom[idx] += eps_occ_t["m"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
-  	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
-				}
-  	      tensorR[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
-
-        denom->free_self();
-        one_t->free_self();
-        eps_occ_t->free_self();
-        eps_vir_t->free_self();
+        denom.free_self();
+        eps_occ_t.free_self();
+        eps_vir_t.free_self();
         delete[] eps_occ;
         delete[] eps_vir;
         delete[] eps_ijk;
+  			free(indiceso);
+  			free(indicesv);
+  			delete[] valueso;
+  			delete[] valuesv;
       }
     break;
     case 3://TAPP_C64:
@@ -556,69 +604,33 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
         std::complex<double> * valuesv;
         eps_occ_t.get_local_data(&numelo, &indiceso, &valueso);
         eps_vir_t.get_local_data(&numelv, &indicesv, &valuesv);
-        for(int i = 0; i<numelo, i++) valueso[i] = eps_occ[indiceso[i]];
-        for(int i = 0; i<numelv, i++) valuesv[i] = eps_vir[indicesv[i]];
+        for(int i = 0; i<numelo; i++) valueso[i] = eps_occ[indiceso[i]];
+        for(int i = 0; i<numelv; i++) valuesv[i] = eps_vir[indicesv[i]];
         eps_occ_t.write(numelo, indiceso, valueso);
         eps_vir_t.write(numelv, indicesv, valuesv);
         
   	    Tensor<std::complex<double>> denom(*tensorC[uuid]);
         denom = eps_ijk[0];
 
-        // CTF::Scalar<std::complex<double>> eps_ijk_t(dw);
-        // eps_ijk_t = eps_ijk[0];
-        CTF::Scalar<std::complex<double>> one_t(dw);
-        one_t = std::complex<double>(1.0, 0.0);
+        const char * idx = idx_.c_str();
+				for(int i=0;i<order/2;i++){
+          denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
+          denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+				}
+        Transform<std::complex<double>> div([](std::complex<double> & b){ b=1./b; });
+        div(denom[idx]);
+        (*tensorC[uuid])[idx] = (*tensorC[uuid])[idx] * denom[idx];
 
-        std::complex<double> divide(std::complex<double> a, std::complex<double> b){
-          return a/b;
-        }
-  	    Function<std::complex<double>> fctr(&divide);
-
-				std::string idx_ = "";
-				int order = denom.order;
-				if(order == 2) {
-					idx_ = "ai";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"];
-  	      denom[idx] -= eps_vir_t["a"];
-				}
-				else if(order == 4) {
-					idx_ = "abij";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
-				}
-				else if(order == 6) {
-					idx_ = "abcijk";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"]; denom[idx] -= eps_vir_t["c"];
-				}
-				else if(order == 8) {
-					idx_ = "abcdijkl";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"];
-  	      denom[idx] += eps_occ_t["k"]; denom[idx] += eps_occ_t["l"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];
-  	      denom[idx] -= eps_vir_t["c"]; denom[idx] -= eps_vir_t["d"];
-				}
-				else if(order == 10) {
-					idx_ ="abcdeijklm";
-                    const char * idx = idx_.c_str();
-  	      denom[idx] += eps_occ_t["i"]; denom[idx] += eps_occ_t["j"]; denom[idx] += eps_occ_t["k"];
-  	      denom[idx] += eps_occ_t["l"]; denom[idx] += eps_occ_t["m"];
-  	      denom[idx] -= eps_vir_t["a"]; denom[idx] -= eps_vir_t["b"];i denom[idx] -= eps_vir_t["c"];
-  	      denom[idx] -= eps_vir_t["d"]; denom[idx] -= eps_vir_t["e"];
-				}
-  	      tensorC[uuid]->contract(1.0, one_t, "", denom, idx_.c_str(), 0.0, idx_.c_str(), fctr);
-
-        denom->free_self();
-        one_t->free_self();
-        eps_occ_t->free_self();
-        eps_vir_t->free_self();
+        denom.free_self();
+        eps_occ_t.free_self();
+        eps_vir_t.free_self();
         delete[] eps_occ;
         delete[] eps_vir;
         delete[] eps_ijk;
+  			free(indiceso);
+  			free(indicesv);
+  			delete[] valueso;
+  			delete[] valuesv;
       }
     break;
   } 
@@ -663,8 +675,8 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
   char* idx_C = int64_tArrayToCharArray(idx_C_, nmode_C);
   char* idx_D = int64_tArrayToCharArray(idx_D_, nmode_D);
 
-  if(dw.rank == 0)
-    std::cout << "contract: D[" << idx_D << "] = " << alpha << " A[" << idx_A << "]*B[" << idx_B << "] + " << beta << " C[" << idx_C << "]" << std::endl;
+  //if(dw.rank == 0)
+  //  std::cout << "contract: D[" << idx_D << "] = " << alpha << " A[" << idx_A << "]*B[" << idx_B << "] + " << beta << " C[" << idx_C << "]" << std::endl;
   
   double alpha_ = alpha.real();
   double beta_ = beta.real();
@@ -682,6 +694,35 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
       (*(tensorC[uuid_D]))[idx_D] = (*(tensorC[uuid_C]))[idx_C]; 
     }
     tensorC[uuid_D]->contract(alpha,  *(tensorC[uuid_A]), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+
+	
+
+
+  //test
+/*
+  int64_t* extentso = new int64_t[4];
+  extentso[0] = 154LL;
+  extentso[1] = 154LL;
+  extentso[2] = 154LL;
+  extentso[3] = 154LL;
+  int* shape = new int[4];
+  shape[0] = NS;
+  shape[1] = NS;
+  shape[2] = NS;
+  shape[3] = NS;
+
+				std::this_thread::sleep_for(std::chrono::seconds(5));
+      std::cout << "get_local_data.x.  "  << std::endl;
+        Tensor<std::complex<double>> eps_occ_t = Tensor<std::complex<double>>(4, extentso, shape, dw);
+        eps_occ_t.set_name("eps_occ_tX");
+      std::cout << "lens:";
+      for (int i =0; i<eps_occ_t.order; i++) std::cout << " " << eps_occ_t.lens[i];
+        int64_t  numelo, * indiceso;
+        std::complex<double> * valueso;
+        eps_occ_t.get_local_data(&numelo, &indiceso, &valueso);
+      std::cout << "suceeded. numel: " << numelo<< std::endl;
+*/
+      //end test	
 
 
   //} 

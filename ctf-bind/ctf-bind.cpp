@@ -347,6 +347,40 @@ extern "C" {
 
     delete[] uuid_;
     return 0;
+  }
+
+  int sctest(TAPP_tensor_info info){
+    TAPP_datatype datatype_tapp = TAPP_get_datatype(info);
+
+    int uuid_len = TAPP_get_uuid_len(info); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr = TAPP_get_uuid(info, uuid_, uuid_len);
+    std::string uuid(uuid_);
+
+
+
+    //test
+    int nmodes = TAPP_get_nmodes(info);
+    if(nmodes == 2 || nmodes == 4 || nmodes == 6 || nmodes == 8){
+      int64_t* extents = new int64_t[nmodes]; 
+      TAPP_get_extents(info, extents);
+      if ((nmodes == 2) || (nmodes == 4 && extents[0] == extents[1] && extents[2] == extents[3])){
+        std::cout << " GOING in  --------------------- " <<  std::endl;
+			  std::complex<double> * occ = new std::complex<double>[extents[nmodes-1]]; 
+			  std::complex<double> * vir = new std::complex<double>[extents[0]]; 
+				std::random_device rd;
+				std::mt19937 gen(rd());
+				std::uniform_real_distribution<> dis(0.001, 0.5);
+				for(int i=0; i<extents[nmodes-1]; i++ ) occ[i] = dis(gen);
+				for(int i=0; i<extents[0]; i++ ) vir[i] = dis(gen);
+			  std::complex<double> eps_ijk = 0.0;
+			  ierr = distributed_scale_with_denominators(info, extents[nmodes-1], extents[0], occ, vir,  &eps_ijk);
+        std::cout << " done  --------------------- " <<  std::endl;
+      }
+    }
+
+    delete[] uuid_;
+    return 0;
 
   }
 
@@ -477,7 +511,7 @@ extern "C" {
       delete[] D2; 
     }
     */
-    std::cout << " op_D " << op_D << " op_A " << op_A << " op_B " << op_B << " op_C " << op_C << std::endl;
+    // std::cout << " op_D " << op_D << " op_A " << op_A << " op_B " << op_B << " op_C " << op_C << std::endl;
    
     //destructTensor(uuid_A);
     //destructTensor(uuid_B);

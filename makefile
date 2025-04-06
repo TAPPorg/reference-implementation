@@ -70,12 +70,12 @@ lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/ctf-bind.o
 # 	$(CC) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/ctf-bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 
 out/worker.x: distributed/worker.cxx distributed/mpi_utils.h
-	mpicxx -O3 -fopenmp -Wall  -D_POSIX_C_SOURCE=200112L -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DUSE_LAPACK distributed/worker.cxx -o out/worker.x -I/lustre/orion/chp109/world-shared/ctf/include -L/lustre/orion/chp109/world-shared/ctf/lib -lctf  -L/sw/frontier/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/openblas-0.3.17-mneinxtrfs6b2yhwndved3u6aoiwvhjw/lib -Wl,-rpath=/sw/frontier/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/openblas-0.3.17-mneinxtrfs6b2yhwndved3u6aoiwvhjw/lib -lopenblas -Idistributed
+	mpicxx -g -O3 -fopenmp -Wall  -D_POSIX_C_SOURCE=200112L -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DUSE_LAPACK distributed/worker.cxx -o out/worker.x -I/lustre/orion/chp109/world-shared/ctf/include -L/lustre/orion/chp109/world-shared/ctf/lib -lctf  -L/sw/frontier/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/openblas-0.3.17-mneinxtrfs6b2yhwndved3u6aoiwvhjw/lib -Wl,-rpath=/sw/frontier/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/openblas-0.3.17-mneinxtrfs6b2yhwndved3u6aoiwvhjw/lib -lopenblas -Idistributed
 
 .PHONY: test
 test:
 	# salloc -A CHP109 -N 1 -t 2:00:00 -q debug
-	srun -n 3 -N 1 --multi-prog distributed/conf_srun
+	srun -n 3 -N 3 --multi-prog distributed/conf_srun
   
 
 .PHONY: clean

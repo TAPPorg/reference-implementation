@@ -271,6 +271,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                   D_info, D, op_D, idx_D, alpha, beta);
 
       if(ierr == 0 && is_dptr) ierr = distributed_gather_tensor_body_data(D_info, D);
+      // ierr = sctest(D_info);
+      if(ierr == 0 && is_dptr) ierr = distributed_gather_tensor_body_data(D_info, D);
     }
      
     if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check

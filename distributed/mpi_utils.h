@@ -406,7 +406,7 @@ int copyTensor(std::string& dest, std::string& src){
   return 0;
 }
 
-int scaleWithDenominatorsPart1(std::string& uuid, int& eps_len){
+int scaleWithDenominatorsPart1(std::string& uuid, int& n_occ, int& n_vir){
   int rootRank = 0;
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -417,7 +417,8 @@ int scaleWithDenominatorsPart1(std::string& uuid, int& eps_len){
   }
 
   mpiBroadcastString(uuid);
-  mpiBroadcastInt(eps_len);
+  mpiBroadcastInt(n_occ);
+  mpiBroadcastInt(n_vir);
   
   //worker prepares to receive denominators
   if(rank == rootRank) waitWorkersFinished();

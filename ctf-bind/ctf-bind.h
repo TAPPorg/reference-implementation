@@ -47,6 +47,8 @@ extern "C" {
   int distributed_scale_with_denominators(TAPP_tensor_info info, 
 		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk);
 
+  int sctest(TAPP_tensor_info info);
+
   int finalizeWork();
 #ifdef __cplusplus
 }
