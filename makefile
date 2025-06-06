@@ -1,3 +1,4 @@
+HAS_TBLIS = false
 CC = gcc
 CXX = g++
 SRC = src
@@ -12,14 +13,25 @@ OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/tapp.o, $(wildcard obj/
 CFLAGS = -fPIC
 CXXFLAGS = -fPIC
 
+COMPILE_DEFS = 
+ifeq ($(HAS_TBLIS),true)
+	COMPILE_DEFS = -DHAS_TBLIS=1
+else
+	TBLIS_PARAM = 
+endif
+
+ifeq ($(HAS_TBLIS),true)
 all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/uselib.o out/uselib
+else
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so 
+endif
 
 
 folders:
 	mkdir -p obj lib out bin
 
 obj/tapp.o: obj/product.o obj/tensor.o obj/error.o obj/executor.o obj/handle.o obj/tblis_bind.o
-	ld -relocatable $(OBJECTS) -o obj/tapp.o
+	ld -r $(OBJECTS) -o obj/tapp.o
 
 obj/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
@@ -28,7 +40,7 @@ obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
 
 obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o -I$(INC) -I$(INC)/tapp -I$(TBL)
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp -I$(TBL)
 
 obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o -I$(INC) -I$(INC)/tapp
@@ -36,8 +48,13 @@ obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
 obj/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/tapp
 
+ifeq ($(HAS_TBLIS),true)
 obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
 	$(CXX) $(CXXFLAGS) -c -g -Wall $(TBL)/tblis_bind.cpp -o $(OBJ)/tblis_bind.o -I$(INC) -I$(INC)/tapp -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
+else
+obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
+	touch obj/tblis_bind.o
+endif
 
 out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
@@ -60,9 +77,14 @@ out/uselib.o: $(TEST)/uselib.c lib/libtapp.so
 out/uselib: $(OUT)/uselib.o lib/libtapp.so
 	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -L./lib -ltapp
 
+ifeq ($(HAS_TBLIS),true)
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 # 	$(CC) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+else
+lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+endif
 
 clean:
 	rm -f obj/tensor.o
