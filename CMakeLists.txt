@@ -13,8 +13,8 @@ target_sources(
     src/tapp/tensor.h
     src/tapp/product.c
     src/tapp/product.h
-  PRIVATE
     src/tapp.h
+  PRIVATE
     src/tapp/attributes.h
     src/tapp/datatype.h
     src/tapp/error.c
