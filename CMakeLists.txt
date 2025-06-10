@@ -13,8 +13,8 @@ target_sources(
     src/tapp/tensor.h
     src/tapp/product.c
     src/tapp/product.h
-  PRIVATE
     src/tapp.h
+  PRIVATE
     src/tapp/attributes.h
     src/tapp/datatype.h
     src/tapp/error.c
@@ -30,8 +30,8 @@ target_sources(
 target_include_directories(
   tapp
   PUBLIC
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/tapp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
   )
 
 
@@ -40,7 +40,7 @@ option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" ON)
 
 if(ENABLE_TBLIS)
 
-  set(TBLIS_INSTALL_DIR ${CMAKE_BINARY_DIR}/tblis)
+  set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
   include(ExternalProject)
 
@@ -48,7 +48,7 @@ if(ENABLE_TBLIS)
     tblis
     GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
     GIT_TAG 4de1919
-    PREFIX ${CMAKE_BINARY_DIR}/_deps/tblis
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${TBLIS_INSTALL_DIR}
     BUILD_COMMAND make
     INSTALL_COMMAND make install
