@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
+
 #ifdef HAS_TBLIS
 #include "tblis_bind.h"
 #endif
@@ -1011,7 +1013,7 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
             return malloc(sizeof(complex double));
             break;
         case TAPP_F16:
-            return malloc(sizeof(_Float16));
+            return malloc(sizeof(float));
             break;
         case TAPP_BF16:
             //return malloc(sizeof(__bf16));
@@ -1057,7 +1059,7 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
         }
         break;
     case TAPP_F16F16_ACCUM_F16:
-        return malloc(sizeof(_Float16));
+        return malloc(sizeof(float));
         break;
     default:
         break;
@@ -1085,7 +1087,7 @@ void* alloc_val(TAPP_prectype prec, TAPP_datatype type)
             return malloc(sizeof(complex double));
             break;
         case TAPP_F16:
-            return malloc(sizeof(_Float16));
+            return malloc(sizeof(float));
             break;
         case TAPP_BF16:
             //return malloc(sizeof(__bf16));
@@ -1136,11 +1138,11 @@ void* alloc_val(TAPP_prectype prec, TAPP_datatype type)
         case TAPP_F64:
         case TAPP_F16:
         case TAPP_BF16:
-            return malloc(sizeof(_Float16));
+            return malloc(sizeof(float));
             break;
         case TAPP_C32:
         case TAPP_C64:
-            return malloc(sizeof(complex _Float16));
+            return malloc(sizeof(complex float));
             break;
         default:
             break;
@@ -1194,7 +1196,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            float* prec_scalar = malloc(sizeof(float));
             *prec_scalar = *(float*)scalar;
             return prec_scalar;
             break;
@@ -1230,7 +1232,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            float* prec_scalar = malloc(sizeof(float));
             *prec_scalar = *(double*)scalar;
             return prec_scalar;
             break;
@@ -1267,7 +1269,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            complex _Float16* prec_scalar = malloc(sizeof(complex _Float16));
+            complex float* prec_scalar = malloc(sizeof(complex float));
             *prec_scalar = *(complex float*)scalar;
             return prec_scalar;
             break;
@@ -1304,7 +1306,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            complex _Float16* prec_scalar = malloc(sizeof(complex _Float16));
+            complex float* prec_scalar = malloc(sizeof(complex float));
             *prec_scalar = *(complex double*)scalar;
             return prec_scalar;
             break;
@@ -1326,14 +1328,14 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F32F32_ACCUM_F32:
         {
             float* prec_scalar = malloc(sizeof(float));
-            *prec_scalar = *(_Float16*)scalar;
+            *prec_scalar = *(float*)scalar;
             return prec_scalar;
             break;
         }
         case TAPP_F64F64_ACCUM_F64:
         {
             double* prec_scalar = malloc(sizeof(double));
-            *prec_scalar = *(_Float16*)scalar;
+            *prec_scalar = *(float*)scalar;
             return prec_scalar;
             break;
         }
@@ -1341,15 +1343,15 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            _Float16* prec_scalar = malloc(sizeof(_Float16));
-            *prec_scalar = *(_Float16*)scalar;
+            float* prec_scalar = malloc(sizeof(float));
+            *prec_scalar = *(float*)scalar;
             return prec_scalar;
             break;
         }
         case TAPP_BF16BF16_ACCUM_F32:
         {
             /*__bf16* prec_alpha = malloc(sizeof(__bf16));
-            *prec_scalar = *(_Float16*)scalar;
+            *prec_scalar = *(float*)scalar;
             return prec_scalar;*/
             break;
         }
@@ -1377,7 +1379,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
         case TAPP_F16F16_ACCUM_F16:
         case TAPP_F16F16_ACCUM_F32:
         {
-            _Float16* prec_scalar = malloc(sizeof(_Float16));
+            float* prec_scalar = malloc(sizeof(float));
             *prec_scalar = *(__bf16*)scalar;
             return prec_scalar;
             break;
@@ -1441,7 +1443,7 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex
             *((complex double*)sum) = 0;
             break;
         case TAPP_F16:
-            *((_Float16*)sum) = 0;
+            *((float*)sum) = 0;
             break;
         case TAPP_BF16:
             //*((__bf16*)sum) = 0;
@@ -1474,11 +1476,11 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex
     case TAPP_F16F16_ACCUM_F32:
         if (is_complex)
         {
-            *(complex _Float16*)sum = 0;
+            *(complex float*)sum = 0;
         }
         else
         {
-            *(_Float16*)sum = 0;
+            *(float*)sum = 0;
         }
         break;
     case TAPP_BF16BF16_ACCUM_F32:
@@ -1516,7 +1518,7 @@ void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_com
             *((complex double*)accum) = 0;
             break;
         case TAPP_F16:
-            *((_Float16*)accum) = 0;
+            *((float*)accum) = 0;
             break;
         case TAPP_BF16:
             //*((__bf16*)accum) = 0;
@@ -1550,11 +1552,11 @@ void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_com
     case TAPP_F16F16_ACCUM_F16:
         if (is_complex)
         {
-            *(complex _Float16*)accum = 0;
+            *(complex float*)accum = 0;
         }
         else
         {
-            *(_Float16*)accum = 0;
+            *(float*)accum = 0;
         }
         break;
     default:
@@ -1582,7 +1584,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
             return *(float*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(float*)val == *(_Float16*)comp_val;
+            return *(float*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
             //return *(float*)val == *(__bf16*)comp_val;
@@ -1607,7 +1609,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
             return *(double*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(double*)val == *(_Float16*)comp_val;
+            return *(double*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
             //return *(double*)val == *(__bf16*)comp_val;
@@ -1632,7 +1634,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
             return *(complex float*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(complex float*)val == *(_Float16*)comp_val;
+            return *(complex float*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
             //return *(complex float*)val == *(__bf16*)comp_val;
@@ -1657,7 +1659,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
             return *(complex double*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(complex double*)val == *(_Float16*)comp_val;
+            return *(complex double*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
             //return *(complex double*)val == *(__bf16*)comp_val;
@@ -1670,22 +1672,22 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
         switch (comp_type)
         {
         case TAPP_F32:
-            return *(_Float16*)val == *(float*)comp_val;
+            return *(float*)val == *(float*)comp_val;
             break;
         case TAPP_F64:
-            return *(_Float16*)val == *(double*)comp_val;
+            return *(float*)val == *(double*)comp_val;
             break;
         case TAPP_C32:
-            return *(_Float16*)val == *(complex float*)comp_val;
+            return *(float*)val == *(complex float*)comp_val;
             break;
         case TAPP_C64:
-            return *(_Float16*)val == *(complex double*)comp_val;
+            return *(float*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(_Float16*)val == *(_Float16*)comp_val;
+            return *(float*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
-            //return *(_Float16*)val == *(__bf16*)comp_val;
+            //return *(float*)val == *(__bf16*)comp_val;
             break;
         default:
             break;
@@ -1707,7 +1709,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
             return *(__bf16*)val == *(complex double*)comp_val;
             break;
         case TAPP_F16:
-            return *(__bf16*)val == *(_Float16*)comp_val;
+            return *(__bf16*)val == *(float*)comp_val;
             break;
         case TAPP_BF16:
             //return *(__bf16*)val == *(__bf16*)comp_val;
@@ -1742,7 +1744,7 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(complex double*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(_Float16*)sum += ((_Float16*)tensor)[index];
+            *(float*)sum += ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(__bf16*)sum += ((__bf16*)tensor)[index];
@@ -1767,7 +1769,7 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(complex float*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(float*)sum += ((_Float16*)tensor)[index];
+            *(float*)sum += ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(float*)sum += ((__bf16*)tensor)[index];
@@ -1792,7 +1794,7 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(complex double*)sum += op == TAPP_CONJUGATE ? conj(((complex double*)tensor)[index]) : ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(double*)sum += ((_Float16*)tensor)[index];
+            *(double*)sum += ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(double*)sum += ((__bf16*)tensor)[index];
@@ -1806,22 +1808,22 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
         switch (type)
         {
         case TAPP_F32:
-            *(_Float16*)sum += ((float*)tensor)[index];
+            *(float*)sum += ((float*)tensor)[index];
             break;
         case TAPP_F64:
-            *(_Float16*)sum += ((double*)tensor)[index];
+            *(float*)sum += ((double*)tensor)[index];
             break;
         case TAPP_C32:
-            *(complex _Float16*)sum += ((complex float*)tensor)[index];
+            *(complex float*)sum += ((complex float*)tensor)[index];
             break;
         case TAPP_C64:
-            *(complex _Float16*)sum += ((complex double*)tensor)[index];
+            *(complex float*)sum += ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(_Float16*)sum += ((_Float16*)tensor)[index];
+            *(float*)sum += ((float*)tensor)[index];
             break;
         case TAPP_BF16:
-            //*(_Float16*)sum += ((__bf16*)tensor)[index];
+            //*(float*)sum += ((__bf16*)tensor)[index];
             break;
         default:
             break;
@@ -1843,7 +1845,7 @@ void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_eleme
             *(complex __bf16*)sum += ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(__bf16*)sum += ((_Float16*)tensor)[index];
+            *(__bf16*)sum += ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             *(__bf16*)sum += ((__bf16*)tensor)[index];
@@ -1893,7 +1895,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
                 //*(float*)accum = *(__bf16*)beta * *(float*)val_C;
@@ -1918,7 +1920,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(float*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(float*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
                 //*(float*)accum = *(__bf16*)beta * *(double*)val_C;
@@ -1943,7 +1945,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
                 //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
@@ -1968,7 +1970,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
                 //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
@@ -1981,22 +1983,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(float*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(float*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(float*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(float*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(float*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                //*(float*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2018,7 +2020,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(float*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(float*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
                 *(float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
@@ -2050,7 +2052,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(double*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
                 //*(double*)accum = *(__bf16*)beta * *(float*)val_C;
@@ -2075,7 +2077,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(double*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(double*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
                 //*(double*)accum = *(__bf16*)beta * *(double*)val_C;
@@ -2100,7 +2102,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
                 //*(double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
@@ -2125,7 +2127,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
                 //*(double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
@@ -2138,22 +2140,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(double*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(double*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(double*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(double*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(double*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(double*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(double*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(double*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                //*(double*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2175,7 +2177,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(double*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(double*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(double*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
                 *(double*)accum = *(__bf16*)beta * *(__bf16*)val_C;
@@ -2207,7 +2209,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(complex float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
                 //*(complex float*)accum = *(__bf16*)beta * *(float*)val_C;
@@ -2232,7 +2234,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex float*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(complex float*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
                 //*(complex float*)accum = *(__bf16*)beta * *(double*)val_C;
@@ -2257,7 +2259,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(complex float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
                 //*(complex float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
@@ -2282,7 +2284,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(complex float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
                 //*(complex float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
@@ -2295,22 +2297,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(complex float*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(complex float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(complex float*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(complex float*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(complex float*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(complex float*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(complex float*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(complex float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(complex float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(complex float*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                //*(complex float*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2332,7 +2334,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex float*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(complex float*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(complex float*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
                 *(complex float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
@@ -2364,7 +2366,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex double*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(complex double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
                 //*(complex double*)accum = *(__bf16*)beta * *(float*)val_C;
@@ -2389,7 +2391,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex double*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(complex double*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
                 //*(complex double*)accum = *(__bf16*)beta * *(double*)val_C;
@@ -2414,7 +2416,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(complex double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
                 //*(complex double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
@@ -2439,7 +2441,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex double*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(complex double*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
                 //*(complex double*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
@@ -2452,22 +2454,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(complex double*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(complex double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(complex double*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(complex double*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(complex double*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(complex double*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(complex double*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(complex double*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(complex double*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(complex double*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                //*(complex double*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2489,7 +2491,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(complex double*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(complex double*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(complex double*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
                 *(complex double*)accum = *(__bf16*)beta * *(__bf16*)val_C;
@@ -2508,22 +2510,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * *(float*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * *(float*)val_C;
+                *(float*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * *(float*)val_C;
+                *(float*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * *(float*)val_C;
+                *(float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(_Float16*)accum = *(__bf16*)beta * *(float*)val_C;
+                //*(float*)accum = *(__bf16*)beta * *(float*)val_C;
                 break;
             default:
                 break;
@@ -2533,22 +2535,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * *(double*)val_C;
+                *(float*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * *(double*)val_C;
+                *(float*)accum = *(double*)beta * *(double*)val_C;
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * *(double*)val_C;
+                *(float*)accum = *(complex float*)beta * *(double*)val_C;
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * *(double*)val_C;
+                *(float*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(float*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
-                //*(_Float16*)accum = *(__bf16*)beta * *(double*)val_C;
+                //*(float*)accum = *(__bf16*)beta * *(double*)val_C;
                 break;
             default:
                 break;
@@ -2558,22 +2560,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
-                //*(_Float16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             default:
                 break;
@@ -2583,22 +2585,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(complex float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(float*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
-                //*(_Float16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                //*(float*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             default:
                 break;
@@ -2608,22 +2610,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(float*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                //*(_Float16*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                //*(float*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2633,22 +2635,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             /*switch (type_beta)
             {
             case TAPP_F32:
-                *(_Float16*)accum = *(float*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F64:
-                *(_Float16*)accum = *(double*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_C32:
-                *(_Float16*)accum = *(complex float*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(complex float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_C64:
-                *(_Float16*)accum = *(complex double*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(_Float16*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
-                *(_Float16*)accum = *(__bf16*)beta * *(__bf16*)val_C;
+                *(float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
                 break;
             default:
                 break;
@@ -2677,7 +2679,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(__bf16*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * *(float*)val_C;
+                *(__bf16*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
                 *(__bf16*)accum = *(__bf16*)beta * *(float*)val_C;
@@ -2702,7 +2704,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(__bf16*)accum = *(complex double*)beta * *(double*)val_C;
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * *(double*)val_C;
+                *(__bf16*)accum = *(float*)beta * *(double*)val_C;
                 break;
             case TAPP_BF16:
                 *(__bf16*)accum = *(__bf16*)beta * *(double*)val_C;
@@ -2727,7 +2729,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(__bf16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
+                *(__bf16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
                 break;
             case TAPP_BF16:
                 *(__bf16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conjf(*(complex float*)val_C) : *(complex float*)val_C);
@@ -2752,7 +2754,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(__bf16*)accum = *(complex double*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
+                *(__bf16*)accum = *(float*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
                 break;
             case TAPP_BF16:
                 *(__bf16*)accum = *(__bf16*)beta * (op_C == TAPP_CONJUGATE ? conj(*(complex double*)val_C) : *(complex double*)val_C);
@@ -2765,22 +2767,22 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
             switch (type_beta)
             {
             case TAPP_F32:
-                *(__bf16*)accum = *(float*)beta * *(_Float16*)val_C;
+                *(__bf16*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_F64:
-                *(__bf16*)accum = *(double*)beta * *(_Float16*)val_C;
+                *(__bf16*)accum = *(double*)beta * *(float*)val_C;
                 break;
             case TAPP_C32:
-                *(__bf16*)accum = *(complex float*)beta * *(_Float16*)val_C;
+                *(__bf16*)accum = *(complex float*)beta * *(float*)val_C;
                 break;
             case TAPP_C64:
-                *(__bf16*)accum = *(complex double*)beta * *(_Float16*)val_C;
+                *(__bf16*)accum = *(complex double*)beta * *(float*)val_C;
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
+                *(__bf16*)accum = *(float*)beta * *(float*)val_C;
                 break;
             case TAPP_BF16:
-                *(__bf16*)accum = *(__bf16*)beta * *(_Float16*)val_C);
+                *(__bf16*)accum = *(__bf16*)beta * *(float*)val_C);
                 break;
             default:
                 break;
@@ -2802,7 +2804,7 @@ void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const v
                 *(__bf16*)accum = *(complex double*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_F16:
-                *(__bf16*)accum = *(_Float16*)beta * *(__bf16*)val_C;
+                *(__bf16*)accum = *(float*)beta * *(__bf16*)val_C;
                 break;
             case TAPP_BF16:
                 *(__bf16*)accum = *(__bf16*)beta * *(__bf16*)val_C;
@@ -2935,22 +2937,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum += *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(complex _Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum += *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum += *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(complex _Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum += *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -2960,22 +2962,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(_Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum += *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(_Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum += *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(_Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum += *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(_Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum += *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -2987,22 +2989,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum += *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum += *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum += *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum += *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -3012,22 +3014,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum += *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum += *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum += *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum += *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -3127,7 +3129,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
@@ -3152,7 +3154,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
@@ -3177,7 +3179,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
@@ -3202,7 +3204,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
@@ -3215,22 +3217,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3252,7 +3254,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
@@ -3284,7 +3286,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
@@ -3309,7 +3311,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
@@ -3334,7 +3336,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
@@ -3359,7 +3361,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
@@ -3372,22 +3374,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3409,7 +3411,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
@@ -3441,7 +3443,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
@@ -3466,7 +3468,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
@@ -3491,7 +3493,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
@@ -3516,7 +3518,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
@@ -3529,22 +3531,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3566,7 +3568,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
@@ -3598,7 +3600,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
@@ -3623,7 +3625,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
@@ -3648,7 +3650,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
@@ -3673,7 +3675,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
@@ -3686,22 +3688,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3723,7 +3725,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
@@ -3743,22 +3745,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3768,22 +3770,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -3793,22 +3795,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -3818,22 +3820,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -3843,22 +3845,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -3868,22 +3870,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -3912,7 +3914,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
@@ -3937,7 +3939,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
@@ -3962,7 +3964,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
@@ -3987,7 +3989,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
@@ -4000,22 +4002,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4037,7 +4039,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
@@ -4076,7 +4078,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
@@ -4101,7 +4103,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
@@ -4126,7 +4128,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
@@ -4151,7 +4153,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
@@ -4164,22 +4166,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4201,7 +4203,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
@@ -4233,7 +4235,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
@@ -4258,7 +4260,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
@@ -4283,7 +4285,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
@@ -4308,7 +4310,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
@@ -4321,22 +4323,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4358,7 +4360,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
@@ -4390,7 +4392,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
@@ -4415,7 +4417,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
@@ -4440,7 +4442,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
@@ -4465,7 +4467,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
@@ -4478,22 +4480,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4515,7 +4517,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
@@ -4547,7 +4549,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
@@ -4572,7 +4574,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
@@ -4597,7 +4599,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
@@ -4622,7 +4624,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
@@ -4635,22 +4637,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4672,7 +4674,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
@@ -4692,22 +4694,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4717,22 +4719,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -4742,22 +4744,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -4767,22 +4769,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -4792,22 +4794,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    //*(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4817,22 +4819,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -4861,7 +4863,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
@@ -4886,7 +4888,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
@@ -4911,7 +4913,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
@@ -4936,7 +4938,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
@@ -4949,22 +4951,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -4986,7 +4988,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
@@ -5025,7 +5027,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
@@ -5050,7 +5052,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
@@ -5075,7 +5077,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
@@ -5100,7 +5102,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
@@ -5113,22 +5115,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5150,7 +5152,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
@@ -5182,7 +5184,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
@@ -5207,7 +5209,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
@@ -5232,7 +5234,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
@@ -5257,7 +5259,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
@@ -5270,22 +5272,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5307,7 +5309,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
@@ -5339,7 +5341,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
@@ -5364,7 +5366,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
@@ -5389,7 +5391,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
@@ -5414,7 +5416,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
@@ -5427,22 +5429,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5464,7 +5466,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
@@ -5496,7 +5498,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
@@ -5521,7 +5523,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
@@ -5546,7 +5548,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
@@ -5571,7 +5573,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
@@ -5584,22 +5586,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5621,7 +5623,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
@@ -5641,22 +5643,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5666,22 +5668,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -5691,22 +5693,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -5716,22 +5718,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -5741,22 +5743,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    //*(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5766,22 +5768,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(complex float*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -5810,7 +5812,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
@@ -5835,7 +5837,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
@@ -5860,7 +5862,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
@@ -5885,7 +5887,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
@@ -5898,22 +5900,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -5935,7 +5937,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex float*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(complex float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
@@ -5974,7 +5976,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
@@ -5999,7 +6001,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
@@ -6024,7 +6026,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
@@ -6049,7 +6051,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
@@ -6062,22 +6064,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6099,7 +6101,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
@@ -6131,7 +6133,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
@@ -6156,7 +6158,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
@@ -6181,7 +6183,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
@@ -6206,7 +6208,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
@@ -6219,22 +6221,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6256,7 +6258,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
@@ -6288,7 +6290,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
@@ -6313,7 +6315,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
@@ -6338,7 +6340,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
@@ -6363,7 +6365,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
@@ -6376,22 +6378,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6413,7 +6415,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
@@ -6445,7 +6447,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
@@ -6470,7 +6472,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
@@ -6495,7 +6497,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
@@ -6520,7 +6522,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
@@ -6533,22 +6535,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6570,7 +6572,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
@@ -6590,22 +6592,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6615,22 +6617,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -6640,22 +6642,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -6665,22 +6667,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -6690,22 +6692,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    //*(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6715,22 +6717,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(complex double*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -6759,7 +6761,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
@@ -6784,7 +6786,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
@@ -6809,7 +6811,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
@@ -6834,7 +6836,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
@@ -6847,22 +6849,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6884,7 +6886,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(complex double*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(complex double*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(complex double*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(complex double*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
@@ -6911,22 +6913,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -6936,22 +6938,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -6961,22 +6963,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -6986,22 +6988,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7011,22 +7013,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7036,22 +7038,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7068,22 +7070,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7093,22 +7095,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -7118,22 +7120,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -7143,22 +7145,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7168,22 +7170,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7193,22 +7195,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7225,22 +7227,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7250,22 +7252,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -7275,22 +7277,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -7300,22 +7302,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7325,22 +7327,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7350,22 +7352,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7382,22 +7384,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7407,22 +7409,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -7432,22 +7434,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -7457,22 +7459,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7482,22 +7484,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7507,22 +7509,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7539,22 +7541,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7564,22 +7566,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -7589,22 +7591,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -7614,22 +7616,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7639,22 +7641,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    //*(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    //*(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7664,22 +7666,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 /*switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7696,22 +7698,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7721,22 +7723,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -7746,22 +7748,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -7771,22 +7773,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -7796,22 +7798,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7821,22 +7823,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(_Float16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(_Float16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(_Float16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(_Float16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(_Float16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(_Float16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(float*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -7872,7 +7874,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
@@ -7897,7 +7899,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
@@ -7922,7 +7924,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
@@ -7947,7 +7949,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
@@ -7960,22 +7962,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -7997,7 +7999,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
@@ -8029,7 +8031,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
@@ -8054,7 +8056,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(double*)sum_B;
@@ -8079,7 +8081,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex float*)sum_B;
@@ -8104,7 +8106,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(complex doubles*)sum_B;
@@ -8117,22 +8119,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8154,7 +8156,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(double*)sum_A * *(__bf16*)sum_B;
@@ -8186,7 +8188,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
@@ -8211,7 +8213,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(double*)sum_B;
@@ -8236,7 +8238,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
@@ -8261,7 +8263,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(complex doubles*)sum_B;
@@ -8274,22 +8276,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8311,7 +8313,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex float*)sum_A * *(__bf16*)sum_B;
@@ -8343,7 +8345,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
@@ -8368,7 +8370,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(double*)sum_B;
@@ -8393,7 +8395,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex float*)sum_B;
@@ -8418,7 +8420,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(complex doubles*)sum_B;
@@ -8431,22 +8433,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8468,7 +8470,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(complex double*)sum_A * *(__bf16*)sum_B;
@@ -8488,22 +8490,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8513,22 +8515,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(double*)sum_B;
                     break;
                 default:
                     break;
@@ -8538,22 +8540,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     break;
                 default:
                     break;
@@ -8563,22 +8565,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(complex doubles*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(complex doubles*)sum_B;
                     break;
                 default:
                     break;
@@ -8588,22 +8590,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8613,22 +8615,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(_Float16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(float*)sum_A * *(__bf16*)sum_B;
                     break;
                 default:
                     break;
@@ -8657,7 +8659,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
@@ -8682,7 +8684,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(double*)sum_B;
@@ -8707,7 +8709,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex float*)sum_B;
@@ -8732,7 +8734,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(complex double*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(complex doubles*)sum_B;
@@ -8745,22 +8747,22 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                 switch (type_alpha)
                 {
                 case TAPP_F32:
-                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F64:
-                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C32:
-                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_C64:
-                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 case TAPP_BF16:
-                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(_Float16*)sum_B;
+                    *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(float*)sum_B;
                     break;
                 default:
                     break;
@@ -8782,7 +8784,7 @@ void calculate_alpha_A_B_default(const void* alpha, TAPP_datatype type_alpha, co
                     *(__bf16*)accum += *(complex double*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_F16:
-                    *(__bf16*)accum += *(_Float16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
+                    *(__bf16*)accum += *(float*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
                     break;
                 case TAPP_BF16:
                     *(__bf16*)accum += *(__bf16*)alpha * *(__bf16*)sum_A * *(__bf16*)sum_B;
@@ -9033,22 +9035,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(complex _Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(complex _Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9058,22 +9060,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(complex _Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex _Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(complex _Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9086,22 +9088,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(_Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(_Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(_Float16*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(_Float16*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9111,22 +9113,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(_Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(_Float16*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(_Float16*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9141,22 +9143,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(complex float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(complex float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9166,22 +9168,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(complex float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(complex float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(complex float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9194,22 +9196,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(float*)accum += *(complex _Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(float*)accum += *(_Float16*)alpha * *(complex _Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(complex float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9219,22 +9221,22 @@ void calculate_alpha_A_B_prec(const void* alpha, bool is_complex_alpha, const vo
                 {
                     if (is_complex_alpha)
                     {
-                        *(float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                     else
                     {
-                        *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(complex _Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(complex float*)sum_B;
                     }
                 }
                 else
                 {
                     if (is_complex_alpha)
                     {
-                        *(float*)accum += *(complex _Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(complex float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                     else
                     {
-                        *(float*)accum += *(_Float16*)alpha * *(_Float16*)sum_A * *(_Float16*)sum_B;
+                        *(float*)accum += *(float*)alpha * *(float*)sum_A * *(float*)sum_B;
                     }
                 }
             }
@@ -9449,7 +9451,7 @@ void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, T
             *(complex double*)val = ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(_Float16*)val = ((_Float16*)tensor)[index];
+            *(float*)val = ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(__bf16*)val = ((__bf16*)tensor)[index];
@@ -9474,7 +9476,7 @@ void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, T
             *(complex float*)val = ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(float*)val = ((_Float16*)tensor)[index];
+            *(float*)val = ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(float*)val = ((__bf16*)tensor)[index];
@@ -9499,7 +9501,7 @@ void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, T
             *(complex double*)val = ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(double*)val = ((_Float16*)tensor)[index];
+            *(double*)val = ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             //*(double*)val = ((__bf16*)tensor)[index];
@@ -9513,22 +9515,22 @@ void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, T
         switch (type)
         {
         case TAPP_F32:
-            *(_Float16*)val = ((float*)tensor)[index];
+            *(float*)val = ((float*)tensor)[index];
             break;
         case TAPP_F64:
-            *(_Float16*)val = ((double*)tensor)[index];
+            *(float*)val = ((double*)tensor)[index];
             break;
         case TAPP_C32:
-            *(complex _Float16*)val = ((complex float*)tensor)[index];
+            *(complex float*)val = ((complex float*)tensor)[index];
             break;
         case TAPP_C64:
-            *(complex _Float16*)val = ((complex double*)tensor)[index];
+            *(complex float*)val = ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(_Float16*)val = ((_Float16*)tensor)[index];
+            *(float*)val = ((float*)tensor)[index];
             break;
         case TAPP_BF16:
-            //*(_Float16*)val = ((__bf16*)tensor)[index];
+            //*(float*)val = ((__bf16*)tensor)[index];
             break;
         default:
             break;
@@ -9550,7 +9552,7 @@ void get_val(void* val, const void* tensor, int64_t index, TAPP_datatype type, T
             *(complex __bf16*)val = ((complex double*)tensor)[index];
             break;
         case TAPP_F16:
-            *(__bf16*)val = ((_Float16*)tensor)[index];
+            *(__bf16*)val = ((float*)tensor)[index];
             break;
         case TAPP_BF16:
             *(__bf16*)val = ((__bf16*)tensor)[index];
@@ -9585,7 +9587,7 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
             ((complex double*)D)[index_D] = *(complex double*)accum;
             break;
         case TAPP_F16:
-            ((_Float16*)D)[index_D] = *(_Float16*)accum;
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_BF16:
             //((__bf16*)D)[index_D] = *(__bf16*)accum;
@@ -9612,7 +9614,7 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
             ((complex double*)D)[index_D] = *(complex float*)accum;
             break;
         case TAPP_F16:
-            ((_Float16*)D)[index_D] = *(float*)accum;
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_BF16:
             //((__bf16*)D)[index_D] = *(float*)accum;
@@ -9637,7 +9639,7 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
             ((complex double*)D)[index_D] = *(complex double*)accum;
             break;
         case TAPP_F16:
-            ((_Float16*)D)[index_D] = *(double*)accum;
+            ((float*)D)[index_D] = *(double*)accum;
             break;
         case TAPP_BF16:
             //((__bf16*)D)[index_D] = *(double*)accum;
@@ -9650,20 +9652,20 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
         switch (type_D)
         {
         case TAPP_F32:
-            ((float*)D)[index_D] = *(_Float16*)accum;
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_F64:
-            ((double*)D)[index_D] = *(_Float16*)accum;
+            ((double*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_C32:
             break;
         case TAPP_C64:
             break;
         case TAPP_F16:
-            ((_Float16*)D)[index_D] = *(_Float16*)accum;
+            ((float*)D)[index_D] = *(float*)accum;
             break;
         case TAPP_BF16:
-            //((__bf16*)D)[index_D] = *(_Float16*)accum;
+            //((__bf16*)D)[index_D] = *(float*)accum;
             break;
         default:
             break;
