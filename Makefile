@@ -1,6 +1,6 @@
 HAS_TBLIS = false
-CC = gcc
-CXX = g++
+CC = gcc-14
+CXX = g++-14
 SRC = src
 OBJ = obj
 TEST = test
@@ -23,7 +23,7 @@ endif
 ifeq ($(HAS_TBLIS),true)
 all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/uselib.o out/uselib
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so 
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo out/uselib.o out/uselib
 endif
 
 
@@ -65,17 +65,23 @@ out/test: $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 out/demo.o: $(TEST)/demo.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
+ifeq ($(HAS_TBLIS),true)
 out/demo: $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -g  $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+else
+out/demo: $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -g  $(OUT)/demo.o $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+endif
+	
 
 out/test++: $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 
 out/uselib.o: $(TEST)/uselib.c lib/libtapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/uselib.c -o $(OUT)/uselib.o -I$(INC)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/uselib.c -o $(OUT)/uselib.o -I$(INC) -I$(INC)/tapp
 
 out/uselib: $(OUT)/uselib.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -L./lib -ltapp
+	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -I$(INC)/tapp -L./lib -ltapp
 
 ifeq ($(HAS_TBLIS),true)
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
