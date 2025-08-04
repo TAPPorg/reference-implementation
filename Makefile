@@ -1,6 +1,6 @@
 HAS_TBLIS = false
-CC = gcc-14
-CXX = g++-14
+CC = gcc
+CXX = g++
 SRC = src
 OBJ = obj
 TEST = test
@@ -90,6 +90,16 @@ lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 else
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+endif
+
+ifeq ($(HAS_TBLIS),true)
+.PHONY: test
+test:
+	out/test++
+else
+.PHONY: test
+test:
+	out/demo
 endif
 
 clean:
