@@ -36,18 +36,18 @@ target_include_directories(
 
 
 
-option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" ON)
+option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 
 if(ENABLE_TBLIS)
 
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
   include(ExternalProject)
-
+  # 4de1919
   ExternalProject_Add(
     tblis
     GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
-    GIT_TAG 4de1919
+    GIT_TAG 6f94295
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${TBLIS_INSTALL_DIR}
     BUILD_COMMAND make
@@ -123,3 +123,27 @@ if(ENABLE_TBLIS)
     )
 
 endif()
+
+
+add_executable(demo)
+
+if(NOT ENABLE_TBLIS)
+  enable_testing()
+endif()
+
+target_sources(
+  demo
+  PRIVATE
+    test/demo.c
+  )
+
+target_link_libraries(
+  demo
+  PRIVATE
+    tapp
+  )
+
+add_test(
+  NAME demo
+  COMMAND $<TARGET_FILE:demo>
+  )
