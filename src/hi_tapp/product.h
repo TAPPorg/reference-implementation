@@ -9,6 +9,7 @@
 #include "hi_tapp/datatype.h"
 #include "hi_tapp/status.h"
 #include "hi_tapp/tensor.h"
+#include "tapp.h"
 
 //TODO: where should this go?
 typedef int HI_TAPP_element_op;

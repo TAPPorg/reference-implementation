@@ -9,6 +9,7 @@ OUT = out
 INC = src
 TBLIS = ../tblis
 TBLIS_PARAM = -ltblis -lm -L$(TBLIS)/lib/.libs -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
+TAPP_PATH = /Users/losos/Downloads/test/reference-implementation
 OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/hi_tapp.o, $(wildcard obj/*.o)))
 CFLAGS = -fPIC
 CXXFLAGS = -fPIC
@@ -34,62 +35,62 @@ obj/hi_tapp.o: obj/product.o obj/tensor.o obj/error.o obj/executor.o obj/handle.
 	ld -r $(OBJECTS) -o obj/hi_tapp.o
 
 obj/error.o: $(SRC)/hi_tapp/error.c $(INC)/hi_tapp/error.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/hi_tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src
 
 obj/tensor.o: $(SRC)/hi_tapp/tensor.c $(INC)/hi_tapp/tensor.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/hi_tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src
 
 obj/product.o: $(SRC)/hi_tapp/product.c $(INC)/hi_tapp/product.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/hi_tapp -I$(TBL)
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/hi_tapp -I$(TBL) -I$(TAPP_PATH)/src
 
 obj/executor.o: $(SRC)/hi_tapp/executor.c $(INC)/hi_tapp/executor.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/executor.c -o $(OBJ)/executor.o -I$(INC) -I$(INC)/hi_tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/executor.c -o $(OBJ)/executor.o -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src
 
 obj/handle.o: $(SRC)/hi_tapp/handle.c $(INC)/hi_tapp/handle.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/hi_tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/hi_tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src
 
 ifeq ($(HAS_TBLIS),true)
 obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
-	$(CXX) $(CXXFLAGS) -c -g -Wall $(TBL)/tblis_bind.cpp -o $(OBJ)/tblis_bind.o -I$(INC) -I$(INC)/hi_tapp -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
+	$(CXX) $(CXXFLAGS) -c -g -Wall $(TBL)/tblis_bind.cpp -o $(OBJ)/tblis_bind.o -I$(INC) -I$(INC)/hi_tapp -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src -I$(TAPP_PATH)/src
 else
 obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
 	touch obj/tblis_bind.o
 endif
 
 out/test.o: $(TEST)/test.c $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/hi_tapp -I$(TBL)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/hi_tapp -I$(TBL) -I$(TAPP_PATH)/src
 
 out/test: $(OUT)/test.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g $(OUT)/test.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -g $(OUT)/test.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH)/lib -ltapp
 
 out/demo.o: $(TEST)/demo.c $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/hi_tapp -I$(TBL)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/hi_tapp -I$(TBL) -I$(TAPP_PATH)/src
 
 ifeq ($(HAS_TBLIS),true)
 out/demo: $(OUT)/demo.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(OUT)/demo.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/demo -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -g  $(OUT)/demo.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/demo -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH)/lib -ltapp
 else
 out/demo: $(OUT)/demo.o $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(OUT)/demo.o $(OBJ)/hi_tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -g  $(OUT)/demo.o $(OBJ)/hi_tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH)/lib -Wl,-rpath,$(TAPP_PATH)/lib -ltapp
 endif
 	
 
 out/test++: $(TEST)/test.cpp $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH)/lib -ltapp
 
 out/uselib.o: $(TEST)/uselib.c lib/libhi_tapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/uselib.c -o $(OUT)/uselib.o -I$(INC) -I$(INC)/hi_tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/uselib.c -o $(OUT)/uselib.o -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src
 
 out/uselib: $(OUT)/uselib.o lib/libhi_tapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -I$(INC)/hi_tapp -L./lib -lhi_tapp
+	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -I$(INC)/hi_tapp -I$(TAPP_PATH)/src -L./lib -lhi_tapp -L$(TAPP_PATH)/lib -ltapp
 
 ifeq ($(HAS_TBLIS),true)
 lib/libhi_tapp.so: $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o lib/libhi_tapp.so -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o lib/libhi_tapp.so -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH) -ltapp
 # 	$(CC) -shared -fPIC $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o -o lib/libhi_tapp.so -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
 else
 lib/libhi_tapp.so: $(OBJ)/hi_tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/hi_tapp.o -o lib/libhi_tapp.so -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/hi_tapp.o -o lib/libhi_tapp.so -I$(INC) -I$(INC)/hi_tapp -I$(TBL) $(TBLIS_PARAM) -I$(TAPP_PATH)/src -L$(TAPP_PATH)/lib -ltapp
 endif
 
 ifeq ($(HAS_TBLIS),true)
