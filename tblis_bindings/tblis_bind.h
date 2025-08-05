@@ -19,9 +19,9 @@
 
 extern "C" {
 #endif
-    #include "tapp.h"
+    #include "hi_tapp.h"
 #ifdef __cplusplus
-    #include "tapp_ex_imp.h"
+    #include "hi_tapp/tapp_ex_imp.h"
 }
 extern "C" {
 #endif

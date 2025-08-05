@@ -1,11 +1,11 @@
-#ifndef TAPP_HANDLE_H_
-#define TAPP_HANDLE_H_
+#ifndef HI_TAPP_HANDLE_H_
+#define HI_TAPP_HANDLE_H_
 
 #include <stdint.h>
 
-#include "error.h"
+#include "hi_tapp/error.h"
 
-typedef intptr_t TAPP_handle;
+typedef intptr_t HI_TAPP_handle;
 
 /*
  * TODO: implementation-defined creation of handles or "wrapper" to get all implementations and select one?
@@ -18,6 +18,6 @@ typedef intptr_t TAPP_handle;
 
  //TODO: optional APIs with feature test macros
 
-TAPP_error TAPP_destroy_handle(TAPP_handle handle);
+HI_TAPP_error HI_TAPP_destroy_handle(HI_TAPP_handle handle);
 
-#endif /* TAPP_HANDLE_H_ */
+#endif /* HI_TAPP_HANDLE_H_ */

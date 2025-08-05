@@ -1,6 +1,6 @@
 HAS_TBLIS = false
-CC = gcc
-CXX = g++
+CC = gcc-14
+CXX = g++-14
 SRC = src
 OBJ = obj
 TEST = test

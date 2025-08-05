@@ -1,13 +1,13 @@
-#ifndef TAPP_ERROR_H_
-#define TAPP_ERROR_H_
+#ifndef HI_TAPP_ERROR_H_
+#define HI_TAPP_ERROR_H_
 
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef int TAPP_error;
+typedef int HI_TAPP_error;
 
 /* Return true if the error code indicates success and false otherwise. */
-bool TAPP_check_success(TAPP_error error);
+bool HI_TAPP_check_success(HI_TAPP_error error);
 
 /*
  * Fill a user-provided buffer with an implementation-defined string explaining the error code. No more than maxlen-1
@@ -19,8 +19,8 @@ bool TAPP_check_success(TAPP_error error);
  *
  * TODO: should the null character be included in the return value?
  */
-size_t TAPP_explain_error(TAPP_error error,
+size_t HI_TAPP_explain_error(HI_TAPP_error error,
                           size_t maxlen,
                           char* message);
 
-#endif /* TAPP_ERROR_H_ */
+#endif /* HI_TAPP_ERROR_H_ */

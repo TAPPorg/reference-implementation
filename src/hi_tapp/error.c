@@ -3,16 +3,16 @@
  * Paolo Bientinesi
  * Umeå University - October 2024
  */
-#include "tapp_ex_imp.h"
+#include "hi_tapp/tapp_ex_imp.h"
 #include <string.h>
 
 
-bool TAPP_check_success(TAPP_error error) {
+bool HI_TAPP_check_success(HI_TAPP_error error) {
     return error == 0;
 }
 
 
-size_t TAPP_explain_error(TAPP_error error,
+size_t HI_TAPP_explain_error(HI_TAPP_error error,
                           size_t maxlen,
                           char* message) {
     char* error_message;

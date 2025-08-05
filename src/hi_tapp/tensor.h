@@ -1,12 +1,12 @@
-#ifndef TAPP_TENSOR_H_
-#define TAPP_TENSOR_H_
+#ifndef HI_TAPP_TENSOR_H_
+#define HI_TAPP_TENSOR_H_
 
 #include <stdint.h>
 
-#include "error.h"
-#include "datatype.h"
+#include "hi_tapp/error.h"
+#include "hi_tapp/datatype.h"
 
-typedef intptr_t TAPP_tensor_info;
+typedef intptr_t HI_TAPP_tensor_info;
 
 /*
  * TODO: what are the required error conditions? What is explicitly allowed (esp. regarding strides)?
@@ -18,29 +18,29 @@ typedef intptr_t TAPP_tensor_info;
  *         using unsigned values? Same with nmode.
  */ 
 
-TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
-                                   TAPP_datatype type,
+HI_TAPP_error HI_TAPP_create_tensor_info(HI_TAPP_tensor_info* info,
+                                   HI_TAPP_datatype type,
                                    int nmode,
                                    const int64_t* extents,
                                    const int64_t* strides);
 
-TAPP_error TAPP_destory_tensor_info(TAPP_tensor_info info);
+HI_TAPP_error HI_TAPP_destory_tensor_info(HI_TAPP_tensor_info info);
 
-int TAPP_get_nmodes(TAPP_tensor_info info);
+int HI_TAPP_get_nmodes(HI_TAPP_tensor_info info);
 
-TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
+HI_TAPP_error HI_TAPP_set_nmodes(HI_TAPP_tensor_info info,
                            int nmodes);
 
-void TAPP_get_extents(TAPP_tensor_info info,
+void HI_TAPP_get_extents(HI_TAPP_tensor_info info,
                       int64_t* extents);
 
-TAPP_error TAPP_set_extents(TAPP_tensor_info info,
+HI_TAPP_error HI_TAPP_set_extents(HI_TAPP_tensor_info info,
                             const int64_t* extents);
 
-void TAPP_get_strides(TAPP_tensor_info info,
+void HI_TAPP_get_strides(HI_TAPP_tensor_info info,
                       int64_t* strides);
 
-TAPP_error TAPP_set_strides(TAPP_tensor_info info,
+HI_TAPP_error HI_TAPP_set_strides(HI_TAPP_tensor_info info,
                             const int64_t* strides);
 
-#endif /* TAPP_TENSOR_H_ */
+#endif /* HI_TAPP_TENSOR_H_ */
