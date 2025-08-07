@@ -6,12 +6,37 @@
 #include "../hi_tapp.h"
 #include <stdint.h>
 
+#ifdef __cplusplus
+
+#include <vector>
+#include <string>
+#include <unordered_map>
+
+struct VectorHasher;
+
+struct space
+{
+    int64_t nsectors;
+    int64_t* extents;
+    int64_t nlabels; 
+    HI_TAPP_attr* labels_names_and_extents;
+    std::unordered_map<std::vector<int>, int, VectorHasher>* labels_to_sector_index;
+};
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct tensor_info
 {
     HI_TAPP_datatype type;
     int nmode;
-    int64_t* extents;
-    int64_t* strides;
+    int64_t* extents; // NULL in block-sparse case
+    int64_t* strides; // NULL in block-sparse case
+    HI_TAPP_space* spaces; // NULL in dense case ? or 
+    int64_t nblocks; // 0 in dense case ? or 1 ?
+    int64_t* block_coordinates; // NULL in dense case ? or 1 row?
 };
 
 struct plan
@@ -34,3 +59,7 @@ struct plan
 
 HI_TAPP_error create_executor(HI_TAPP_executor* exec);
 HI_TAPP_error create_handle(HI_TAPP_handle* handle);
+
+#ifdef __cplusplus
+}
+#endif

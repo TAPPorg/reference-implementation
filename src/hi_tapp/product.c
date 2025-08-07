@@ -127,8 +127,16 @@ HI_TAPP_error HI_TAPP_execute_product(HI_TAPP_tensor_product plan,
                                 const void* C,
                                 void* D)
 {
-   TAPP_error err;
-   err =  TAPP_execute_product((TAPP_tensor_product)plan,
+    /*
+    int nmode_A = 3;
+    int64_t extents_A[3] = {4, 3, 3};
+    int64_t strides_A[3] = {1, 4, 12};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    */
+
+    TAPP_error err;
+    err =  TAPP_execute_product((TAPP_tensor_product)plan,
                                 (TAPP_executor)exec,
                                 (TAPP_status*)status,
                                 alpha,

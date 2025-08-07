@@ -7,6 +7,7 @@
 #include "hi_tapp/product.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "hi_tapp/tapp_ex_imp.h"
 
 int main(int argc, char const *argv[])
 {

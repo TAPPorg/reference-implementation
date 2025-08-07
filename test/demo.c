@@ -28,6 +28,7 @@ int main(int argc, char const *argv[])
 {
     printf("Contraction: \n");
     contraction();
+    /*
     printf("Hadamard: \n");
     hadamard();
     printf("Complex: \n");
@@ -48,15 +49,21 @@ int main(int argc, char const *argv[])
     negative_str();
     printf("Subtensors: \n");
     subtensors();
+    */
     return 0;
 }
 
 void contraction() {
     int nmode_A = 3;
-    int64_t extents_A[3] = {4, 3, 3};
-    int64_t strides_A[3] = {1, 4, 12};
+    int nblocks_A = 5;
+    int64_t block_coordinates_A[15] = {
+        0, 0, 0, 
+        0, 1, 1,
+        0, 2, 0,
+        1, 0, 2,
+        2, 1, 0};
     HI_TAPP_tensor_info info_A;
-    HI_TAPP_create_tensor_info(&info_A, HI_TAPP_F32, nmode_A, extents_A, strides_A);
+    HI_TAPP_create_block_sparse_tensor_info(&info_A, HI_TAPP_F32, nmode_A, spaces_A, nblocks_A, block_coordinates_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
