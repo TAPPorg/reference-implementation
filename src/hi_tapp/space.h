@@ -1,5 +1,5 @@
-#ifndef HI_TAPP_TENSOR_H_
-#define HI_TAPP_TENSOR_H_
+#ifndef HI_TAPP_SPACE_H_
+#define HI_TAPP_SPACE_H_
 
 #include <stdint.h>
 
@@ -75,4 +75,4 @@ HI_TAPP_error HI_TAPP_get_subsector_coordinates(HI_TAPP_space space,
                             int64_t nelements,
                             void* coordinates);
 
-#endif /* HI_TAPP_TENSOR_H_ */
+#endif /* HI_TAPP_SPACE_H_ */
