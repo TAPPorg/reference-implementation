@@ -100,6 +100,17 @@ if(ENABLE_TBLIS)
   # ----------------------------------------------------------------------------
   # testing
 
+  add_library(tblis::tblis SHARED IMPORTED)
+  add_dependencies(tblis::tblis tblis)
+
+  file(MAKE_DIRECTORY "${TBLIS_INSTALL_DIR}/lib")
+  file(MAKE_DIRECTORY "${TBLIS_INSTALL_DIR}/include")
+
+  set_target_properties(tblis::tblis PROPERTIES
+    IMPORTED_LOCATION         "${TBLIS_INSTALL_DIR}/lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${TBLIS_INSTALL_DIR}/include"
+  )
+
   add_executable(test++)
 
   target_sources(
@@ -109,10 +120,13 @@ if(ENABLE_TBLIS)
       test/test.h
     )
 
+  add_dependencies(test++ tblis::tblis)
+
   target_link_libraries(
     test++
     PRIVATE
       tapp
+      tblis::tblis
     )
 
   enable_testing()
@@ -137,11 +151,23 @@ target_sources(
     test/demo.c
   )
 
-target_link_libraries(
+if(NOT ENABLE_TBLIS)
+ target_link_libraries(
   demo
   PRIVATE
     tapp
   )
+
+else()
+ add_dependencies(demo tblis)
+
+ target_link_libraries(
+  demo
+  PRIVATE
+    tapp
+    tblis::tblis
+  )
+endif()
 
 add_test(
   NAME demo

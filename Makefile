@@ -20,6 +20,7 @@ else
 	TBLIS_PARAM = 
 endif
 
+
 ifeq ($(HAS_TBLIS),true)
 all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/uselib.o out/uselib
 else
@@ -83,13 +84,20 @@ out/uselib.o: $(TEST)/uselib.c lib/libtapp.so
 out/uselib: $(OUT)/uselib.o lib/libtapp.so
 	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -I$(INC)/tapp -L./lib -ltapp
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	SONAME = -install_name "@rpath/libtapp.so"
+else
+	SONAME = -Wl,-soname,libtapp.so
+endif
+
 ifeq ($(HAS_TBLIS),true)
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 # 	$(CC) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 else
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 endif
 
 ifeq ($(HAS_TBLIS),true)
