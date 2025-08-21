@@ -1,4 +1,4 @@
-ENABLE_TBLIS = false
+ENABLE_TBLIS = true
 CC = gcc
 CXX = g++
 SRC = src
@@ -7,7 +7,7 @@ TEST = test
 TBL = tblis_bindings
 OUT = out
 INC = src
-TBLIS = ../tblis
+TBLIS = ../../tblis
 TBLIS_PARAM = -ltblis -lm -L$(TBLIS)/lib/.libs -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/tapp.o, $(wildcard obj/*.o)))
 CFLAGS = -fPIC
@@ -63,20 +63,14 @@ out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 out/test: $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 
-out/demo.o: $(TEST)/demo.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TBL)
+out/demo.o: $(TEST)/demo.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp
 
-ifeq ($(ENABLE_TBLIS),true)
-out/demo: $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
-else
-out/demo: $(OUT)/demo.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(OUT)/demo.o $(OBJ)/tapp.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
-endif
-	
+out/demo: $(OUT)/demo.o  lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OUT)/demo.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp
 
-out/test++: $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+out/test++: $(TEST)/test.cpp lib/libtapp.so
+	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM)
 
 
 UNAME_S := $(shell uname -s)
@@ -89,7 +83,6 @@ endif
 ifeq ($(ENABLE_TBLIS),true)
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
-# 	$(CC) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 else
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
