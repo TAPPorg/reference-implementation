@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15)
 
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Install Prefix" FORCE)
 project(tapp LANGUAGES C CXX)
-
-
 
 add_library(tapp SHARED)
 
@@ -43,13 +42,14 @@ if(ENABLE_TBLIS)
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
   include(ExternalProject)
-  # 4de1919
+
   ExternalProject_Add(
     tblis
     GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
-    GIT_TAG 6f94295
+    GIT_TAG 4de1919
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${TBLIS_INSTALL_DIR}
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+                      --prefix=${TBLIS_INSTALL_DIR}
     BUILD_COMMAND make
     INSTALL_COMMAND make install
     UPDATE_DISCONNECTED TRUE
@@ -100,17 +100,6 @@ if(ENABLE_TBLIS)
   # ----------------------------------------------------------------------------
   # testing
 
-  add_library(tblis::tblis SHARED IMPORTED)
-  add_dependencies(tblis::tblis tblis)
-
-  file(MAKE_DIRECTORY "${TBLIS_INSTALL_DIR}/lib")
-  file(MAKE_DIRECTORY "${TBLIS_INSTALL_DIR}/include")
-
-  set_target_properties(tblis::tblis PROPERTIES
-    IMPORTED_LOCATION         "${TBLIS_INSTALL_DIR}/lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${TBLIS_INSTALL_DIR}/include"
-  )
-
   add_executable(test++)
 
   target_sources(
@@ -120,13 +109,10 @@ if(ENABLE_TBLIS)
       test/test.h
     )
 
-  add_dependencies(test++ tblis::tblis)
-
   target_link_libraries(
     test++
     PRIVATE
       tapp
-      tblis::tblis
     )
 
   enable_testing()
@@ -137,7 +123,6 @@ if(ENABLE_TBLIS)
     )
 
 endif()
-
 
 add_executable(demo)
 
@@ -151,21 +136,20 @@ target_sources(
     test/demo.c
   )
 
-if(NOT ENABLE_TBLIS)
- target_link_libraries(
-  demo
-  PRIVATE
-    tapp
+if(ENABLE_TBLIS)
+  # Ensure `tblis` is built before the demo executable.
+  add_dependencies(demo tblis)
+
+  target_link_libraries(
+   demo
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
   )
-
 else()
- add_dependencies(demo tblis)
-
- target_link_libraries(
-  demo
-  PRIVATE
-    tapp
-    tblis::tblis
+  target_link_libraries(
+   demo
+   PRIVATE
+     tapp
   )
 endif()
 
