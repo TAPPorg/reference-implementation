@@ -1,4 +1,4 @@
-ENABLE_TBLIS = true
+ENABLE_TBLIS = false
 CC = gcc
 CXX = g++
 SRC = src
@@ -7,7 +7,7 @@ TEST = test
 TBL = tblis_bindings
 OUT = out
 INC = src
-TBLIS = ../../tblis
+TBLIS = ../tblis
 TBLIS_PARAM = -ltblis -lm -L$(TBLIS)/lib/.libs -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/tapp.o, $(wildcard obj/*.o)))
 CFLAGS = -fPIC
