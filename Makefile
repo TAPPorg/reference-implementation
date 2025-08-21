@@ -22,9 +22,9 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/uselib.o out/uselib
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo out/uselib.o out/uselib
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo 
 endif
 
 
@@ -78,11 +78,6 @@ endif
 out/test++: $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -g  $(TEST)/test.cpp $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 
-out/uselib.o: $(TEST)/uselib.c lib/libtapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/uselib.c -o $(OUT)/uselib.o -I$(INC) -I$(INC)/tapp
-
-out/uselib: $(OUT)/uselib.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/uselib.o -o $(OUT)/uselib -I$(INC) -I$(INC)/tapp -L./lib -ltapp
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -123,6 +118,4 @@ clean:
 	rm -f out/test++
 	rm -f out/demo
 	rm -f out/demo.o
-	rm -f out/uselib
-	rm -f out/uselib.o
 	rm -f lib/libtapp.so
