@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAS_TBLIS
+#include "tblis_bind.h"
+#endif
 
 int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr);
 int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);
@@ -34,6 +37,7 @@ int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, i
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
 int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
 int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code);
+int check_executor_existence(TAPP_executor exec, int error_code);
 void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right);
 void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right);
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type);
@@ -46,6 +50,7 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex
 void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
 bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_datatype comp_type);
 void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
+void print_tensor_(int nmode, int64_t* extents, int64_t* strides, void* data, TAPP_datatype type);
 
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -188,6 +193,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (error_status == 0) error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7);
     if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, 8);
     if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, 12);
+    if (error_status == 0) error_status = check_executor_existence(exec, 33);
     if (error_status != 0)
     {
         free(idx_A);
@@ -204,178 +210,311 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(strides_D);
         return error_status;
     }
+    int64_t size_D;
 
-    compress_repeated_indices(&nmode_A, &idx_A, &extents_A, &strides_A);
-    compress_repeated_indices(&nmode_B, &idx_B, &extents_B, &strides_B);
-    compress_repeated_indices(&nmode_C, &idx_C, &extents_C, &strides_C);
-    compress_repeated_indices(&nmode_D, &idx_D, &extents_D, &strides_D);
+    intptr_t* exec_ptr= &exec; //pointer to intptr_t (TAPP_executor)
+    int* exec_int_ptr = (int*) *exec_ptr;//dereference to get the int pointer
 
-    int64_t* idx_binary_contractions = NULL;
-    int binary_contractions = extract_binary_contractions_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, &idx_binary_contractions);
-
-    int64_t* extents_binary_contractions = NULL;
-    extract_extents(binary_contractions, idx_binary_contractions, nmode_A, idx_A, extents_A, &extents_binary_contractions);
-
-    int size_binary_contractions = calculate_size(extents_binary_contractions, binary_contractions);
-
-    int64_t* idx_unary_contractions_A = NULL;
-    int unary_contractions_A = extract_unary_contracted_indices(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D, &idx_unary_contractions_A);
-
-    int64_t* extents_unary_contractions_A = NULL;
-    extract_extents(unary_contractions_A, idx_unary_contractions_A, nmode_A, idx_A, extents_A, &extents_unary_contractions_A);
-
-    int size_unary_contractions_A = calculate_size(extents_unary_contractions_A, unary_contractions_A);
-
-    int64_t* idx_unary_contractions_B = NULL;
-    int unary_contractions_B = extract_unary_contracted_indices(nmode_B, idx_B, nmode_A, idx_A, nmode_D, idx_D, &idx_unary_contractions_B);
-    
-    int64_t* extents_unary_contractions_B = NULL;
-    extract_extents(unary_contractions_B, idx_unary_contractions_B, nmode_B, idx_B, extents_B, &extents_unary_contractions_B);
-
-    int size_unary_contractions_B = calculate_size(extents_unary_contractions_B, unary_contractions_B);
-
-    int64_t* strides_free_A = NULL;
-    extract_free_strides(nmode_A, idx_A, strides_A, nmode_D, idx_D, &strides_free_A);
-
-    int64_t* strides_binary_contractions_A = NULL;
-    extract_contracted_strides(nmode_A, idx_A, strides_A, binary_contractions, idx_binary_contractions, &strides_binary_contractions_A);
-    
-    int64_t* strides_unary_contractions_A = NULL;
-    extract_contracted_strides(nmode_A, idx_A, strides_A, unary_contractions_A, idx_unary_contractions_A, &strides_unary_contractions_A);
-    
-    int64_t* strides_free_B = NULL;
-    extract_free_strides(nmode_B, idx_B, strides_B, nmode_D, idx_D, &strides_free_B);
-
-    int64_t* strides_binary_contractions_B = NULL;
-    extract_contracted_strides(nmode_B, idx_B, strides_B, binary_contractions, idx_binary_contractions, &strides_binary_contractions_B);
-    
-    int64_t* strides_unary_contractions_B = NULL;
-    extract_contracted_strides(nmode_B, idx_B, strides_B, unary_contractions_B, idx_unary_contractions_B, &strides_unary_contractions_B);
-
-    int64_t* coordinates_free = malloc(nmode_D * sizeof(int64_t));
-    zero_array(coordinates_free, nmode_D);
-
-    int64_t* coordinates_binary_contractions = malloc(binary_contractions * sizeof(int64_t));
-    zero_array(coordinates_binary_contractions, binary_contractions);
-
-    int64_t* coordinates_unary_contractions_A = malloc(unary_contractions_A * sizeof(int64_t));
-    zero_array(coordinates_unary_contractions_A, unary_contractions_A);
-    
-    int64_t* coordinates_unary_contractions_B = malloc(unary_contractions_B * sizeof(int64_t));
-    zero_array(coordinates_unary_contractions_B, unary_contractions_B);
-
-    int64_t size_free = calculate_size(extents_D, nmode_D);
-
-    void* accum = alloc_accum(prec, type_D);
-    void* sum_A = alloc_val(prec, type_A);
-    void* sum_B = alloc_val(prec, type_B);
-    void* val_C = alloc_val(prec, type_C);
-    void* prec_alpha = create_prec_scalar(alpha, type_D, prec);
-    void* prec_beta = create_prec_scalar(beta, type_D, prec);
-
-    bool is_complex_A = is_complex(type_A);
-    bool is_complex_B = is_complex(type_B);
-    bool is_complex_C = is_complex(type_C);
-    bool is_complex_D = is_complex(type_D);
-
-    for (int i = 0; i < size_free; i++)
-    {
-        int index_free_A = 0; // Index calculated from free indices of A
-        int index_free_B = 0; // Index calculated from free indices of B
-        int index_C = 0;
-        int index_D = 0;
-        for (int j = 0; j < nmode_D; j++)
-        {
-            index_free_A += coordinates_free[j] * strides_free_A[j];
-            index_free_B += coordinates_free[j] * strides_free_B[j];
-            index_C += coordinates_free[j] * strides_C[j];
-            index_D += coordinates_free[j] * strides_D[j];
-        }
-        float val_zero = 0;
-        if (!is_equal(beta, type_D, &val_zero, TAPP_F32))
-        {
-            get_val(val_C, C, index_C, type_C, prec);
-            calculate_beta_C(prec_beta, type_D, is_complex_D, val_C, type_C, is_complex_C, op_C, prec, accum, type_D, is_complex_D);
-        }
-        else
-        {
-            zero_accum(accum, prec, type_D, is_complex_D);
-        }
-        for (int j = 0; j < size_binary_contractions; j++)
-        {
-            int index_binary_contractions_A = index_free_A;
-            int index_binary_contractions_B = index_free_B;
-            for (int k = 0; k < binary_contractions; k++)
-            {
-                index_binary_contractions_A += coordinates_binary_contractions[k] * strides_binary_contractions_A[k];
-                index_binary_contractions_B += coordinates_binary_contractions[k] * strides_binary_contractions_B[k];
-            }
-            zero_sum(sum_A, prec, type_A, is_complex_A);
-            for (int k = 0; k < size_unary_contractions_A; k++)
-            {
-                int index_unary_contractions_A = index_binary_contractions_A;
-                for (int l = 0; l < unary_contractions_A; l++)
-                {
-                    index_unary_contractions_A += coordinates_unary_contractions_A[l] * strides_unary_contractions_A[l];
-                }
-                sum_unary_contractions(sum_A, A, index_unary_contractions_A, op_A, type_A, prec);
-                increment_coordinates(coordinates_unary_contractions_A, unary_contractions_A, extents_unary_contractions_A);
-            }
-            zero_sum(sum_B, prec, type_B, is_complex_A);
-            for (int k = 0; k < size_unary_contractions_B; k++)
-            {
-                int index_unary_contractions_B = index_binary_contractions_B;
-                for (int l = 0; l < unary_contractions_B; l++)
-                {
-                    index_unary_contractions_B += coordinates_unary_contractions_B[l] * strides_unary_contractions_B[l];
-                }
-                sum_unary_contractions(sum_B, B, index_unary_contractions_B, op_B, type_B, prec);
-                increment_coordinates(coordinates_unary_contractions_B, unary_contractions_B, extents_unary_contractions_B);
-            }
-            
-            calculate_alpha_A_B(prec_alpha, type_D, is_complex_D, sum_A, type_A, is_complex_A, sum_B, type_B, is_complex_B, prec, accum, type_D, is_complex_D);
-            increment_coordinates(coordinates_binary_contractions, binary_contractions, extents_binary_contractions);
-        }
-        calculate_op_D(accum, type_D, op_D, prec);
-        assign_D(D, type_D, index_D, accum, prec);
-        increment_coordinates(coordinates_free, nmode_D, extents_D);
+    void* E_ = D;
+    if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+      size_D = calculate_size(extents_D, nmode_D);
+      int64_t in_bytes;
+      switch (type_D) { // tapp_datatype
+      case TAPP_F32:
+        in_bytes = (size_D)*(sizeof(float));
+        break;
+      case TAPP_F64:
+        in_bytes = (size_D)*(sizeof(double));
+        break;
+      case TAPP_C32:
+        in_bytes = (size_D)*(sizeof(float complex));
+        break;
+      case TAPP_C64:
+        in_bytes = (size_D)*(sizeof(double complex));
+        break;
+      } 
+      E_ = malloc((size_t)in_bytes);
+      memcpy(E_, D, (size_t)in_bytes);
+     
     }
 
-    free(accum);
-    free(sum_A);
-    free(sum_B);
-    free(val_C);
-    free(prec_alpha);
-    free(prec_beta);
+    if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+      // if((*exec_int_ptr) == 2) printf("tapp used2 \n");
+ 
+#ifdef HAS_TBLIS
+      bind_tblis_execute_product(nmode_A, extents_A, strides_A, A, op_A, idx_A,
+                       nmode_B, extents_B, strides_B, B, op_B, idx_B,
+                       nmode_C, extents_C, strides_C, C, op_C, idx_D,
+                       nmode_D, extents_D, strides_D, E_, op_D, idx_D,
+                       alpha, beta, type_D);
+#endif 
+    }
+     
+    if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+      // if((*exec_int_ptr) == 1) printf("tapp used1 \n");
+      compress_repeated_indices(&nmode_A, &idx_A, &extents_A, &strides_A);
+      compress_repeated_indices(&nmode_B, &idx_B, &extents_B, &strides_B);
+      compress_repeated_indices(&nmode_C, &idx_C, &extents_C, &strides_C);
+      compress_repeated_indices(&nmode_D, &idx_D, &extents_D, &strides_D);
+
+      int64_t* idx_binary_contractions = NULL;
+      int binary_contractions = extract_binary_contractions_indices(nmode_A, nmode_B, nmode_D, idx_A, idx_B, idx_D, &idx_binary_contractions);
+
+      int64_t* extents_binary_contractions = NULL;
+      extract_extents(binary_contractions, idx_binary_contractions, nmode_A, idx_A, extents_A, &extents_binary_contractions);
+
+      int size_binary_contractions = calculate_size(extents_binary_contractions, binary_contractions);
+
+      int64_t* idx_unary_contractions_A = NULL;
+      int unary_contractions_A = extract_unary_contracted_indices(nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D, &idx_unary_contractions_A);
+
+      int64_t* extents_unary_contractions_A = NULL;
+      extract_extents(unary_contractions_A, idx_unary_contractions_A, nmode_A, idx_A, extents_A, &extents_unary_contractions_A);
+
+      int size_unary_contractions_A = calculate_size(extents_unary_contractions_A, unary_contractions_A);
+
+      int64_t* idx_unary_contractions_B = NULL;
+      int unary_contractions_B = extract_unary_contracted_indices(nmode_B, idx_B, nmode_A, idx_A, nmode_D, idx_D, &idx_unary_contractions_B);
+      
+      int64_t* extents_unary_contractions_B = NULL;
+      extract_extents(unary_contractions_B, idx_unary_contractions_B, nmode_B, idx_B, extents_B, &extents_unary_contractions_B);
+
+      int size_unary_contractions_B = calculate_size(extents_unary_contractions_B, unary_contractions_B);
+
+      int64_t* strides_free_A = NULL;
+      extract_free_strides(nmode_A, idx_A, strides_A, nmode_D, idx_D, &strides_free_A);
+
+      int64_t* strides_binary_contractions_A = NULL;
+      extract_contracted_strides(nmode_A, idx_A, strides_A, binary_contractions, idx_binary_contractions, &strides_binary_contractions_A);
+      
+      int64_t* strides_unary_contractions_A = NULL;
+      extract_contracted_strides(nmode_A, idx_A, strides_A, unary_contractions_A, idx_unary_contractions_A, &strides_unary_contractions_A);
+      
+      int64_t* strides_free_B = NULL;
+      extract_free_strides(nmode_B, idx_B, strides_B, nmode_D, idx_D, &strides_free_B);
+
+      int64_t* strides_binary_contractions_B = NULL;
+      extract_contracted_strides(nmode_B, idx_B, strides_B, binary_contractions, idx_binary_contractions, &strides_binary_contractions_B);
+      
+      int64_t* strides_unary_contractions_B = NULL;
+      extract_contracted_strides(nmode_B, idx_B, strides_B, unary_contractions_B, idx_unary_contractions_B, &strides_unary_contractions_B);
+
+      int64_t* coordinates_free = malloc(nmode_D * sizeof(int64_t));
+      zero_array(coordinates_free, nmode_D);
+
+      int64_t* coordinates_binary_contractions = malloc(binary_contractions * sizeof(int64_t));
+      zero_array(coordinates_binary_contractions, binary_contractions);
+
+      int64_t* coordinates_unary_contractions_A = malloc(unary_contractions_A * sizeof(int64_t));
+      zero_array(coordinates_unary_contractions_A, unary_contractions_A);
+      
+      int64_t* coordinates_unary_contractions_B = malloc(unary_contractions_B * sizeof(int64_t));
+      zero_array(coordinates_unary_contractions_B, unary_contractions_B);
+
+      int64_t size_free = calculate_size(extents_D, nmode_D);
+
+      void* accum = alloc_accum(prec, type_D);
+      void* sum_A = alloc_val(prec, type_A);
+      void* sum_B = alloc_val(prec, type_B);
+      void* val_C = alloc_val(prec, type_C);
+      void* prec_alpha = create_prec_scalar(alpha, type_D, prec);
+      void* prec_beta = create_prec_scalar(beta, type_D, prec);
+
+      bool is_complex_A = is_complex(type_A);
+      bool is_complex_B = is_complex(type_B);
+      bool is_complex_C = is_complex(type_C);
+      bool is_complex_D = is_complex(type_D);
+
+      for (int i = 0; i < size_free; i++)
+      {
+          int index_free_A = 0; // Index calculated from free indices of A
+          int index_free_B = 0; // Index calculated from free indices of B
+          int index_C = 0;
+          int index_D = 0;
+          for (int j = 0; j < nmode_D; j++)
+          {
+              index_free_A += coordinates_free[j] * strides_free_A[j];
+              index_free_B += coordinates_free[j] * strides_free_B[j];
+              index_C += coordinates_free[j] * strides_C[j];
+              index_D += coordinates_free[j] * strides_D[j];
+          }
+          float val_zero = 0;
+          if (!is_equal(beta, type_D, &val_zero, TAPP_F32))
+          {
+              get_val(val_C, C, index_C, type_C, prec);
+              calculate_beta_C(prec_beta, type_D, is_complex_D, val_C, type_C, is_complex_C, op_C, prec, accum, type_D, is_complex_D);
+          }
+          else
+          {
+              zero_accum(accum, prec, type_D, is_complex_D);
+          }
+          for (int j = 0; j < size_binary_contractions; j++)
+          {
+              int index_binary_contractions_A = index_free_A;
+              int index_binary_contractions_B = index_free_B;
+              for (int k = 0; k < binary_contractions; k++)
+              {
+                  index_binary_contractions_A += coordinates_binary_contractions[k] * strides_binary_contractions_A[k];
+                  index_binary_contractions_B += coordinates_binary_contractions[k] * strides_binary_contractions_B[k];
+              }
+              zero_sum(sum_A, prec, type_A, is_complex_A);
+              for (int k = 0; k < size_unary_contractions_A; k++)
+              {
+                  int index_unary_contractions_A = index_binary_contractions_A;
+                  for (int l = 0; l < unary_contractions_A; l++)
+                  {
+                      index_unary_contractions_A += coordinates_unary_contractions_A[l] * strides_unary_contractions_A[l];
+                  }
+                  sum_unary_contractions(sum_A, A, index_unary_contractions_A, op_A, type_A, prec);
+                  increment_coordinates(coordinates_unary_contractions_A, unary_contractions_A, extents_unary_contractions_A);
+              }
+              zero_sum(sum_B, prec, type_B, is_complex_A);
+              for (int k = 0; k < size_unary_contractions_B; k++)
+              {
+                  int index_unary_contractions_B = index_binary_contractions_B;
+                  for (int l = 0; l < unary_contractions_B; l++)
+                  {
+                      index_unary_contractions_B += coordinates_unary_contractions_B[l] * strides_unary_contractions_B[l];
+                  }
+                  sum_unary_contractions(sum_B, B, index_unary_contractions_B, op_B, type_B, prec);
+                  increment_coordinates(coordinates_unary_contractions_B, unary_contractions_B, extents_unary_contractions_B);
+              }
+              
+              calculate_alpha_A_B(prec_alpha, type_D, is_complex_D, sum_A, type_A, is_complex_A, sum_B, type_B, is_complex_B, prec, accum, type_D, is_complex_D);
+              increment_coordinates(coordinates_binary_contractions, binary_contractions, extents_binary_contractions);
+          }
+          calculate_op_D(accum, type_D, op_D, prec);
+          assign_D(D, type_D, index_D, accum, prec);
+          increment_coordinates(coordinates_free, nmode_D, extents_D);
+      }
+      free(accum);
+      free(sum_A);
+      free(sum_B);
+      free(val_C);
+      free(prec_alpha);
+      free(prec_beta);
+      free(idx_binary_contractions);
+      free(extents_binary_contractions);
+      free(strides_free_A);
+      free(strides_binary_contractions_A);
+      free(strides_unary_contractions_A);
+      free(idx_unary_contractions_A);
+      free(strides_free_B);
+      free(strides_binary_contractions_B);
+      free(strides_unary_contractions_B);
+      free(idx_unary_contractions_B);
+      free(coordinates_free);
+      free(coordinates_binary_contractions);
+      free(extents_unary_contractions_A);
+      free(extents_unary_contractions_B);
+      free(coordinates_unary_contractions_A);
+      free(coordinates_unary_contractions_B);
+    }
+
+    bool comp_ = true;
+    if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+#ifdef HAS_TBLIS
+      comp_ = compare_tensors_(D, E_, (int64_t)size_D, type_D);
+#endif
+      if(!comp_){
+        printf("A: \n");
+        print_tensor_(nmode_A, extents_A, strides_A, A, type_D);
+        printf("B: \n");
+        print_tensor_(nmode_B, extents_B, strides_B, B, type_D);
+        printf("C: \n");
+        print_tensor_(nmode_C, extents_C, strides_C, C, type_D);
+        printf("D: \n");
+        print_tensor_(nmode_D, extents_D, strides_D, D, type_D);
+        printf("E_: \n");
+        print_tensor_(nmode_D, extents_D, strides_D, E_, type_D);
+        printf("alpha: \n");
+        print_tensor_(0, extents_D, strides_D, alpha, type_D);
+        printf("beta: \n");
+        print_tensor_(0, extents_D, strides_D, beta, type_D);
+        printf("size_D: %d \n", (int)size_D);
+        printf("nmode_D: %d \n", nmode_D);
+      } 
+      free(E_);
+    }
+
     free(idx_A);
     free(idx_B);
     free(idx_C);
     free(idx_D);
     free(extents_A);
-    free(strides_A);
     free(extents_B);
-    free(strides_B);
     free(extents_C);
-    free(strides_C);
     free(extents_D);
+    free(strides_A);
+    free(strides_B);
+    free(strides_C);
     free(strides_D);
-    free(idx_binary_contractions);
-    free(extents_binary_contractions);
-    free(strides_free_A);
-    free(strides_binary_contractions_A);
-    free(strides_unary_contractions_A);
-    free(idx_unary_contractions_A);
-    free(strides_free_B);
-    free(strides_binary_contractions_B);
-    free(strides_unary_contractions_B);
-    free(idx_unary_contractions_B);
-    free(coordinates_free);
-    free(coordinates_binary_contractions);
-    free(extents_unary_contractions_A);
-    free(extents_unary_contractions_B);
-    free(coordinates_unary_contractions_A);
-    free(coordinates_unary_contractions_B);
+
+    if(!comp_) return 137;
     return 0;
+}
+
+void print_tensor_(int nmode, int64_t* extents, int64_t* strides, void* data_, TAPP_datatype type) {
+    
+    int64_t* coords;
+    if(nmode > 0) coords = malloc(nmode * sizeof(int64_t));
+    else {
+      printf("scalar");
+    }
+    int64_t size = 1;
+    for (size_t i = 0; i < nmode; i++)
+    {
+        coords[i] = 0;
+        size *= extents[i];
+    }
+    printf("\t");
+    for (size_t i = 0; i < size; i++)
+    {
+        int64_t index = 0;
+        for (size_t i = 0; i < nmode; i++)
+        {
+            index += coords[i] * strides[i];
+        }
+        switch (type) { // tapp_datatype
+          case TAPP_F32:
+            float* datas = (float*) data_;
+            printf("%.3f", datas[index]);
+            break;
+          case TAPP_F64:
+            double* datad = (double*) data_;
+            printf("%.3f", datad[index]);
+            break;
+          case TAPP_C32:
+            float complex* datac = (float complex*) data_;
+            printf("%.3f+%.3fi", crealf(datac[index]), cimagf(datac[index]));
+            break;
+          case TAPP_C64:
+            double complex* dataz = (double complex*) data_;
+            printf("%.3f+%.3fi", creal(dataz[index]), cimag(dataz[index]));
+            break;
+        } 
+
+        if (nmode <= 0) continue;
+        
+        int k = 0;
+        do
+        {
+            if (k != 0) {
+                printf("\n");
+                if (i < size - 1) {
+                    printf("\t");
+                }
+            }
+            else {
+                printf(" ");
+            }
+            coords[k] = (coords[k] + 1) % extents[k];
+            k++;
+        } while (coords[k - 1] == 0 && k < nmode);
+    }
+
+    if(nmode > 0) free(coords);
+    else printf("\n");
 }
 
 int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr)
@@ -716,6 +855,15 @@ int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* t
 {
     float val_zero = 0;
     return tensor == NULL && !is_equal(scalar, type, &val_zero, TAPP_F32) ? error_code : 0;
+}
+
+int check_executor_existence(TAPP_executor exec, int error_code)
+{
+    if(!exec) return error_code;
+    intptr_t* exec_ptr= &exec; //pointer to intptr_t (TAPP_executor)
+    int* eip = (int*) *exec_ptr;//dereference to get the int pointer
+    if((*eip) == 1 || (*eip) == 2 ||  (*eip) == 12) return 0; 
+    return error_code; // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
 }
 
 void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right)

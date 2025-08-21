@@ -11,7 +11,7 @@ import os.path
 import platform
 from datetime import datetime
 
-tapp_so = "/home/niklas/Documents/Tensor_Product/Tensor_Product/lib/tapp.so"
+tapp_so = "/lustre/orion/chp109/world-shared/Tensor_Product/lib/libtapp.so"
 
 TAPP_create_tensor_product = CDLL(tapp_so).TAPP_create_tensor_product
 TAPP_create_tensor_product.restype = c_int
