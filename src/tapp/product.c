@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAS_TBLIS
+#ifdef ENABLE_TBLIS
 #include "tblis_bind.h"
 #endif
 
@@ -241,7 +241,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
       // if((*exec_int_ptr) == 2) printf("tapp used2 \n");
  
-#ifdef HAS_TBLIS
+#ifdef ENABLE_TBLIS
       bind_tblis_execute_product(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                        nmode_B, extents_B, strides_B, B, op_B, idx_B,
                        nmode_C, extents_C, strides_C, C, op_C, idx_D,
@@ -413,7 +413,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     bool comp_ = true;
     if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
-#ifdef HAS_TBLIS
+#ifdef ENABLE_TBLIS
       comp_ = compare_tensors_(D, E_, (int64_t)size_D, type_D);
 #endif
       if(!comp_){
