@@ -25,8 +25,6 @@ target_sources(
     src/tapp/status.h
     src/tapp/tensor.c
     src/tapp/product.c
-    tblis_bindings/tblis_bind.h
-    tblis_bindings/tblis_bind.cpp
   )
 
 target_include_directories(
@@ -39,7 +37,7 @@ target_include_directories(
 
   enable_testing()
 
-option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" ON)
+  option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 
 if(ENABLE_TBLIS)
 
@@ -64,21 +62,21 @@ if(ENABLE_TBLIS)
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
   )
 
-  add_library(tblis-imported SHARED IMPORTED)
+  add_library(tblis-interface INTERFACE)
+  add_dependencies(tblis-interface tblis)
+  target_include_directories(tblis-interface INTERFACE
+      "${TBLIS_INSTALL_DIR}/include"
+      "${TBLIS_INSTALL_DIR}/include/tblis"
+  )
+  set(TBLIS_LIBRARY_PATH "")
   if(WIN32)
-    set_target_properties(tblis-imported PROPERTIES
-        IMPORTED_LOCATION "${TBLIS_INSTALL_DIR}/lib/tblis.lib"
-    )
+      set(TBLIS_LIBRARY_PATH "${TBLIS_INSTALL_DIR}/lib/tblis.lib")
   else()
-    # e.g., libtblis.so (Linux) or libtblis.dylib (macOS)
-    set_target_properties(tblis-imported PROPERTIES
-        IMPORTED_LOCATION "${TBLIS_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tblis${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
+      set(TBLIS_LIBRARY_PATH "${TBLIS_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tblis${CMAKE_SHARED_LIBRARY_SUFFIX}")
   endif()
-
-  set_target_properties(tblis-imported PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES
-       "${TBLIS_INSTALL_DIR}/include;${TBLIS_INSTALL_DIR}/include/tblis" 
+  
+  target_link_libraries(tblis-interface INTERFACE
+      "${TBLIS_LIBRARY_PATH}"
   )
 
   # Ensure `tblis` is built before the demo executable.
@@ -100,7 +98,7 @@ if(ENABLE_TBLIS)
   # ----------------------------------------------------------------------------
   # interface
 
-  target_link_directories(
+  target_link_directories( # can be removed?
     tapp
     PUBLIC
       ${TBLIS_INSTALL_DIR}/lib
@@ -109,7 +107,7 @@ if(ENABLE_TBLIS)
   target_link_libraries(
     tapp
     PUBLIC
-      tblis-imported
+      tblis-interface
   )
 
   # ----------------------------------------------------------------------------
