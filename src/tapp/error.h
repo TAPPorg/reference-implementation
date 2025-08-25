@@ -4,10 +4,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "util.h"
+
 typedef int TAPP_error;
 
 /* Return true if the error code indicates success and false otherwise. */
-bool TAPP_check_success(TAPP_error error);
+TAPP_EXPORT bool TAPP_check_success(TAPP_error error);
 
 /*
  * Fill a user-provided buffer with an implementation-defined string explaining the error code. No more than maxlen-1
@@ -19,8 +21,8 @@ bool TAPP_check_success(TAPP_error error);
  *
  * TODO: should the null character be included in the return value?
  */
-size_t TAPP_explain_error(TAPP_error error,
-                          size_t maxlen,
-                          char* message);
+TAPP_EXPORT size_t TAPP_explain_error(TAPP_error error,
+                                      size_t maxlen,
+                                      char* message);
 
 #endif /* TAPP_ERROR_H_ */

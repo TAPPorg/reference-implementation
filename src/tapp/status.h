@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "util.h"
 #include "error.h"
 
 typedef intptr_t TAPP_status;
@@ -13,6 +14,6 @@ typedef intptr_t TAPP_status;
  * TODO: how to get data out? using attributes or separate standardized interface? implementation-defined?
  */
 
-TAPP_error TAPP_destroy_status(TAPP_status status);
+TAPP_EXPORT TAPP_error TAPP_destroy_status(TAPP_status status);
 
 #endif /* TAPP_STATUS_H_ */

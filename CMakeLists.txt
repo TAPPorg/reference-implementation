@@ -27,6 +27,14 @@ target_sources(
     src/tapp/product.c
   )
 
+set_property(
+   TARGET tapp
+   PROPERTY
+     CXX_STANDARD 20
+     CXX_STANDARD_REQUIRED YES
+     CXX_EXTENSIONS NO
+)
+
 target_include_directories(
   tapp
   PUBLIC
@@ -43,45 +51,19 @@ if(ENABLE_TBLIS)
 
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
-  include(ExternalProject)
+  include(FetchContent)
 
-  ExternalProject_Add(
+  FetchContent_Declare(
     tblis
     GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
-    GIT_TAG 4de1919
+    GIT_TAG 9b95712
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure
-                      --prefix=${TBLIS_INSTALL_DIR}
-    BUILD_COMMAND make V=1
-    INSTALL_COMMAND make install
     UPDATE_DISCONNECTED TRUE
-    LOG_CONFIGURE ON
-    LOG_BUILD ON
-    LOG_INSTALL ON
-    CMAKE_ARGS
-            -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
   )
 
-  add_library(tblis-interface INTERFACE)
-  add_dependencies(tblis-interface tblis)
-  target_include_directories(tblis-interface INTERFACE
-      "${TBLIS_INSTALL_DIR}/include"
-      "${TBLIS_INSTALL_DIR}/include/tblis"
-  )
-  set(TBLIS_LIBRARY_PATH "")
-  if(WIN32)
-      set(TBLIS_LIBRARY_PATH "${TBLIS_INSTALL_DIR}/lib/tblis.lib")
-  else()
-      set(TBLIS_LIBRARY_PATH "${TBLIS_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tblis${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  endif()
-  
-  target_link_libraries(tblis-interface INTERFACE
-      "${TBLIS_LIBRARY_PATH}"
-  )
+  FetchContent_MakeAvailable(tblis)
 
-  # Ensure `tblis` is built before the demo executable.
   target_compile_definitions(tapp PRIVATE ENABLE_TBLIS=1)
-  add_dependencies(tapp tblis)
 
   target_sources(
   tapp
@@ -107,7 +89,7 @@ if(ENABLE_TBLIS)
   target_link_libraries(
     tapp
     PUBLIC
-      tblis-interface
+      tblis-static
   )
 
   # ----------------------------------------------------------------------------
@@ -128,6 +110,13 @@ if(ENABLE_TBLIS)
       tapp
     )
 
+  set_property(
+    TARGET test++
+    PROPERTY
+      CXX_STANDARD 20
+      CXX_STANDARD_REQUIRED YES
+      CXX_EXTENSIONS NO
+  )
 
   add_test(
     NAME test++
@@ -149,6 +138,7 @@ target_sources(
    PRIVATE
      tapp # Linking to tapp provides everything needed.
   )
+
 
 add_test(
   NAME demo

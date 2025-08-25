@@ -1,6 +1,8 @@
 #ifndef TAPP_DATATYPE_H_
 #define TAPP_DATATYPE_H_
 
+#include "util.h"
+
 /*
  * Storage data types:
  *

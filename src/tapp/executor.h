@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "util.h"
 #include "error.h"
 
 typedef intptr_t TAPP_executor;
@@ -12,6 +13,6 @@ typedef intptr_t TAPP_executor;
  *       devices probably can't be enumerated until you have a handle....
  */
 
-TAPP_error TAPP_destroy_executor(TAPP_executor exec);
+TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor exec);
 
 #endif /* TAPP_HANDLE_H_ */
