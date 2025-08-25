@@ -44,7 +44,7 @@ obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp -I$(TBL)
 
 obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
-	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o -I$(INC) -I$(INC)/tapp
+	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp
 
 obj/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/tapp

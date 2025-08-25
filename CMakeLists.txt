@@ -52,7 +52,7 @@ if(ENABLE_TBLIS)
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
                       --prefix=${TBLIS_INSTALL_DIR}
-    BUILD_COMMAND make
+    BUILD_COMMAND make V=1
     INSTALL_COMMAND make install
     UPDATE_DISCONNECTED TRUE
     LOG_CONFIGURE ON
