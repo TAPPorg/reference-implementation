@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "util.h"
 #include "error.h"
 
 typedef intptr_t TAPP_handle;
@@ -18,6 +19,6 @@ typedef intptr_t TAPP_handle;
 
  //TODO: optional APIs with feature test macros
 
-TAPP_error TAPP_destroy_handle(TAPP_handle handle);
+TAPP_EXPORT TAPP_error TAPP_destroy_handle(TAPP_handle handle);
 
 #endif /* TAPP_HANDLE_H_ */
