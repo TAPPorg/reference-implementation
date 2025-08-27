@@ -57,28 +57,35 @@ obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
 	touch obj/tblis_bind.o
 endif
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  RPATH_FLAG = -Wl,-rpath,'@executable_path/../lib'
+else #linux
+  RPATH_FLAG = -Wl,-rpath,'$$ORIGIN/../lib'
+endif
+
 out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
 out/test: $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
 
 out/demo.o: $(TEST)/demo.c lib/libtapp.so
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp
 
 out/demo: $(OUT)/demo.o  lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/demo.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp
+	$(CC) $(CFLAGS) -g  $(OUT)/demo.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 out/test++: $(TEST)/test.cpp lib/libtapp.so
-	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM)
+	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
 
-UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-	SONAME = -install_name "@rpath/libtapp.so"
-else
-	SONAME = -Wl,-soname,libtapp.so
+  SONAME = -install_name "@rpath/libtapp.so"
+else #linux
+  SONAME = -Wl,-soname,libtapp.so
 endif
+
 
 ifeq ($(ENABLE_TBLIS),true)
 lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
