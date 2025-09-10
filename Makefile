@@ -24,9 +24,8 @@ endif
 ifeq ($(ENABLE_TBLIS),true)
 all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo 
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo
 endif
-
 
 folders:
 	mkdir -p obj lib out bin
@@ -70,11 +69,14 @@ out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 out/test: $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
 
-out/demo.o: $(TEST)/demo.c lib/libtapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp
+out/helpers.o: $(TEST)/helpers.c
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OUT)/helpers.o
 
-out/demo: $(OUT)/demo.o  lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/demo.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+out/demo.o: $(TEST)/demo.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+out/demo: $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 out/test++: $(TEST)/test.cpp lib/libtapp.so
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
@@ -118,4 +120,5 @@ clean:
 	rm -f out/test++
 	rm -f out/demo
 	rm -f out/demo.o
+	rm -f out/helpers.o
 	rm -f lib/libtapp.so
