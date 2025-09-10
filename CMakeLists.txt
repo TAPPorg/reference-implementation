@@ -131,6 +131,7 @@ target_sources(
   demo
   PRIVATE
     test/demo.c
+    test/helpers.c
   )
 
   target_link_libraries(
@@ -151,6 +152,7 @@ target_sources(
   driver
   PRIVATE
     test/driver.c
+    test/helpers.c
   )
 
   target_link_libraries(

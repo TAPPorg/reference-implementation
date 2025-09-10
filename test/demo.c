@@ -21,8 +21,6 @@ void chained_diff_op();
 void chained_same_op();
 void negative_str();
 void subtensors();
-void print_tensor_s(int nmode, int64_t *extents, int64_t *strides, float *data);
-void print_tensor_c(int nmode, int64_t *extents, int64_t *strides, float complex *data);
 
 int main(int argc, char const *argv[])
 {
