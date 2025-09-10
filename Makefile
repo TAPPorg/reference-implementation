@@ -13,6 +13,14 @@ OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/tapp.o, $(wildcard obj/
 CFLAGS = -fPIC
 CXXFLAGS = -fPIC
 
+ifeq ($(OS),Windows_NT) #windows
+    EXEEXT = .exe
+	LIBEXT = .lib
+else #linux/mac
+    EXEEXT =
+	LIBEXT = .so
+endif
+
 COMPILE_DEFS = 
 ifeq ($(ENABLE_TBLIS),true)
 	COMPILE_DEFS = -DENABLE_TBLIS=1
@@ -22,9 +30,9 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/driver.o out/driver
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/test.o out/test$(EXEEXT) out/test++ out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo out/driver.o out/driver
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
 endif
 
 demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
@@ -62,6 +70,8 @@ endif
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
   RPATH_FLAG = -Wl,-rpath,'@executable_path/../lib'
+else ifeq ($(OS),Windows_NT) #windows
+  RPATH_FLAG =
 else #linux
   RPATH_FLAG = -Wl,-rpath,'$$ORIGIN/../lib'
 endif
@@ -69,41 +79,43 @@ endif
 out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
-out/test: $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
+out/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test$(EXEEXT) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
 
 out/helpers.o: $(TEST)/helpers.c
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OUT)/helpers.o
 
-out/demo.o: $(TEST)/demo.c lib/libtapp.so
+out/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/demo: $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+out/demo$(EXEEXT): $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/driver.o: $(TEST)/driver.c lib/libtapp.so
+out/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OUT)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/driver: $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+out/driver$(EXEEXT): $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/test++: $(TEST)/test.cpp lib/libtapp.so
-	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
+out/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
+	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
 
 ifeq ($(UNAME_S),Darwin)
   SONAME = -install_name "@rpath/libtapp.so"
+else ifeq ($(OS),Windows_NT) #windows
+  SONAME =
 else #linux
   SONAME = -Wl,-soname,libtapp.so
 endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+lib/libtapp$(LIBEXT): $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 else
-lib/libtapp.so: $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp.so $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+lib/libtapp$(LIBEXT): $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
 endif
 
 ifeq ($(ENABLE_TBLIS),true)
@@ -124,12 +136,12 @@ clean:
 	rm -f obj/handle.o
 	rm -f obj/tapp.o
 	rm -f obj/tblis_bind.o
-	rm -f out/test
+	rm -f out/test$(EXEEXT)
 	rm -f out/test.o
-	rm -f out/test++
-	rm -f out/demo
+	rm -f out/test++$(EXEEXT)
+	rm -f out/demo$(EXEEXT)
 	rm -f out/demo.o
-	rm -f out/driver
+	rm -f out/driver$(EXEEXT)
 	rm -f out/driver.o
 	rm -f out/helpers.o
-	rm -f lib/libtapp.so
+	rm -f lib/libtapp$(LIBEXT)
