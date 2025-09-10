@@ -166,3 +166,24 @@ add_test(
   NAME driver
   COMMAND $<TARGET_FILE:driver>
   )
+
+add_executable(exercise)
+
+target_sources(
+  exercise
+  PRIVATE
+    test/exercise.c
+    test/helpers.c
+  )
+
+  target_link_libraries(
+   exercise
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
+  )
+
+
+add_test(
+  NAME exercise
+  COMMAND $<TARGET_FILE:exercise>
+  )

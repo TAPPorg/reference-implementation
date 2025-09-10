@@ -30,13 +30,14 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/test.o out/test$(EXEEXT) out/test++ out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/test.o out/test$(EXEEXT) out/test++ out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT) out/exercise.o out/exercise$(EXEEXT)
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT) out/exercise.o out/exercise$(EXEEXT)
 endif
 
 demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
 driver: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/driver.o out/driver
+exercise: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/exercise.o out/exercise
 
 folders:
 	mkdir -p obj lib out bin
@@ -97,6 +98,12 @@ out/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
 out/driver$(EXEEXT): $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
+out/exercise.o: $(TEST)/exercise.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/exercise.c -o $(OUT)/exercise.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+out/exercise: $(OUT)/exercise.o $(OUT)/helpers.o lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OUT)/exercise.o $(OUT)/helpers.o -o $(OUT)/exercise -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+
 out/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
@@ -143,5 +150,7 @@ clean:
 	rm -f out/demo.o
 	rm -f out/driver$(EXEEXT)
 	rm -f out/driver.o
+	rm -f out/exercise$(EXEEXT)
+	rm -f out/exercise.o
 	rm -f out/helpers.o
 	rm -f lib/libtapp$(LIBEXT)
