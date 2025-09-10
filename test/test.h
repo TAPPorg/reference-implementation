@@ -15,7 +15,6 @@
 #include "tblis.h"
 #pragma GCC diagnostic pop
 extern "C" {
-    #include "tapp.h"
     #include "tapp_ex_imp.h"
 }
 
