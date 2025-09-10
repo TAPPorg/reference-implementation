@@ -27,6 +27,8 @@ else
 all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo
 endif
 
+demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
+
 folders:
 	mkdir -p obj lib out bin
 
