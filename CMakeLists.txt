@@ -144,3 +144,23 @@ add_test(
   NAME demo
   COMMAND $<TARGET_FILE:demo>
   )
+
+add_executable(driver)
+
+target_sources(
+  driver
+  PRIVATE
+    test/driver.c
+  )
+
+  target_link_libraries(
+   driver
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
+  )
+
+
+add_test(
+  NAME driver
+  COMMAND $<TARGET_FILE:driver>
+  )

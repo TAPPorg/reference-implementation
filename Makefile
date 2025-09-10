@@ -22,12 +22,13 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/test.o out/test out/test++ out/demo.o out/demo out/driver.o out/driver
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo
+all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp.so out/demo.o out/demo out/driver.o out/driver
 endif
 
 demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
+driver: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/driver.o out/driver
 
 folders:
 	mkdir -p obj lib out bin
@@ -80,6 +81,12 @@ out/demo.o: $(TEST)/demo.c lib/libtapp.so
 out/demo: $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp.so
 	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
+out/driver.o: $(TEST)/driver.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OUT)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+out/driver: $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+
 out/test++: $(TEST)/test.cpp lib/libtapp.so
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++ -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
@@ -122,5 +129,7 @@ clean:
 	rm -f out/test++
 	rm -f out/demo
 	rm -f out/demo.o
+	rm -f out/driver
+	rm -f out/driver.o
 	rm -f out/helpers.o
 	rm -f lib/libtapp.so
