@@ -171,7 +171,7 @@ int main(int argc, char const *argv[])
     /* Remove */ TAPP_explain_error(error, message_len + 1, message_buff);
 
     // Print error message
-    printf(message_buff);
+    printf("%s", message_buff);
     printf("\n");
 
     // Print the output

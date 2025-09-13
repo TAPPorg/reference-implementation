@@ -128,7 +128,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 void* D)
 {
     struct plan* plan_ptr = (struct plan*)plan;
-    //TAPP_handle handle = plan_ptr->handle;
+    TAPP_handle handle = plan_ptr->handle;
 
     TAPP_element_op op_A = plan_ptr->op_A;
     TAPP_tensor_info A_info = (TAPP_tensor_info)(plan_ptr->A);
