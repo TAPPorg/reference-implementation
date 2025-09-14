@@ -92,8 +92,8 @@ $(OBJ)/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
 $(OUT)/demo$(EXEEXT): $(OBJ)/demo.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OBJ)/demo.o $(OBJ)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-$(OBJ)/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OBJ)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/driver.o: examples/driver.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/driver.c -o $(OBJ)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
 $(OUT)/driver$(EXEEXT): $(OBJ)/driver.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OBJ)/driver.o $(OBJ)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
