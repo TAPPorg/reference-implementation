@@ -30,14 +30,14 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
+all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
 else
-all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
+all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
 endif
 
 demo: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
 driver: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/driver.o $(OUT)/driver$(EXEEXT)
-exercise: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
+exercise_contraction: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
 
 folders:
 	mkdir -p obj lib out bin
@@ -98,11 +98,11 @@ $(OBJ)/driver.o: examples/driver.c lib/libtapp$(LIBEXT)
 $(OUT)/driver$(EXEEXT): $(OBJ)/driver.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OBJ)/driver.o $(OBJ)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-$(OBJ)/exercise.o: $(TEST)/exercise.c lib/libtapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/exercise.c -o $(OBJ)/exercise.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/exercise_contraction.o: examples/exercise_contraction/exercise_contraction.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_contraction/exercise_contraction.c -o $(OBJ)/exercise_contraction.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-$(OUT)/exercise$(EXEEXT): $(OBJ)/exercise.o $(OBJ)/helpers.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OBJ)/exercise.o $(OBJ)/helpers.o -o $(OUT)/exercise$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+$(OUT)/exercise_contraction$(EXEEXT): $(OBJ)/exercise_contraction.o $(OBJ)/helpers.o lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OBJ)/exercise_contraction.o $(OBJ)/helpers.o -o $(OUT)/exercise_contraction$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 $(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
@@ -150,7 +150,7 @@ clean:
 	rm -f $(OBJ)/demo.o
 	rm -f $(OUT)/driver$(EXEEXT)
 	rm -f $(OBJ)/driver.o
-	rm -f $(OUT)/exercise$(EXEEXT)
-	rm -f $(OBJ)/exercise.o
+	rm -f $(OUT)/exercise_contraction$(EXEEXT)
+	rm -f $(OBJ)/exercise_contraction.o
 	rm -f $(OBJ)/helpers.o
 	rm -f lib/libtapp$(LIBEXT)

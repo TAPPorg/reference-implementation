@@ -4,6 +4,17 @@
 #include <stdio.h>
 #include <complex.h>
 
+/*
+ * TODO:
+ *  1. Fill in the arguments for creating the tensor (Line 46).
+ *  2. Complete the function call to create the execution plan. (Line 106)
+ *  3. Fill in the arguments for the execution of the product. (Line 174)
+ *  4. Fill in arguments to fetch the error message. (198)
+ * For a complete example usage. Look at examples/driver.c
+ * Compile with: make exercise_contraction
+ * The file to run is /out/exercise_contraction(.exe for windows)
+ */
+
 int main(int argc, char const *argv[])
 {
     /*
@@ -16,40 +27,44 @@ int main(int argc, char const *argv[])
 
     // Tensor A
     // Assign the number of indices
-    /* Remove */ int nmode_A = 3;
+    int nmode_A = 3;
 
     // Assign the extents
-    /* Remove */ int64_t extents_A[3] = {4, 3, 2};
+    int64_t extents_A[3] = {4, 3, 2};
 
     // Assign the strides
-    /* Remove */ int64_t strides_A[3] = {1, 4, 12};
+    int64_t strides_A[3] = {1, 4, 12};
 
     // Declare the tensor structure variable
-    /* Remove */ TAPP_tensor_info info_A;
+    TAPP_tensor_info info_A;
 
     // Assign the structure to the variable
-    /* Remove */ TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    /* 
+     * TODO 1: Fill in the arguments for creating the tensor info.
+     * This includes: the tensor info object, datatype(float32), structure for tensor A: number of indices, extents, strides.
+     */
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
 
     // Tensor B
-    /* Remove */ int nmode_B = 3;
-    /* Remove */ int64_t extents_B[3] = {3, 2, 4};
-    /* Remove */ int64_t strides_B[3] = {1, 3, 6};
-    /* Remove */ TAPP_tensor_info info_B;
-    /* Remove */ TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    int nmode_B = 3;
+    int64_t extents_B[3] = {3, 2, 4};
+    int64_t strides_B[3] = {1, 3, 6};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
 
     // Tensor C
-    /* Remove */ int nmode_C = 2;
-    /* Remove */ int64_t extents_C[2] = {3, 3};
-    /* Remove */ int64_t strides_C[2] = {1, 3};
-    /* Remove */ TAPP_tensor_info info_C;
-    /* Remove */ TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    int nmode_C = 2;
+    int64_t extents_C[2] = {3, 3};
+    int64_t strides_C[2] = {1, 3};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
 
     // Tensor D
-    /* Remove */ int nmode_D = 2;
-    /* Remove */ int64_t extents_D[2] = {3, 3};
-    /* Remove */ int64_t strides_D[2] = {1, 3};
-    /* Remove */ TAPP_tensor_info info_D;
-    /* Remove */ TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    int nmode_D = 2;
+    int64_t extents_D[2] = {3, 3};
+    int64_t strides_D[2] = {1, 3};
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
 
     /*
@@ -63,37 +78,41 @@ int main(int argc, char const *argv[])
      */
 
     // Declare handle (no assignment)
-    /* Remove */ TAPP_handle handle;
+    TAPP_handle handle;
 
     // Initialize the precision
-    /* Remove */ TAPP_prectype prec = TAPP_DEFAULT_PREC; 
+    TAPP_prectype prec = TAPP_DEFAULT_PREC; 
 
     // Initialize the elemental operations for each of the tensors
-    /* Remove */ TAPP_element_op op_A = TAPP_IDENTITY;
-    /* Remove */ TAPP_element_op op_B = TAPP_IDENTITY;
-    /* Remove */ TAPP_element_op op_C = TAPP_IDENTITY;
-    /* Remove */ TAPP_element_op op_D = TAPP_IDENTITY;
+    TAPP_element_op op_A = TAPP_IDENTITY;
+    TAPP_element_op op_B = TAPP_IDENTITY;
+    TAPP_element_op op_C = TAPP_IDENTITY;
+    TAPP_element_op op_D = TAPP_IDENTITY;
 
     // Create ths indicies arrays for each of the tensor
-    /* Remove */ int64_t idx_A[3] = {'a', 'b', 'c'};
-    /* Remove */ int64_t idx_B[3] = {'d', 'c', 'a'};
-    /* Remove */ int64_t idx_C[2] = {'b', 'd'};
-    /* Remove */ int64_t idx_D[2] = {'b', 'd'};
+    int64_t idx_A[3] = {'a', 'b', 'c'};
+    int64_t idx_B[3] = {'d', 'c', 'a'};
+    int64_t idx_C[2] = {'b', 'd'};
+    int64_t idx_D[2] = {'b', 'd'};
 
     // Declare plan
-    /* Remove */ TAPP_tensor_product plan;
+    TAPP_tensor_product plan;
 
     // Create plan/Assign the options to the plan
-    /* Remove */ TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+    /*
+     * TODO 2: Complete the function call to create the execution plan.
+     * Fill in the plan, handle, computation information for tensor A and precision.
+     */
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare executor
-    /* Remove */ TAPP_executor exec;
+    TAPP_executor exec;
 
     // Create executor
     create_executor(&exec);
 
     // Declare status object
-    /* Remove */ TAPP_status status;
+    TAPP_status status;
 
 
     /*
@@ -148,7 +167,11 @@ int main(int argc, char const *argv[])
      */
 
     // Call the execution function
-    /* Remove */TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    /* 
+     * TODO 3: Fill in the arguments for the execution of the product.
+     * This includes: the plan, executor, status object, and the computed data: alpha, A, B, beta, C, and D.
+     */
+    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
 
     /*
@@ -156,19 +179,23 @@ int main(int argc, char const *argv[])
      */
 
     // Check if the execution was successful
-    bool success = /* Remove */ TAPP_check_success(error);
+    bool success = TAPP_check_success(error);
     
     // Print if the execution was successful
     printf(success ? "Success\n" : "Fail\n");
 
     // Get the length of the error message
-    /* Remove */ int message_len = TAPP_explain_error(error, 0, NULL);
+    int message_len = TAPP_explain_error(error, 0, NULL);
 
     // Create a buffer to hold the message + 1 character for null terminator
-    /* Remove */ char* message_buff = malloc((message_len + 1) * sizeof(char));
+    char* message_buff = malloc((message_len + 1) * sizeof(char));
 
     // Fetch error message
-    /* Remove */ TAPP_explain_error(error, message_len + 1, message_buff);
+    /* 
+     * TODO 4: Fill in arguments to fetch the error message from the error reference to the message buffer.
+     * The length is message_len + 1 to account for null-terminator
+     */
+    TAPP_explain_error(error, message_len + 1, message_buff);
 
     // Print error message
     printf("%s", message_buff);
