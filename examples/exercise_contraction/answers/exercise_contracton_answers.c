@@ -43,7 +43,7 @@ int main(int argc, char const *argv[])
      * TODO 1: Fill in the arguments for creating the tensor info.
      * This includes: the tensor info object, datatype(float32), structure for tensor A: number of indices, extents, strides.
      */
-    TAPP_create_tensor_info(, , , , );
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
 
     // Tensor B
     int nmode_B = 3;
@@ -103,7 +103,7 @@ int main(int argc, char const *argv[])
      * TODO 2: Complete the function call to create the execution plan.
      * Fill in the plan, handle, computation information for tensor A and precision.
      */
-    TAPP_create_tensor_product(, , , , , op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, );
+    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare executor
     TAPP_executor exec;
@@ -171,7 +171,7 @@ int main(int argc, char const *argv[])
      * TODO 3: Fill in the arguments for the execution of the product.
      * This includes: the plan, executor, status object, and the computed data: alpha, A, B, beta, C, and D.
      */
-    TAPP_error error = TAPP_execute_product(, , , , , , , , );
+    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
 
     /*
@@ -195,7 +195,7 @@ int main(int argc, char const *argv[])
      * TODO 4: Fill in arguments to fetch the error message from the error reference to the message buffer.
      * The length is message_len + 1 to account for null-terminator
      */
-    TAPP_explain_error(, , );
+    TAPP_explain_error(error, message_len + 1, message_buff);
 
     // Print error message
     printf("%s", message_buff);
