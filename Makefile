@@ -35,9 +35,9 @@ else
 all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
 endif
 
-demo: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
-driver: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/driver.o $(OUT)/driver$(EXEEXT)
-exercise_contraction: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
+demo: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
+driver: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT)
+exercise_contraction: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT) $(OBJ)/exercise_contraction.o $(OUT)/exercise_contraction$(EXEEXT)
 
 folders:
 	mkdir -p obj lib out bin
@@ -98,10 +98,10 @@ $(OBJ)/driver.o: examples/driver.c lib/libtapp$(LIBEXT)
 $(OUT)/driver$(EXEEXT): $(OBJ)/driver.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OBJ)/driver.o $(OBJ)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-$(OBJ)/exercise_contraction.o: examples/exercise_contraction/exercise_contraction.c lib/libtapp.so
+$(OBJ)/exercise_contraction.o: examples/exercise_contraction/exercise_contraction.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_contraction/exercise_contraction.c -o $(OBJ)/exercise_contraction.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-$(OUT)/exercise_contraction$(EXEEXT): $(OBJ)/exercise_contraction.o $(OBJ)/helpers.o lib/libtapp.so
+$(OUT)/exercise_contraction$(EXEEXT): $(OBJ)/exercise_contraction.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -g  $(OBJ)/exercise_contraction.o $(OBJ)/helpers.o -o $(OUT)/exercise_contraction$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 $(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
