@@ -30,42 +30,42 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/test.o out/test$(EXEEXT) out/test++ out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT) out/exercise.o out/exercise$(EXEEXT)
+all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT) out/exercise.o out/exercise$(EXEEXT)
+all: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o lib/libtapp$(LIBEXT) $(OBJ)/demo.o $(OUT)/demo$(EXEEXT) $(OBJ)/driver.o $(OUT)/driver$(EXEEXT) $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
 endif
 
-demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
-driver: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/driver.o out/driver
-exercise: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/exercise.o out/exercise
+demo: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
+driver: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/driver.o $(OUT)/driver$(EXEEXT)
+exercise: folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp.so $(OBJ)/exercise.o $(OUT)/exercise$(EXEEXT)
 
 folders:
 	mkdir -p obj lib out bin
 
-obj/tapp.o: obj/product.o obj/tensor.o obj/error.o obj/executor.o obj/handle.o obj/tblis_bind.o
+$(OBJ)/tapp.o: $(OBJ)/product.o $(OBJ)/tensor.o $(OBJ)/error.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o
 	ld -r $(OBJECTS) -o obj/tapp.o
 
-obj/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
+$(OBJ)/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
 
-obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
+$(OBJ)/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
 
-obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
+$(OBJ)/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp -I$(TBL)
 
-obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
+$(OBJ)/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp
 
-obj/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
+$(OBJ)/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/tapp
 
 ifeq ($(ENABLE_TBLIS),true)
-obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
+$(OBJ)/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
 	$(CXX) $(CXXFLAGS) -c -g -Wall $(TBL)/tblis_bind.cpp -o $(OBJ)/tblis_bind.o -I$(INC) -I$(INC)/tapp -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 else
-obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
-	touch obj/tblis_bind.o
+$(OBJ)/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
+	touch $(OBJ)/tblis_bind.o
 endif
 
 UNAME_S := $(shell uname -s)
@@ -77,34 +77,34 @@ else #linux
   RPATH_FLAG = -Wl,-rpath,'$$ORIGIN/../lib'
 endif
 
-out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
+$(OBJ)/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OBJ)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
-out/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test$(EXEEXT) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
+$(OUT)/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -g $(OBJ)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test$(EXEEXT) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
 
-out/helpers.o: $(TEST)/helpers.c
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OUT)/helpers.o
+$(OBJ)/helpers.o: $(TEST)/helpers.c
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OBJ)/helpers.o
 
-out/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OBJ)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/demo$(EXEEXT): $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+$(OUT)/demo$(EXEEXT): $(OBJ)/demo.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  $(OBJ)/demo.o $(OBJ)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OUT)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OBJ)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/driver$(EXEEXT): $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+$(OUT)/driver$(EXEEXT): $(OBJ)/driver.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  $(OBJ)/driver.o $(OBJ)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/exercise.o: $(TEST)/exercise.c lib/libtapp.so
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/exercise.c -o $(OUT)/exercise.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/exercise.o: $(TEST)/exercise.c lib/libtapp.so
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/exercise.c -o $(OBJ)/exercise.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/exercise: $(OUT)/exercise.o $(OUT)/helpers.o lib/libtapp.so
-	$(CC) $(CFLAGS) -g  $(OUT)/exercise.o $(OUT)/helpers.o -o $(OUT)/exercise -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+$(OUT)/exercise$(EXEEXT): $(OBJ)/exercise.o $(OBJ)/helpers.o lib/libtapp.so
+	$(CC) $(CFLAGS) -g  $(OBJ)/exercise.o $(OBJ)/helpers.o -o $(OUT)/exercise$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
+$(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
 
@@ -128,29 +128,29 @@ endif
 ifeq ($(ENABLE_TBLIS),true)
 .PHONY: test
 test:
-	out/test++
+	$(OUT)/test++$(EXEEXT)
 else
 .PHONY: test
 test:
-	out/demo
+	$(OUT)/demo$(EXEEXT)
 endif
 
 clean:
-	rm -f obj/tensor.o
-	rm -f obj/product.o
-	rm -f obj/error.o
-	rm -f obj/executor.o
-	rm -f obj/handle.o
-	rm -f obj/tapp.o
-	rm -f obj/tblis_bind.o
-	rm -f out/test$(EXEEXT)
-	rm -f out/test.o
-	rm -f out/test++$(EXEEXT)
-	rm -f out/demo$(EXEEXT)
-	rm -f out/demo.o
-	rm -f out/driver$(EXEEXT)
-	rm -f out/driver.o
-	rm -f out/exercise$(EXEEXT)
-	rm -f out/exercise.o
-	rm -f out/helpers.o
+	rm -f $(OBJ)/tensor.o
+	rm -f $(OBJ)/product.o
+	rm -f $(OBJ)/error.o
+	rm -f $(OBJ)/executor.o
+	rm -f $(OBJ)/handle.o
+	rm -f $(OBJ)/tapp.o
+	rm -f $(OBJ)/tblis_bind.o
+	rm -f $(OUT)/test$(EXEEXT)
+	rm -f $(OBJ)/test.o
+	rm -f $(OUT)/test++$(EXEEXT)
+	rm -f $(OUT)/demo$(EXEEXT)
+	rm -f $(OBJ)/demo.o
+	rm -f $(OUT)/driver$(EXEEXT)
+	rm -f $(OBJ)/driver.o
+	rm -f $(OUT)/exercise$(EXEEXT)
+	rm -f $(OBJ)/exercise.o
+	rm -f $(OBJ)/helpers.o
 	rm -f lib/libtapp$(LIBEXT)
