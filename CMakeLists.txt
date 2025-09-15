@@ -40,8 +40,10 @@ target_include_directories(
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
-  )
-
+)
+if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
+  target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
+endif()
 
   enable_testing()
 
