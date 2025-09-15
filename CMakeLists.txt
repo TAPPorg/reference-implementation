@@ -30,9 +30,9 @@ target_sources(
 set_property(
    TARGET tapp
    PROPERTY
-     CXX_STANDARD 20
-     CXX_STANDARD_REQUIRED YES
-     CXX_EXTENSIONS NO
+     C_STANDARD 99
+     C_STANDARD_REQUIRED YES
+     C_EXTENSIONS NO
 )
 
 target_include_directories(
