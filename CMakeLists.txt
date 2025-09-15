@@ -132,6 +132,7 @@ target_sources(
   PRIVATE
     test/demo.c
     test/helpers.c
+    test/helpers.h
   )
 
   target_link_libraries(
@@ -151,8 +152,15 @@ add_executable(driver)
 target_sources(
   driver
   PRIVATE
-    test/driver.c
+    examples/driver/driver.c
     test/helpers.c
+    test/helpers.h
+  )
+
+  target_include_directories(
+  driver
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
   )
 
   target_link_libraries(
@@ -167,23 +175,58 @@ add_test(
   COMMAND $<TARGET_FILE:driver>
   )
 
-add_executable(exercise)
+add_executable(exercise_contraction)
 
 target_sources(
-  exercise
+  exercise_contraction
   PRIVATE
-    test/exercise.c
+    examples/exercise_contraction/exercise_contraction.c
     test/helpers.c
+    test/helpers.h
+  )
+
+  target_include_directories(
+  exercise_contraction
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
   )
 
   target_link_libraries(
-   exercise
+   exercise_contraction
    PRIVATE
      tapp # Linking to tapp provides everything needed.
   )
 
 
 add_test(
-  NAME exercise
-  COMMAND $<TARGET_FILE:exercise>
+  NAME exercise_contraction
+  COMMAND $<TARGET_FILE:exercise_contraction>
+  )
+
+add_executable(exercise_contraction_answers)
+
+target_sources(
+  exercise_contraction_answers
+  PRIVATE
+    examples/exercise_contraction/answers/exercise_contraction_answers.c
+    test/helpers.c
+    test/helpers.h
+  )
+  
+  target_include_directories(
+  exercise_contraction_answers
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+  )
+
+  target_link_libraries(
+   exercise_contraction_answers
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
+  )
+
+
+add_test(
+  NAME exercise_contraction_answers
+  COMMAND $<TARGET_FILE:exercise_contraction_answers>
   )
