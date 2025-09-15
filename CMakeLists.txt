@@ -45,9 +45,9 @@ if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
 endif()
 
-  enable_testing()
+enable_testing()
 
-  option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 
 if(ENABLE_TBLIS)
 
