@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void print_tensor_s(int nmode, int64_t *extents, int64_t *strides, float *data)
+void print_tensor_s(int nmode, const int64_t *extents, const int64_t *strides, const float *data)
 {
     int64_t *coords = malloc(nmode * sizeof(int64_t));
     int64_t size = 1;
@@ -52,7 +52,7 @@ void print_tensor_s(int nmode, int64_t *extents, int64_t *strides, float *data)
     free(coords);
 }
 
-void print_tensor_c(int nmode, int64_t *extents, int64_t *strides, float complex *data)
+void print_tensor_c(int nmode, const int64_t *extents, const int64_t *strides, const float complex *data)
 {
     int64_t *coords = malloc(nmode * sizeof(int64_t));
     int64_t size = 1;
