@@ -9,9 +9,9 @@ import ctypes
 import os
 
 if os.name == 'nt':
-    tucker_to_tensor_contraction = ctypes.CDLL(os.path.dirname(__file__) + '/../lib/exercise2.dll').tucker_to_tensor_contraction
+    tucker_to_tensor_contraction = ctypes.CDLL(os.path.dirname(__file__) + '/../../lib/libexercise_tucker.dll').tucker_to_tensor_contraction
 else:
-    tucker_to_tensor_contraction = ctypes.CDLL(os.path.dirname(__file__) + '/../lib/exercise2.so').tucker_to_tensor_contraction
+    tucker_to_tensor_contraction = ctypes.CDLL(os.path.dirname(__file__) + '/../../lib/libexercise_tucker.so').tucker_to_tensor_contraction
 
 tucker_to_tensor_contraction.argtypes = [
     c_int, # nmode A
