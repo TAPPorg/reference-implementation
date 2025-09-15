@@ -40,6 +40,7 @@ demo: examples_folders tapp $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
 driver: examples_folders tapp examples/driver/obj/driver.o examples/driver/out/driver$(EXEEXT)
 exercise_contraction: examples_folders tapp examples/exercise_contraction/obj/exercise_contraction.o examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
 exercise_contraction_answers: examples_folders tapp examples/exercise_contraction/answers/obj/exercise_contraction_answers.o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
+exercise_tucker: examples_folders tapp lib/libexercise_tucker$(LIBEXT) $(OUT)/debug$(EXEEXT)
 
 base_folders:
 	mkdir -p obj lib out bin
@@ -118,6 +119,22 @@ examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT):
 $(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
+#$(OBJ)/exercise_tucker.o: examples/exercise_tucker/exercise_tucker.c lib/libtapp$(LIBEXT)
+#	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/exercise_tucker.c -o $(OBJ)/exercise_tucker.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
+
+ifeq ($(UNAME_S),Darwin)
+  SONAME = -install_name "@rpath/libexercise_tucker.so"
+else ifeq ($(OS),Windows_NT) #windows
+  SONAME =
+else #linux
+  SONAME = -Wl,-soname,libexercise_tucker.so
+endif
+
+lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/exercise_tucker.c lib/libtapp$(LIBEXT)
+	$(CC) -shared -fPIC examples/exercise_tucker/exercise_tucker.c -o lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp -Wl,-rpath,'$$ORIGIN' $(RPATH_FLAG)
+
+$(OUT)/debug$(EXEEXT): examples/exercise_tucker/debug.c lib/libtapp$(LIBEXT) lib/libexercise_tucker$(LIBEXT)
+	$(CC) $(CFLAGS) -g examples/exercise_tucker/debug.c -o $(OUT)/debug$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -lexercise_tucker -Wl,-rpath,'$$ORIGIN' -ltapp $(RPATH_FLAG)
 
 ifeq ($(UNAME_S),Darwin)
   SONAME = -install_name "@rpath/libtapp.so"
@@ -165,5 +182,8 @@ clean:
 	rm -f examples/exercise_contraction/obj/exercise_contraction.o
 	rm -f examples/exercise_contraction/answers/obj/exercise_contraction_answers.o
 	rm -f examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
+	rm -f lib/libexercise2$(LIBEXT)
+	rm -f $(OBJ)/exercise2.o
 	rm -f $(OBJ)/helpers.o
 	rm -f lib/libtapp$(LIBEXT)
+	rm -f $(OBJ)/debug$(EXEEXT)
