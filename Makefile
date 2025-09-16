@@ -15,7 +15,7 @@ CXXFLAGS = -fPIC
 
 ifeq ($(OS),Windows_NT) #windows
     EXEEXT = .exe
-	LIBEXT = .lib
+	LIBEXT = .dll
 else #linux/mac
     EXEEXT =
 	LIBEXT = .so
@@ -188,6 +188,6 @@ clean:
 	rm -f examples/exercise_contraction/answers/obj/exercise_contraction_answers.o
 	rm -f examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
 	rm -f examples/exercise_tucker/obj/exercise_tucker.o
-	rm -f examples/exercise_tucker/lib/libexercise_tucker.so
+	rm -f examples/exercise_tucker/lib/libexercise_tucker$(LIBEXT)
 	rm -f $(OBJ)/helpers.o
 	rm -f lib/libtapp$(LIBEXT)
