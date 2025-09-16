@@ -187,34 +187,25 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	return D
 
 def tucker_to_tensor_tapp_helper(A, B, idx_A, idx_B, idx_D):
-    dim_map = {idx: dim for idx, dim in zip(idx_A, A.shape)}
-    dim_map.update({idx: dim for idx, dim in zip(idx_B, B.shape)})
-    print(idx_A)
-    print(idx_B)
-    print(idx_D)
-    D_shape = tuple(dim_map[idx] for idx in idx_D)
-    C = np.zeros(D_shape)
-    D = np.zeros(D_shape)
+    shape_D = [{**dict(zip(idx_A, A.shape)), **dict(zip(idx_B, B.shape))}[idx] for idx in idx_D]
+    C = np.zeros(shape_D)
+    D = np.zeros(shape_D)
     return Product(1, A, B, 0, C, D, idx_A, idx_B, idx_D, idx_D, 0, 0, 0, 0)
 
 def tucker_to_tensor_tapp(core, factors):
     ndim = core.ndim
-    subscripts = [string.ascii_lowercase]
+    core_subs = list(range(1, ndim + 1))
+    factor_subs = [[ndim+1+i, core_subs[i]] for i in range(ndim)]
+    output_subs = [[s for s in core_subs + factor_subs[0] if s not in set(core_subs) & set(factor_subs[0])]]
 
-    core_subs = subscripts[:ndim]
-    factor_subs = [f"{subscripts[ndim+i]}{core_subs[i]}" for i in range(ndim)]
-    output_subs = [''.join([s for s in core_subs + factor_subs[0] if s not in ''.join(set(core_subs) & set(factor_subs[0]))])]
-    print(core_subs)
-    print(factor_subs)
     for i in range(1, ndim):
-        output_subs = output_subs + [''.join([s for s in output_subs[i - 1] + factor_subs[i] if s not in ''.join(set(factor_subs[i]) & set(output_subs[i - 1]))])]
+        output_subs = output_subs + [[s for s in output_subs[i - 1] + factor_subs[i] if s not in set(factor_subs[i]) & set(output_subs[i - 1])]]
 
     result = tucker_to_tensor_tapp_helper(core, factors[0], list(core_subs), list(factor_subs[0]), list(output_subs[0]))
     
     for i in range(1, ndim):
         result = tucker_to_tensor_tapp_helper(result, factors[i], list(output_subs[i - 1]), list(factor_subs[i]), list(output_subs[i]))
 
-    print(result)
     return result
 
 tl.set_backend('numpy')
@@ -224,14 +215,14 @@ image_np = np.array(image) / 255.0
 
 core, factors = tucker(image_np, rank=[50, 50, 3])
 
-reconstructed = tucker_to_tensor_tapp(core, factors)
+reconstructed_tapp = tucker_to_tensor_tapp(core, factors)
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 axes[0].imshow(image_np)
 axes[0].set_title("Original")
 axes[0].axis('off')
 
-axes[1].imshow(np.clip(reconstructed, 0, 1))
+axes[1].imshow(np.clip(reconstructed_tapp, 0, 1))
 axes[1].set_title("Compressed")
 axes[1].axis('off')
 

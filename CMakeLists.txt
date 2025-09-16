@@ -230,3 +230,19 @@ add_test(
   NAME exercise_contraction_answers
   COMMAND $<TARGET_FILE:exercise_contraction_answers>
   )
+
+  add_library(exercise_tucker SHARED)
+
+target_sources(
+  exercise_tucker
+  PUBLIC
+    examples/exercise_tucker/exercise_tucker.h
+  PRIVATE
+    examples/exercise_tucker/exercise_tucker.c
+  )
+
+  target_link_libraries(
+   exercise_tucker
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
+  )

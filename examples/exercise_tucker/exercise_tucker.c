@@ -1,9 +1,9 @@
 #include "exercise_tucker.h"
 
-float* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* strides_A, float* A,
-                                    int nmode_B, int64_t* extents_B, int64_t* strides_B, float* B,
-                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, float* D,
-                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
+void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* strides_A, void* A,
+                                   int nmode_B, int64_t* extents_B, int64_t* strides_B, void* B,
+                                   int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
+                                   int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
@@ -17,19 +17,19 @@ float* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* st
 
     TAPP_tensor_info info_A; // Declare the variable that holds the tensor structure
 
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
 
     // Tensor B
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     // Tensor C
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_D, extents_D, strides_D);
 
     // Output tensor D
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
@@ -68,9 +68,9 @@ float* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* st
      * Choose data for the execution
      */
 
-    float alpha = 1; // Choose the scalar for scaling A * B
+    double alpha = 1; // Choose the scalar for scaling A * B
 
-    float beta = 0; // Choose scalar for scaling C
+    double beta = 0; // Choose scalar for scaling C
 
     /*
      * Execution 
