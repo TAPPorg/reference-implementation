@@ -50,7 +50,7 @@ void zero_sum(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex
 void zero_accum(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
 bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_datatype comp_type);
 void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
-void print_tensor_(int nmode, int64_t* extents, int64_t* strides, const void* data, TAPP_datatype type);
+void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data, TAPP_datatype type);
 
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -454,7 +454,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     return 0;
 }
 
-void print_tensor_(int nmode, int64_t* extents, int64_t* strides, const void* data_, TAPP_datatype type) {
+void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data_, TAPP_datatype type) {
     
     int64_t* coords;
     if(nmode > 0) coords = malloc(nmode * sizeof(int64_t));
@@ -476,22 +476,30 @@ void print_tensor_(int nmode, int64_t* extents, int64_t* strides, const void* da
             index += coords[i] * strides[i];
         }
         switch (type) { // tapp_datatype
-          case TAPP_F32: {
-              float* datas = (float*) data_;
-              printf("%.3f", datas[index]);
-          } break;
-          case TAPP_F64: {
-              double* datad = (double*) data_;
-              printf("%.3f", datad[index]);
-          } break;
-          case TAPP_C32: {
-              float complex* datac = (float complex*) data_;
-              printf("%.3f+%.3fi", crealf(datac[index]), cimagf(datac[index]));
-          } break;
-          case TAPP_C64: {
-              double complex* dataz = (double complex*) data_;
-              printf("%.3f+%.3fi", creal(dataz[index]), cimag(dataz[index]));
-          } break;
+          case TAPP_F32:
+          {
+            float* datas = (float*) data_;
+            printf("%.3f", datas[index]);
+            break;
+          }
+          case TAPP_F64:
+          {
+            double* datad = (double*) data_;
+            printf("%.3f", datad[index]);
+            break;
+          }
+          case TAPP_C32:
+          {
+            float complex* datac = (float complex*) data_;
+            printf("%.3f+%.3fi", crealf(datac[index]), cimagf(datac[index]));
+            break;
+          }
+          case TAPP_C64:
+          {
+            double complex* dataz = (double complex*) data_;
+            printf("%.3f+%.3fi", creal(dataz[index]), cimag(dataz[index]));
+            break;
+          }
         } 
 
         if (nmode <= 0) continue;
@@ -833,7 +841,7 @@ int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* stride
     int64_t* sorted_extents = malloc(nmode * sizeof(int64_t));
     for (size_t i = 0; i < nmode; i++)
     {
-        sorted_strides[i] = llabs(strides[i]);
+        sorted_strides[i] = labs(strides[i]);
         sorted_extents[i] = extents[i];
     }
     merge_sort_strides(sorted_strides, sorted_extents, 0, nmode - 1);

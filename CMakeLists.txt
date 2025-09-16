@@ -30,9 +30,9 @@ target_sources(
 set_property(
    TARGET tapp
    PROPERTY
-     CXX_STANDARD 20
-     CXX_STANDARD_REQUIRED YES
-     CXX_EXTENSIONS NO
+     C_STANDARD 99
+     C_STANDARD_REQUIRED YES
+     C_EXTENSIONS NO
 )
 
 target_include_directories(
@@ -40,12 +40,14 @@ target_include_directories(
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
-  )
+)
+if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
+  target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
+endif()
 
+enable_testing()
 
-  enable_testing()
-
-  option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 
 if(ENABLE_TBLIS)
 

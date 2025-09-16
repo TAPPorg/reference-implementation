@@ -160,12 +160,19 @@ else #linux
 endif
 
 
+# Conditional linking flags for macOS
+ifeq ($(UNAME_S),Darwin)
+  UNDEFINED_FLAG = -undefined dynamic_lookup
+else
+  UNDEFINED_FLAG =
+endif
+
 ifeq ($(ENABLE_TBLIS),true)
 lib/libtapp$(LIBEXT): $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(UNDEFINED_FLAG)
 else
 lib/libtapp$(LIBEXT): $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM)
+	$(CXX) -shared -fPIC $(OBJ)/tapp.o -o lib/libtapp$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(UNDEFINED_FLAG)
 endif
 
 ifeq ($(ENABLE_TBLIS),true)
