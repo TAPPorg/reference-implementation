@@ -15,7 +15,7 @@ CXXFLAGS = -fPIC
 
 ifeq ($(OS),Windows_NT) #windows
     EXEEXT = .exe
-	LIBEXT = .lib
+	LIBEXT = .dll
 else #linux/mac
     EXEEXT =
 	LIBEXT = .so
@@ -30,41 +30,60 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/test.o out/test$(EXEEXT) out/test++ out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
+all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
 else
-all: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o obj/tblis_bind.o lib/libtapp$(LIBEXT) out/demo.o out/demo$(EXEEXT) out/driver.o out/driver$(EXEEXT)
+all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
 endif
 
-demo: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/demo.o out/demo
-driver: folders obj/tapp.o obj/error.o obj/tensor.o obj/product.o obj/executor.o obj/handle.o lib/libtapp.so out/driver.o out/driver
+tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
+demo: base_folders tapp $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
+driver: driver_folders tapp examples/driver/obj/driver.o examples/driver/out/driver$(EXEEXT)
+exercise_contraction: exercise_contraction_folders tapp examples/exercise_contraction/obj/exercise_contraction.o examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
+exercise_contraction_answers: exercise_contraction_answers_folders tapp examples/exercise_contraction/answers/obj/exercise_contraction_answers.o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
+exercise_tucker: exercise_tucker_folders tapp examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT)
+exercise_tucker_answers: exercise_tucker_answers_folders tapp examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT)
 
-folders:
+base_folders:
 	mkdir -p obj lib out bin
+driver_folders:
+	mkdir -p examples/driver/obj examples/driver/out
 
-obj/tapp.o: obj/product.o obj/tensor.o obj/error.o obj/executor.o obj/handle.o obj/tblis_bind.o
+exercise_contraction_folders:
+	mkdir -p examples/exercise_contraction/obj examples/exercise_contraction/out
+
+exercise_contraction_answers_folders:
+	mkdir -p examples/exercise_contraction/answers/obj examples/exercise_contraction/answers/out
+
+exercise_tucker_folders:
+	mkdir -p examples/exercise_tucker/tapp_tucker/obj examples/exercise_tucker/tapp_tucker/lib
+
+exercise_tucker_answers_folders:
+	mkdir -p examples/exercise_tucker/tapp_tucker/answers/obj examples/exercise_tucker/tapp_tucker/answers/lib
+
+$(OBJ)/tapp.o: $(OBJ)/product.o $(OBJ)/tensor.o $(OBJ)/error.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o
 	ld -r $(OBJECTS) -o obj/tapp.o
 
-obj/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
+$(OBJ)/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
 
-obj/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
+$(OBJ)/tensor.o: $(SRC)/tapp/tensor.c $(INC)/tapp/tensor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/tensor.c -o $(OBJ)/tensor.o -I$(INC) -I$(INC)/tapp
 
-obj/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
+$(OBJ)/product.o: $(SRC)/tapp/product.c $(INC)/tapp/product.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/product.c -o $(OBJ)/product.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp -I$(TBL)
 
-obj/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
+$(OBJ)/executor.o: $(SRC)/tapp/executor.c $(INC)/tapp/executor.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/executor.c -o $(OBJ)/executor.o $(COMPILE_DEFS) -I$(INC) -I$(INC)/tapp
 
-obj/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
+$(OBJ)/handle.o: $(SRC)/tapp/handle.c $(INC)/tapp/handle.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/handle.c -o $(OBJ)/handle.o -I$(INC) -I$(INC)/tapp
 
 ifeq ($(ENABLE_TBLIS),true)
-obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
+$(OBJ)/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
 	$(CXX) $(CXXFLAGS) -c -g -Wall $(TBL)/tblis_bind.cpp -o $(OBJ)/tblis_bind.o -I$(INC) -I$(INC)/tapp -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 else
-obj/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
-	touch obj/tblis_bind.o
+$(OBJ)/tblis_bind.o: $(TBL)/tblis_bind.cpp $(TBL)/tblis_bind.h
+	touch $(OBJ)/tblis_bind.o
 endif
 
 UNAME_S := $(shell uname -s)
@@ -76,30 +95,61 @@ else #linux
   RPATH_FLAG = -Wl,-rpath,'$$ORIGIN/../lib'
 endif
 
-out/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OUT)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
+$(OBJ)/test.o: $(TEST)/test.c $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/test.c -o $(OBJ)/test.o -I$(INC) -I$(INC)/tapp -I$(TBL)
 
-out/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
-	$(CXX) -g $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test$(EXEEXT) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
+$(OUT)/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
+	$(CXX) -g $(OBJ)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o -o $(OUT)/test$(EXEEXT) -I$(INC) -I$(INC)/tapp -I$(TBL) $(TBLIS_PARAM) $(RPATH_FLAG)
 
-out/helpers.o: $(TEST)/helpers.c
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OUT)/helpers.o
+$(OBJ)/helpers.o: $(TEST)/helpers.c
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OBJ)/helpers.o
 
-out/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OUT)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+$(OBJ)/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OBJ)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/demo$(EXEEXT): $(OUT)/demo.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -g  $(OUT)/demo.o $(OUT)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+$(OUT)/demo$(EXEEXT): $(OBJ)/demo.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  $(OBJ)/demo.o $(OBJ)/helpers.o -o $(OUT)/demo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/driver.o: $(TEST)/driver.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/driver.c -o $(OUT)/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+examples/driver/obj/driver.o: examples/driver/driver.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/driver/driver.c -o examples/driver/obj/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
-out/driver$(EXEEXT): $(OUT)/driver.o $(OUT)/helpers.o lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -g  $(OUT)/driver.o $(OUT)/helpers.o -o $(OUT)/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+examples/driver/out/driver$(EXEEXT): examples/driver/obj/driver.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  examples/driver/obj/driver.o $(OBJ)/helpers.o -o examples/driver/out/driver$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
-out/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
+examples/exercise_contraction/obj/exercise_contraction.o: examples/exercise_contraction/exercise_contraction.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_contraction/exercise_contraction.c -o examples/exercise_contraction/obj/exercise_contraction.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+examples/exercise_contraction/out/exercise_contraction$(EXEEXT): examples/exercise_contraction/obj/exercise_contraction.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  examples/exercise_contraction/obj/exercise_contraction.o $(OBJ)/helpers.o -o examples/exercise_contraction/out/exercise_contraction$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+
+examples/exercise_contraction/answers/obj/exercise_contraction_answers.o: examples/exercise_contraction/answers/exercise_contraction_answers.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_contraction/answers/exercise_contraction_answers.c -o examples/exercise_contraction/answers/obj/exercise_contraction_answers.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT): examples/exercise_contraction/answers/obj/exercise_contraction_answers.o $(OBJ)/helpers.o lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -g  examples/exercise_contraction/answers/obj/exercise_contraction_answers.o $(OBJ)/helpers.o -o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+	
+$(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
+examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o: examples/exercise_tucker/tapp_tucker/exercise_tucker.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/tapp_tucker/exercise_tucker.c -o examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
+
+examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o: examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c -o examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
+
+ifeq ($(UNAME_S),Darwin)
+  SONAME = -install_name "@rpath/libexercise_tucker.so"
+else ifeq ($(OS),Windows_NT) #windows
+  SONAME =
+else #linux
+  SONAME = -Wl,-soname,libexercise_tucker.so
+endif
+
+examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o $(OBJ)/tapp.o
+	$(CC) -shared -fPIC examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o $(OBJ)/tapp.o -o examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+
+examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o
+	$(CC) -shared -fPIC examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o -o examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 ifeq ($(UNAME_S),Darwin)
   SONAME = -install_name "@rpath/libtapp.so"
@@ -128,27 +178,33 @@ endif
 ifeq ($(ENABLE_TBLIS),true)
 .PHONY: test
 test:
-	out/test++
+	$(OUT)/test++$(EXEEXT)
 else
 .PHONY: test
 test:
-	out/demo
+	$(OUT)/demo$(EXEEXT)
 endif
 
 clean:
-	rm -f obj/tensor.o
-	rm -f obj/product.o
-	rm -f obj/error.o
-	rm -f obj/executor.o
-	rm -f obj/handle.o
-	rm -f obj/tapp.o
-	rm -f obj/tblis_bind.o
-	rm -f out/test$(EXEEXT)
-	rm -f out/test.o
-	rm -f out/test++$(EXEEXT)
-	rm -f out/demo$(EXEEXT)
-	rm -f out/demo.o
-	rm -f out/driver$(EXEEXT)
-	rm -f out/driver.o
-	rm -f out/helpers.o
+	rm -f $(OBJ)/tensor.o
+	rm -f $(OBJ)/product.o
+	rm -f $(OBJ)/error.o
+	rm -f $(OBJ)/executor.o
+	rm -f $(OBJ)/handle.o
+	rm -f $(OBJ)/tapp.o
+	rm -f $(OBJ)/tblis_bind.o
+	rm -f $(OUT)/test$(EXEEXT)
+	rm -f $(OBJ)/test.o
+	rm -f $(OUT)/test++$(EXEEXT)
+	rm -f $(OUT)/demo$(EXEEXT)
+	rm -f $(OBJ)/demo.o
+	rm -f examples/driver/out/driver$(EXEEXT)
+	rm -f examples/driver/obj/driver.o
+	rm -f examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
+	rm -f examples/exercise_contraction/obj/exercise_contraction.o
+	rm -f examples/exercise_contraction/answers/obj/exercise_contraction_answers.o
+	rm -f examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
+	rm -f examples/exercise_tucker/obj/exercise_tucker.o
+	rm -f examples/exercise_tucker/lib/libexercise_tucker$(LIBEXT)
+	rm -f $(OBJ)/helpers.o
 	rm -f lib/libtapp$(LIBEXT)

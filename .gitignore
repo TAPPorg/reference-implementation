@@ -2,3 +2,14 @@
 out/*
 lib/*
 obj/*
+.venv/*
+examples/driver/out/*
+examples/driver/obj/*
+examples/exercise_contraction/out/*
+examples/exercise_contraction/obj/*
+examples/exercise_contraction/answers/out/*
+examples/exercise_contraction/answers/obj/*
+examples/exercise_tucker/tapp_tucker/obj/*
+examples/exercise_tucker/tapp_tucker/lib/*
+examples/exercise_tucker/tapp_tucker/answers/obj/*
+examples/exercise_tucker/tapp_tucker/answers/lib/*
