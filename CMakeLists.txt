@@ -236,13 +236,29 @@ add_test(
 target_sources(
   exercise_tucker
   PUBLIC
-    examples/exercise_tucker/exercise_tucker.h
+    examples/exercise_tucker/tapp_tucker/exercise_tucker.h
   PRIVATE
-    examples/exercise_tucker/exercise_tucker.c
+    examples/exercise_tucker/tapp_tucker/exercise_tucker.c
   )
 
   target_link_libraries(
    exercise_tucker
+   PRIVATE
+     tapp # Linking to tapp provides everything needed.
+  )
+
+  add_library(exercise_tucker_answers SHARED)
+
+target_sources(
+  exercise_tucker_answers
+  PUBLIC
+    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
+  PRIVATE
+    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
+  )
+
+  target_link_libraries(
+   exercise_tucker_answers
    PRIVATE
      tapp # Linking to tapp provides everything needed.
   )

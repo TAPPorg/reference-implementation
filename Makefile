@@ -30,9 +30,9 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction exercise_contraction_answers exercise_tucker
+all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
 else
-all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction exercise_contraction_answers exercise_tucker
+all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
 endif
 
 tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
@@ -40,7 +40,8 @@ demo: base_folders tapp $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
 driver: driver_folders tapp examples/driver/obj/driver.o examples/driver/out/driver$(EXEEXT)
 exercise_contraction: exercise_contraction_folders tapp examples/exercise_contraction/obj/exercise_contraction.o examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
 exercise_contraction_answers: exercise_contraction_answers_folders tapp examples/exercise_contraction/answers/obj/exercise_contraction_answers.o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
-exercise_tucker: exercise_tucker_folders tapp examples/exercise_tucker/obj/exercise_tucker.o examples/exercise_tucker/lib/libexercise_tucker$(LIBEXT)
+exercise_tucker: exercise_tucker_folders tapp examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT)
+exercise_tucker_answers: exercise_tucker_answers_folders tapp examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT)
 
 base_folders:
 	mkdir -p obj lib out bin
@@ -54,7 +55,10 @@ exercise_contraction_answers_folders:
 	mkdir -p examples/exercise_contraction/answers/obj examples/exercise_contraction/answers/out
 
 exercise_tucker_folders:
-	mkdir -p examples/exercise_tucker/obj examples/exercise_tucker/lib
+	mkdir -p examples/exercise_tucker/tapp_tucker/obj examples/exercise_tucker/tapp_tucker/lib
+
+exercise_tucker_answers_folders:
+	mkdir -p examples/exercise_tucker/tapp_tucker/answers/obj examples/exercise_tucker/tapp_tucker/answers/lib
 
 $(OBJ)/tapp.o: $(OBJ)/product.o $(OBJ)/tensor.o $(OBJ)/error.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o
 	ld -r $(OBJECTS) -o obj/tapp.o
@@ -127,8 +131,11 @@ examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT):
 $(OUT)/test++$(EXEEXT): $(TEST)/test.cpp lib/libtapp$(LIBEXT)
 	$(CXX) -g  $(TEST)/test.cpp  -o $(OUT)/test++$(EXEEXT) -Itest -I$(INC) -I$(INC)/tapp -L./lib -ltapp -I$(TBL)  $(TBLIS_PARAM) $(RPATH_FLAG)
 
-examples/exercise_tucker/obj/exercise_tucker.o: examples/exercise_tucker/exercise_tucker.c lib/libtapp$(LIBEXT)
-	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/exercise_tucker.c -o examples/exercise_tucker/obj/exercise_tucker.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
+examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o: examples/exercise_tucker/tapp_tucker/exercise_tucker.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/tapp_tucker/exercise_tucker.c -o examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
+
+examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o: examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c lib/libtapp$(LIBEXT)
+	$(CC) $(CFLAGS) -c -g -Wall examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c -o examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o -I$(INC) -I$(INC)/tapp -I$(TEST) -L./lib -ltapp $(RPATH_FLAG)
 
 ifeq ($(UNAME_S),Darwin)
   SONAME = -install_name "@rpath/libexercise_tucker.so"
@@ -138,8 +145,11 @@ else #linux
   SONAME = -Wl,-soname,libexercise_tucker.so
 endif
 
-examples/exercise_tucker/lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o
-	$(CC) -shared -fPIC examples/exercise_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o -o examples/exercise_tucker/lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o $(OBJ)/tapp.o
+	$(CC) -shared -fPIC examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o $(OBJ)/tapp.o -o examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
+
+examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT): examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o
+	$(CC) -shared -fPIC examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o $(OBJ)/tapp.o -o examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT) $(SONAME) -I$(INC) -I$(INC)/tapp -L./lib -ltapp $(RPATH_FLAG)
 
 ifeq ($(UNAME_S),Darwin)
   SONAME = -install_name "@rpath/libtapp.so"

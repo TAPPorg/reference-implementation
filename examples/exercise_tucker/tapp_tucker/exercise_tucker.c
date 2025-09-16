@@ -1,5 +1,12 @@
 #include "exercise_tucker.h"
 
+/*
+ * TODO:
+ *  1. Complete the function call for TAPP_execute_product (Line 102).
+ *  2. Complete the function call for TAPP_create_tensor_product (Line 67)
+ *  3. Complete the function call for TAPP_create_tensor_info (Line 32)
+ */
+
 void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* strides_A, void* A,
                                    int nmode_B, int64_t* extents_B, int64_t* strides_B, void* B,
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
@@ -17,7 +24,12 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
 
     TAPP_tensor_info info_A; // Declare the variable that holds the tensor structure
 
-    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    /*
+     * TODO 3: Complete the function call.
+     * Uncomment function call
+     * Add: nmode_A, extents_A, and strides_A
+     */
+    //TAPP_create_tensor_info(&info_A, TAPP_F64, , , ); // Assign the structure to the variable, including datatype
 
     // Tensor B
     TAPP_tensor_info info_B;
@@ -47,7 +59,12 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
 
     TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation 
 
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_D, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
+    /*
+     * TODO 2: Complete the function call.
+     * Uncomment function call
+     * Add: idx_A, idx_B, and ixd_D
+     */
+    //TAPP_create_tensor_product(&plan, handle, op_A, info_A, , op_B, info_B, , op_C, info_C, idx_D, op_D, info_D, , prec); // Assign the calculation options to the variable
 
     /*
      * Decide which implementation to use with a executor (not yet implemented)
@@ -76,7 +93,13 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Execution 
      */
 
-    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)NULL, (void *)D); // Execute the product with a plan, executor, status object and data, returning an error object
+    TAPP_error error;
+    /*
+     * TODO 1: Complete the function call.
+     * Uncomment function call
+     * Add: A, B, and D
+     */
+    //error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, , , (void *)&beta, (void *)NULL, ); // Execute the product with a plan, executor, status object and data, returning an error object
     /*
      * Error handling
      */

@@ -19,10 +19,10 @@ int main(int argc, char const *argv[])
 {
     /*
      * Create the tensor structures for tensor A, B, C and D.
-     * Tensor A 3 dimensional tensor with the extents 4, 3, 2, and the strides 1, 4, 12.
-     * Tensor B 3 dimensional tensor with the extents 3, 2, 4, and the strides 1, 3, 6.
-     * Tensor C 2 dimensional tensor with the extents 3, 3, and the strides 1, 3.
-     * Tensor D 2 dimensional tensor with the extents 3, 3, and the strides 1, 3.
+     * Tensor A with 3 indices, with the extents 4, 3, 2, and the strides 1, 4, 12.
+     * Tensor B with 3 indices, with the extents 3, 2, 4, and the strides 1, 3, 6.
+     * Tensor C with 2 indices, with the extents 3, 3, and the strides 1, 3.
+     * Tensor D with 2 indices, with the extents 3, 3, and the strides 1, 3.
      */
 
     // Tensor A
