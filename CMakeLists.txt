@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Install Prefix" FORCE)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output" FORCE)
-project(tapp LANGUAGES C CXX)
+project(tapp LANGUAGES C)
 
 add_library(tapp SHARED)
 
@@ -41,7 +41,7 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
 )
-if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
+if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
 endif()
 
@@ -50,6 +50,14 @@ enable_testing()
 option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 
 if(ENABLE_TBLIS)
+
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build TBLIS as part of TAPP due to missing CXX language support; ensure that the CXX compiler can be discovered")
+  endif()
 
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
@@ -72,6 +80,13 @@ if(ENABLE_TBLIS)
   PRIVATE
     tblis_bindings/tblis_bind.h
     tblis_bindings/tblis_bind.cpp
+  )
+  set_property(
+          TARGET tapp
+          PROPERTY
+          CXX_STANDARD 20
+          CXX_STANDARD_REQUIRED YES
+          CXX_EXTENSIONS NO
   )
   target_include_directories(
   tapp
