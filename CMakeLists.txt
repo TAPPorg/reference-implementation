@@ -48,6 +48,16 @@ endif()
 enable_testing()
 
 option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(ENABLE_F16 "Turn on F16 support" OFF)
+option(ENABLE_BF16 "Turn on BF16 support" OFF)
+
+if(ENABLE_F16)
+  target_compile_definitions(tapp PRIVATE ENABLE_F16=1)
+endif()
+
+if(ENABLE_BF16)
+  target_compile_definitions(tapp PRIVATE ENABLE_BF16=1)
+endif()
 
 if(ENABLE_TBLIS)
 
@@ -229,7 +239,7 @@ target_sources(
     test/helpers.c
     test/helpers.h
   )
-  
+
   target_include_directories(
   exercise_contraction_answers
   PRIVATE
