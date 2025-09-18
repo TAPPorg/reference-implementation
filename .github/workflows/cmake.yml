@@ -108,7 +108,7 @@ jobs:
       if: ${{ !matrix.valgrind }}
       working-directory: ${{github.workspace}}/build
       shell: bash
-      run: ctest
+      run: ctest --output-on-failure
 
     - name: Test (+ Valgrind)
       if: ${{ matrix.valgrind }}
