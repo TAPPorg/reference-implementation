@@ -154,11 +154,11 @@ void contraction()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void hadamard()
@@ -249,11 +249,11 @@ void hadamard()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void complex_num()
@@ -327,11 +327,11 @@ void complex_num()
 
     print_tensor_c(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void conjugate()
@@ -405,11 +405,11 @@ void conjugate()
 
     print_tensor_c(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void zero_dim()
@@ -481,11 +481,11 @@ void zero_dim()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void one_ext_contracted()
@@ -585,11 +585,11 @@ void one_ext_contracted()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void one_ext_transfered()
@@ -689,11 +689,11 @@ void one_ext_transfered()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void chained_diff_op()
@@ -818,13 +818,13 @@ void chained_diff_op()
     printf("\tOperation 2:\n");
     print_tensor_s(nmode_E, extents_E, strides_E, E);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_product(plan2);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
-    TAPP_destory_tensor_info(info_E);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_product(plan2);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_tensor_info(info_E);
 }
 
 void chained_same_op()
@@ -928,11 +928,11 @@ void chained_same_op()
     printf("\tOperation 2:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, E);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void negative_str()
@@ -1035,11 +1035,11 @@ void negative_str()
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }
 
 void subtensors()
@@ -1182,9 +1182,9 @@ void subtensors()
     int64_t super_strides_D[2] = {1, 4};
     print_tensor_s(nmode_D, super_extents_D, super_strides_D, D);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
 }

@@ -38,7 +38,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     return 0;
 }
 
-TAPP_error TAPP_destory_tensor_info(TAPP_tensor_info info) {
+TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info) {
     struct tensor_info* info_ptr = (struct tensor_info*)info;
     free(info_ptr->extents);
     free(info_ptr->strides);

@@ -106,7 +106,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     return 0;
 }
 
-TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan)
+TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
     free(((struct plan*)plan)->idx_A);
     free(((struct plan*)plan)->idx_B);
