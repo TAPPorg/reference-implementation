@@ -1674,8 +1674,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     std::complex<double>* B = (std::complex<double>*)calculate_tensor_pointer(data_B, nmode_B, extents_B, offsets_B, strides_B, sizeof(std::complex<double>));
     std::complex<double>* C = (std::complex<double>*)calculate_tensor_pointer(data_C, nmode_C, extents_C, offsets_C, strides_C, sizeof(std::complex<double>));
     std::complex<double>* D = (std::complex<double>*)calculate_tensor_pointer(data_D, nmode_D, extents_D, offsets_D, strides_D, sizeof(std::complex<double>));
-    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
-    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+    std::complex<double> zmi{1.0e-14,1.0e-14}; //+ 2I
+    std::complex<double> zma{1.0e-1,1.0e-1};
     std::complex<double> alpha = rand_z(zmi,zma);
     std::complex<double> beta = rand_z(zmi,zma);
 
@@ -1865,8 +1865,8 @@ std::complex<float>* create_tensor_data_c(int64_t size)
 
 std::complex<double>* create_tensor_data_z(int64_t size)
 {
-    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
-    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+    std::complex<double> zmi{1.0e-14,1.0e-14}; //+ 2I
+    std::complex<double> zma{1.0e-1,1.0e-1};
 
     std::complex<double>* data = new std::complex<double>[size];
     for (size_t i = 0; i < size; i++)
