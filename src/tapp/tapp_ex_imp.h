@@ -3,6 +3,10 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
+
+#ifndef TAPP_TAPP_EX_IMP_H_
+#define TAPP_TAPP_EX_IMP_H_
+
 #include "../tapp.h"
 #include <stdint.h>
 
@@ -34,3 +38,5 @@ struct plan
 
 TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec);
 TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle);
+
+#endif  // TAPP_TAPP_EX_IMP_H_
