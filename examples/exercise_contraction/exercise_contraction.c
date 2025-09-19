@@ -9,7 +9,6 @@
  *  1. Fill in the arguments for creating the tensor (Line 47).
  *  2. Complete the function call to create the execution plan. (Line 108)
  *  3. Fill in the arguments for the execution of the product. (Line 178)
- *  5. Fill in arguments to fetch the error message. (204)
  * For a complete example usage. Look at examples/driver.c
  * Compile with: make exercise_contraction
  * The file to run is /examples/exercise_contraction/out/exercise_contraction(.exe for windows)
@@ -210,7 +209,6 @@ int main(int argc, char const *argv[])
     // Print the output
     print_tensor_s(nmode_D, extents_D, strides_D, D);
     
-
     /*
      * Free data
      */
