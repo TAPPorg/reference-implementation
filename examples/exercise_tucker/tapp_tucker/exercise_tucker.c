@@ -117,10 +117,10 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Free structures
      */
 
-    TAPP_destory_tensor_product(plan); 
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_D);
 
     return D;
 }

@@ -32,9 +32,9 @@ TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture(
 									   c_int, # prec
 									   ]
 
-TAPP_destory_tensor_product = CDLL(tapp_so).TAPP_destory_tensor_product
-TAPP_destory_tensor_product.restype = c_int
-TAPP_destory_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # plan 
+TAPP_destroy_tensor_product = CDLL(tapp_so).TAPP_destroy_tensor_product
+TAPP_destroy_tensor_product.restype = c_int
+TAPP_destroy_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # plan 
 										]
 
 TAPP_execute_product = CDLL(tapp_so).TAPP_execute_product
@@ -59,7 +59,7 @@ TAPP_create_tensor_info.argtypes = [POINTER(c_int32 if platform.architecture()[0
                                     POINTER(c_int64), # strides
 									]
 
-TAPP_destroy_tensor_info = CDLL(tapp_so).TAPP_destory_tensor_info
+TAPP_destroy_tensor_info = CDLL(tapp_so).TAPP_destroy_tensor_info
 TAPP_destroy_tensor_info.restype = c_int
 TAPP_destroy_tensor_info.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # info
 									 ]
@@ -176,7 +176,7 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 
 	TAPP_destroy_handle(handle)
 	TAPP_destroy_executor(exec)
-	TAPP_destory_tensor_product(plan)
+	TAPP_destroy_tensor_product(plan)
 	TAPP_destroy_tensor_info(tensor_info_A)
 	TAPP_destroy_tensor_info(tensor_info_B)
 	TAPP_destroy_tensor_info(tensor_info_C)
