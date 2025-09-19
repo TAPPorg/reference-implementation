@@ -218,12 +218,12 @@ int main(int argc, char const *argv[])
     // Free buffer
     free(message_buff);
 
-    // Destroy structures
-    TAPP_destory_tensor_product(plan); 
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    // TODO 5: Uncomment cleanup code once done
+    // TAPP_destory_tensor_product(plan);
+    // TAPP_destory_tensor_info(info_A);
+    // TAPP_destory_tensor_info(info_B);
+    // TAPP_destory_tensor_info(info_C);
+    // TAPP_destory_tensor_info(info_D);
 
     /*
      * Expected output:
