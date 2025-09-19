@@ -48,6 +48,7 @@ endif()
 enable_testing()
 
 option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
 
 if(ENABLE_TBLIS)
 
@@ -192,19 +193,20 @@ add_test(
   COMMAND $<TARGET_FILE:driver>
   )
 
-add_executable(exercise_contraction)
-
-target_sources(
-  exercise_contraction
-  PRIVATE
-    examples/exercise_contraction/exercise_contraction.c
-    test/helpers.c
-    test/helpers.h
-  )
-
-  target_include_directories(
-  exercise_contraction
-  PRIVATE
+if(BUILD_EXERCISE)
+  add_executable(exercise_contraction)
+  
+  target_sources(
+    exercise_contraction
+    PRIVATE
+      examples/exercise_contraction/exercise_contraction.c
+      test/helpers.c
+      test/helpers.h
+    )
+  
+    target_include_directories(
+    exercise_contraction
+    PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/test
   )
 
@@ -215,10 +217,11 @@ target_sources(
   )
 
 
-add_test(
-  NAME exercise_contraction
-  COMMAND $<TARGET_FILE:exercise_contraction>
-  )
+  add_test(
+    NAME exercise_contraction
+    COMMAND $<TARGET_FILE:exercise_contraction>
+    )
+endif()
 
 add_executable(exercise_contraction_answers)
 
