@@ -120,5 +120,6 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
     return 0;
 }

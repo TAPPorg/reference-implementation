@@ -159,6 +159,7 @@ void contraction()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void hadamard()
@@ -254,6 +255,7 @@ void hadamard()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void complex_num()
@@ -332,6 +334,7 @@ void complex_num()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void conjugate()
@@ -410,6 +413,7 @@ void conjugate()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void zero_dim()
@@ -486,6 +490,7 @@ void zero_dim()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void one_ext_contracted()
@@ -590,6 +595,7 @@ void one_ext_contracted()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void one_ext_transfered()
@@ -694,6 +700,7 @@ void one_ext_transfered()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void chained_diff_op()
@@ -825,6 +832,7 @@ void chained_diff_op()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_tensor_info(info_E);
+    TAPP_destroy_executor(exec);
 }
 
 void chained_same_op()
@@ -933,6 +941,7 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void negative_str()
@@ -1040,6 +1049,7 @@ void negative_str()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
 
 void subtensors()
@@ -1187,4 +1197,5 @@ void subtensors()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
 }
