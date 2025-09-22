@@ -115,10 +115,10 @@ int main(int argc, char const *argv[])
     printf(message_buff);
     free(message_buff);
 
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     return 0;
 }

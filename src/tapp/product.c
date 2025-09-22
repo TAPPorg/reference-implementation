@@ -52,6 +52,16 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
 void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
 void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data, TAPP_datatype type);
 
+// calling realloc with size 0 is nonportable, this does the "right" thing
+// see: https://valgrind.org/docs/manual/mc-manual.html#mc-manual.reallocsizezero
+void* TAPP_realloc(void *ptr, size_t size) {
+    if (size == 0) {
+        if (ptr != NULL) free(ptr);
+        return NULL;
+    }
+    else
+        return realloc(ptr, size);
+}
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_handle handle,
@@ -106,7 +116,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     return 0;
 }
 
-TAPP_error TAPP_destory_tensor_product(TAPP_tensor_product plan)
+TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
     free(((struct plan*)plan)->idx_A);
     free(((struct plan*)plan)->idx_B);
@@ -554,7 +564,7 @@ int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, c
         idx_contraction[binary_contractions] = idx_A[i];
         binary_contractions++;
     }
-    idx_contraction = realloc(idx_contraction, binary_contractions * sizeof(int64_t)); //Reallocate for right amount
+    idx_contraction = TAPP_realloc(idx_contraction, binary_contractions * sizeof(int64_t)); //Reallocate for right amount
     *idx_contraction_ptr = idx_contraction;
     return binary_contractions;
 }
@@ -603,7 +613,7 @@ int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64
         idx_unary_contractions[unary_contractions] = idx[i];
         unary_contractions++;
     }
-    idx_unary_contractions = realloc(idx_unary_contractions, unary_contractions * sizeof(int64_t));
+    idx_unary_contractions = TAPP_realloc(idx_unary_contractions, unary_contractions * sizeof(int64_t));
     *idx_unary_contractions_ptr = idx_unary_contractions;
     return unary_contractions;
 }
@@ -987,9 +997,9 @@ void compress_repeated_indices(int* nmode, int64_t** idx, int64_t** extents, int
             new_nmode++;
         }
     }
-    new_idx = realloc(new_idx, new_nmode * sizeof(int64_t));
-    new_extents = realloc(new_extents, new_nmode * sizeof(int64_t));
-    new_strides = realloc(new_strides, new_nmode * sizeof(int64_t));
+    new_idx = TAPP_realloc(new_idx, new_nmode * sizeof(int64_t));
+    new_extents = TAPP_realloc(new_extents, new_nmode * sizeof(int64_t));
+    new_strides = TAPP_realloc(new_strides, new_nmode * sizeof(int64_t));
     free(*idx);
     free(*extents);
     free(*strides);

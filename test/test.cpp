@@ -1674,8 +1674,8 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
     std::complex<double>* B = (std::complex<double>*)calculate_tensor_pointer(data_B, nmode_B, extents_B, offsets_B, strides_B, sizeof(std::complex<double>));
     std::complex<double>* C = (std::complex<double>*)calculate_tensor_pointer(data_C, nmode_C, extents_C, offsets_C, strides_C, sizeof(std::complex<double>));
     std::complex<double>* D = (std::complex<double>*)calculate_tensor_pointer(data_D, nmode_D, extents_D, offsets_D, strides_D, sizeof(std::complex<double>));
-    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
-    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+    std::complex<double> zmi{1.0e-14,1.0e-14}; //+ 2I
+    std::complex<double> zma{1.0e-1,1.0e-1};
     std::complex<double> alpha = rand_z(zmi,zma);
     std::complex<double> beta = rand_z(zmi,zma);
 
@@ -1865,8 +1865,8 @@ std::complex<float>* create_tensor_data_c(int64_t size)
 
 std::complex<double>* create_tensor_data_z(int64_t size)
 {
-    std::complex<double> zmi = 1.0e-14 + 1.0e-14I; //+ 2I
-    std::complex<double> zma = 1.0e-1 + 1.0e-1I;
+    std::complex<double> zmi{1.0e-14,1.0e-14}; //+ 2I
+    std::complex<double> zma{1.0e-1,1.0e-1};
 
     std::complex<double>* data = new std::complex<double>[size];
     for (size_t i = 0; i < size; i++)
@@ -2364,11 +2364,11 @@ bool test_hadamard_product()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents;
     delete[] strides;
     delete[] A;
@@ -2426,11 +2426,11 @@ bool test_contraction()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2508,12 +2508,12 @@ bool test_commutativity()
     
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(planAB);
-    TAPP_destory_tensor_product(planBA);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(planAB);
+    TAPP_destroy_tensor_product(planBA);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2582,15 +2582,15 @@ bool test_permutations()
 
         rotate_indices(idx_C, nmode_C, extents_C, strides_C);
         rotate_indices(idx_D, nmode_D, extents_D, strides_D);
-        TAPP_destory_tensor_info(info_C);
-        TAPP_destory_tensor_info(info_D);
-        TAPP_destory_tensor_product(plan);
+        TAPP_destroy_tensor_info(info_C);
+        TAPP_destroy_tensor_info(info_D);
+        TAPP_destroy_tensor_product(plan);
     }
     
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2654,11 +2654,11 @@ bool test_equal_extents()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2722,11 +2722,11 @@ bool test_outer_product()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2790,11 +2790,11 @@ bool test_full_contraction()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2858,11 +2858,11 @@ bool test_zero_dim_tensor_contraction()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2926,11 +2926,11 @@ bool test_one_dim_tensor_contraction()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2994,11 +2994,11 @@ bool test_subtensor_same_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3062,11 +3062,11 @@ bool test_subtensor_lower_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3129,11 +3129,11 @@ bool test_negative_strides()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3197,11 +3197,11 @@ bool test_negative_strides_subtensor_same_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3265,11 +3265,11 @@ bool test_negative_strides_subtensor_lower_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3332,11 +3332,11 @@ bool test_mixed_strides()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3400,11 +3400,11 @@ bool test_mixed_strides_subtensor_same_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3468,11 +3468,11 @@ bool test_mixed_strides_subtensor_lower_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3536,11 +3536,11 @@ bool test_contraction_double_precision()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3609,11 +3609,11 @@ bool test_contraction_complex()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3683,11 +3683,11 @@ bool test_contraction_complex_double_precision()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3759,11 +3759,11 @@ bool test_zero_stride()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3827,11 +3827,11 @@ bool test_unique_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3895,11 +3895,11 @@ bool test_repeated_idx()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4019,11 +4019,11 @@ bool test_hadamard_and_free()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4143,11 +4143,11 @@ bool test_hadamard_and_contraction()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4226,11 +4226,11 @@ bool test_error_too_many_idx_D()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4317,11 +4317,11 @@ bool test_error_non_matching_ext()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4409,11 +4409,11 @@ bool test_error_C_other_structure()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -4470,11 +4470,11 @@ bool test_error_aliasing_within_D()
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destory_tensor_product(plan);
-    TAPP_destory_tensor_info(info_A);
-    TAPP_destory_tensor_info(info_B);
-    TAPP_destory_tensor_info(info_C);
-    TAPP_destory_tensor_info(info_D);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;

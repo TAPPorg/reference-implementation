@@ -1,6 +1,6 @@
 ENABLE_TBLIS = false
-CC = gcc
-CXX = g++
+CC = gcc-14
+CXX = g++-14
 SRC = src
 OBJ = obj
 TEST = test
@@ -30,9 +30,9 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
+all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers
 else
-all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction exercise_contraction_answers exercise_tucker exercise_tucker_answers
+all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers
 endif
 
 tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
