@@ -3164,22 +3164,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex float*)beta * *(complex float*)val_C;
+                    *(complex float*)accum = *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(float*)beta * *(complex float*)val_C;
+                    *(complex float*)accum = *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex float*)beta * *(float*)val_C;
+                    *(complex float*)accum = *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(float*)beta * *(float*)val_C;
+                    *(complex float*)accum = *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -3189,22 +3189,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex float*)beta * *(complex float*)val_C;
+                    *(float*)accum = *(complex float*)beta * *(complex float*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(float*)beta * *(complex float*)val_C;
+                    *(float*)accum = *(float*)beta * *(complex float*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex float*)beta * *(float*)val_C;
+                    *(float*)accum = *(complex float*)beta * *(float*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(float*)beta * *(float*)val_C;
+                    *(float*)accum = *(float*)beta * *(float*)val_C;
                 }
             }
         }
@@ -3216,22 +3216,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex double*)accum += *(complex double*)beta * *(complex double*)val_C;
+                    *(complex double*)accum = *(complex double*)beta * *(complex double*)val_C;
                 }
                 else
                 {
-                    *(complex double*)accum += *(double*)beta * *(complex double*)val_C;
+                    *(complex double*)accum = *(double*)beta * *(complex double*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex double*)accum += *(complex double*)beta * *(double*)val_C;
+                    *(complex double*)accum = *(complex double*)beta * *(double*)val_C;
                 }
                 else
                 {
-                    *(complex double*)accum += *(double*)beta * *(double*)val_C;
+                    *(complex double*)accum = *(double*)beta * *(double*)val_C;
                 }
             }
         }
@@ -3241,22 +3241,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(double*)accum += *(complex double*)beta * *(complex double*)val_C;
+                    *(double*)accum = *(complex double*)beta * *(complex double*)val_C;
                 }
                 else
                 {
-                    *(double*)accum += *(double*)beta * *(complex double*)val_C;
+                    *(double*)accum = *(double*)beta * *(complex double*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(double*)accum += *(complex double*)beta * *(double*)val_C;
+                    *(double*)accum = *(complex double*)beta * *(double*)val_C;
                 }
                 else
                 {
-                    *(double*)accum += *(double*)beta * *(double*)val_C;
+                    *(double*)accum = *(double*)beta * *(double*)val_C;
                 }
             }
         }
@@ -3269,22 +3269,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex _Float16*)accum = *(complex _Float16*)beta * *(complex _Float16*)val_C;
                 }
                 else
                 {
-                    *(complex _Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex _Float16*)accum = *(_Float16*)beta * *(complex _Float16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex _Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(complex _Float16*)accum = *(complex _Float16*)beta * *(_Float16*)val_C;
                 }
                 else
                 {
-                    *(complex _Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(complex _Float16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
                 }
             }
         }
@@ -3294,22 +3294,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(_Float16*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(_Float16*)accum = *(complex _Float16*)beta * *(complex _Float16*)val_C;
                 }
                 else
                 {
-                    *(_Float16*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(_Float16*)accum = *(_Float16*)beta * *(complex _Float16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(_Float16*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(_Float16*)accum = *(complex _Float16*)beta * *(_Float16*)val_C;
                 }
                 else
                 {
-                    *(_Float16*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(_Float16*)accum = *(_Float16*)beta * *(_Float16*)val_C;
                 }
             }
         }
@@ -3323,22 +3323,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum = *(complex _Float16*)beta * *(complex _Float16*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(complex float*)accum = *(_Float16*)beta * *(complex _Float16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum = *(complex _Float16*)beta * *(_Float16*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(complex float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
                 }
             }
         }
@@ -3348,22 +3348,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex _Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum = *(complex _Float16*)beta * *(complex _Float16*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(_Float16*)beta * *(complex _Float16*)val_C;
+                    *(float*)accum = *(_Float16*)beta * *(complex _Float16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex _Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum = *(complex _Float16*)beta * *(_Float16*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(_Float16*)beta * *(_Float16*)val_C;
+                    *(float*)accum = *(_Float16*)beta * *(_Float16*)val_C;
                 }
             }
         }
@@ -3377,22 +3377,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex __bf16*)beta * *(complex __bf16*)val_C;
+                    *(complex float*)accum = *(complex __bf16*)beta * *(complex __bf16*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(__bf16*)beta * *(complex __bf16*)val_C;
+                    *(complex float*)accum = *(__bf16*)beta * *(complex __bf16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(complex float*)accum += *(complex __bf16*)beta * *(__bf16*)val_C;
+                    *(complex float*)accum = *(complex __bf16*)beta * *(__bf16*)val_C;
                 }
                 else
                 {
-                    *(complex float*)accum += *(__bf16*)beta * *(__bf16*)val_C;
+                    *(complex float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
                 }
             }
         }
@@ -3402,22 +3402,22 @@ void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* v
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex __bf16*)beta * *(complex __bf16*)val_C;
+                    *(float*)accum = *(complex __bf16*)beta * *(complex __bf16*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(__bf16*)beta * *(complex __bf16*)val_C;
+                    *(float*)accum = *(__bf16*)beta * *(complex __bf16*)val_C;
                 }
             }
             else
             {
                 if (is_complex_beta)
                 {
-                    *(float*)accum += *(complex __bf16*)beta * *(__bf16*)val_C;
+                    *(float*)accum = *(complex __bf16*)beta * *(__bf16*)val_C;
                 }
                 else
                 {
-                    *(float*)accum += *(__bf16*)beta * *(__bf16*)val_C;
+                    *(float*)accum = *(__bf16*)beta * *(__bf16*)val_C;
                 }
             }
         }
