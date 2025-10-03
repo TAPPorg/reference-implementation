@@ -77,6 +77,7 @@ void contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -150,7 +151,7 @@ void contraction()
     int message_len = TAPP_explain_error(error, 0, NULL);
     char *message_buff = malloc((message_len + 1) * sizeof(char));
     TAPP_explain_error(error, message_len + 1, message_buff);
-    printf(message_buff);
+    printf("%s", message_buff);
     free(message_buff);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -161,6 +162,7 @@ void contraction()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void hadamard()
@@ -190,6 +192,7 @@ void hadamard()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -257,6 +260,7 @@ void hadamard()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void complex_num()
@@ -286,6 +290,7 @@ void complex_num()
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -336,6 +341,7 @@ void complex_num()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void conjugate()
@@ -365,6 +371,7 @@ void conjugate()
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_CONJUGATE;
@@ -415,6 +422,7 @@ void conjugate()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void zero_dim()
@@ -444,6 +452,7 @@ void zero_dim()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -492,6 +501,7 @@ void zero_dim()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void one_ext_contracted()
@@ -521,6 +531,7 @@ void one_ext_contracted()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -597,6 +608,7 @@ void one_ext_contracted()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void one_ext_transfered()
@@ -626,6 +638,7 @@ void one_ext_transfered()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_executor(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -702,6 +715,7 @@ void one_ext_transfered()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void chained_diff_op()
@@ -731,6 +745,7 @@ void chained_diff_op()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -834,6 +849,7 @@ void chained_diff_op()
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_tensor_info(info_E);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void chained_same_op()
@@ -863,6 +879,7 @@ void chained_same_op()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -943,6 +960,7 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void negative_str()
@@ -972,6 +990,7 @@ void negative_str()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -1051,6 +1070,7 @@ void negative_str()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
 
 void subtensors()
@@ -1080,6 +1100,7 @@ void subtensors()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
+    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -1199,4 +1220,5 @@ void subtensors()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 }
