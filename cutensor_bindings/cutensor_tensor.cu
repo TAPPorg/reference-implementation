@@ -22,33 +22,19 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     size_t elements = 1;
     for (int i = 0; i < nmode; ++i)
         elements *= extents[i];
-    size_t size = elements;
-    switch (translate_datatype(type))
+    tensor_info->copy_size = 1;
+    tensor_info->data_offset = 0;
+    for (int i = 0; i < nmode; i++)
     {
-    case CUTENSOR_R_32F:
-        size *= sizeof(float);
-        break;
-    case CUTENSOR_R_64F:
-        size *= sizeof(double);
-        break;
-    /*case CUTENSOR_C_32F: //TODO: Fix these types
-        size *= sizeof(complex float);
-        break;
-    case CUTENSOR_C_64F:
-        size *= sizeof(complex double);
-        break;
-    case CUTENSOR_R_16F:
-        size *= sizeof(__half);
-        break;
-    case CUTENSOR_R_16BF:
-        size *= sizeof(__nv_bfloat16);
-        break;
-    */
-    default: // TODO: Default should probably be an error
-        size *= sizeof(float); 
-        break;
+        tensor_info->copy_size += (extents[i] - 1)*strides[i];
+        if (extents[i] < 0)
+        {
+            tensor_info->data_offset += extents[i] * strides[i];
+        }
     }
-    tensor_info->size = size;
+    tensor_info->copy_size *= sizeof_datatype(type);
+    tensor_info->data_offset *= sizeof_datatype(type);
+    tensor_info->type = type;
     tensor_info->elements = elements;
     tensor_info->nmode = nmode;
     tensor_info->extents = new int64_t[nmode];
