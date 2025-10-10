@@ -49,3 +49,31 @@ cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec)
             break;
     }
 }
+
+size_t sizeof_datatype(TAPP_datatype type)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+        return sizeof(float);
+        break;
+    case TAPP_F64:
+        return sizeof(double);
+        break;
+    case TAPP_C32: 
+        return sizeof(std::complex<float>);
+        break;
+    case TAPP_C64:
+        return sizeof(std::complex<double>);
+        break;
+    /*case TAPP_F16: // Fix these datatypes
+        //return _Float16;
+        break;
+    case TAPP_BF16:
+        //return __bf16;
+        break;*/
+    default: // TODO: Default should probably be an error
+        return sizeof(float);
+        break;
+    }
+}
