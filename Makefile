@@ -7,6 +7,7 @@ TEST = test
 TBL = tblis_bindings
 OUT = out
 INC = src
+LIB = lib
 TBLIS = ../tblis
 TBLIS_PARAM = -ltblis -lm -L$(TBLIS)/lib/.libs -I$(TBLIS)/src/external/tci -I$(TBLIS)/include -I$(TBLIS)/src
 OBJECTS =$(filter-out obj/tblis_bind.o, $(filter-out obj/tapp.o, $(wildcard obj/*.o)))
@@ -37,6 +38,7 @@ endif
 
 tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
 demo: base_folders tapp $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
+cutensor: base_folders $(lib)/libcutensor_binds${LIBEXT} $(OUT)/cudemo$(EXEEXT)
 driver: driver_folders tapp examples/driver/obj/driver.o examples/driver/out/driver$(EXEEXT)
 exercise_contraction: exercise_contraction_folders tapp examples/exercise_contraction/obj/exercise_contraction.o examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
 exercise_contraction_answers: exercise_contraction_answers_folders tapp examples/exercise_contraction/answers/obj/exercise_contraction_answers.o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
@@ -60,8 +62,32 @@ exercise_tucker_folders:
 exercise_tucker_answers_folders:
 	mkdir -p examples/exercise_tucker/tapp_tucker/answers/obj examples/exercise_tucker/tapp_tucker/answers/lib
 
+$(lib)/libcutensor_binds${LIBEXT}: $(OBJ)/cutensor_binds.o
+	nvcc -Xcompiler -fPIC -shared -g $(OBJ)/cutensor_binds.o -o $(LIB)/libcutensor_binds${LIBEXT} -L/usr/lib/x86_64-linux-gnu/libcutensor/12 -I/usr/include/ -std=c++11 -lcutensor
+
+$(OBJ)/cutensor_binds.o: $(OBJ)/cutensor_datatype.o $(OBJ)/cutensor_error.o $(OBJ)/cutensor_executor.o $(OBJ)/cutensor_handle.o $(OBJ)/cutensor_product.o $(OBJ)/cutensor_tensor.o
+	ld -r $(OBJ)/cutensor_datatype.o $(OBJ)/cutensor_error.o $(OBJ)/cutensor_executor.o $(OBJ)/cutensor_handle.o $(OBJ)/cutensor_product.o $(OBJ)/cutensor_tensor.o -o $(OBJ)/cutensor_binds.o
+
+$(OBJ)/cutensor_datatype.o: cutensor_bindings/cutensor_datatype.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_datatype.cu -o $(OBJ)/cutensor_datatype.o -I/usr/include/ -std=c++11
+
+$(OBJ)/cutensor_executor.o: cutensor_bindings/cutensor_executor.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_executor.cu -o $(OBJ)/cutensor_executor.o -I/usr/include/ -std=c++11
+
+$(OBJ)/cutensor_error.o: cutensor_bindings/cutensor_error.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_error.cu -o $(OBJ)/cutensor_error.o -I/usr/include/ -std=c++11
+
+$(OBJ)/cutensor_handle.o: cutensor_bindings/cutensor_handle.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_handle.cu -o $(OBJ)/cutensor_handle.o -I/usr/include/ -std=c++11
+
+$(OBJ)/cutensor_product.o: cutensor_bindings/cutensor_product.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_product.cu -o $(OBJ)/cutensor_product.o -I/usr/include/ -std=c++11
+
+$(OBJ)/cutensor_tensor.o: cutensor_bindings/cutensor_tensor.cu
+	nvcc -Xcompiler -fPIC -c -g cutensor_bindings/cutensor_tensor.cu -o $(OBJ)/cutensor_tensor.o -I/usr/include/ -std=c++11
+
 $(OBJ)/tapp.o: $(OBJ)/product.o $(OBJ)/tensor.o $(OBJ)/error.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o
-	ld -r $(OBJECTS) -o obj/tapp.o
+	ld -r $(OBJ)/product.o $(OBJ)/tensor.o $(OBJ)/error.o $(OBJ)/executor.o $(OBJ)/handle.o $(OBJ)/tblis_bind.o -o obj/tapp.o
 
 $(OBJ)/error.o: $(SRC)/tapp/error.c $(INC)/tapp/error.h
 	$(CC) $(CFLAGS) -c -g -Wall $(SRC)/tapp/error.c -o $(OBJ)/error.o -I$(INC) -I$(INC)/tapp
@@ -103,6 +129,9 @@ $(OUT)/test$(EXEEXT): $(OUT)/test.o $(OBJ)/tapp.o $(OBJ)/tblis_bind.o
 
 $(OBJ)/helpers.o: $(TEST)/helpers.c
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/helpers.c -o $(OBJ)/helpers.o
+
+$(OUT)/cudemo$(EXEEXT): $(OBJ)/demo.o $(OBJ)/helpers.o lib/libcutensor_binds$(LIBEXT)
+	$(CC) $(CFLAGS) -g $(OBJ)/demo.o $(OBJ)/helpers.o -o $(OUT)/cudemo$(EXEEXT) -I$(INC) -I$(INC)/tapp -L./lib -lcutensor_binds $(RPATH_FLAG)
 
 $(OBJ)/demo.o: $(TEST)/demo.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo.c -o $(OBJ)/demo.o -I$(INC) -I$(INC)/tapp -I$(TEST)
