@@ -28,9 +28,10 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     std::vector<int32_t> cuidx_B = std::vector<int32_t>(idx_B, idx_B + TAPP_get_nmodes(B));
     std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + TAPP_get_nmodes(C));
     std::vector<int32_t> cuidx_D = std::vector<int32_t>(idx_D, idx_D + TAPP_get_nmodes(D));
-    cutensorOperationDescriptor_t desc;
+
+    cutensorOperationDescriptor_t contraction_desc;
     HANDLE_ERROR(cutensorCreateContraction(cuhandle, 
-                &desc,
+                &contraction_desc,
                 *((cutensor_info*)A)->desc, cuidx_A.data(), translate_operator(op_A),
                 *((cutensor_info*)B)->desc, cuidx_B.data(), translate_operator(op_B),
                 *((cutensor_info*)C)->desc, cuidx_C.data(), translate_operator(op_C),
@@ -39,7 +40,22 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     cutensorDataType_t scalarType;
     HANDLE_ERROR(cutensorOperationDescriptorGetAttribute(cuhandle,
-                desc,
+                contraction_desc,
+                CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
+                (void*)&scalarType,
+                sizeof(scalarType)));
+
+    assert(scalarType == translate_datatype(((cutensor_info*)D)->type));
+
+    cutensorOperationDescriptor_t permutation_desc;
+    HANDLE_ERROR(cutensorCreatePermutation(cuhandle,
+        &permutation_desc,
+        *((cutensor_info*)D)->desc, cuidx_D.data(), translate_operator(op_D),
+        *((cutensor_info*)D)->desc, cuidx_D.data(),
+        translate_prectype(prec)))
+
+    HANDLE_ERROR(cutensorOperationDescriptorGetAttribute(cuhandle,
+                permutation_desc,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalarType,
                 sizeof(scalarType)));
@@ -48,27 +64,35 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     const cutensorAlgo_t algo = CUTENSOR_ALGO_DEFAULT;
 
-    cutensorPlanPreference_t planPref;
+    cutensorPlanPreference_t plan_pref;
     HANDLE_ERROR(cutensorCreatePlanPreference(
                 cuhandle,
-                &planPref,
+                &plan_pref,
                 algo,
                 CUTENSOR_JIT_MODE_NONE));
 
-    uint64_t workspaceSizeEstimate = 0;
+    uint64_t workspace_size_estimate = 0;
     const cutensorWorksizePreference_t workspacePref = CUTENSOR_WORKSPACE_DEFAULT;
     cutensorEstimateWorkspaceSize(cuhandle,
-                desc,
-                planPref,
+                contraction_desc,
+                plan_pref,
                 workspacePref,
-                &workspaceSizeEstimate);
+                &workspace_size_estimate);
 
-    cuplan->plan = new cutensorPlan_t;
+    cuplan->contraction_plan = new cutensorPlan_t;
     HANDLE_ERROR(cutensorCreatePlan(cuhandle,
-                cuplan->plan,
-                desc,
-                planPref,
-                workspaceSizeEstimate));
+                cuplan->contraction_plan,
+                contraction_desc,
+                plan_pref,
+                workspace_size_estimate));
+
+    cuplan->permutation_plan = new cutensorPlan_t;
+    HANDLE_ERROR(cutensorCreatePlan(cuhandle,
+        cuplan->permutation_plan,
+        permutation_desc,
+        plan_pref,
+        workspace_size_estimate
+    ))
     cuplan->data_offset_A = ((cutensor_info*)A)->data_offset;
     cuplan->copy_size_A = ((cutensor_info*)A)->copy_size;
     cuplan->data_offset_B = ((cutensor_info*)B)->data_offset;
@@ -110,16 +134,21 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     }
     cuplan->section_size_D *= sizeof_datatype(((cutensor_info*)D)->type);
     *plan = (TAPP_tensor_product) cuplan;
-    HANDLE_ERROR(cutensorDestroyOperationDescriptor(desc));
-    cutensorDestroyPlanPreference(planPref);
+    HANDLE_ERROR(cutensorDestroyOperationDescriptor(contraction_desc));
+    HANDLE_ERROR(cutensorDestroyOperationDescriptor(permutation_desc));
+    cutensorDestroyPlanPreference(plan_pref);
     return 0; // TODO: implement cutensor error handling
 }
 
 TAPP_EXPORT TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
     cutensor_plan* cuplan = (cutensor_plan*) plan;
-    HANDLE_ERROR(cutensorDestroyPlan(*cuplan->plan));
-    delete cuplan->plan;
+    HANDLE_ERROR(cutensorDestroyPlan(*cuplan->contraction_plan));
+    delete cuplan->contraction_plan;
+    HANDLE_ERROR(cutensorDestroyPlan(*cuplan->permutation_plan));
+    delete cuplan->permutation_plan;
+    delete[] cuplan->section_strides_D;
+    delete[] cuplan->section_extents_D;
     delete cuplan;
     return 0; // TODO: implement cutensor error handling
 }
@@ -134,11 +163,12 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                             const void* C,
                                                   void* D)
 {    
-    void *A_d, *B_d, *C_d, *D_d;
+    void *A_d, *B_d, *C_d, *D_d, *E_d;
     cudaMalloc((void**)&A_d, ((cutensor_plan*)plan)->copy_size_A);
     cudaMalloc((void**)&B_d, ((cutensor_plan*)plan)->copy_size_B);
     cudaMalloc((void**)&C_d, ((cutensor_plan*)plan)->copy_size_C);
     cudaMalloc((void**)&D_d, ((cutensor_plan*)plan)->copy_size_D);
+    cudaMalloc((void**)&E_d, ((cutensor_plan*)plan)->copy_size_D);
     HANDLE_CUDA_ERROR(cudaMemcpy(A_d, (void*)((intptr_t)A + ((cutensor_plan*)plan)->data_offset_A), ((cutensor_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice));
     HANDLE_CUDA_ERROR(cudaMemcpy(B_d, (void*)((intptr_t)B + ((cutensor_plan*)plan)->data_offset_B), ((cutensor_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice));
     HANDLE_CUDA_ERROR(cudaMemcpy(C_d, (void*)((intptr_t)C + ((cutensor_plan*)plan)->data_offset_C), ((cutensor_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice));
@@ -147,34 +177,49 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     B_d = (void*)((intptr_t)B_d + ((cutensor_plan*)plan)->data_offset_B);
     C_d = (void*)((intptr_t)C_d + ((cutensor_plan*)plan)->data_offset_C);
     D_d = (void*)((intptr_t)D_d + ((cutensor_plan*)plan)->data_offset_D);
+    E_d = (void*)((intptr_t)D_d + ((cutensor_plan*)plan)->data_offset_D);
     assert(uintptr_t(A_d) % 128 == 0);
     assert(uintptr_t(B_d) % 128 == 0);
     assert(uintptr_t(C_d) % 128 == 0);
     assert(uintptr_t(D_d) % 128 == 0);
     cutensorHandle_t handle;
     cutensorCreate(&handle);
-    cutensorPlan_t* cuplan = ((cutensor_plan*) plan)->plan;
-    uint64_t actualWorkspaceSize = 0;
+    cutensorPlan_t* contraction_plan = ((cutensor_plan*) plan)->contraction_plan;
+    uint64_t contraction_actual_workspace_size = 0;
     HANDLE_ERROR(cutensorPlanGetAttribute(handle,
-                *cuplan,
+                *contraction_plan,
                 CUTENSOR_PLAN_REQUIRED_WORKSPACE,
-                &actualWorkspaceSize,
-                sizeof(actualWorkspaceSize)));
+                &contraction_actual_workspace_size,
+                sizeof(contraction_actual_workspace_size)));
 
-    void *work = nullptr;
-    if (actualWorkspaceSize > 0)
+    void *contraction_work = nullptr;
+    if (contraction_actual_workspace_size > 0)
     {
-        HANDLE_CUDA_ERROR(cudaMalloc(&work, actualWorkspaceSize));
-        assert(uintptr_t(work) % 128 == 0);
+        HANDLE_CUDA_ERROR(cudaMalloc(&contraction_work, contraction_actual_workspace_size));
+        assert(uintptr_t(contraction_work) % 128 == 0);
     }
+
+    cutensorPlan_t* permutation_plan = ((cutensor_plan*) plan)->permutation_plan;
+
+    float one_float = 1.0f; // TODO: Needs to be adjusted to the datatype of D
+
+    void* one_ptr = (void*)&one_float;
+
     cudaStream_t stream;
     HANDLE_CUDA_ERROR(cudaStreamCreate(&stream));
 
     HANDLE_ERROR(cutensorContract(handle,
-                *cuplan,
+                *contraction_plan,
                 alpha, A_d, B_d,
                 beta,  C_d, D_d, 
-                work, actualWorkspaceSize, stream));
+                contraction_work, contraction_actual_workspace_size, stream));
+
+    HANDLE_ERROR(cutensorPermute(handle,
+                *permutation_plan,
+                one_ptr,
+                D_d,
+                E_d,
+                stream));
 
     HANDLE_CUDA_ERROR(cudaStreamSynchronize(stream));
 
@@ -203,7 +248,7 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (B_d) cudaFree(B_d);
     if (C_d) cudaFree(C_d);
     if (D_d) cudaFree(D_d);
-    if (work) cudaFree(work);
+    if (contraction_work) cudaFree(contraction_work);
     return 0; // TODO: implement cutensor error handling
 }
 
