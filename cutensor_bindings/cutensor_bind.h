@@ -64,5 +64,6 @@ typedef struct
     int64_t* section_extents_D;
     int64_t* section_strides_D;
     TAPP_datatype type_D;
-    cutensorPlan_t* plan;
+    cutensorPlan_t* contraction_plan;
+    cutensorPlan_t* permutation_plan;
 } cutensor_plan;
