@@ -242,8 +242,8 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     HANDLE_CUDA_ERROR(cudaStreamSynchronize(stream));
 
-    int64_t section_coordinates_D[((cutensor_plan*)plan)->sections_D];
-    for (size_t i = 0; i < ((cutensor_plan*)plan)->sections_D; i++)
+    int64_t section_coordinates_D[((cutensor_plan*)plan)->sections_nmode_D];
+    for (size_t i = 0; i < ((cutensor_plan*)plan)->sections_nmode_D; i++)
     {
         section_coordinates_D[i] = 0;
     }
