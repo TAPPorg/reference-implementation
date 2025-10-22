@@ -26,7 +26,7 @@
 
 cutensorDataType_t translate_datatype(TAPP_datatype type);
 
-cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec);
+cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
 
 cutensorOperator_t translate_operator(TAPP_element_op op);
 
