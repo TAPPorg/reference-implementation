@@ -121,7 +121,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 {
                     cuplan->section_size_D *= std::abs(((cutensor_info*)D)->extents[i]);
                 }
-                else
+                else if (((cutensor_info*)D)->extents[j] != 1) // if extent = 0 then stride will never be used i.e. no need for section, even if stride would create section
                 {
                     cuplan->sections_D *= ((cutensor_info*)D)->extents[j];
                     cuplan->section_extents_D[cuplan->sections_nmode_D] = ((cutensor_info*)D)->extents[j];
