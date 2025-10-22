@@ -36,7 +36,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 *((cutensor_info*)B)->desc, cuidx_B.data(), translate_operator(op_B),
                 *((cutensor_info*)C)->desc, cuidx_C.data(), translate_operator(op_C),
                 *((cutensor_info*)D)->desc, cuidx_D.data(),
-                translate_prectype(prec)));
+                translate_prectype(prec, ((cutensor_info*)D)->type)));
 
     cutensorDataType_t scalarType;
     HANDLE_ERROR(cutensorOperationDescriptorGetAttribute(cuhandle,
@@ -52,7 +52,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         &permutation_desc,
         *((cutensor_info*)D)->desc, cuidx_D.data(), translate_operator(op_D),
         *((cutensor_info*)D)->desc, cuidx_D.data(),
-        translate_prectype(prec)))
+        translate_prectype(prec, ((cutensor_info*)D)->type)))
 
     HANDLE_ERROR(cutensorOperationDescriptorGetAttribute(cuhandle,
                 permutation_desc,
