@@ -2,7 +2,7 @@
 #include "cutensor_bind.h"
 #include <algorithm>
 
-int64_t compue_index(const int64_t* coordinates, int nmode, const int64_t* strides);
+int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
 cutensorOperator_t translate_operator(TAPP_element_op op);
 
@@ -231,7 +231,7 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     for (size_t i = 0; i < ((cutensor_plan*)plan)->sections_D; i++)
     {
-        int64_t index = compue_index(section_coordinates_D, ((cutensor_plan*)plan)->sections_nmode_D, ((cutensor_plan*)plan)->section_strides_D);
+        int64_t index = compute_index(section_coordinates_D, ((cutensor_plan*)plan)->sections_nmode_D, ((cutensor_plan*)plan)->section_strides_D);
         HANDLE_CUDA_ERROR(cudaMemcpy((void*)((intptr_t)D + index * sizeof_datatype(((cutensor_plan*)plan)->type_D)), (void*)((intptr_t)D_d + index * sizeof_datatype(((cutensor_plan*)plan)->type_D)), ((cutensor_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost));
         increment_coordinates(section_coordinates_D, ((cutensor_plan*)plan)->sections_nmode_D, ((cutensor_plan*)plan)->section_extents_D);
     }
@@ -252,7 +252,7 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     return 0; // TODO: implement cutensor error handling
 }
 
-int64_t compue_index(const int64_t* coordinates, int nmode, const int64_t* strides)
+int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides)
 {
     int64_t index = 0;
     for (int i = 0; i < nmode; i++)
