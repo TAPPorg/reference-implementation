@@ -29,18 +29,32 @@ cutensorDataType_t translate_datatype(TAPP_datatype type)
     }
 }
 
-cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec)
+cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype)
 {
     switch (prec)
     {
         case TAPP_DEFAULT_PREC: // TODO: Make dependent on datatype
-            return CUTENSOR_COMPUTE_DESC_32F;
+            switch (datatype)
+            {
+            case TAPP_F32:
+            case TAPP_C32:
+                return CUTENSOR_COMPUTE_DESC_32F;
+                break;
+            case TAPP_F64:
+            case TAPP_C64:
+                return CUTENSOR_COMPUTE_DESC_64F;
+                break;
+            default: // TODO: Default should probably be an error
+                return CUTENSOR_COMPUTE_DESC_32F;
+                break;
+            }
             break;
         case TAPP_F32F32_ACCUM_F32:
             return CUTENSOR_COMPUTE_DESC_32F;
             break;
         case TAPP_F64F64_ACCUM_F64:
-        return CUTENSOR_COMPUTE_DESC_64F;
+            return CUTENSOR_COMPUTE_DESC_64F;
+            break;
         case TAPP_F16F16_ACCUM_F16:
             return CUTENSOR_COMPUTE_DESC_16F;
             break;
