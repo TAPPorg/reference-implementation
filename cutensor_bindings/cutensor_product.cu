@@ -201,9 +201,28 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     cutensorPlan_t* permutation_plan = ((cutensor_plan*) plan)->permutation_plan;
 
-    float one_float = 1.0f; // TODO: Needs to be adjusted to the datatype of D
+    void* perm_scalar_ptr = NULL;
 
-    void* one_ptr = (void*)&one_float;
+    if (((cutensor_plan*)plan)->type_D == TAPP_F32)
+    {
+        float perm_scalar = 1.0f;
+        perm_scalar_ptr = (void*)&perm_scalar;
+    }
+    else if (((cutensor_plan*)plan)->type_D == TAPP_F64)
+    {
+        double perm_scalar = 1.0;
+        perm_scalar_ptr = (void*)&perm_scalar;
+    }
+    else if (((cutensor_plan*)plan)->type_D == TAPP_C32)
+    {
+        std::complex<float> perm_scalar = 1.0f;
+        perm_scalar_ptr = (void*)&perm_scalar;
+    }
+    else if (((cutensor_plan*)plan)->type_D == TAPP_C64)
+    {
+        std::complex<double> perm_scalar = 1.0;
+        perm_scalar_ptr = (void*)&perm_scalar;
+    }
 
     cudaStream_t stream;
     HANDLE_CUDA_ERROR(cudaStreamCreate(&stream));
@@ -216,7 +235,7 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     HANDLE_ERROR(cutensorPermute(handle,
                 *permutation_plan,
-                one_ptr,
+                perm_scalar_ptr,
                 D_d,
                 E_d,
                 stream));
