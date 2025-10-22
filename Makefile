@@ -39,6 +39,7 @@ endif
 tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
 demo: base_folders tapp $(OBJ)/demo.o $(OUT)/demo$(EXEEXT)
 demo_dynamic: base_folders tapp $(OBJ)/demo_dynamic.o $(OUT)/demo_dynamic$(EXEEXT)
+test_dynamic: base_folders tapp $(OBJ)/test_dynamic.o $(OUT)/test_dynamic$(EXEEXT)
 cutensor: base_folders $(lib)/libcutensor_binds${LIBEXT} $(OUT)/cudemo$(EXEEXT)
 driver: driver_folders tapp examples/driver/obj/driver.o examples/driver/out/driver$(EXEEXT)
 exercise_contraction: exercise_contraction_folders tapp examples/exercise_contraction/obj/exercise_contraction.o examples/exercise_contraction/out/exercise_contraction$(EXEEXT)
@@ -145,6 +146,12 @@ $(OBJ)/demo_dynamic.o: $(TEST)/demo_dynamic.c lib/libtapp$(LIBEXT)
 
 $(OUT)/demo_dynamic$(EXEEXT): $(OBJ)/demo_dynamic.o $(OBJ)/helpers.o
 	$(CC) $(CFLAGS) -g  $(OBJ)/demo_dynamic.o $(OBJ)/helpers.o -o $(OUT)/demo_dynamic$(EXEEXT)
+
+$(OBJ)/test_dynamic.o: $(TEST)/test_dynamic.cpp lib/libtapp$(LIBEXT)
+	$(CXX) $(CFLAGS) -c -g -Wall $(TEST)/test_dynamic.cpp -o $(OBJ)/test_dynamic.o -I$(INC) -I$(INC)/tapp -I$(TEST)
+
+$(OUT)/test_dynamic$(EXEEXT): $(OBJ)/test_dynamic.o $(OBJ)/helpers.o
+	$(CXX) $(CFLAGS) -g  $(OBJ)/test_dynamic.o $(OBJ)/helpers.o -o $(OUT)/test_dynamic$(EXEEXT)
 
 examples/driver/obj/driver.o: examples/driver/driver.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall examples/driver/driver.c -o examples/driver/obj/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)
