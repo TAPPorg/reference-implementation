@@ -224,23 +224,20 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         perm_scalar_ptr = (void*)&perm_scalar;
     }
 
-    cudaStream_t stream;
-    HANDLE_CUDA_ERROR(cudaStreamCreate(&stream));
-
     HANDLE_ERROR(cutensorContract(handle,
                 *contraction_plan,
                 alpha, A_d, B_d,
                 beta,  C_d, D_d, 
-                contraction_work, contraction_actual_workspace_size, stream));
+                contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec));
 
     HANDLE_ERROR(cutensorPermute(handle,
                 *permutation_plan,
                 perm_scalar_ptr,
                 D_d,
                 E_d,
-                stream));
+                *(cudaStream_t*)exec));
 
-    HANDLE_CUDA_ERROR(cudaStreamSynchronize(stream));
+    HANDLE_CUDA_ERROR(cudaStreamSynchronize(*(cudaStream_t*)exec));
 
     int64_t section_coordinates_D[((cutensor_plan*)plan)->sections_nmode_D];
     for (size_t i = 0; i < ((cutensor_plan*)plan)->sections_nmode_D; i++)
@@ -254,9 +251,6 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         HANDLE_CUDA_ERROR(cudaMemcpy((void*)((intptr_t)D + index * sizeof_datatype(((cutensor_plan*)plan)->type_D)), (void*)((intptr_t)D_d + index * sizeof_datatype(((cutensor_plan*)plan)->type_D)), ((cutensor_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost));
         increment_coordinates(section_coordinates_D, ((cutensor_plan*)plan)->sections_nmode_D, ((cutensor_plan*)plan)->section_extents_D);
     }
-
-    cutensorDestroy(handle);
-    cudaStreamDestroy(stream);
 
     A_d = (void*)((intptr_t)A_d - ((cutensor_plan*)plan)->data_offset_A);
     B_d = (void*)((intptr_t)B_d - ((cutensor_plan*)plan)->data_offset_B);
