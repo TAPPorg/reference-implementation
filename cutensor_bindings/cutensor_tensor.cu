@@ -27,7 +27,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     for (int i = 0; i < nmode; i++)
     {
         tensor_info->copy_size += (extents[i] - 1)*strides[i];
-        if (extents[i] < 0)
+        if (strides[i] < 0)
         {
             tensor_info->data_offset += extents[i] * strides[i];
         }
