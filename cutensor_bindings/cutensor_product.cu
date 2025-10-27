@@ -188,12 +188,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     HANDLE_CUDA_ERROR(cudaMemcpy(A_d, (void*)((intptr_t)A + ((cutensor_plan*)plan)->data_offset_A), ((cutensor_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice));
     HANDLE_CUDA_ERROR(cudaMemcpy(B_d, (void*)((intptr_t)B + ((cutensor_plan*)plan)->data_offset_B), ((cutensor_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice));
     HANDLE_CUDA_ERROR(cudaMemcpy(C_d, (void*)((intptr_t)C + ((cutensor_plan*)plan)->data_offset_C), ((cutensor_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice));
-    HANDLE_CUDA_ERROR(cudaMemcpy(D_d, (void*)((intptr_t)D + ((cutensor_plan*)plan)->data_offset_D), ((cutensor_plan*)plan)->copy_size_D, cudaMemcpyHostToDevice));
     A_d = (void*)((intptr_t)A_d + ((cutensor_plan*)plan)->data_offset_A);
     B_d = (void*)((intptr_t)B_d + ((cutensor_plan*)plan)->data_offset_B);
     C_d = (void*)((intptr_t)C_d + ((cutensor_plan*)plan)->data_offset_C);
     D_d = (void*)((intptr_t)D_d + ((cutensor_plan*)plan)->data_offset_D);
-    E_d = (void*)((intptr_t)D_d + ((cutensor_plan*)plan)->data_offset_D);
+    E_d = (void*)((intptr_t)E_d + ((cutensor_plan*)plan)->data_offset_D);
     assert(uintptr_t(A_d) % 128 == 0);
     assert(uintptr_t(B_d) % 128 == 0);
     assert(uintptr_t(C_d) % 128 == 0);
