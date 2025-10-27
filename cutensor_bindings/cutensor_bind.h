@@ -66,4 +66,5 @@ typedef struct
     TAPP_datatype type_D;
     cutensorPlan_t* contraction_plan;
     cutensorPlan_t* permutation_plan;
+    cutensorHandle_t* handle;
 } cutensor_plan;
