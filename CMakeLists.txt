@@ -49,6 +49,7 @@ enable_testing()
 
 option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 option(BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
+option(ENABLE_CTF "Link to manually installed Cyclops CTF library." OFF)
 
 option(ENABLE_F16 "Turn on F16 support" OFF)
 option(ENABLE_BF16 "Turn on BF16 support" OFF)
@@ -59,6 +60,137 @@ endif()
 
 if(ENABLE_BF16)
   target_compile_definitions(tapp PRIVATE ENABLE_BF16=1)
+endif()
+
+if(ENABLE_CTF)
+  message(STATUS "ENABLE_CTF is ON. Configuring CTF build.")
+
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build CTF bindings due to missing CXX language support;
+ensure that the CXX compiler can be discovered")
+  endif()
+
+  find_package(MPI REQUIRED)
+  find_package(OpenMP REQUIRED)
+
+  # Paths for CTF and OpenBLAS
+  set(CTF_ROOT "$ENV{CTF_ROOT}" CACHE PATH "Root directory of CTF installation")
+  set(OPENBLAS_ROOT "/opt/software/gaia/prod/3.2.0/openblas-0.3.26-gcc-12.1.genoa-3utm" CACHE PATH "Root of OpenBLAS install")
+
+  find_path(CTF_INCLUDE_DIR ctf.hpp
+    PATHS "${CTF_ROOT}/include"
+    DOC "CTF include directory")
+  
+  find_library(CTF_LIBRARY ctf
+    PATHS "${CTF_ROOT}/lib" "${CTF_ROOT}/lib_shared"
+    DOC "CTF library file")
+
+  find_library(OPENBLAS_LIBRARY openblas
+    PATHS "${OPENBLAS_ROOT}/lib"
+    DOC "OpenBLAS library file")
+
+  if(NOT CTF_INCLUDE_DIR OR NOT CTF_LIBRARY OR NOT OPENBLAS_LIBRARY)
+    message(FATAL_ERROR "Could not find CTF or OpenBLAS.
+    Please set:
+      CTF_ROOT (points to CTF install, found: ${CTF_ROOT})
+      OPENBLAS_ROOT (points to OpenBLAS install, found: ${OPENBLAS_ROOT})")
+  endif()
+
+  # Get directory paths for setting rpath
+  get_filename_component(CTF_LIB_DIR ${CTF_LIBRARY} DIRECTORY)
+  get_filename_component(OPENBLAS_LIB_DIR ${OPENBLAS_LIBRARY} DIRECTORY)
+
+  target_sources(
+    tapp
+    PRIVATE
+      "ctf-bind/ctf-bind.cpp"
+    )
+
+  target_include_directories(
+    tapp
+    PUBLIC
+      ${CTF_INCLUDE_DIR}
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/ctf-bind"
+      "${CMAKE_CURRENT_SOURCE_DIR}/distributed"
+  )
+
+  set_property(
+          TARGET tapp
+          PROPERTY
+          CXX_STANDARD 20
+          CXX_STANDARD_REQUIRED YES
+          CXX_EXTENSIONS NO
+  )
+
+  target_compile_definitions(tapp PRIVATE
+    ENABLE_CTF=1
+    _POSIX_C_SOURCE=200112L
+    __STDC_LIMIT_MACROS
+    FTN_UNDERSCORE=1
+    USE_LAPACK
+  )
+
+  target_link_libraries(
+    tapp
+    PUBLIC
+      ${CTF_LIBRARY}
+      ${OPENBLAS_LIBRARY}
+      MPI::MPI_CXX
+      OpenMP::OpenMP_CXX
+      m # Math library
+  )
+
+  # Add rpath settings from Makefile 
+  target_link_options(tapp PRIVATE
+    "-Wl,-rpath,${CTF_LIB_DIR}"
+    "-Wl,-rpath,${OPENBLAS_LIB_DIR}"
+  )
+
+  # Add 'worker_ctf' executable
+  add_executable(worker_ctf "distributed/worker.cxx")
+
+  target_include_directories(
+    worker_ctf
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/distributed"
+      ${CTF_INCLUDE_DIR}
+  )
+
+  set_property(
+    TARGET worker_ctf
+    PROPERTY
+      CXX_STANDARD 20
+      CXX_STANDARD_REQUIRED YES
+      CXX_EXTENSIONS NO
+  )
+
+  target_compile_definitions(worker_ctf PRIVATE
+    _POSIX_C_SOURCE=200112L
+    __STDC_LIMIT_MACROS
+    FTN_UNDERSCORE=1
+    USE_LAPACK
+  )
+
+  target_link_libraries(
+    worker_ctf
+    PRIVATE
+      ${CTF_LIBRARY}
+      ${OPENBLAS_LIBRARY}
+      MPI::MPI_CXX
+      OpenMP::OpenMP_CXX
+      m
+  )
+
+  target_link_options(worker_ctf PRIVATE
+    "-Wl,-rpath,${CTF_LIB_DIR}"
+    "-Wl,-rpath,${OPENBLAS_LIB_DIR}"
+  )
+
 endif()
 
 if(ENABLE_TBLIS)
