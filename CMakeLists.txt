@@ -49,7 +49,7 @@ enable_testing()
 
 option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 option(BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
-option(ENABLE_CTF "Link to manually installed Cyclops CTF library." OFF)
+option(ENABLE_CTF "Link to manually installed Cyclops CTF library." ON)
 
 option(ENABLE_F16 "Turn on F16 support" OFF)
 option(ENABLE_BF16 "Turn on BF16 support" OFF)
@@ -74,7 +74,17 @@ if(ENABLE_CTF)
 ensure that the CXX compiler can be discovered")
   endif()
 
-  find_package(MPI REQUIRED)
+  set(TAPP_MPI_PATH "" CACHE PATH "Root directory of the specific MPI installation to use")
+
+  if(TAPP_MPI_PATH)
+    message(STATUS "TAPP: Forcing MPI search to: ${TAPP_MPI_PATH}")
+    find_package(MPI REQUIRED HINTS "${TAPP_MPI_PATH}" NO_DEFAULT_PATH)
+  else()
+    # otherwise perform a normal search.
+    message(STATUS "TAPP: Using default system path for MPI.")
+    find_package(MPI REQUIRED)
+  endif()
+
   find_package(OpenMP REQUIRED)
 
   # Paths for CTF and OpenBLAS
