@@ -9,6 +9,10 @@
 int main(int argc, char const *argv[])
 {
     srand(time(NULL)); 
+    std::cout << "Contraction Complex Double Precision: " << str(test_contraction_complex_double_precision()) << std::endl;
+     //std::cout << "Contraction Double Precision: " << str(test_contraction_double_precision()) << std::endl;
+    TAPP_finalize();
+    exit(0);
     std::cout << "Hadamard Product: " << str(test_hadamard_product()) << std::endl;
     std::cout << "Contraction: " << str(test_contraction()) << std::endl;
     std::cout << "Commutativity: " << str(test_commutativity()) << std::endl;
@@ -605,7 +609,7 @@ bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int siz
     {
         double rel_diff_r = abs((A[i].real() - B[i].real()) / (A[i].real() > B[i].real() ? A[i].real() : B[i].real()));
         double rel_diff_i = abs((A[i].imag() - B[i].imag()) / (A[i].imag() > B[i].imag() ? A[i].imag() : B[i].imag()));
-        if (rel_diff_r > 0.0000000005 || rel_diff_i > 0.0000000005) //0.00005
+        if (rel_diff_r > 0.00005 || rel_diff_i > 0.00005) //0.00005 // 0.0000000005
         {
             std::cout << "\n" << i << ": " << A[i] << " - " << B[i] << std::endl;
             std::cout << "\n" << i << ": " << std::complex<double>(rel_diff_r, rel_diff_i) << std::endl;

@@ -74,4 +74,6 @@ TAPP_EXPORT TAPP_error TAPP_execute_batched_product(TAPP_tensor_product plan,
                                                     const void** C,
                                                           void** D);
 
+TAPP_EXPORT TAPP_error TAPP_finalize();
+
 #endif /* TAPP_PRODUCT_H_ */
