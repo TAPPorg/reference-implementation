@@ -88,26 +88,26 @@ ensure that the CXX compiler can be discovered")
   find_package(OpenMP REQUIRED)
 
   # Paths for CTF and OpenBLAS
-  set(CTF_ROOT "$ENV{CTF_ROOT}" CACHE PATH "Root directory of CTF installation")
-  set(OPENBLAS_ROOT "/opt/software/gaia/prod/3.2.0/openblas-0.3.26-gcc-12.1.genoa-3utm" CACHE PATH "Root of OpenBLAS install")
+  set(CTF_PATH "$ENV{CTF_PATH}" CACHE PATH "Root directory of CTF installation")
+  set(OPENBLAS_PATH "/opt/software/gaia/prod/3.2.0/openblas-0.3.26-gcc-12.1.genoa-3utm" CACHE PATH "Root of OpenBLAS install")
 
   find_path(CTF_INCLUDE_DIR ctf.hpp
-    PATHS "${CTF_ROOT}/include"
+    PATHS "${CTF_PATH}/include"
     DOC "CTF include directory")
   
   find_library(CTF_LIBRARY ctf
-    PATHS "${CTF_ROOT}/lib" "${CTF_ROOT}/lib_shared"
+    PATHS "${CTF_PATH}/lib" "${CTF_PATH}/lib_shared"
     DOC "CTF library file")
 
   find_library(OPENBLAS_LIBRARY openblas
-    PATHS "${OPENBLAS_ROOT}/lib"
+    PATHS "${OPENBLAS_PATH}/lib"
     DOC "OpenBLAS library file")
 
   if(NOT CTF_INCLUDE_DIR OR NOT CTF_LIBRARY OR NOT OPENBLAS_LIBRARY)
     message(FATAL_ERROR "Could not find CTF or OpenBLAS.
     Please set:
-      CTF_ROOT (points to CTF install, found: ${CTF_ROOT})
-      OPENBLAS_ROOT (points to OpenBLAS install, found: ${OPENBLAS_ROOT})")
+      CTF_PATH (points to CTF install, found: ${CTF_PATH})
+      OPENBLAS_PATH (points to OpenBLAS install, found: ${OPENBLAS_PATH})")
   endif()
 
   # Get directory paths for setting rpath
