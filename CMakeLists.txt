@@ -259,50 +259,45 @@ if(ENABLE_TBLIS)
 
   target_compile_definitions(tapp PRIVATE ENABLE_TBLIS=1)
 
-  if(ENABLE_TBLIS2)
-    target_sources(
-    tapp
-    PRIVATE
-        tblis_bindings/tblis_bind.cpp
-    )
-  endif()
-
+  target_sources(
+  tapp
+  PRIVATE
+    tblis_bindings/tblis_bind.cpp
+  )
   set_property(
           TARGET tapp
           PROPERTY
-          CXX_STANDARD 20
+          CXX_STANDARD 17
           CXX_STANDARD_REQUIRED YES
           CXX_EXTENSIONS NO
   )
 
-  if(ENABLE_TBLIS2)
-          target_include_directories(
-          tapp
-          PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
-          )
+  target_include_directories(
+  tapp
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
+  )
 
-          set_source_files_properties(
-            tblis_bindings/tblis_bind.cpp
-            PROPERTIES
-            INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
-          )
+  set_source_files_properties(
+    tblis_bindings/tblis_bind.cpp
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
+  )
 
   # ----------------------------------------------------------------------------
   # interface
 
-          target_link_directories( # can be removed?
-            tapp
-            PUBLIC
-              ${TBLIS_INSTALL_DIR}/lib
-          )
-          
-          target_link_libraries(
-            tapp
-            PUBLIC
-              tblis-static
-          )
-  endif()
+  target_link_directories( # can be removed?
+    tapp
+    PUBLIC
+      ${TBLIS_INSTALL_DIR}/lib
+  )
+
+  target_link_libraries(
+    tapp
+    PUBLIC
+      tblis-static
+  )
 
   # ----------------------------------------------------------------------------
   # testing
@@ -320,7 +315,6 @@ if(ENABLE_TBLIS)
     test++
     PRIVATE
       tapp
-      tblis-static
     )
 
   set_property(
