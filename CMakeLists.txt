@@ -149,8 +149,7 @@ ensure that the CXX compiler can be discovered")
     "ctf-bind/ctf-bind.cpp"
     PROPERTIES
     INCLUDE_DIRECTORIES
-      "${CTF_INCLUDE_DIR}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
+     "${CTF_INCLUDE_DIR};${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
     )
 
   target_include_directories(
