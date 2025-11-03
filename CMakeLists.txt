@@ -184,7 +184,7 @@ ensure that the CXX compiler can be discovered")
   set_property(
     TARGET worker_ctf
     PROPERTY
-      CXX_STANDARD 20
+      CXX_STANDARD 17
       CXX_STANDARD_REQUIRED YES
       CXX_EXTENSIONS NO
   )
