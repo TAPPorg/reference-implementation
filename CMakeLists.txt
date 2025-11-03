@@ -76,10 +76,23 @@ ensure that the CXX compiler can be discovered")
 
   set(TAPP_MPI_PATH "" CACHE PATH "Root directory of the specific MPI installation to use")
 
-  if(TAPP_MPI_PATH AND EXISTS "${TAPP_MPI_PATH}/bin/mpicc" AND EXISTS "${TAPP_MPI_PATH}/bin/mpicxx")
+  if(TAPP_MPI_PATH)
+    # Set paths for all three MPI compiler wrappers
     set(MPI_C_COMPILER   "${TAPP_MPI_PATH}/bin/mpicc")
     set(MPI_CXX_COMPILER "${TAPP_MPI_PATH}/bin/mpicxx")
-    find_package(MPI REQUIRED)
+
+    if(EXISTS "${TAPP_MPI_PATH}/bin/mpif90")
+      set(MPI_Fortran_COMPILER "${TAPP_MPI_PATH}/bin/mpif90")
+    elseif(EXISTS "${TAPP_MPI_PATH}/bin/mpifc")
+      set(MPI_Fortran_COMPILER "${TAPP_MPI_PATH}/bin/mpifc")
+    endif()
+
+    # Now that all compilers are set, FindMPI will work correctly
+    if(EXISTS ${MPI_C_COMPILER} AND EXISTS ${MPI_CXX_COMPILER})
+        find_package(MPI REQUIRED)
+    else()
+        message(FATAL_ERROR "TAPP: Could not find mpicc/mpicxx in ${TAPP_MPI_PATH}/bin")
+    endif()
   elseif(TAPP_MPI_PATH)
     message(STATUS "TAPP: Could not find mpicc/mpicxx in its 'bin' subdirectory.")
     message(STATUS "TAPP: Forcing MPI search to: ${TAPP_MPI_PATH}")
