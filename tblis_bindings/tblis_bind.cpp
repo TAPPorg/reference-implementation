@@ -5,6 +5,7 @@
  */
 
 #include "tblis_bind.h"
+#include <iostream>
 
 namespace {
 

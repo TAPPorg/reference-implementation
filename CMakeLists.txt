@@ -140,6 +140,9 @@ ensure that the CXX compiler can be discovered")
     set_source_files_properties(
     "ctf-bind/ctf-bind.cpp"
     PROPERTIES
+    CXX_STANDARD 17               # <--- ADD THIS
+    CXX_STANDARD_REQUIRED YES     # <--- ADD THIS
+    CXX_EXTENSIONS NO             # <--- ADD THIS
     INCLUDE_DIRECTORIES
      "${CTF_INCLUDE_DIR};${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
     )
@@ -151,13 +154,6 @@ ensure that the CXX compiler can be discovered")
       "${CMAKE_CURRENT_SOURCE_DIR}/distributed"
   )
 
-  set_property(
-          TARGET tapp
-          PROPERTY
-          CXX_STANDARD 17
-          CXX_STANDARD_REQUIRED YES
-          CXX_EXTENSIONS NO
-  )
 
   target_compile_definitions(tapp PRIVATE
     ENABLE_CTF=1
@@ -264,12 +260,21 @@ if(ENABLE_TBLIS)
   PRIVATE
     tblis_bindings/tblis_bind.cpp
   )
-  set_property(
-          TARGET tapp
-          PROPERTY
-          CXX_STANDARD 17
-          CXX_STANDARD_REQUIRED YES
-          CXX_EXTENSIONS NO
+  target_include_directories(
+  tapp
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
+    ${tblis_SOURCE_DIR}/include                # <--- ADD THIS
+    ${tblis_SOURCE_DIR}/src/external/tci    # <--- ADD THIS
+  )
+
+  set_source_files_properties(
+    tblis_bindings/tblis_bind.cpp
+    PROPERTIES
+    CXX_STANDARD 20               # <--- KEEP/ADD THIS
+    CXX_STANDARD_REQUIRED YES     # <--- KEEP/ADD THIS
+    CXX_EXTENSIONS NO             # <--- KEEP/ADD THIS
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
   )
 
   target_include_directories(
