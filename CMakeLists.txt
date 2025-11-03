@@ -277,17 +277,7 @@ if(ENABLE_TBLIS)
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
   )
 
-  target_include_directories(
-  tapp
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
-  )
 
-  set_source_files_properties(
-    tblis_bindings/tblis_bind.cpp
-    PROPERTIES
-    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
-  )
 
   # ----------------------------------------------------------------------------
   # interface
