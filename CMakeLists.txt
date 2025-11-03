@@ -76,11 +76,15 @@ ensure that the CXX compiler can be discovered")
 
   set(TAPP_MPI_PATH "" CACHE PATH "Root directory of the specific MPI installation to use")
 
-  if(TAPP_MPI_PATH)
+  if(TAPP_MPI_PATH AND EXISTS "${TAPP_MPI_PATH}/bin/mpicc" AND EXISTS "${TAPP_MPI_PATH}/bin/mpicxx")
+    set(MPI_C_COMPILER   "${TAPP_MPI_PATH}/bin/mpicc")
+    set(MPI_CXX_COMPILER "${TAPP_MPI_PATH}/bin/mpicxx")
+    find_package(MPI REQUIRED)
+  elseif(TAPP_MPI_PATH)
+    message(STATUS "TAPP: Could not find mpicc/mpicxx in its 'bin' subdirectory.")
     message(STATUS "TAPP: Forcing MPI search to: ${TAPP_MPI_PATH}")
     find_package(MPI REQUIRED HINTS "${TAPP_MPI_PATH}" NO_DEFAULT_PATH)
   else()
-    # otherwise perform a normal search.
     message(STATUS "TAPP: Using default system path for MPI.")
     find_package(MPI REQUIRED)
   endif()
