@@ -215,6 +215,8 @@ ensure that the CXX compiler can be discovered")
     "-Wl,-rpath,${OPENBLAS_LIB_DIR}"
   )
 
+  set_property(TARGET worker_ctf PROPERTY LINKER_LANGUAGE Fortran)
+
 endif()
 
 if(ENABLE_TBLIS)
