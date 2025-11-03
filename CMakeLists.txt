@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Install Prefix" FORCE)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output" FORCE)
-project(tapp LANGUAGES C CXX)
+project(tapp LANGUAGES C CXX Fortran)
 
 add_library(tapp SHARED)
 
