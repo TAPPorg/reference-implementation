@@ -121,8 +121,8 @@ ensure that the CXX compiler can be discovered")
     DOC "CTF include directory")
   
   find_library(CTF_LIBRARY ctf
-    PATHS "${CTF_PATH}/lib" "${CTF_PATH}/lib_shared"
-    DOC "CTF library file")
+    PATHS "${CTF_PATH}/lib_shared" 
+    DOC "CTF shared library file")
 
   find_library(OPENBLAS_LIBRARY openblas
     PATHS "${OPENBLAS_PATH}/lib"
