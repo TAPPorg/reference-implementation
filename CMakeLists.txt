@@ -161,8 +161,8 @@ ensure that the CXX compiler can be discovered")
       ${CTF_LIBRARY}
       ${OPENBLAS_LIBRARY}
       MPI::MPI_CXX
-      m # Math library
-      ${CMAKE_Fortran_LIBRARIES}
+      MPI::MPI_Fortran
+      m
   )
 
   # Add rpath settings from Makefile 
@@ -205,8 +205,8 @@ ensure that the CXX compiler can be discovered")
       ${CTF_LIBRARY}
       ${OPENBLAS_LIBRARY}
       MPI::MPI_CXX
+      MPI::MPI_Fortran
       m
-      ${CMAKE_Fortran_LIBRARIES}
   )
 
   target_link_options(worker_ctf PRIVATE
