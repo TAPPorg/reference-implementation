@@ -200,7 +200,6 @@ ensure that the CXX compiler can be discovered")
       ${CTF_LIBRARY}
       ${OPENBLAS_LIBRARY}
       MPI::MPI_CXX
-      OpenMP::OpenMP_CXX
       m
   )
 
