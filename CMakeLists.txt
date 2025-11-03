@@ -145,11 +145,13 @@ ensure that the CXX compiler can be discovered")
       "ctf-bind/ctf-bind.cpp"
     )
 
-  set_source_files_properties(
+    set_source_files_properties(
     "ctf-bind/ctf-bind.cpp"
     PROPERTIES
-    INCLUDE_DIRECTORIES "${CTF_INCLUDE_DIR}"
-  )
+    INCLUDE_DIRECTORIES
+      "${CTF_INCLUDE_DIR}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
+    )
 
   target_include_directories(
     tapp
@@ -279,10 +281,17 @@ if(ENABLE_TBLIS)
           CXX_STANDARD_REQUIRED YES
           CXX_EXTENSIONS NO
   )
+
   target_include_directories(
   tapp
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
+  )
+
+  set_source_files_properties(
+    tblis_bindings/tblis_bind.cpp
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
   )
 
   # ----------------------------------------------------------------------------
