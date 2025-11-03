@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Install Prefix" FORCE)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output" FORCE)
-project(tapp LANGUAGES C)
+project(tapp LANGUAGES C CXX)
 
 add_library(tapp SHARED)
 
@@ -123,6 +123,12 @@ ensure that the CXX compiler can be discovered")
     PRIVATE
       "ctf-bind/ctf-bind.cpp"
     )
+
+  set_source_files_properties(
+    "ctf-bind/ctf-bind.cpp"
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${CTF_INCLUDE_DIR}"
+  )
 
   target_include_directories(
     tapp
