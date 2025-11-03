@@ -39,15 +39,7 @@ target_include_directories(
   tapp
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-set_source_files_properties(
-  src/tapp/error.c
-  src/tapp/executor.c
-  src/tapp/handle.c
-  src/tapp/tensor.c
-  src/tapp/product.c
-  PROPERTIES
-  INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/tapp"
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
 )
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
