@@ -271,7 +271,6 @@ if(ENABLE_TBLIS)
   target_sources(
   tapp
   PRIVATE
-    tblis_bindings/tblis_bind.h
     tblis_bindings/tblis_bind.cpp
   )
   set_property(
