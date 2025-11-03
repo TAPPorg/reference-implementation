@@ -132,8 +132,6 @@ ensure that the CXX compiler can be discovered")
 
   target_include_directories(
     tapp
-    PUBLIC
-      ${CTF_INCLUDE_DIR}
     PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/ctf-bind"
       "${CMAKE_CURRENT_SOURCE_DIR}/distributed"
