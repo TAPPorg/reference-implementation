@@ -39,6 +39,7 @@ target_include_directories(
   tapp
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+  PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
 )
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
