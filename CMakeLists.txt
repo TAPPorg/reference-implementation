@@ -89,7 +89,7 @@ ensure that the CXX compiler can be discovered")
     find_package(MPI REQUIRED)
   endif()
 
-  find_package(OpenMP REQUIRED)
+  # find_package(OpenMP REQUIRED)
 
   # Paths for CTF and OpenBLAS
   set(CTF_PATH "$ENV{CTF_PATH}" CACHE PATH "Root directory of CTF installation")
@@ -149,18 +149,20 @@ ensure that the CXX compiler can be discovered")
     USE_LAPACK
   )
 
+  target_compile_options(tapp PRIVATE -fopenmp)
+
   target_link_libraries(
     tapp
     PUBLIC
       ${CTF_LIBRARY}
       ${OPENBLAS_LIBRARY}
       MPI::MPI_CXX
-      OpenMP::OpenMP_CXX
       m # Math library
   )
 
   # Add rpath settings from Makefile 
   target_link_options(tapp PRIVATE
+    -fopenmp
     "-Wl,-rpath,${CTF_LIB_DIR}"
     "-Wl,-rpath,${OPENBLAS_LIB_DIR}"
   )
@@ -190,6 +192,8 @@ ensure that the CXX compiler can be discovered")
     USE_LAPACK
   )
 
+  target_compile_options(worker_ctf PRIVATE -fopenmp)
+
   target_link_libraries(
     worker_ctf
     PRIVATE
@@ -201,6 +205,7 @@ ensure that the CXX compiler can be discovered")
   )
 
   target_link_options(worker_ctf PRIVATE
+    -fopenmp
     "-Wl,-rpath,${CTF_LIB_DIR}"
     "-Wl,-rpath,${OPENBLAS_LIB_DIR}"
   )
