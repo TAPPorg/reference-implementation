@@ -1,11 +1,10 @@
 /*
- * Niklas Hörnblad
- * Paolo Bientinesi
- * Umeå University - November 2024
+ * Jan Brandejs
+ * Universite de Toulouse - November 2025
  */
 
-#ifndef TBLIS_BIND_H
-#define TBLIS_BIND_H
+#ifndef CTF_BIND_H
+#define CTF_BIND_H
 #ifdef __cplusplus
 #include <iostream>
 #include <random>
