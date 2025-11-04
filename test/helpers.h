@@ -9,3 +9,5 @@
 
 void print_tensor_s(int nmode, const int64_t *extents, const int64_t *strides, const float *data);
 void print_tensor_c(int nmode, const int64_t *extents, const int64_t *strides, const float complex *data);
+void print_tensor_d(int nmode, const int64_t *extents, const int64_t *strides, const double *data);
+void print_tensor_z(int nmode, const int64_t *extents, const int64_t *strides, const double complex *data);

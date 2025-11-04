@@ -250,6 +250,23 @@ extern "C" {
     return 0;
   }
 
+  int distributed_reshape_tensor(TAPP_tensor_info dest, TAPP_tensor_info src, int nmode, int64_t* extents){
+    int uuid_len = TAPP_get_uuid_len(src); 
+    char* uuid_ = new char[uuid_len + 1];
+    int ierr;
+
+    ierr = TAPP_get_uuid(dest, uuid_, uuid_len);
+    std::string uuid_dest(uuid_);
+   
+    ierr = TAPP_get_uuid(src, uuid_, uuid_len);
+    std::string uuid_src(uuid_);
+
+    reshapeTensor(uuid_dest, uuid_src, nmode, extents);
+
+    delete[] uuid_;
+    return 0;
+  }
+
   int distributed_scale_with_denominators(TAPP_tensor_info info, 
 		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk){
     int uuid_len = TAPP_get_uuid_len(info); 

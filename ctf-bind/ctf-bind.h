@@ -43,6 +43,7 @@ extern "C" {
   int distributed_tensor_set_name(TAPP_tensor_info info, const int64_t* name, const int name_len);
   int distributed_initialize_tensor(TAPP_tensor_info info, void* init_val);
   int distributed_copy_tensor(TAPP_tensor_info dest, TAPP_tensor_info src);
+  int distributed_reshape_tensor(TAPP_tensor_info dest, TAPP_tensor_info src, int nmode, int64_t* extents);
   int distributed_scale_with_denominators(TAPP_tensor_info info, 
 		                  const int n_occ, const int n_vir, void* eps_occ, void* eps_vir, void* eps_ijk);
 

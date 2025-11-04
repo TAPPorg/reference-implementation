@@ -46,6 +46,8 @@ int main(int argc, char const *argv[])
     negative_str();
     printf("Subtensors: \n");
     subtensors();
+    TAPP_finalize();
+    exit(0);
     return 0;
 }
 
@@ -55,25 +57,25 @@ void contraction()
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -94,9 +96,9 @@ void contraction()
     // exec = (intptr_t)&exec_id;
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[36] = {
+    double A[36] = {
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
@@ -109,7 +111,7 @@ void contraction()
         1, 2, 1.01, -1,
         1, 2, 1.01, -1};
 
-    float B[36] = {
+    double B[36] = {
         1, 1, 1,
         2, 2, 2,
 
@@ -128,16 +130,16 @@ void contraction()
         3, 3, 3,
         6, 6, 6};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[16] = {
+    double C[16] = {
         2, 4, 6, 8,
         2, 4, 6, 8,
 
         2, 4, 6, 8,
         2, 4, 6, 8};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
@@ -152,7 +154,7 @@ void contraction()
     printf(message_buff);
     free(message_buff);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -168,25 +170,25 @@ void hadamard()
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {4, 4};
     int64_t strides_B[2] = {1, 4};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {4, 4};
     int64_t strides_C[2] = {1, 4};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {4, 4};
     int64_t strides_D[2] = {1, 4};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -205,29 +207,29 @@ void hadamard()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 3;
+    double alpha = 3;
 
-    float A[16] = {
+    double A[16] = {
         1, 2, 3, 4,
         1, 2, 3, 4,
         1, 2, 3, 4,
         1, 2, 3, 4};
 
-    float B[16] = {
+    double B[16] = {
         1, 1, 1, 1,
         2, 2, 2, 2,
         3, 3, 3, 3,
         4, 4, 4, 4};
 
-    float beta = 2;
+    double beta = 2;
 
-    float C[16] = {
+    double C[16] = {
         1, 2, 1, 2,
         1, 2, 1, 2,
         1, 2, 1, 2,
         1, 2, 1, 2};
 
-    float D[16] = {
+    double D[16] = {
         1,
         2,
         3,
@@ -248,7 +250,7 @@ void hadamard()
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -301,33 +303,33 @@ void complex_num()
     create_executor(&exec);
     TAPP_status status;
 
-    float complex alpha = 1;
+    double complex alpha = 1;
 
-    float complex A[9] = {
+    double complex A[9] = {
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I};
 
-    float complex B[9] = {
+    double complex B[9] = {
         1 + 1 * I, 1 + 1 * I, 1 + 1 * I,
         2 + 2 * I, 2 + 2 * I, 2 + 2 * I,
         3 + 3 * I, 3 + 3 * I, 3 + 3 * I};
 
-    float complex beta = 1 * I;
+    double complex beta = 1 * I;
 
-    float complex C[9] = {
+    double complex C[9] = {
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I};
 
-    float complex D[9] = {
+    double complex D[9] = {
         1 + 1 * I, 2 + 2 * I, 3 + 3 * I,
         4 + 4 * I, 5 + 5 * I, 6 + 6 * I,
         7 + 7 * I, 8 + 8 * I, 9 + 2 * I};
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_c(nmode_D, extents_D, strides_D, D);
+    print_tensor_z(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -380,33 +382,33 @@ void conjugate()
     create_executor(&exec);
     TAPP_status status;
 
-    float complex alpha = 1;
+    double complex alpha = 1;
 
-    float complex A[9] = {
+    double complex A[9] = {
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
         1 + 1 * I, 3 + 2 * I, 5 + 3 * I};
 
-    float complex B[9] = {
+    double complex B[9] = {
         1 + 1 * I, 1 + 1 * I, 1 + 1 * I,
         2 + 2 * I, 2 + 2 * I, 2 + 2 * I,
         3 + 3 * I, 3 + 3 * I, 3 + 3 * I};
 
-    float complex beta = 1 * I;
+    double complex beta = 1 * I;
 
-    float complex C[9] = {
+    double complex C[9] = {
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
         1 + 2 * I, 2 + 1 * I, 3 + 1 * I};
 
-    float complex D[9] = {
+    double complex D[9] = {
         1 + 1 * I, 2 + 2 * I, 3 + 3 * I,
         4 + 4 * I, 5 + 5 * I, 6 + 6 * I,
         7 + 7 * I, 8 + 8 * I, 9 + 2 * I};
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_c(nmode_D, extents_D, strides_D, D);
+    print_tensor_z(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -422,25 +424,25 @@ void zero_dim()
     int64_t extents_A[0] = {};
     int64_t strides_A[0] = {};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {3, 3};
     int64_t strides_B[2] = {1, 3};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -459,31 +461,31 @@ void zero_dim()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[1] = {
+    double A[1] = {
         5};
 
-    float B[9] = {
+    double B[9] = {
         1, 2, 3,
         4, 5, 6,
         7, 8, 9};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[9] = {
+    double C[9] = {
         1, 1, 1,
         1, 1, 1,
         1, 1, 1};
 
-    float D[9] = {
+    double D[9] = {
         2, 2, 2,
         2, 2, 2,
         2, 2, 2};
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -499,25 +501,25 @@ void one_ext_contracted()
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 5;
     int64_t extents_B[5] = {3, 2, 1, 2, 3};
     int64_t strides_B[5] = {1, 3, 6, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -536,9 +538,9 @@ void one_ext_contracted()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[36] = {
+    double A[36] = {
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
@@ -551,7 +553,7 @@ void one_ext_contracted()
         1, 2, 1.01, -1,
         1, 2, 1.01, -1};
 
-    float B[36] = {
+    double B[36] = {
         1, 1, 1,
         2, 2, 2,
 
@@ -570,16 +572,16 @@ void one_ext_contracted()
         3, 3, 3,
         6, 6, 6};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[16] = {
+    double C[16] = {
         2, 4, 6, 8,
         2, 4, 6, 8,
 
         2, 4, 6, 8,
         2, 4, 6, 8};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
@@ -588,7 +590,7 @@ void one_ext_contracted()
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -604,25 +606,25 @@ void one_ext_transfered()
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 4;
     int64_t extents_C[4] = {4, 1, 2, 2};
     int64_t strides_C[4] = {1, 4, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 4;
     int64_t extents_D[4] = {4, 1, 2, 2};
     int64_t strides_D[4] = {1, 4, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -641,9 +643,9 @@ void one_ext_transfered()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[36] = {
+    double A[36] = {
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
@@ -656,7 +658,7 @@ void one_ext_transfered()
         1, 2, 1.01, -1,
         1, 2, 1.01, -1};
 
-    float B[36] = {
+    double B[36] = {
         1, 1, 1,
         2, 2, 2,
 
@@ -675,16 +677,16 @@ void one_ext_transfered()
         3, 3, 3,
         6, 6, 6};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[16] = {
+    double C[16] = {
         2, 4, 6, 8,
         2, 4, 6, 8,
 
         2, 4, 6, 8,
         2, 4, 6, 8};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
@@ -693,7 +695,7 @@ void one_ext_transfered()
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -709,25 +711,25 @@ void chained_diff_op()
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -746,9 +748,9 @@ void chained_diff_op()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 2;
+    double alpha = 2;
 
-    float A[36] = {
+    double A[36] = {
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
         1, 2, 1.01, -1,
@@ -761,7 +763,7 @@ void chained_diff_op()
         1, 2, 1.01, -1,
         1, 2, 1.01, -1};
 
-    float B[36] = {
+    double B[36] = {
         1, 1, 1,
         2, 2, 2,
 
@@ -780,16 +782,16 @@ void chained_diff_op()
         3, 3, 3,
         6, 6, 6};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[16] = {
+    double C[16] = {
         2, 4, 6, 8,
         2, 4, 6, 8,
 
         2, 4, 6, 8,
         2, 4, 6, 8};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
@@ -799,7 +801,7 @@ void chained_diff_op()
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
     printf("\tOperation 1:\n");
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     alpha = 0.5;
 
@@ -807,14 +809,14 @@ void chained_diff_op()
     int64_t extents_E[3] = {4, 2, 2};
     int64_t strides_E[3] = {1, 4, 8};
     TAPP_tensor_info info_E;
-    TAPP_create_tensor_info(&info_E, TAPP_F32, nmode_E, extents_E, strides_E);
+    TAPP_create_tensor_info(&info_E, TAPP_F64, nmode_E, extents_E, strides_E);
 
     TAPP_tensor_product plan2;
     TAPP_element_op op_E = TAPP_IDENTITY;
     int64_t idx_E[3] = {'a', 'd', 'e'};
     TAPP_create_tensor_product(&plan2, handle, op_D, info_D, idx_D, op_C, info_C, idx_C, op_C, info_C, idx_C, op_E, info_E, idx_E, prec);
 
-    float E[16] = {
+    double E[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
@@ -823,7 +825,7 @@ void chained_diff_op()
     TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D, (void *)C, (void *)&beta, (void *)C, (void *)E);
 
     printf("\tOperation 2:\n");
-    print_tensor_s(nmode_E, extents_E, strides_E, E);
+    print_tensor_d(nmode_E, extents_E, strides_E, E);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_product(plan2);
@@ -841,25 +843,25 @@ void chained_same_op()
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {4, 4};
     int64_t strides_B[2] = {1, 4};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {4, 4};
     int64_t strides_C[2] = {1, 4};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {4, 4};
     int64_t strides_D[2] = {1, 4};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -878,29 +880,29 @@ void chained_same_op()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 3;
+    double alpha = 3;
 
-    float A[16] = {
+    double A[16] = {
         1, 2, 3, 4,
         1, 2, 3, 4,
         1, 2, 3, 4,
         1, 2, 3, 4};
 
-    float B[16] = {
+    double B[16] = {
         1, 1, 1, 1,
         2, 2, 2, 2,
         3, 3, 3, 3,
         4, 4, 4, 4};
 
-    float beta = 2;
+    double beta = 2;
 
-    float C[16] = {
+    double C[16] = {
         1, 2, 1, 2,
         1, 2, 1, 2,
         1, 2, 1, 2,
         1, 2, 1, 2};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
         9, 10, 11, 12,
@@ -909,11 +911,11 @@ void chained_same_op()
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
     printf("\tOperation 1:\n");
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     alpha = 1;
     beta = 2;
-    float E[16] = {
+    double E[16] = {
         1,
         2,
         3,
@@ -934,7 +936,7 @@ void chained_same_op()
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)D, (void *)&beta, (void *)C, (void *)E);
 
     printf("\tOperation 2:\n");
-    print_tensor_s(nmode_D, extents_D, strides_D, E);
+    print_tensor_d(nmode_D, extents_D, strides_D, E);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -950,25 +952,25 @@ void negative_str()
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {-1, -4, -12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {-1, -3, -6, -12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -987,9 +989,9 @@ void negative_str()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[36] = {
+    double A[36] = {
         -1, 1.01, 2, 1,
         -1, 1.01, 2, 1,
         -1, 1.01, 2, 1,
@@ -1002,7 +1004,7 @@ void negative_str()
         -1, 1.01, 2, 1,
         -1, 1.01, 2, 1};
 
-    float B[36] = {
+    double B[36] = {
         6, 6, 6,
         3, 3, 3,
 
@@ -1021,28 +1023,28 @@ void negative_str()
         2, 2, 2,
         1, 1, 1};
 
-    float beta = 0;
+    double beta = 0;
 
-    float C[16] = {
+    double C[16] = {
         2, 4, 6, 8,
         2, 4, 6, 8,
 
         2, 4, 6, 8,
         2, 4, 6, 8};
 
-    float D[16] = {
+    double D[16] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
 
         1, 2, 3, 4,
         5, 6, 7, 8};
 
-    float *A_ptr = &A[35];
-    float *B_ptr = &B[35];
+    double *A_ptr = &A[35];
+    double *B_ptr = &B[35];
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_ptr, (void *)B_ptr, (void *)&beta, (void *)C, (void *)D);
 
-    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    print_tensor_d(nmode_D, extents_D, strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
@@ -1058,25 +1060,25 @@ void subtensors()
     int64_t extents_A[3] = {3, 2, 2};
     int64_t strides_A[3] = {1, 12, 24};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
 
     int nmode_B = 3;
     int64_t extents_B[3] = {2, 2, 3};
     int64_t strides_B[3] = {3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 4};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_handle handle;
     TAPP_tensor_product plan;
@@ -1095,9 +1097,9 @@ void subtensors()
     create_executor(&exec);
     TAPP_status status;
 
-    float alpha = 1;
+    double alpha = 1;
 
-    float A[48] = {
+    double A[48] = {
         0,
         0,
         0,
@@ -1151,7 +1153,7 @@ void subtensors()
         0,
     };
 
-    float B[36] = {
+    double B[36] = {
         0, 1, 0,
         0, 2, 0,
 
@@ -1170,27 +1172,27 @@ void subtensors()
         0, 9, 0,
         0, 12, 0};
 
-    float beta = 0.5;
+    double beta = 0.5;
 
-    float C[9] = {
+    double C[9] = {
         2, 4, 6,
         2, 4, 6,
         2, 4, 6};
 
-    float D[12] = {
+    double D[12] = {
         1, 2, 3, 4,
         5, 6, 7, 8,
         9, 10, 11, 12};
 
-    float *A_ptr = &A[5];
+    double *A_ptr = &A[5];
 
-    float *B_ptr = &B[1];
+    double *B_ptr = &B[1];
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_ptr, (void *)B_ptr, (void *)&beta, (void *)C, (void *)D);
 
     int64_t super_extents_D[2] = {4, 3};
     int64_t super_strides_D[2] = {1, 4};
-    print_tensor_s(nmode_D, super_extents_D, super_strides_D, D);
+    print_tensor_d(nmode_D, super_extents_D, super_strides_D, D);
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);

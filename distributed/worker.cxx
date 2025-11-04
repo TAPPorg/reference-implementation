@@ -432,6 +432,49 @@ int copyTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& ten
   return 0;
 }
 
+int reshapeTensor_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
+  int datatype_dest, datatype_src;
+  std::string dest, src;
+
+  int nmodes = -1;
+  int64_t* extents = nullptr;
+
+  reshapeTensor(dest, src, nmodes, extents);
+  int* extents_ = int64ToIntArray(extents, nmodes);
+
+  if(tensorR.find(dest) != tensorR.end()) datatype_dest = 1;
+  else if(tensorC.find(dest) != tensorC.end()) datatype_dest = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << dest << std::endl;
+    exit(404);
+  }
+  if(tensorR.find(src) != tensorR.end()) datatype_src = 1;
+  else if(tensorC.find(src) != tensorC.end()) datatype_src = 3; 
+  else {
+    std::cout << "ERROR: Tensor not found. uuid: " << src << std::endl;
+    exit(404);
+  }
+  if (datatype_dest != datatype_src){
+    std::cout << "ERROR: Copied tensors cannot have different datatypes. " << std::endl;
+    exit(403);
+  }
+
+
+  switch (datatype_src) { // tapp_datatype
+    case 1://TAPP_R64:
+      *tensorR[dest] = (*tensorR[src]).reshape(nmodes, extents_);
+      break;
+    case 3://TAPP_C64:
+      *tensorC[dest] = (*tensorC[src]).reshape(nmodes, extents_);
+      break;
+  }
+
+  delete[] extents;
+  delete[] extents_;
+  waitWorkersFinished();
+  return 0;
+}
+
 int tensorSetName_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
   int datatype_tapp;
   std::string uuid;
@@ -821,6 +864,9 @@ int main(int argc, char ** argv){
       }
       else if(message == "copyTensor"){
         ierr = copyTensor_(dw, tensorR, tensorC);
+      }
+      else if(message == "reshapeTensor"){
+        ierr = reshapeTensor_(dw, tensorR, tensorC);
       }
       else if(message == "destructTensor"){
         ierr = destructTensor_(dw, tensorR, tensorC);

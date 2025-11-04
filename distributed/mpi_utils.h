@@ -406,6 +406,25 @@ int copyTensor(std::string& dest, std::string& src){
   return 0;
 }
 
+int reshapeTensor(std::string& dest, std::string& src, int& nmodes, int64_t*& extents){
+  int rootRank = 0;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(rank == rootRank){
+    std::string message = "reshapeTensor";
+    mpiBroadcastString(message);
+  }
+
+  mpiBroadcastString(dest);
+  mpiBroadcastString(src);
+  mpiBroadcastInt64_tArray(extents, nmodes);
+  
+  //worker copies tensor
+  if(rank == rootRank) waitWorkersFinished();
+  return 0;
+}
+
 int scaleWithDenominatorsPart1(std::string& uuid, int& n_occ, int& n_vir){
   int rootRank = 0;
   int rank;
