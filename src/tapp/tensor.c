@@ -187,8 +187,8 @@ TAPP_error TAPP_scale_with_denominators(TAPP_tensor_info info,
     return distributed_scale_with_denominators(info, n_occ, n_vir, eps_occ, eps_vir, eps_ijk);
 }
 
-TAPP_error TAPP_reshape_tensor(TAPP_tensor_info dest, TAPP_tensor_info src, int nmode, const int64_t* dimensions){
+TAPP_error TAPP_reshape_tensor(TAPP_tensor_info dest, TAPP_tensor_info src, int nmode, int64_t* dimensions){
 
-    return distributed_reshape_tensor(dest, src, int nmode, const int64_t* dimensions);
+    return distributed_reshape_tensor(dest, src, nmode, dimensions);
 }
 
