@@ -686,13 +686,20 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
   return 0;
 }
 
+CTF::Tensor<std::complex<double>> conj_(CTF::Tensor<std::complex<double>> & A){
+  CTF::Tensor<std::complex<double>> B(A);
+  B["i"] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })(A["i"]);
+  return B;
+}
+
 int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
   std::string uuid_A, uuid_B, uuid_C, uuid_D;
   int nmode_A, nmode_B, nmode_C, nmode_D;
   int64_t * idx_A_ = nullptr, * idx_B_ = nullptr, * idx_C_ = nullptr, * idx_D_ = nullptr;
+  int op_A, op_B, op_C, op_D;
   std::complex<double> alpha, beta;
 
-  executeProduct(uuid_A, nmode_A, idx_A_, uuid_B, nmode_B, idx_B_, uuid_C, nmode_C, idx_C_, uuid_D, nmode_D, idx_D_, alpha, beta);
+  executeProduct(uuid_A, nmode_A, idx_A_, op_A, uuid_B, nmode_B, idx_B_, op_B, uuid_C, nmode_C, idx_C_, op_C, uuid_D, nmode_D, idx_D_, op_D, alpha, beta);
   
   int datatype_A, datatype_B, datatype_C, datatype_D;
   if(tensorR.find(uuid_A) != tensorR.end()) datatype_A = 1;
@@ -733,12 +740,31 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
     tensorR[uuid_D]->contract(alpha_,  *(tensorR[uuid_A]), idx_A, *(tensorR[uuid_B]), idx_B, beta_, idx_D);
   } 
   else if(datatype_D == 3){
-    if(uuid_C != uuid_D){
+    if(uuid_C != uuid_D && op_C==0){
       (*(tensorC[uuid_D]))[idx_D] = (*(tensorC[uuid_C]))[idx_C]; 
     }
-    tensorC[uuid_D]->contract(alpha,  *(tensorC[uuid_A]), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+    else if(op_C==1){
+      (*(tensorC[uuid_D]))[idx_D] = (conj_(*(tensorC[uuid_C])))[idx_C]; 
+    }
 
-	
+    //B["i"] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_A]))["i"]);
+
+    if(op_A==0 && op_B==0){
+      tensorC[uuid_D]->contract(alpha, *(tensorC[uuid_A]), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+    }
+    else if(op_A==1 && op_B==0){
+      tensorC[uuid_D]->contract(alpha, conj_(*(tensorC[uuid_A])), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+    }
+    else if(op_A==0 && op_B==1){
+      tensorC[uuid_D]->contract(alpha, *(tensorC[uuid_A]), idx_A, conj_(*(tensorC[uuid_B])), idx_B, beta, idx_D);
+    }
+    else if(op_A==1 && op_B==1){
+      tensorC[uuid_D]->contract(alpha, conj_(*(tensorC[uuid_A])), idx_A, conj_(*(tensorC[uuid_B])), idx_B, beta, idx_D);
+    }
+
+	if(op_D==1){
+      (*(tensorC[uuid_D]))[idx_D] = (conj_(*(tensorC[uuid_D])))[idx_D]; 
+    }
 
 
   //test

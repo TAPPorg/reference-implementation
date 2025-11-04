@@ -499,7 +499,7 @@ int destructTensor(std::string& uuid){
   return 0;
 }
 
-int executeProduct(std::string& uuid_A, int& nmode_A, int64_t*& idx_A, std::string& uuid_B, int& nmode_B, int64_t*& idx_B, std::string& uuid_C, int& nmode_C, int64_t*& idx_C, std::string& uuid_D, int& nmode_D, int64_t*& idx_D, std::complex<double>& alpha, std::complex<double>& beta){
+int executeProduct(std::string& uuid_A, int& nmode_A, int64_t*& idx_A, int& op_A, std::string& uuid_B, int& nmode_B, int64_t*& idx_B, int& op_B, std::string& uuid_C, int& nmode_C, int64_t*& idx_C, int& op_C, std::string& uuid_D, int& nmode_D, int64_t*& idx_D, int& op_D, std::complex<double>& alpha, std::complex<double>& beta){
   int rootRank = 0;
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -512,15 +512,19 @@ int executeProduct(std::string& uuid_A, int& nmode_A, int64_t*& idx_A, std::stri
   mpiBroadcastString(uuid_A);
   mpiBroadcastInt(nmode_A);
   mpiBroadcastInt64_tArray(idx_A, nmode_A);
+  mpiBroadcastInt(op_A);
   mpiBroadcastString(uuid_B);
   mpiBroadcastInt(nmode_B);
   mpiBroadcastInt64_tArray(idx_B, nmode_B);
+  mpiBroadcastInt(op_B);
   mpiBroadcastString(uuid_C);
   mpiBroadcastInt(nmode_C);
   mpiBroadcastInt64_tArray(idx_C, nmode_C);
+  mpiBroadcastInt(op_C);
   mpiBroadcastString(uuid_D);
   mpiBroadcastInt(nmode_D);
   mpiBroadcastInt64_tArray(idx_D, nmode_D);
+  mpiBroadcastInt(op_D);
   mpiBroadcastC64(alpha);
   mpiBroadcastC64(beta);
 

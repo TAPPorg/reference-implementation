@@ -502,8 +502,8 @@ extern "C" {
     int nmodes_C = TAPP_get_nmodes(info_C);
     int nmodes_D = TAPP_get_nmodes(info_D);
    
-    executeProduct(uuid_A, nmodes_A, idx_A, uuid_B, nmodes_B, idx_B, 
-                   uuid_C, nmodes_C, idx_C, uuid_D, nmodes_D, idx_D, alpha_, beta_);
+    executeProduct(uuid_A, nmodes_A, idx_A, op_A, uuid_B, nmodes_B, idx_B, op_B, 
+                   uuid_C, nmodes_C, idx_C, op_C, uuid_D, nmodes_D, idx_D, op_D, alpha_, beta_);
    
    
     /* //comm test
