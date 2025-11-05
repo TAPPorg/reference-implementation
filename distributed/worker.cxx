@@ -744,7 +744,9 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
       (*(tensorC[uuid_D]))[idx_D] = (*(tensorC[uuid_C]))[idx_C]; 
     }
     else if(op_C==1){
-      (*(tensorC[uuid_D]))[idx_D] = (conj_(*(tensorC[uuid_C])))[idx_C]; 
+      CTF::Tensor<std::complex<double>> conjT(*(tensorC[uuid_C]));
+      conjT[idx_C] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_C]))[idx_C]);
+      (*(tensorC[uuid_D]))[idx_D] = conjT[idx_C]; 
     }
 
     //B["i"] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_A]))["i"]);
@@ -753,17 +755,27 @@ int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>&
       tensorC[uuid_D]->contract(alpha, *(tensorC[uuid_A]), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
     }
     else if(op_A==1 && op_B==0){
-      tensorC[uuid_D]->contract(alpha, conj_(*(tensorC[uuid_A])), idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
+      CTF::Tensor<std::complex<double>> conjT(*(tensorC[uuid_A]));
+      conjT[idx_A] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_A]))[idx_A]);
+      tensorC[uuid_D]->contract(alpha, conjT, idx_A, *(tensorC[uuid_B]), idx_B, beta, idx_D);
     }
     else if(op_A==0 && op_B==1){
-      tensorC[uuid_D]->contract(alpha, *(tensorC[uuid_A]), idx_A, conj_(*(tensorC[uuid_B])), idx_B, beta, idx_D);
+      CTF::Tensor<std::complex<double>> conjT(*(tensorC[uuid_B]));
+      conjT[idx_B] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_B]))[idx_B]);
+      tensorC[uuid_D]->contract(alpha, *(tensorC[uuid_A]), idx_A, conjT, idx_B, beta, idx_D);
     }
     else if(op_A==1 && op_B==1){
-      tensorC[uuid_D]->contract(alpha, conj_(*(tensorC[uuid_A])), idx_A, conj_(*(tensorC[uuid_B])), idx_B, beta, idx_D);
+      CTF::Tensor<std::complex<double>> conjT(*(tensorC[uuid_A]));
+      conjT[idx_A] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_A]))[idx_A]);
+      CTF::Tensor<std::complex<double>> conjT2(*(tensorC[uuid_B]));
+      conjT2[idx_B] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_B]))[idx_B]);
+      tensorC[uuid_D]->contract(alpha, conjT, idx_A, conjT2, idx_B, beta, idx_D);
     }
 
 	if(op_D==1){
-      (*(tensorC[uuid_D]))[idx_D] = (conj_(*(tensorC[uuid_D])))[idx_D]; 
+      CTF::Tensor<std::complex<double>> conjT(*(tensorC[uuid_D]));
+      conjT[idx_D] = CTF::Function<std::complex<double>>([](std::complex<double> a){ return std::conj(a); })((*(tensorC[uuid_D]))[idx_D]);
+      (*(tensorC[uuid_D]))[idx_D] = conjT[idx_D]; 
     }
 
 
