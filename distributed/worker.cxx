@@ -697,7 +697,7 @@ void conj_helper(CTF::Tensor<std::complex<double>> & A, CTF::Tensor<std::complex
     for(int i=0;i<A.order;i++) {
       str[i] = 'a' + i;
     }
-    B[str] = CTF::Function<std::complex<double>,std::complex<dtype>>([](std::complex<double> a){ return std::complex<double>(a.real(), -a.imag()); })(A[str]);
+    B[str] = CTF::Function<std::complex<double>,std::complex<double>>([](std::complex<double> a){ return std::complex<double>(a.real(), -a.imag()); })(A[str]);
   }
 
 int executeProduct_(World& dw, std::map<std::string, std::unique_ptr<Tensor<>>>& tensorR, std::map<std::string, std::unique_ptr<Tensor<std::complex<double>>>>& tensorC){
