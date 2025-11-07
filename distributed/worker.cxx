@@ -547,7 +547,7 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
   else { std::cout << "ERROR: Attempting to destruct nonexisting tensor. uuid: " << uuid << std::endl; exit(404); }
 
   if(dw.rank == 0)
-    std::cout << "Using scaleWithDenominators."  << std::endl;
+    std::cout << "Using scaleWithDenominators. lambda: " << lambda  << std::endl;
 
 	std::string idx_ = "";
 	if(order == 2) {
@@ -609,8 +609,14 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
 
         const char * idx = idx_.c_str();
 				for(int i=0;i<order/2;i++){
-          denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
-          denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+		          if(!lambda){
+                    denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+                  }
+                  else { 
+                    denom[idx] += eps_vir_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] -= eps_occ_t[idx_.substr(i,1).c_str()];
+                  }
 				}
         Transform<> div([](double & b){ b=1./b; });
         div(denom[idx]);
@@ -657,8 +663,14 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
 
         const char * idx = idx_.c_str();
 				for(int i=0;i<order/2;i++){
-          denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
-          denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+		          if(!lambda){
+                    denom[idx] += eps_occ_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
+                  }
+                  else { 
+                    denom[idx] += eps_vir_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] -= eps_occ_t[idx_.substr(i,1).c_str()];
+                  }
 				}
         Transform<std::complex<double>> div([](std::complex<double> & b){ b=1./b; });
         div(denom[idx]);
