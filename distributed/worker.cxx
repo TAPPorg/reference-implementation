@@ -614,8 +614,8 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
                     denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
                   }
                   else { 
-                    denom[idx] += eps_vir_t[idx_.substr(order-i-1,1).c_str()];
-                    denom[idx] -= eps_occ_t[idx_.substr(i,1).c_str()];
+                    denom[idx] -= eps_vir_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] += eps_occ_t[idx_.substr(i,1).c_str()];
                   }
 				}
         Transform<> div([](double & b){ b=1./b; });
@@ -668,8 +668,8 @@ int scaleWithDenominators_(World& dw, std::map<std::string, std::unique_ptr<Tens
                     denom[idx] -= eps_vir_t[idx_.substr(i,1).c_str()];
                   }
                   else { 
-                    denom[idx] += eps_vir_t[idx_.substr(order-i-1,1).c_str()];
-                    denom[idx] -= eps_occ_t[idx_.substr(i,1).c_str()];
+                    denom[idx] -= eps_vir_t[idx_.substr(order-i-1,1).c_str()];
+                    denom[idx] += eps_occ_t[idx_.substr(i,1).c_str()];
                   }
 				}
         Transform<std::complex<double>> div([](std::complex<double> & b){ b=1./b; });
