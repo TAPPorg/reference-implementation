@@ -31,9 +31,9 @@ endif
 
 
 ifeq ($(ENABLE_TBLIS),true)
-all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers
+all: base_folders tapp $(OBJ)/tblis_bind.o $(OBJ)/test.o $(OUT)/test$(EXEEXT) $(OUT)/test++$(EXEEXT) demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers benchmark
 else
-all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers
+all: base_folders tapp $(OBJ)/tblis_bind.o demo driver exercise_contraction_answers exercise_tucker exercise_tucker_answers benchmark
 endif
 
 tapp: base_folders $(OBJ)/tapp.o $(OBJ)/error.o $(OBJ)/tensor.o $(OBJ)/product.o $(OBJ)/executor.o $(OBJ)/handle.o lib/libtapp$(LIBEXT)
@@ -46,11 +46,16 @@ exercise_contraction: exercise_contraction_folders tapp examples/exercise_contra
 exercise_contraction_answers: exercise_contraction_answers_folders tapp examples/exercise_contraction/answers/obj/exercise_contraction_answers.o examples/exercise_contraction/answers/out/exercise_contraction_answers$(EXEEXT)
 exercise_tucker: exercise_tucker_folders tapp examples/exercise_tucker/tapp_tucker/obj/exercise_tucker.o examples/exercise_tucker/tapp_tucker/lib/libexercise_tucker$(LIBEXT)
 exercise_tucker_answers: exercise_tucker_answers_folders tapp examples/exercise_tucker/tapp_tucker/answers/obj/exercise_tucker_answers.o examples/exercise_tucker/tapp_tucker/answers/lib/libexercise_tucker$(LIBEXT)
+benchmark: benchmark_folders tapp benchmark/obj/benchmark.o benchmark/out/benchmark$(EXEEXT)
 
 base_folders:
 	mkdir -p obj lib out bin
+
 driver_folders:
 	mkdir -p examples/driver/obj examples/driver/out
+
+benchmark_folders:
+	mkdir -p benchmark/obj benchmark/out
 
 exercise_contraction_folders:
 	mkdir -p examples/exercise_contraction/obj examples/exercise_contraction/out
@@ -145,13 +150,19 @@ $(OBJ)/demo_dynamic.o: $(TEST)/demo_dynamic.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall $(TEST)/demo_dynamic.c -o $(OBJ)/demo_dynamic.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
 $(OUT)/demo_dynamic$(EXEEXT): $(OBJ)/demo_dynamic.o $(OBJ)/helpers.o
-	$(CC) $(CFLAGS) -g  $(OBJ)/demo_dynamic.o $(OBJ)/helpers.o -o $(OUT)/demo_dynamic$(EXEEXT)
+	$(CC) $(CFLAGS) -g $(OBJ)/demo_dynamic.o $(OBJ)/helpers.o -o $(OUT)/demo_dynamic$(EXEEXT)
 
 $(OBJ)/test_dynamic.o: $(TEST)/test_dynamic.cpp lib/libtapp$(LIBEXT)
 	$(CXX) $(CFLAGS) -c -g -Wall $(TEST)/test_dynamic.cpp -o $(OBJ)/test_dynamic.o -I$(INC) -I$(INC)/tapp -I$(TEST)
 
 $(OUT)/test_dynamic$(EXEEXT): $(OBJ)/test_dynamic.o $(OBJ)/helpers.o
 	$(CXX) $(CFLAGS) -g  $(OBJ)/test_dynamic.o $(OBJ)/helpers.o -o $(OUT)/test_dynamic$(EXEEXT)
+
+benchmark/obj/benchmark.o: benchmark/benchmark.c
+	$(CC) $(CFLAGS) -c -g -Wall benchmark/benchmark.c -o benchmark/obj/benchmark.o -I$(INC) -I$(INC)/tapp -Ibenchmark
+
+benchmark/out/benchmark$(EXEEXT): benchmark/obj/benchmark.o
+	$(CC) $(CFLAGS) -g benchmark/obj/benchmark.o -o benchmark/out/benchmark$(EXEEXT)
 
 examples/driver/obj/driver.o: examples/driver/driver.c lib/libtapp$(LIBEXT)
 	$(CC) $(CFLAGS) -c -g -Wall examples/driver/driver.c -o examples/driver/obj/driver.o -I$(INC) -I$(INC)/tapp -I$(TEST)

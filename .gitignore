@@ -13,3 +13,5 @@ examples/exercise_tucker/tapp_tucker/obj/*
 examples/exercise_tucker/tapp_tucker/lib/*
 examples/exercise_tucker/tapp_tucker/answers/obj/*
 examples/exercise_tucker/tapp_tucker/answers/lib/*
+benchmark/out/*
+benchmark/obj/*
