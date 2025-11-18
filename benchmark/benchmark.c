@@ -268,6 +268,92 @@ intptr_t calculate_offset(TAPP_tensor_info tensor, TAPP_datatype datatype)
     return offset;
 }
 
+uint64_t calculate_FLO(int test_id)
+{
+    uint64_t unary_contraction_A_size = 1;
+    uint64_t unary_contraction_B_size = 1;
+    uint64_t free_A_size = 1;
+    uint64_t free_B_size = 1;
+    uint64_t binary_contraction_size = 1;
+    uint64_t result_size = 1;
+    for (int i = 0, current_tensor = TENSOR_A; current_tensor < TENSOR_D; i++)
+    {
+        if (indices_list[test_id][i] == '-'){
+            current_tensor++;
+            continue;
+        }
+        int test_tensor = TENSOR_A;
+        bool in_other = false;
+        bool in_result = false;
+        for (int j = 0; indices_list[test_id][j] != '\0'; j++)
+        {
+            if (indices_list[test_id][j] == '-')
+            {
+                test_tensor++;
+                continue;
+            }
+            if (indices_list[test_id][i] == indices_list[test_id][j] && j < i)
+            {
+                goto skip;
+            }
+            if (current_tensor == test_tensor || current_tensor == TENSOR_D)
+            {
+                continue;
+            }
+            if (indices_list[test_id][i] == indices_list[test_id][j] && current_tensor != test_tensor && test_tensor != TENSOR_D)
+            {
+                in_other = true;
+            }
+            if (indices_list[test_id][i] == indices_list[test_id][j] && test_tensor == TENSOR_D)
+            {
+                in_result = true;
+            }
+        }
+
+        if (!in_result && !in_other)
+        {
+            if (current_tensor == TENSOR_A)
+            {
+                unary_contraction_A_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+            }
+            else if (current_tensor == TENSOR_B)
+            {
+                unary_contraction_B_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+            }
+        }
+        else if (in_other && !in_result)
+        {
+            binary_contraction_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+        }
+        else if (in_result)
+        {
+            result_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+            if (current_tensor == TENSOR_A)
+            {
+                free_A_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+            }
+            else if (current_tensor == TENSOR_B)
+            {
+                free_B_size *= extents_list[test_id][(int)(indices_list[test_id][i]) - (int)'a'];
+            }
+        }
+        
+        skip:
+    }
+    
+    uint64_t FLO = 2 * result_size; // beta * C
+
+    FLO += (unary_contraction_A_size - 1) * free_A_size; // unary contractions for A (more optimized than reference implementation)
+
+    FLO += (unary_contraction_B_size - 1) * free_B_size; // unary contractions for B (more optimized than reference implementation)
+    
+    FLO += result_size * binary_contraction_size * 2; // A * B
+
+    FLO += result_size; // alpha
+
+    return FLO;
+}
+
 int main(int argc, char const *argv[])
 {
     load_imlpementation(&imp);
@@ -300,7 +386,7 @@ int main(int argc, char const *argv[])
         TAPP_error error = imp.TAPP_execute_product(plan, exec, &status, (void *)alpha, (void *)((intptr_t)A + offset_A), (void *)((intptr_t)B + offset_B), (void *)beta, (void *)((intptr_t)C + offset_C), (void *)((intptr_t)D + offset_D));
         clock_t end = clock();
         double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
-        printf("%f seconds\n", time_spent);
+        printf("%lf seconds, %lf FLOPS\n", time_spent, (double)FLO / time_spent);
         imp.TAPP_destroy_tensor_product(plan);
         imp.TAPP_destroy_executor(exec);
         imp.TAPP_destroy_handle(handle);
