@@ -2,14 +2,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include "tapp.h"
+#include <complex.h>
+#include <string.h>
 #include <dlfcn.h>  // POSIX dynamic loading, TODO: fix for windows
+#include "tapp.h"
 
-#define NUMBER_OF_TESTS 48
+#define NUMBER_OF_TESTS 49
 #define TENSOR_A 0
 #define TENSOR_B 1
+#define TENSOR_C 2
 #define TENSOR_D 2
-#define NUMBER_OF_TENSORS 3
+#define NUMBER_OF_TENSOR_INFOS 3
+#define NUMBER_OF_TENSORS 4
+#define OP_A 0
+#define OP_B 1
+#define OP_C 2
+#define OP_D 3
+#define DATATYPE_A 0
+#define DATATYPE_B 1
+#define DATATYPE_C 2
+#define DATATYPE_D 3
+#define DATATYPE_ALPHA 3
+#define DATATYPE_BETA 3
 
 struct imp
 {
@@ -125,7 +139,9 @@ const char* indices_list[NUMBER_OF_TESTS] = {
     "abcdef-gfab-degc",
     "abcdef-gfac-degb",
     "abcdef-gfbc-dega",
+    "abc-bda-dc",
 };
+
 const int64_t extents_list[NUMBER_OF_TESTS][7] = { // Extents in alphabetic order for the indices starting on 'a'
     {384,384,24,384},
     {384,24,376,384},
@@ -174,7 +190,412 @@ const int64_t extents_list[NUMBER_OF_TESTS][7] = { // Extents in alphabetic orde
     {24,20,20,24,20,20,24},
     {24,20,20,24,20,20,24},
     {24,20,20,24,20,20,24},
-    {24,20,20,24,20,20,24}
+    {24,20,20,24,20,20,24},
+    {384,384,24,384},
+};
+
+int64_t* strides_list[NUMBER_OF_TESTS][NUMBER_OF_TENSOR_INFOS] = { // For use of subtensors
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+};
+
+const TAPP_element_op op_list[NUMBER_OF_TESTS][NUMBER_OF_TENSORS] = {
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+    {TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY, TAPP_IDENTITY},
+};
+
+const TAPP_datatype datatype_list[NUMBER_OF_TESTS][NUMBER_OF_TENSORS] = {
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+    {TAPP_F32, TAPP_F32, TAPP_F32},
+};
+
+const TAPP_prectype precision_list[NUMBER_OF_TESTS] = {
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
+    TAPP_DEFAULT_PREC,
 };
 
 struct imp imp;

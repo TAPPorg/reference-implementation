@@ -1,6 +1,7 @@
 #include "benchmark.h"
 
-void load_imlpementation() {
+void load_imlpementation()
+{
     imp.handle = dlopen(imp_path, RTLD_LAZY);
     if (!imp.handle) {
         fprintf(stderr, "dlopen failed: %s\n", dlerror());
@@ -37,17 +38,35 @@ void load_imlpementation() {
     }
 }
 
-void unload_implementation() {
+void unload_implementation()
+{
     if (imp.handle) {
         dlclose(imp.handle);
         imp.handle = NULL;
     }
 }
 
+void load_strides()
+{
+    strides_list[48][TENSOR_A] = malloc(sizeof(int64_t) * 3);
+    strides_list[48][TENSOR_A][0] = 2; strides_list[48][TENSOR_A][1] = 384*2*2; strides_list[48][TENSOR_A][2] = 384*384*2*2*2;
+    strides_list[48][TENSOR_B] = malloc(sizeof(int64_t) * 3);
+    strides_list[48][TENSOR_B][0] = 2; strides_list[48][TENSOR_B][1] = 384*2*2; strides_list[48][TENSOR_B][2] = 384*384*2*2*2;
+    strides_list[48][TENSOR_D] = malloc(sizeof(int64_t) * 2);
+    strides_list[48][TENSOR_D][0] = 2; strides_list[48][TENSOR_D][1] = 384*2*2;
+}
+
+void unload_strides()
+{
+    free(strides_list[48][TENSOR_A]);
+    free(strides_list[48][TENSOR_B]);
+    free(strides_list[48][TENSOR_D]);
+}
+
 int* count_nmodes(int test_id)
 {
-    int* nmodes = malloc(sizeof(int) * NUMBER_OF_TENSORS);
-    for (int i = 0; i < NUMBER_OF_TENSORS; i++)
+    int* nmodes = malloc(sizeof(int) * NUMBER_OF_TENSOR_INFOS);
+    for (int i = 0; i < NUMBER_OF_TENSOR_INFOS; i++)
     {
         nmodes[i] = 0;
     }
@@ -69,12 +88,12 @@ TAPP_tensor_info** create_tensor_infos(int test_id)
 {
     int* nmodes = count_nmodes(test_id);
 
-    int64_t* extents[NUMBER_OF_TENSORS] = {
+    int64_t* extents[NUMBER_OF_TENSOR_INFOS] = {
         malloc(sizeof(int64_t) * nmodes[TENSOR_A]),
         malloc(sizeof(int64_t) * nmodes[TENSOR_B]),
         malloc(sizeof(int64_t) * nmodes[TENSOR_D])
     };
-    int64_t* strides[NUMBER_OF_TENSORS] = {
+    int64_t* strides[NUMBER_OF_TENSOR_INFOS] = {
         malloc(sizeof(int64_t) * nmodes[TENSOR_A]),
         malloc(sizeof(int64_t) * nmodes[TENSOR_B]),
         malloc(sizeof(int64_t) * nmodes[TENSOR_D])
@@ -97,12 +116,16 @@ TAPP_tensor_info** create_tensor_infos(int test_id)
         working_index++;
     }
 
-    TAPP_tensor_info** tensors = malloc(sizeof(TAPP_tensor_info*) * NUMBER_OF_TENSORS);
+    if (strides_list[test_id][TENSOR_A] != NULL) memcpy(strides[TENSOR_A], strides_list[test_id][TENSOR_A], sizeof(int64_t) * nmodes[TENSOR_A]);
+    if (strides_list[test_id][TENSOR_B] != NULL) memcpy(strides[TENSOR_B], strides_list[test_id][TENSOR_B], sizeof(int64_t) * nmodes[TENSOR_B]);
+    if (strides_list[test_id][TENSOR_D] != NULL) memcpy(strides[TENSOR_D], strides_list[test_id][TENSOR_D], sizeof(int64_t) * nmodes[TENSOR_D]);
 
-    for (int i = 0; i < NUMBER_OF_TENSORS; i++)
+    TAPP_tensor_info** tensors = malloc(sizeof(TAPP_tensor_info*) * NUMBER_OF_TENSOR_INFOS);
+
+    for (int i = 0; i < NUMBER_OF_TENSOR_INFOS; i++)
     {
         tensors[i] = malloc(sizeof(TAPP_tensor_info));
-        imp.TAPP_create_tensor_info(tensors[i], TAPP_F32, nmodes[i], extents[i], strides[i]);
+        imp.TAPP_create_tensor_info(tensors[i], datatype_list[test_id][i], nmodes[i], extents[i], strides[i]);
         
         free(extents[i]);
         free(strides[i]);
@@ -115,8 +138,8 @@ TAPP_tensor_info** create_tensor_infos(int test_id)
 
 int64_t** create_indices(int test_id, TAPP_tensor_info** tensors)
 {
-    int64_t** indices = malloc(sizeof(int64_t*) * NUMBER_OF_TENSORS);
-    for (int i = 0; i < NUMBER_OF_TENSORS; i++)
+    int64_t** indices = malloc(sizeof(int64_t*) * NUMBER_OF_TENSOR_INFOS);
+    for (int i = 0; i < NUMBER_OF_TENSOR_INFOS; i++)
     {
         indices[i] = malloc(sizeof(int64_t) * imp.TAPP_get_nmodes(*tensors[i]));
     }
@@ -166,25 +189,89 @@ void* create_random_values(int64_t number_of_values, TAPP_datatype datatype)
         }
         return values;
     }
+    else if (datatype == TAPP_SCOMPLEX)
+    {
+        complex float* values = malloc(sizeof(complex float) * number_of_values);
+        for (int64_t i = 0; i < number_of_values; i++)
+        {
+            values[i] = randf(-10, 10) + randf(-10, 10) * I;
+        }
+        return values;
+    }
+    else if (datatype == TAPP_DCOMPLEX)
+    {
+        complex double* values = malloc(sizeof(complex double) * number_of_values);
+        for (int64_t i = 0; i < number_of_values; i++)
+        {
+            values[i] = randd(-10, 10) + randd(-10, 10) * I;
+        }
+        return values;
+    }
     return NULL;
 }
 
-void* create_tensor_values(TAPP_tensor_info tensor)
+void* create_tensor_values(TAPP_tensor_info tensor, TAPP_datatype datatype)
 {
     int64_t size = 1;
     int64_t* extents = malloc(sizeof(int64_t) * imp.TAPP_get_nmodes(tensor));
+    int64_t* strides = malloc(sizeof(int64_t) * imp.TAPP_get_nmodes(tensor));
     imp.TAPP_get_extents(tensor, extents);
+    imp.TAPP_get_strides(tensor, strides);
+
     for (int i = 0; i < imp.TAPP_get_nmodes(tensor); i++)
     {
-        size *= extents[i];
+        size += abs(strides[i] * (extents[i] - 1));
     }
+
     free(extents);
-    return create_random_values(size, TAPP_FLOAT);
+    free(strides);
+
+    return create_random_values(size, datatype);
+}
+
+intptr_t calculate_offset(TAPP_tensor_info tensor, TAPP_datatype datatype)
+{
+    intptr_t offset = 0;
+    int64_t* extents = malloc(sizeof(int64_t) * imp.TAPP_get_nmodes(tensor));
+    int64_t* strides = malloc(sizeof(int64_t) * imp.TAPP_get_nmodes(tensor));
+    imp.TAPP_get_extents(tensor, extents);
+    imp.TAPP_get_strides(tensor, strides);
+
+    for (int i = 0; i < imp.TAPP_get_nmodes(tensor); i++)
+    {
+        if (strides[i] < 0)
+        {
+            offset += abs(strides[i] * (extents[i] - 1));
+        }
+    }
+
+    if (datatype == TAPP_FLOAT)
+    {
+        offset *= sizeof(float);
+    }
+    else if (datatype == TAPP_DOUBLE)
+    {
+        offset *= sizeof(double);
+    }
+    else if (datatype == TAPP_SCOMPLEX)
+    {
+        offset *= sizeof(complex float);
+    }
+    else if (datatype == TAPP_DCOMPLEX)
+    {
+        offset *= sizeof(complex double);
+    }
+    
+    free(extents);
+    free(strides);
+
+    return offset;
 }
 
 int main(int argc, char const *argv[])
 {
     load_imlpementation(&imp);
+    load_strides();
     for (int test_id = 0; test_id < NUMBER_OF_TESTS; test_id++)
     {
         printf("Test %d, %s: ", test_id + 1, indices_list[test_id]);
@@ -194,19 +281,23 @@ int main(int argc, char const *argv[])
         TAPP_handle handle;
         imp.create_handle(&handle);
         TAPP_tensor_product plan;
-        TAPP_prectype prec = TAPP_DEFAULT_PREC;
-        imp.TAPP_create_tensor_product(&plan, handle, TAPP_IDENTITY, *tensors[TENSOR_A], indices[TENSOR_A], TAPP_IDENTITY, *tensors[TENSOR_B], indices[TENSOR_B], TAPP_IDENTITY, *tensors[TENSOR_D], indices[TENSOR_D], TAPP_IDENTITY, *tensors[TENSOR_D], indices[TENSOR_D], prec);
+        imp.TAPP_create_tensor_product(&plan, handle, op_list[test_id][OP_A], *tensors[TENSOR_A], indices[TENSOR_A], op_list[test_id][OP_B], *tensors[TENSOR_B], indices[TENSOR_B], op_list[test_id][OP_C], *tensors[TENSOR_C], indices[TENSOR_C], op_list[test_id][OP_D], *tensors[TENSOR_D], indices[TENSOR_D], precision_list[test_id]);
         TAPP_executor exec;
         imp.create_executor(&exec);
         TAPP_status status;
-        void* alpha = create_random_values(1, TAPP_FLOAT);
-        void* beta = create_random_values(1, TAPP_FLOAT);
-        void* A = create_tensor_values(*tensors[TENSOR_A]);
-        void* B = create_tensor_values(*tensors[TENSOR_B]);
-        void* C = create_tensor_values(*tensors[TENSOR_D]);
-        void* D = create_tensor_values(*tensors[TENSOR_D]);
+        void* alpha = create_random_values(1, datatype_list[test_id][DATATYPE_ALPHA]);
+        void* beta = create_random_values(1, datatype_list[test_id][DATATYPE_BETA]);
+        void* A = create_tensor_values(*tensors[TENSOR_A], datatype_list[test_id][DATATYPE_A]);
+        void* B = create_tensor_values(*tensors[TENSOR_B], datatype_list[test_id][DATATYPE_B]);
+        void* C = create_tensor_values(*tensors[TENSOR_C], datatype_list[test_id][DATATYPE_C]);
+        void* D = create_tensor_values(*tensors[TENSOR_D], datatype_list[test_id][DATATYPE_D]);
+        intptr_t offset_A = calculate_offset(*tensors[TENSOR_A], datatype_list[test_id][DATATYPE_A]);
+        intptr_t offset_B = calculate_offset(*tensors[TENSOR_B], datatype_list[test_id][DATATYPE_B]);
+        intptr_t offset_C = calculate_offset(*tensors[TENSOR_C], datatype_list[test_id][DATATYPE_C]);
+        intptr_t offset_D = offset_C;
+        uint64_t FLO = calculate_FLO(test_id);
         clock_t start = clock();
-        TAPP_error error = imp.TAPP_execute_product(plan, exec, &status, (void *)alpha, (void *)A, (void *)B, (void *)beta, (void *)C, (void *)D);
+        TAPP_error error = imp.TAPP_execute_product(plan, exec, &status, (void *)alpha, (void *)((intptr_t)A + offset_A), (void *)((intptr_t)B + offset_B), (void *)beta, (void *)((intptr_t)C + offset_C), (void *)((intptr_t)D + offset_D));
         clock_t end = clock();
         double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
         printf("%f seconds\n", time_spent);
@@ -219,7 +310,7 @@ int main(int argc, char const *argv[])
         free(B);
         free(C);
         free(D);
-        for (int i = 0; i < NUMBER_OF_TENSORS; i++)
+        for (int i = 0; i < NUMBER_OF_TENSOR_INFOS; i++)
         {
             imp.TAPP_destroy_tensor_info(*tensors[i]);
             free(tensors[i]);
@@ -230,6 +321,7 @@ int main(int argc, char const *argv[])
         
         if (error != 0) return -1;
     }
+    unload_strides();
     unload_implementation(&imp);
     return 0;
 }
