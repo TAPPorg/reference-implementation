@@ -9,5 +9,6 @@
 #include "tapp/status.h"
 #include "tapp/tensor.h"
 #include "tapp/product.h"
+#include "tapp/transpose.h"
 
 #endif /* TAPP_TAPP_H_ */

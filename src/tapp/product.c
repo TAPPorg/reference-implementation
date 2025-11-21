@@ -79,7 +79,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       const int64_t* idx_D,
                                       TAPP_prectype prec)
 {
-    struct plan* plan_ptr = malloc(sizeof(struct plan));
+    struct product_plan* plan_ptr = malloc(sizeof(struct product_plan));
     plan_ptr->handle = handle;
 
     plan_ptr->op_A = op_A;
@@ -118,11 +118,11 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
-    free(((struct plan*)plan)->idx_A);
-    free(((struct plan*)plan)->idx_B);
-    free(((struct plan*)plan)->idx_C);
-    free(((struct plan*)plan)->idx_D);
-    free((struct plan*)plan);
+    free(((struct product_plan*)plan)->idx_A);
+    free(((struct product_plan*)plan)->idx_B);
+    free(((struct product_plan*)plan)->idx_C);
+    free(((struct product_plan*)plan)->idx_D);
+    free((struct product_plan*)plan);
 
     return 0;
 }
@@ -137,7 +137,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* C,
                                 void* D)
 {
-    struct plan* plan_ptr = (struct plan*)plan;
+    struct product_plan* plan_ptr = (struct product_plan*)plan;
     TAPP_handle handle = plan_ptr->handle;
 
     TAPP_element_op op_A = plan_ptr->op_A;

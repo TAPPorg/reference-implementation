@@ -18,7 +18,7 @@ struct tensor_info
     int64_t* strides;
 };
 
-struct plan
+struct product_plan
 {
     TAPP_handle handle;
     TAPP_element_op op_A;
@@ -35,6 +35,21 @@ struct plan
     int64_t* idx_D;
     TAPP_prectype prec;
 };
+
+struct transpose_plan
+{
+    TAPP_handle handle;
+    TAPP_element_op op_X;
+    TAPP_tensor_info X;
+    int64_t* idx_X;
+    TAPP_element_op op_Y;
+    TAPP_tensor_info Y;
+    int64_t* idx_Y;
+    TAPP_element_op op_Z;
+    TAPP_tensor_info Z;
+    int64_t* idx_Z;
+};
+
 
 TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec);
 TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle);
