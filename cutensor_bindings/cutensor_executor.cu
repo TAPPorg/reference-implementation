@@ -3,15 +3,19 @@
 TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec)
 {
     cudaStream_t* stream = (cudaStream_t*)malloc(sizeof(cudaStream_t));
-    HANDLE_CUDA_ERROR(cudaStreamCreate(stream));
+    cudaError_t cerr;
+    cerr = cudaStreamCreate(stream);
+    if (cerr != cudaSuccess) return pack_error(0, cerr);
     *exec = (TAPP_executor)stream;
-    return 0;
+    return pack_error(0, cerr);
 }
 
 TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor exec)
 {
     cudaStream_t* stream = (cudaStream_t*)exec;
-    HANDLE_CUDA_ERROR(cudaStreamDestroy(*stream));
+    cudaError_t cerr;
+    cerr = cudaStreamDestroy(*stream);
+    if (cerr != cudaSuccess) return pack_error(0, cerr);
     free(stream);
-    return 0;
+    return pack_error(0, cerr);
 }
