@@ -8,21 +8,9 @@
 #include <unordered_map>
 #include <vector>
 #include <complex>
+#include <cstdint> // uint64_t
 
 #include "../src/tapp.h"
-
-// Handle cuTENSOR errors
-#define HANDLE_ERROR(x)                                             \
-{ const auto err = x;                                               \
-    if( err != CUTENSOR_STATUS_SUCCESS )                              \
-    { printf("Error: %s\n", cutensorGetErrorString(err)); exit(-1); } \
-};
-
-#define HANDLE_CUDA_ERROR(x)                                      \
-{ const auto err = x;                                             \
-    if( err != cudaSuccess )                                        \
-    { printf("Error: %s\n", cudaGetErrorString(err)); exit(-1); } \
-};
 
 cutensorDataType_t translate_datatype(TAPP_datatype type);
 
@@ -35,6 +23,10 @@ TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle);
 TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec);
 
 size_t sizeof_datatype(TAPP_datatype type);
+
+int pack_error(int current_value, int tapp_err);
+int pack_error(int current_value, cutensorStatus_t e); 
+int pack_error(int current_value, cudaError_t e);
 
 typedef struct 
 {
