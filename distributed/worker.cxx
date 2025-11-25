@@ -933,6 +933,11 @@ int main(int argc, char ** argv){
       else if(message == "scaleWithDenominators"){
         ierr = scaleWithDenominators_(dw, tensorR, tensorC);
       }
+      else if(message == "initializeWorker"){
+        run = true;
+        waitWorkersFinished();
+        ierr = 0;
+      }
       else if(message == "stopWorker"){
         run = false;
         waitWorkersFinished();

@@ -143,6 +143,15 @@ int doJacobi(){
   return 0;
 }
 
+int initialize_(){
+  initialize(); 
+  std::string message = "initializeWorker";
+  mpiBroadcastString(message);
+  waitWorkersFinished();
+
+  return 0;
+}
+
 int finalize(){
 
   std::string message = "stopWorker";
@@ -427,6 +436,10 @@ extern "C" {
     delete[] buffi;
     delete[] buffc;
     return 0;
+  }
+
+  int initializeWork(){
+    return initialize_();
   }
 
   int finalizeWork(){

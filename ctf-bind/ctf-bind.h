@@ -49,6 +49,7 @@ extern "C" {
 
   int sctest(TAPP_tensor_info info);
 
+  int initializeWork();
   int finalizeWork();
 #ifdef __cplusplus
 }

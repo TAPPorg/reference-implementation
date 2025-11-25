@@ -128,6 +128,11 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     return 0;
 }
 
+TAPP_error TAPP_initialize(){
+    initializeWork();
+    return 0;
+}
+
 TAPP_error TAPP_finalize(){
     finalizeWork();
     return 0;
