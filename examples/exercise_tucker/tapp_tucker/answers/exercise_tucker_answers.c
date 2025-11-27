@@ -71,7 +71,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      */
 
     TAPP_executor exec; // Declaration of executor
-    create_executor(&exec); // Creation of executor
+    TAPP_create_executor(&exec); // Creation of executor
     // int exec_id = 1; // Choose executor
     // exec = (intptr_t)&exec_id; // Assign executor
 

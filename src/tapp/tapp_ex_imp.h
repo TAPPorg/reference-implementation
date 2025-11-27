@@ -36,7 +36,4 @@ struct plan
     TAPP_prectype prec;
 };
 
-TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec);
-TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle);
-
 #endif  // TAPP_TAPP_EX_IMP_H_

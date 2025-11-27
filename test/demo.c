@@ -4,7 +4,7 @@
  * Umeå University - September 2024
  */
 
-#include "tapp_ex_imp.h"
+#include <tapp.h>
 #include "helpers.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -89,7 +89,7 @@ void contraction()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     // int exec_id = 1;
     // exec = (intptr_t)&exec_id;
     TAPP_status status;
@@ -202,7 +202,7 @@ void hadamard()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -298,7 +298,7 @@ void complex_num()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float complex alpha = 1;
@@ -377,7 +377,7 @@ void conjugate()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float complex alpha = 1;
@@ -456,7 +456,7 @@ void zero_dim()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -533,7 +533,7 @@ void one_ext_contracted()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -638,7 +638,7 @@ void one_ext_transfered()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -743,7 +743,7 @@ void chained_diff_op()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 2;
@@ -875,7 +875,7 @@ void chained_same_op()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -984,7 +984,7 @@ void negative_str()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -1092,7 +1092,7 @@ void subtensors()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;

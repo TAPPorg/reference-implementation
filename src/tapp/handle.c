@@ -6,7 +6,7 @@
 #include "tapp_ex_imp.h"
 #include <stdlib.h>
 
-TAPP_error create_handle(TAPP_handle* handle) {
+TAPP_error TAPP_create_handle(TAPP_handle* handle) {
     *handle = (TAPP_handle)malloc(sizeof(TAPP_handle));
     return 0;
 }
