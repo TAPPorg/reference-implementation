@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - September 2024
  */
-#include "ref_imp.h"
+#include <ref_imp.h>
 #include <stdlib.h>
 
 TAPP_error TAPP_create_handle(TAPP_handle* handle) {

@@ -4,7 +4,7 @@
  * Umeå University - June 2024
  */
 
-#include "product.h"
+#include <tapp.h>
 #include <stdlib.h>
 #include <stdio.h>
 

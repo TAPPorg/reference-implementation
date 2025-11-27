@@ -9,22 +9,23 @@ add_library(tapp SHARED)
 target_sources(
   tapp
   PUBLIC
-    src/tapp.h
-    src/tapp/ref_imp.h
+    interface/tapp.h
   PRIVATE
-    src/tapp/tensor.h
-    src/tapp/product.h
-    src/tapp/attributes.h
-    src/tapp/datatype.h
-    src/tapp/error.c
-    src/tapp/error.h
-    src/tapp/executor.c
-    src/tapp/executor.h
-    src/tapp/handle.c
-    src/tapp/handle.h
-    src/tapp/status.h
-    src/tapp/tensor.c
-    src/tapp/product.c
+    reference_implementation/include/ref_imp.h
+    reference_implementation/src/error.c
+    reference_implementation/src/executor.c
+    reference_implementation/src/handle.c
+    reference_implementation/src/tensor.c
+    reference_implementation/src/product.c
+
+    interface/tapp/tensor.h
+    interface/tapp/product.h
+    interface/tapp/attributes.h
+    interface/tapp/datatype.h
+    interface/tapp/error.h
+    interface/tapp/executor.h
+    interface/tapp/handle.h
+    interface/tapp/status.h
   )
 
 set_property(
@@ -38,8 +39,9 @@ set_property(
 target_include_directories(
   tapp
   PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reference_implementation/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/interface
+    ${CMAKE_CURRENT_SOURCE_DIR}/interface/tapp
 )
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")

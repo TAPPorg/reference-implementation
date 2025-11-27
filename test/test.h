@@ -15,7 +15,7 @@
 #include "tblis.h"
 #pragma GCC diagnostic pop
 extern "C" {
-    #include "tapp.h"
+    #include <tapp.h>
 }
 
 void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float* A, int op_A, int64_t* idx_A,
