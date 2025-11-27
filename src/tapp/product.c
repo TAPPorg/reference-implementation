@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "tapp_ref_imp.h"
+#include "ref_imp.h"
 #include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
