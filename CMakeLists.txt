@@ -10,7 +10,7 @@ target_sources(
   tapp
   PUBLIC
     src/tapp.h
-    src/tapp/tapp_ex_imp.h
+    src/tapp/tapp_ref_imp.h
   PRIVATE
     src/tapp/tensor.h
     src/tapp/product.h

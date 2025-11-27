@@ -17,7 +17,7 @@
 #include "tapp.h"
 
 #ifdef __cplusplus
-    #include "tapp_ex_imp.h"
+    #include "tapp_ref_imp.h"
 #endif
 
 TAPP_EXPORT void
