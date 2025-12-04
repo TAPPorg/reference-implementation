@@ -16,8 +16,6 @@ int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, c
 int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);
 void extract_extents(int nr_extents, int64_t* idx_extraction, int nmode, const int64_t* idx, int64_t* extents, int64_t** extracted_extents_ptr);
 void compile_strides(int64_t* strides, int ndim, const int64_t* idx, int ndim_D, const int64_t* idx_D, int contractions, int64_t* idx_contraction, int64_t* free_strides, int64_t* contracted_strides);
-int64_t calculate_size(int64_t* extents, int nmode);
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
 void zero_array(int64_t* arr, int size);
 void extract_free_strides(int nmode, const int64_t* idx, int64_t* strides, int nmode_D, const int64_t* idx_D, int64_t** strides_free_ptr);
 void extract_contracted_strides(int nmode, const int64_t* idx, int64_t* strides, int contractions, int64_t* idx_contraction, int64_t** strides_contractions_ptr);
@@ -687,31 +685,6 @@ void compile_strides(int64_t* strides, int nmode, const int64_t* idx, int nmode_
             }
         }
     }
-}
-
-int64_t calculate_size(int64_t* extents, int nmode)
-{
-    int size = 1;
-    for (int i = 0; i < nmode; i++)
-    {
-        size *= extents[i];
-    }
-    return size;
-}
-
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents)
-{
-    if (nmode <= 0)
-    {
-        return;
-    }
-
-    int k = 0;
-    do
-    {
-        coordinates[k] = (coordinates[k] + 1) % extents[k];
-        k++;
-    } while (coordinates[k - 1] == 0 && k < nmode);
 }
 
 bool compare_arrays(int* arr_a, int* arr_b, int size)

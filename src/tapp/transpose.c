@@ -8,8 +8,6 @@
 #include <complex.h>
 
 int64_t* sort_by_idx(int nmode, int64_t* list, int64_t* idx, int64_t* sorted_idx);
-int64_t calculate_size(int64_t* extents, int nmode);
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
 int calculate_index(int nmode, int64_t* strides, int64_t* coordinates);
 void calculate_alpha_X_beta_Y(TAPP_datatype type_Z, int64_t index_Z, void* Z, TAPP_datatype type_X, void* alpha, int64_t index_X, void* X, TAPP_datatype type_Y, void* beta, int64_t index_Y, void* Y);
 
@@ -155,31 +153,6 @@ int64_t* sort_by_idx(int nmode, int64_t* list, int64_t* idx, int64_t* sorted_idx
     }
     
     return sorted_list;
-}
-
-int64_t calculate_size(int64_t* extents, int nmode)
-{
-    int size = 1;
-    for (int i = 0; i < nmode; i++)
-    {
-        size *= extents[i];
-    }
-    return size;
-}
-
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents)
-{
-    if (nmode <= 0)
-    {
-        return;
-    }
-
-    int k = 0;
-    do
-    {
-        coordinates[k] = (coordinates[k] + 1) % extents[k];
-        k++;
-    } while (coordinates[k - 1] == 0 && k < nmode);
 }
 
 int calculate_index(int nmode, int64_t* strides, int64_t* coordinates)

@@ -8,6 +8,7 @@
 #define TAPP_TAPP_EX_IMP_H_
 
 #include "../tapp.h"
+#include "helpers.h"
 #include <stdint.h>
 
 struct tensor_info
