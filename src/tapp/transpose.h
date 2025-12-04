@@ -17,15 +17,6 @@
 #include "status.h"
 #include "tensor.h"
 
-//TODO: where should this go?
-typedef int TAPP_element_op;
-
-enum
-{
-    TAPP_IDENTITY = 0,
-    TAPP_CONJUGATE = 1,
-};
-
 typedef intptr_t TAPP_tensor_transpose;
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_transpose(TAPP_tensor_transpose* plan,
