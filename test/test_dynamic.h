@@ -9,8 +9,8 @@ extern "C" {
     #include "tapp_ex_imp.h"
 }
 
-const char* pathA = "./lib/libtapp.so";
-const char* pathB = "./lib/libcutensor_binds.so";
+const char* pathA = "libtapp.so";
+const char* pathB = "libcutensor_binds.so";
 struct imp
 {
     void* handle;
