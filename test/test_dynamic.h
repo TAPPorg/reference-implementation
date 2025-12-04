@@ -172,7 +172,7 @@ int64_t* calculate_strides(int nmode, int outer_nmode, int64_t* outer_extents, i
 int calculate_size(int nmode, int64_t* extents);
 void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size);
 
-void load_imlpementation(struct imp* imp, const char* path);
+void load_implementation(struct imp* imp, const char* path);
 void unload_implementation(struct imp* imp);
 
 // Tests

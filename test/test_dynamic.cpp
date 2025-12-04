@@ -9,9 +9,9 @@
 int main(int argc, char const *argv[])
 {
     struct imp impA;
-    load_imlpementation(&impA, pathA);
+    load_implementation(&impA, pathA);
     struct imp impB;
-    load_imlpementation(&impB, pathB);
+    load_implementation(&impB, pathB);
     
     srand(time(NULL)); 
     std::cout << "Hadamard Product: " << str(test_hadamard_product(impA, impB)) << std::endl;
@@ -1786,7 +1786,7 @@ void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, in
     *strides = strides_tmp;
 }
 
-void load_imlpementation(struct imp* imp, const char* path) {
+void load_implementation(struct imp* imp, const char* path) {
     imp->handle = dlopen(path, RTLD_LAZY);
     if (!imp->handle) {
         fprintf(stderr, "dlopen failed: %s\n", dlerror());
