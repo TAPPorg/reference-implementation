@@ -20,6 +20,10 @@ target_sources(
     src/tapp/error.h
     src/tapp/executor.c
     src/tapp/executor.h
+    src/tapp/transpose.c
+    src/tapp/transpose.h
+    src/tapp/helpers.c
+    src/tapp/helpers.h
     src/tapp/handle.c
     src/tapp/handle.h
     src/tapp/status.h
