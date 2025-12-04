@@ -39,6 +39,7 @@ int main(int argc, char const *argv[])
     std::cout << "Error: Non Matching Extents: " << str(test_error_non_matching_ext()) << std::endl;
     std::cout << "Error: C Other Structure: " << str(test_error_C_other_structure()) << std::endl;
     std::cout << "Error: Aliasing Within D: " << str(test_error_aliasing_within_D()) << std::endl;
+    std::cout << "Transpose:" << str(test_transpose()) << std::endl;
     return 0;
 }
 
@@ -107,6 +108,46 @@ void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float
     delete[] tblis_stride_B_reduced;
     delete[] tblis_data_B_reduced;
     delete tblis_B_reduced;
+}
+
+void run_tblis_transpose_s(int nmode_X, int64_t* extents_X, int64_t* strides_X, float* X, int64_t* idx_X,
+                           int nmode_Y, int64_t* extents_Y, int64_t* strides_Y, float* Y, int64_t* idx_Y,
+                           int nmode_Z, int64_t* extents_Z, int64_t* strides_Z, float* Z, int64_t* idx_Z,
+                           float alpha, float beta)
+{
+    tblis::len_type* tblis_len_X = translate_extents_to_tblis(nmode_X, extents_X);
+    tblis::stride_type* tblis_stride_X = translate_strides_to_tblis(nmode_X, strides_X);
+    tblis::tblis_tensor tblis_X;
+    tblis::tblis_init_tensor_scaled_s(&tblis_X, alpha, nmode_X, tblis_len_X, X, tblis_stride_X);
+    tblis::label_type* tblis_idx_X = translate_idx_to_tblis(nmode_X, idx_X);
+
+    tblis::len_type* tblis_len_Y = translate_extents_to_tblis(nmode_Y, extents_Y);
+    tblis::stride_type* tblis_stride_Y = translate_strides_to_tblis(nmode_Y, strides_Y);
+    tblis::tblis_tensor tblis_Y;
+    tblis::tblis_init_tensor_scaled_s(&tblis_Y, beta, nmode_Y, tblis_len_Y, Y, tblis_stride_Y);
+    tblis::label_type* tblis_idx_Y = translate_idx_to_tblis(nmode_Y, idx_Y);
+    
+    tblis::len_type* tblis_len_Z = translate_extents_to_tblis(nmode_Z, extents_Z);
+    tblis::stride_type* tblis_stride_Z = translate_strides_to_tblis(nmode_Z, strides_Z);
+    tblis::tblis_tensor tblis_Z;
+    tblis::tblis_init_tensor_scaled_s(&tblis_Z, 0, nmode_Z, tblis_len_Z, Z, tblis_stride_Z);
+    tblis::label_type* tblis_idx_Z = translate_idx_to_tblis(nmode_Z, idx_Z);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_X, tblis_idx_X, &tblis_Z, tblis_idx_Z);
+
+    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_Y, tblis_idx_Y, &tblis_Z, tblis_idx_Z);
+
+    delete[] tblis_idx_X;
+    delete[] tblis_len_X;
+    delete[] tblis_stride_X;
+
+    delete[] tblis_idx_Y;
+    delete[] tblis_len_Y;
+    delete[] tblis_stride_Y;
+
+    delete[] tblis_idx_Z;
+    delete[] tblis_len_Z;
+    delete[] tblis_stride_Z;
 }
 
 std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
@@ -1706,6 +1747,58 @@ std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
             alpha, beta,
             data_A, data_B, data_C, data_D,
             size_A, size_B, size_C, size_D};
+}
+
+std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
+           int, int64_t*, int64_t*, float*, int64_t*,
+           int, int64_t*, int64_t*, float*, int64_t*,
+           float, float,
+           int64_t, int64_t, int64_t> generate_transposition_s()
+{
+    int nmode = randi(2, 6);
+    int64_t* extents_X = new int64_t[nmode];
+    int64_t* idx_X = new int64_t[nmode];
+    for (int i = 0; i < nmode; i++) {
+        extents_X[i] = randi(2, 5);
+        idx_X[i] = 'a' + i;
+    }
+    int64_t* strides_X = calculate_simple_strides(nmode, extents_X);
+    int64_t size = calculate_size(nmode, extents_X);
+    float* X = create_tensor_data_s(size);
+    
+    int64_t* extents_Y = new int64_t[nmode];
+    int64_t* idx_Y = new int64_t[nmode];
+    std::copy(extents_X, extents_X + nmode, extents_Y);
+    std::copy(idx_X, idx_X + nmode, idx_Y);
+    int seed = time(NULL);
+    std::default_random_engine engine = std::default_random_engine();
+    engine.seed(seed);
+    std::shuffle(extents_Y, extents_Y + nmode, engine);
+    engine.seed(seed);
+    std::shuffle(idx_Y, idx_Y + nmode, engine);
+    int64_t* strides_Y = calculate_simple_strides(nmode, extents_Y);
+    float* Y = create_tensor_data_s(size);
+
+    int64_t* extents_Z = new int64_t[nmode];
+    int64_t* idx_Z = new int64_t[nmode];
+    std::copy(extents_X, extents_X + nmode, extents_Z);
+    std::copy(idx_X, idx_X + nmode, idx_Z);
+    seed = time(NULL);
+    engine.seed(seed);
+    std::shuffle(extents_Z, extents_Z + nmode, engine);
+    engine.seed(seed);
+    std::shuffle(idx_Z, idx_Z + nmode, engine);
+    int64_t* strides_Z = calculate_simple_strides(nmode, extents_Y);
+    float* Z = create_tensor_data_s(size);
+
+    float alpha = rand_s();
+    float beta = rand_s();
+
+    return {nmode, extents_X, strides_X, X, idx_X,
+            nmode, extents_Y, strides_Y, Y, idx_Y,
+            nmode, extents_Z, strides_Z, Z, idx_Z,
+            alpha, beta,
+            size, size, size};
 }
 
 int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str)
@@ -4493,4 +4586,60 @@ bool test_error_aliasing_within_D()
     delete[] data_D;
 
     return error_status == 8;
+}
+
+bool test_transpose()
+{
+    auto [nmode_X, extents_X, strides_X, X, idx_X,
+          nmode_Y, extents_Y, strides_Y, Y, idx_Y,
+          nmode_Z, extents_Z, strides_Z, Z, idx_Z,
+          alpha, beta,
+          size_X, size_Y, size_Z] = generate_transposition_s();
+    
+    float* Z2 = copy_tensor_data_s(size_Z, Z);
+
+    TAPP_tensor_info info_X;
+    TAPP_create_tensor_info(&info_X, TAPP_F32, nmode_X, extents_X, strides_X);
+    TAPP_tensor_info info_Y;
+    TAPP_create_tensor_info(&info_Y, TAPP_F32, nmode_Y, extents_Y, strides_Y);
+    TAPP_tensor_info info_Z;
+    TAPP_create_tensor_info(&info_Z, TAPP_F32, nmode_Z, extents_Z, strides_Z);
+
+    TAPP_tensor_transpose plan;
+    TAPP_handle handle;
+    create_handle(&handle);
+    TAPP_create_tensor_transpose(&plan, handle, 0, info_X, idx_X, 0, info_Y, idx_Y, 0, info_Z, idx_Z);
+    TAPP_status status;
+    TAPP_executor exec;
+    create_executor(&exec);
+    TAPP_execute_transpose(plan, exec, &status, (void*)&alpha, (void*)X, (void*)Y, (void*)&beta, (void*)Z);
+
+    run_tblis_transpose_s(nmode_X, extents_X, strides_X, X, idx_X,
+                          nmode_Y, extents_Y, strides_Y, Y, idx_Y,
+                          nmode_Z, extents_Z, strides_Z, Z2, idx_Z,
+                          alpha, beta);
+    
+    bool result = compare_tensors_s(Z, Z2, size_Z);
+
+    TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
+    TAPP_destroy_tensor_transpose(plan);
+    TAPP_destroy_tensor_info(info_X);
+    TAPP_destroy_tensor_info(info_Y);
+    TAPP_destroy_tensor_info(info_Z);
+    delete[] extents_X;
+    delete[] extents_Y;
+    delete[] extents_Z;
+    delete[] strides_X;
+    delete[] strides_Y;
+    delete[] strides_Z;
+    delete[] idx_X;
+    delete[] idx_Y;
+    delete[] idx_Z;
+    delete[] X;
+    delete[] Y;
+    delete[] Z;
+    delete[] Z2;
+
+    return result;
 }

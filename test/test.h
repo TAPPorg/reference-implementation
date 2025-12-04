@@ -137,6 +137,7 @@ bool* choose_subtensor_dims(int nmode, int outer_nmode);
 int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents);
 int64_t* calculate_offsets(int nmode, int outer_nmode, int64_t* extents, int64_t* outer_extents, bool* subtensor_dims, bool lower_extents);
 int64_t* calculate_strides(int nmode, int outer_nmode, int64_t* outer_extents, int* stride_signs, bool* subtensor_dims);
+int64_t* calculate_simple_strides(int nmode, int64_t* extents);
 int calculate_size(int nmode, int64_t* extents);
 void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size);
 
@@ -169,3 +170,4 @@ bool test_hadamard_and_contraction();
 bool test_error_non_matching_ext();
 bool test_error_C_other_structure();
 bool test_error_aliasing_within_D();
+bool test_transpose();
