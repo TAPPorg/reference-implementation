@@ -88,7 +88,7 @@ void chained_same_op();
 void negative_str();
 void subtensors();
 
-void load_imlpementation(struct imp* imp) {
+void load_implementation(struct imp* imp) {
     imp->handle = dlopen(path, RTLD_LAZY);
     if (!imp->handle) {
         fprintf(stderr, "dlopen failed: %s\n", dlerror());
@@ -135,7 +135,7 @@ void unload_implementation(struct imp* imp) {
 int main(int argc, char const *argv[])
 {
     struct imp imp;
-    load_imlpementation(&imp);
+    load_implementation(&imp);
     
     printf("Contraction: \n");
     contraction(imp);

@@ -1,6 +1,6 @@
 #include "benchmark.h"
 
-void load_imlpementation()
+void load_implementation()
 {
     imp.handle = dlopen(imp_path, RTLD_LAZY);
     if (!imp.handle) {
@@ -356,7 +356,7 @@ uint64_t calculate_FLO(int test_id)
 
 int main(int argc, char const *argv[])
 {
-    load_imlpementation(&imp);
+    load_implementation(&imp);
     load_strides();
     for (int test_id = 0; test_id < NUMBER_OF_TESTS; test_id++)
     {
