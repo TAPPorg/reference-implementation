@@ -49,18 +49,17 @@ TAPP_error TAPP_create_tensor_transpose(TAPP_tensor_transpose* plan,
     plan_ptr->idx_Z = malloc(((struct tensor_info*)Z)->nmode * sizeof(int64_t));
     memcpy(plan_ptr->idx_Z, idx_Z, ((struct tensor_info*)Z)->nmode * sizeof(int64_t));
 
-    *plan = (TAPP_tensor_product)plan_ptr;
+    *plan = (TAPP_tensor_transpose)plan_ptr;
 
     return 0;
 }
 
 TAPP_error TAPP_destroy_tensor_transpose(TAPP_tensor_transpose plan)
 {
-    free(((struct product_plan*)plan)->idx_A);
-    free(((struct product_plan*)plan)->idx_B);
-    free(((struct product_plan*)plan)->idx_C);
-    free(((struct product_plan*)plan)->idx_D);
-    free((struct product_plan*)plan);
+    free(((struct transpose_plan*)plan)->idx_X);
+    free(((struct transpose_plan*)plan)->idx_Y);
+    free(((struct transpose_plan*)plan)->idx_Z);
+    free((struct transpose_plan*)plan);
 
     return 0;
 }
