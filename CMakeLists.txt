@@ -159,6 +159,85 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 endif()
 
 # ----------------------------------------------------------------------------
+# cutensor
+
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CXX)
+  enable_language(CUDA)
+else()
+  message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
+endif()
+
+set(CUTENSOR_ROOT "/usr/local/cutensor")
+set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
+set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" "${CUTENSOR_ROOT}/lib/11")
+
+find_library(
+  CUTENSOR_LIB
+  NAMES cutensor
+  PATHS ${CUTENSOR_LIBRARY_DIR}
+)
+
+if (NOT CUTENSOR_LIB)
+  message(FATAL_ERROR "cuTENSOR library not found. Set CUTENSOR_ROOT correctly.")
+endif()
+
+message(STATUS "Found cuTENSOR: ${CUTENSOR_LIB}")
+
+add_library(cutensor_binds SHARED)
+
+target_sources(
+  cutensor_binds
+  PUBLIC
+    src/tapp.h
+    cutensor_bindings/cutensor_bind.h
+  PRIVATE
+    src/tapp/tensor.h
+    src/tapp/product.h
+    src/tapp/attributes.h
+    src/tapp/datatype.h
+    src/tapp/error.h
+    src/tapp/executor.h
+    src/tapp/handle.h
+    src/tapp/status.h
+
+    cutensor_bindings/cutensor_executor.cu
+    cutensor_bindings/cutensor_error.cu
+    cutensor_bindings/cutensor_handle.cu
+    cutensor_bindings/cutensor_tensor.cu
+    cutensor_bindings/cutensor_product.cu
+    cutensor_bindings/cutensor_datatype.cu
+  )
+
+set_property(
+  TARGET cutensor_binds
+  PROPERTY
+    CUDA_SEPARABLE_COMPILATION ON
+    POSITION_INDEPENDENT_CODE ON
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+    CUDA_STANDARD 20
+)
+
+set_property(TARGET cutensor_binds PROPERTY CUDA_ARCHITECTURES OFF)
+
+target_include_directories(
+  cutensor_binds
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cutensor_bindings
+  PRIVATE
+    ${CUTENSOR_INCLUDE_DIR}
+)
+
+target_link_libraries(cutensor_binds PRIVATE ${CUTENSOR_LIB})
+
+if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
+  target_link_options(cutensor_binds PRIVATE "-undefined;dynamic_lookup")
+endif()
+
+# ----------------------------------------------------------------------------
 # testing
 
 include(CTest)
