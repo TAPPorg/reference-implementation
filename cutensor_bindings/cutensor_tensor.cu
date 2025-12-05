@@ -2,23 +2,21 @@
 #include "cutensor_bind.h"
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
+                                               TAPP_handle handle,
                                                TAPP_datatype type,
                                                int nmode,
                                                const int64_t* extents,
                                                const int64_t* strides)
 {
-    cutensorHandle_t handle;
-    cutensorCreate(&handle);
     cutensor_info* tensor_info = new cutensor_info;
     tensor_info->desc = new cutensorTensorDescriptor_t;
     const uint32_t kAlignment = 128;
-    cutensorCreateTensorDescriptor(handle,
+    cutensorCreateTensorDescriptor(*((cutensorHandle_t*) handle),
                 tensor_info->desc,
                 nmode,
                 extents,
                 strides,
                 translate_datatype(type), kAlignment);
-    cutensorDestroy(handle);
     size_t elements = 1;
     for (int i = 0; i < nmode; ++i)
         elements *= extents[i];
