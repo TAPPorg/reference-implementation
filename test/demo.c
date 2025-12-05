@@ -52,32 +52,33 @@ int main(int argc, char const *argv[])
 
 void contraction()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -167,32 +168,33 @@ void contraction()
 
 void hadamard()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {4, 4};
     int64_t strides_B[2] = {1, 4};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {4, 4};
     int64_t strides_C[2] = {1, 4};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {4, 4};
     int64_t strides_D[2] = {1, 4};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -265,32 +267,33 @@ void hadamard()
 
 void complex_num()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
     int64_t strides_A[2] = {1, 3};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_C32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {3, 3};
     int64_t strides_B[2] = {1, 3};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_C32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_C32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_C32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_C32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_C32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -346,32 +349,33 @@ void complex_num()
 
 void conjugate()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
     int64_t strides_A[2] = {1, 3};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_C32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {3, 3};
     int64_t strides_B[2] = {1, 3};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_C32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_C32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_C32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_C32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_C32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_CONJUGATE;
@@ -427,32 +431,33 @@ void conjugate()
 
 void zero_dim()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 0;
     int64_t extents_A[0] = {};
     int64_t strides_A[0] = {};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {3, 3};
     int64_t strides_B[2] = {1, 3};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -506,32 +511,33 @@ void zero_dim()
 
 void one_ext_contracted()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 5;
     int64_t extents_B[5] = {3, 2, 1, 2, 3};
     int64_t strides_B[5] = {1, 3, 6, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -613,32 +619,33 @@ void one_ext_contracted()
 
 void one_ext_transfered()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 4;
     int64_t extents_C[4] = {4, 1, 2, 2};
     int64_t strides_C[4] = {1, 4, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 4;
     int64_t extents_D[4] = {4, 1, 2, 2};
     int64_t strides_D[4] = {1, 4, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -720,32 +727,33 @@ void one_ext_transfered()
 
 void chained_diff_op()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -823,7 +831,7 @@ void chained_diff_op()
     int64_t extents_E[3] = {4, 2, 2};
     int64_t strides_E[3] = {1, 4, 8};
     TAPP_tensor_info info_E;
-    TAPP_create_tensor_info(&info_E, TAPP_F32, nmode_E, extents_E, strides_E);
+    TAPP_create_tensor_info(&info_E, handle, TAPP_F32, nmode_E, extents_E, strides_E);
 
     TAPP_tensor_product plan2;
     TAPP_element_op op_E = TAPP_IDENTITY;
@@ -854,32 +862,33 @@ void chained_diff_op()
 
 void chained_same_op()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 2;
     int64_t extents_B[2] = {4, 4};
     int64_t strides_B[2] = {1, 4};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {4, 4};
     int64_t strides_C[2] = {1, 4};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {4, 4};
     int64_t strides_D[2] = {1, 4};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -965,32 +974,33 @@ void chained_same_op()
 
 void negative_str()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {-1, -4, -12};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {-1, -3, -6, -12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -1075,32 +1085,33 @@ void negative_str()
 
 void subtensors()
 {
+    TAPP_handle handle;
+    create_handle(&handle);
+
     int nmode_A = 3;
     int64_t extents_A[3] = {3, 2, 2};
     int64_t strides_A[3] = {1, 12, 24};
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
 
     int nmode_B = 3;
     int64_t extents_B[3] = {2, 2, 3};
     int64_t strides_B[3] = {3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    create_handle(&handle);
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;

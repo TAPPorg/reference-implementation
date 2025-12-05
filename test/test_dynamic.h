@@ -9,8 +9,8 @@ extern "C" {
     #include "tapp_ex_imp.h"
 }
 
-const char* pathA = "libtapp.so";
-const char* pathB = "libcutensor_binds.so";
+const char* pathA = "lib/libtapp.so";
+const char* pathB = "lib/libcutensor_binds.so";
 struct imp
 {
     void* handle;
@@ -60,6 +60,7 @@ struct imp
                                                      void** D);
     TAPP_error (*TAPP_destroy_status)(TAPP_status status);
     TAPP_error (*TAPP_create_tensor_info)(TAPP_tensor_info* info,
+                                          TAPP_handle handle,
                                           TAPP_datatype type,
                                           int nmode,
                                           const int64_t* extents,
