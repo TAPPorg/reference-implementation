@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "handle.h"
 #include "util.h"
 #include "error.h"
 #include "datatype.h"
@@ -20,6 +21,7 @@ typedef intptr_t TAPP_tensor_info;
  */ 
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
+                                               TAPP_handle handle,
                                                TAPP_datatype type,
                                                int nmode,
                                                const int64_t* extents,

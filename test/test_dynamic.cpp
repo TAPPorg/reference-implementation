@@ -1878,23 +1878,29 @@ bool test_hadamard_product(struct imp impA, struct imp impB)
 
     float* E = copy_tensor_data_s(size, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode, extents, strides);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode, extents, strides);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode, extents, strides);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode, extents, strides);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode, extents, strides);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode, extents, strides);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode, extents, strides);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode, extents, strides);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode, extents, strides);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode, extents, strides);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode, extents, strides);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -1902,14 +1908,10 @@ bool test_hadamard_product(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -1966,23 +1968,29 @@ bool test_contraction(struct imp impA, struct imp impB)
 
     auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -1990,14 +1998,10 @@ bool test_contraction(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2063,42 +2067,42 @@ bool test_commutativity(struct imp impA, struct imp impB)
     auto [F, data_F] = copy_tensor_data_s(size_D, data_D, D);
 
     auto [G, data_G] = copy_tensor_data_s(size_D, data_D, D);
-
     
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
 
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
     int op_C = TAPP_IDENTITY;
     int op_D = TAPP_IDENTITY;
 
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     TAPP_tensor_product planAB_A;
     impA.TAPP_create_tensor_product(&planAB_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_tensor_product planBA_A;
     impA.TAPP_create_tensor_product(&planBA_A, handle_A, op_B, info_B_A, idx_B, op_A, info_A_A, idx_A, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     TAPP_tensor_product planAB_B;
     impB.TAPP_create_tensor_product(&planAB_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_tensor_product planBA_B;
@@ -2172,24 +2176,26 @@ bool test_permutations(struct imp impA, struct imp impB)
           
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
-    TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
-    
-    TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
-
-    TAPP_tensor_product plan_A;
     TAPP_handle handle_A;
     impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
+    TAPP_tensor_info info_A_A;
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B_A;
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    
+    TAPP_tensor_info info_A_B;
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B_B;
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
+
+    TAPP_tensor_product plan_A;
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     TAPP_status status_B;
 
     TAPP_executor exec_A;
@@ -2203,13 +2209,13 @@ bool test_permutations(struct imp impA, struct imp impB)
     for (int i = 0; i < nmode_D; i++)
     {
         TAPP_tensor_info info_C_A;
-        impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+        impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
         TAPP_tensor_info info_C_B;
-        impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+        impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
         TAPP_tensor_info info_D_A;
-        impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+        impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
         TAPP_tensor_info info_D_B;
-        impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+        impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
         int op_A = TAPP_IDENTITY;
         int op_B = TAPP_IDENTITY;
         int op_C = TAPP_IDENTITY;
@@ -2272,23 +2278,29 @@ bool test_equal_extents(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2296,14 +2308,10 @@ bool test_equal_extents(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2366,23 +2374,29 @@ bool test_outer_product(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2390,14 +2404,10 @@ bool test_outer_product(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2460,23 +2470,29 @@ bool test_full_contraction(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2484,14 +2500,10 @@ bool test_full_contraction(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2554,23 +2566,29 @@ bool test_zero_dim_tensor_contraction(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2578,14 +2596,10 @@ bool test_zero_dim_tensor_contraction(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2648,23 +2662,29 @@ bool test_one_dim_tensor_contraction(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2672,14 +2692,10 @@ bool test_one_dim_tensor_contraction(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2742,23 +2758,29 @@ bool test_subtensor_same_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2766,14 +2788,10 @@ bool test_subtensor_same_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2836,23 +2854,29 @@ bool test_subtensor_lower_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2860,14 +2884,10 @@ bool test_subtensor_lower_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -2930,23 +2950,29 @@ bool test_negative_strides(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -2954,14 +2980,10 @@ bool test_negative_strides(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3024,23 +3046,29 @@ bool test_negative_strides_subtensor_same_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3048,14 +3076,10 @@ bool test_negative_strides_subtensor_same_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3118,23 +3142,29 @@ bool test_negative_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3142,14 +3172,10 @@ bool test_negative_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3212,23 +3238,29 @@ bool test_mixed_strides(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3236,14 +3268,10 @@ bool test_mixed_strides(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3306,23 +3334,29 @@ bool test_mixed_strides_subtensor_same_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3330,14 +3364,10 @@ bool test_mixed_strides_subtensor_same_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3400,23 +3430,29 @@ bool test_mixed_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
     
     auto[E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3424,14 +3460,10 @@ bool test_mixed_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3494,23 +3526,29 @@ bool test_contraction_double_precision(struct imp impA, struct imp impB)
 
     auto [E, data_E] = copy_tensor_data_d(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F64, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F64, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F64, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F64, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F64, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F64, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F64, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F64, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F64, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3518,14 +3556,10 @@ bool test_contraction_double_precision(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3587,24 +3621,30 @@ bool test_contraction_complex(struct imp impA, struct imp impB)
           size_A, size_B, size_C, size_D] = generate_contraction_c();
 
     auto [E, data_E] = copy_tensor_data_c(size_D, data_D, D);
+
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
     
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_C32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_C32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_C32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_C32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_C32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_C32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_C32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_C32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_C32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_C32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_C32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_C32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_C32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_C32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_C32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_C32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3612,14 +3652,10 @@ bool test_contraction_complex(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3682,23 +3718,29 @@ bool test_contraction_complex_double_precision(struct imp impA, struct imp impB)
 
     auto [E, data_E] = copy_tensor_data_z(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_C64, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_C64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_C64, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_C64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_C64, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_C64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_C64, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_C64, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_C64, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_C64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_C64, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_C64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_C64, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_C64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_C64, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_C64, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3706,14 +3748,10 @@ bool test_contraction_complex_double_precision(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3784,23 +3822,29 @@ bool test_zero_stride(struct imp impA, struct imp impB)
         strides_B[0] = 0;
     }
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3808,14 +3852,10 @@ bool test_zero_stride(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3878,23 +3918,29 @@ bool test_unique_idx(struct imp impA, struct imp impB)
 
     auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3902,14 +3948,10 @@ bool test_unique_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -3972,23 +4014,29 @@ bool test_repeated_idx(struct imp impA, struct imp impB)
 
     auto [E, data_E] = copy_tensor_data_s(size_D, data_D, D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -3996,14 +4044,10 @@ bool test_repeated_idx(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4122,23 +4166,29 @@ bool test_hadamard_and_free(struct imp impA, struct imp impB)
     float alpha = rand_s();
     float beta = rand_s();
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4146,14 +4196,10 @@ bool test_hadamard_and_free(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4272,23 +4318,29 @@ bool test_hadamard_and_contraction(struct imp impA, struct imp impB)
     float alpha = rand_s();
     float beta = rand_s();
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4296,14 +4348,10 @@ bool test_hadamard_and_contraction(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4389,23 +4437,29 @@ bool test_error_too_many_idx_D(struct imp impA, struct imp impB)
 
     add_incorrect_idx(max_idx, &nmode_D, &idx_D, &extents_D, &strides_D);
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4413,14 +4467,10 @@ bool test_error_too_many_idx_D(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4512,23 +4562,29 @@ bool test_error_non_matching_ext(struct imp impA, struct imp impB)
         break;
     }
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4536,14 +4592,10 @@ bool test_error_non_matching_ext(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4636,23 +4688,29 @@ bool test_error_C_other_structure(struct imp impA, struct imp impB)
         break;
     }
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4660,14 +4718,10 @@ bool test_error_C_other_structure(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
@@ -4729,23 +4783,29 @@ bool test_error_aliasing_within_D(struct imp impA, struct imp impB)
     int signs[2] = {-1, 1};
     strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - randi(1, strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - 1));
 
+    TAPP_handle handle_A;
+    impA.create_handle(&handle_A);
+    
+    TAPP_handle handle_B;
+    impB.create_handle(&handle_B);
+
     TAPP_tensor_info info_A_A;
-    impA.TAPP_create_tensor_info(&info_A_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_A;
-    impA.TAPP_create_tensor_info(&info_B_A, TAPP_F32, nmode_B, extents_B, strides_B);
+    impA.TAPP_create_tensor_info(&info_B_A, handle_A, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_A;
-    impA.TAPP_create_tensor_info(&info_C_A, TAPP_F32, nmode_C, extents_C, strides_C);
+    impA.TAPP_create_tensor_info(&info_C_A, handle_A, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_A;
-    impA.TAPP_create_tensor_info(&info_D_A, TAPP_F32, nmode_D, extents_D, strides_D);
+    impA.TAPP_create_tensor_info(&info_D_A, handle_A, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_info info_A_B;
-    impB.TAPP_create_tensor_info(&info_A_B, TAPP_F32, nmode_A, extents_A, strides_A);
+    impB.TAPP_create_tensor_info(&info_A_B, handle_B, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B_B;
-    impB.TAPP_create_tensor_info(&info_B_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    impB.TAPP_create_tensor_info(&info_B_B, handle_B, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C_B;
-    impB.TAPP_create_tensor_info(&info_C_B, TAPP_F32, nmode_C, extents_C, strides_C);
+    impB.TAPP_create_tensor_info(&info_C_B, handle_B, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D_B;
-    impB.TAPP_create_tensor_info(&info_D_B, TAPP_F32, nmode_D, extents_D, strides_D);
+    impB.TAPP_create_tensor_info(&info_D_B, handle_B, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = TAPP_IDENTITY;
     int op_B = TAPP_IDENTITY;
@@ -4753,14 +4813,10 @@ bool test_error_aliasing_within_D(struct imp impA, struct imp impB)
     int op_D = TAPP_IDENTITY;
 
     TAPP_tensor_product plan_A;
-    TAPP_handle handle_A;
-    impA.create_handle(&handle_A);
     impA.TAPP_create_tensor_product(&plan_A, handle_A, op_A, info_A_A, idx_A, op_B, info_B_A, idx_B, op_C, info_C_A, idx_C, op_D, info_D_A, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_A;
 
     TAPP_tensor_product plan_B;
-    TAPP_handle handle_B;
-    impB.create_handle(&handle_B);
     impB.TAPP_create_tensor_product(&plan_B, handle_B, op_A, info_A_B, idx_A, op_B, info_B_B, idx_B, op_C, info_C_B, idx_C, op_D, info_D_B, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status_B;
 
