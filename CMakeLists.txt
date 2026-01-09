@@ -35,7 +35,7 @@ endif()
 project(tapp-reference
         VERSION ${TAPP_REFERENCE_VERSION}
         DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
-        LANGUAGES C
+        LANGUAGES C CUDA
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 include(GNUInstallDirs)
@@ -201,6 +201,7 @@ target_sources(
     src/tapp/handle.h
     src/tapp/status.h
 
+    cutensor_bindings/cutensor_attributes.cu
     cutensor_bindings/cutensor_executor.cu
     cutensor_bindings/cutensor_error.cu
     cutensor_bindings/cutensor_handle.cu
@@ -300,6 +301,36 @@ if(BUILD_TESTING)
     NAME tapp-reference-demo
     COMMAND $<TARGET_FILE:tapp-reference-demo>
     )
+  
+  # ----------------------------------------------------------------------------
+  # cutensor demo
+
+  add_executable(tapp-reference-cutensor-demo)
+
+  target_sources(
+    tapp-reference-cutensor-demo
+    PRIVATE
+      test/cudemo.cu
+      test/helpers.c
+      test/helpers.h
+  )
+
+  target_link_libraries(
+    tapp-reference-cutensor-demo
+    PRIVATE
+      cutensor_binds
+  )
+
+  target_include_directories(
+    tapp-reference-cutensor-demo
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+  )
+
+  add_test(
+    NAME tapp-reference-cutensor-demo
+    COMMAND $<TARGET_FILE:tapp-reference-cutensor-demo>
+  )
 
   # ----------------------------------------------------------------------------
   # driver
