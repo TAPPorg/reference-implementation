@@ -12,7 +12,7 @@
 #include <dlfcn.h>  // POSIX dynamic loading, TODO: fix for windows
 #include <unistd.h>
 
-const char* path = "lib/libcutensor_binds.so";
+const char* path = "./libcutensor_binds.so";
 struct imp
 {
     void* handle;
@@ -171,6 +171,9 @@ void contraction(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
@@ -286,6 +289,9 @@ void hadamard(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
@@ -385,6 +391,9 @@ void complex_num(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
     int64_t strides_A[2] = {1, 3};
@@ -467,6 +476,9 @@ void conjugate(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
     int64_t strides_A[2] = {1, 3};
@@ -548,6 +560,9 @@ void zero_dim(struct imp imp)
 {
     TAPP_handle handle;
     imp.create_handle(&handle);
+
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
     
     int nmode_A = 0;
     int64_t extents_A[0] = {};
@@ -628,6 +643,9 @@ void one_ext_contracted(struct imp imp)
 {
     TAPP_handle handle;
     imp.create_handle(&handle);
+
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
@@ -737,6 +755,9 @@ void one_ext_transfered(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
@@ -845,6 +866,9 @@ void chained_diff_op(struct imp imp)
     TAPP_handle handle;
     imp.create_handle(&handle);
 
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
@@ -937,6 +961,7 @@ void chained_diff_op(struct imp imp)
 
     imp.TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
+    printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
     alpha = 0.5;
@@ -960,6 +985,7 @@ void chained_diff_op(struct imp imp)
         5, 6, 7, 8};
     imp.TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D, (void *)C, (void *)&beta, (void *)C, (void *)E);
 
+    printf("\tOperation 2:\n");
     print_tensor_s(nmode_E, extents_E, strides_E, E);
 
     imp.TAPP_destroy_tensor_product(plan);
@@ -977,6 +1003,9 @@ void chained_same_op(struct imp imp)
 {
     TAPP_handle handle;
     imp.create_handle(&handle);
+
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
@@ -1048,6 +1077,7 @@ void chained_same_op(struct imp imp)
 
     imp.TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
 
+    printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
     alpha = 1;
@@ -1072,6 +1102,7 @@ void chained_same_op(struct imp imp)
     };
     imp.TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)D, (void *)&beta, (void *)C, (void *)E);
 
+    printf("\tOperation 2:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, E);
 
     imp.TAPP_destroy_tensor_product(plan);
@@ -1087,6 +1118,9 @@ void negative_str(struct imp imp)
 {
     TAPP_handle handle;
     imp.create_handle(&handle);
+
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
@@ -1198,6 +1232,9 @@ void subtensors(struct imp imp)
 {
     TAPP_handle handle;
     imp.create_handle(&handle);
+
+    bool use_device_memory = false; // CuTensor specific attribute
+    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     int nmode_A = 3;
     int64_t extents_A[3] = {3, 2, 2};
