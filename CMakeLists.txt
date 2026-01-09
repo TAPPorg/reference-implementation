@@ -35,7 +35,7 @@ endif()
 project(tapp-reference
         VERSION ${TAPP_REFERENCE_VERSION}
         DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
-        LANGUAGES C
+        LANGUAGES C CUDA
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 include(GNUInstallDirs)
@@ -234,6 +234,7 @@ target_sources(
     src/tapp/handle.h
     src/tapp/status.h
 
+    cutensor_bindings/cutensor_attributes.cu
     cutensor_bindings/cutensor_executor.cu
     cutensor_bindings/cutensor_error.cu
     cutensor_bindings/cutensor_handle.cu
@@ -269,6 +270,33 @@ target_link_libraries(cutensor_binds PRIVATE ${CUTENSOR_LIB})
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(cutensor_binds PRIVATE "-undefined;dynamic_lookup")
 endif()
+
+add_executable(cudemo)
+
+target_sources(
+  cudemo
+  PRIVATE
+    test/cudemo.cu
+    test/helpers.c
+    test/helpers.h
+)
+
+target_link_libraries(
+  cudemo
+  PRIVATE
+    cutensor_binds # Linking to tapp provides everything needed.
+)
+
+target_include_directories(
+  cudemo
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+)
+
+add_test(
+  NAME cudemo
+  COMMAND $<TARGET_FILE:cudemo>
+)
 
 add_executable(demo)
 

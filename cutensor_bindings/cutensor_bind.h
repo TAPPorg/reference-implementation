@@ -12,6 +12,8 @@
 
 #include "../src/tapp.h"
 
+#define ATTR_KEY_USE_DEVICE_MEMORY 0
+
 cutensorDataType_t translate_datatype(TAPP_datatype type);
 
 cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
@@ -28,7 +30,13 @@ int pack_error(int current_value, int tapp_err);
 int pack_error(int current_value, cutensorStatus_t e); 
 int pack_error(int current_value, cudaError_t e);
 
-typedef struct 
+struct handle
+{
+    cutensorHandle_t* libhandle;
+    intptr_t* attributes;
+};
+
+struct tensor_info
 {
     int nmode;
     int64_t *extents;
@@ -38,9 +46,9 @@ typedef struct
     int64_t data_offset;
     TAPP_datatype type;
     cutensorTensorDescriptor_t* desc;
-} cutensor_info;
+};
 
-typedef struct 
+struct product_plan
 {
     int64_t data_offset_A;
     size_t copy_size_A;
@@ -59,4 +67,4 @@ typedef struct
     cutensorPlan_t* contraction_plan;
     cutensorPlan_t* permutation_plan;
     cutensorHandle_t* handle;
-} cutensor_plan;
+};
