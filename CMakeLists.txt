@@ -35,7 +35,7 @@ endif()
 project(tapp
         VERSION ${TAPP_VERSION}
         DESCRIPTION "TAPP (Tensor Algebra Processing Primitives)"
-        LANGUAGES C
+        LANGUAGES C CUDA
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 # TBLIS requires CXX; enable_language must be called at the top level
@@ -114,6 +114,7 @@ target_sources(
     src/tapp/handle.h
     src/tapp/status.h
 
+    cutensor_bindings/cutensor_attributes.cu
     cutensor_bindings/cutensor_executor.cu
     cutensor_bindings/cutensor_error.cu
     cutensor_bindings/cutensor_handle.cu
@@ -194,10 +195,10 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # Test dynamic
 
-  add_executable(test_dynamic)
+  add_executable(tapp-reference-test-dynamic)
 
   target_sources(
-    test_dynamic
+    tapp-reference-test-dynamic
     PRIVATE
       test/test_dynamic.cpp
       test/test_dynamic.h
@@ -205,14 +206,14 @@ if(BUILD_TESTING)
   )
 
   target_include_directories(
-    test_dynamic
+    tapp-reference-test-dynamic
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
   )
 
   add_test(
-    NAME test_dynamic
-    COMMAND $<TARGET_FILE:test_dynamic>
+    NAME tapp-reference-test-dynamic
+    COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
   )
 
   # ----------------------------------------------------------------------------
@@ -242,10 +243,10 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # demo dynamic
 
-  add_executable(demo_dynamic)
+  add_executable(tapp-reference-demo-dynamic)
 
   target_sources(
-    demo_dynamic
+    tapp-reference-demo-dynamic
     PRIVATE
       test/demo_dynamic.c
       test/helpers.c
@@ -254,14 +255,44 @@ if(BUILD_TESTING)
   )
 
   target_include_directories(
-    demo_dynamic
+    tapp-reference-demo-dynamic
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
   )
 
   add_test(
-    NAME demo_dynamic
-    COMMAND $<TARGET_FILE:demo_dynamic>
+    NAME tapp-reference-demo-dynamic
+    COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
+  )
+  
+  # ----------------------------------------------------------------------------
+  # cutensor demo
+
+  add_executable(tapp-cutensor-demo)
+
+  target_sources(
+    tapp-cutensor-demo
+    PRIVATE
+      test/cudemo.cu
+      test/helpers.c
+      test/helpers.h
+  )
+
+  target_link_libraries(
+    tapp-cutensor-demo
+    PRIVATE
+      cutensor_binds
+  )
+
+  target_include_directories(
+    tapp-cutensor-demo
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+  )
+
+  add_test(
+    NAME tapp-cutensor-demo
+    COMMAND $<TARGET_FILE:tapp-cutensor-demo>
   )
 
   # ----------------------------------------------------------------------------
