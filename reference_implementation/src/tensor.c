@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include <ref_imp.h>
+#include <ref_impl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

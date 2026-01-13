@@ -11,7 +11,7 @@ target_sources(
   PUBLIC
     interface/tapp.h
   PRIVATE
-    reference_implementation/include/ref_imp.h
+    reference_implementation/include/ref_impl.h
     reference_implementation/src/error.c
     reference_implementation/src/executor.c
     reference_implementation/src/handle.c
