@@ -7,7 +7,7 @@
 #ifndef TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_
 #define TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_
 
-#include <tapp.h>
+#include "tapp.h"
 #include <stdint.h>
 
 struct tensor_info

@@ -4,7 +4,7 @@
  * Umeå University - September 2024
  */
 
-#include <tapp.h>
+#include "tapp.h"
 #include "helpers.h"
 #include <stdlib.h>
 #include <stdio.h>
