@@ -4,8 +4,8 @@
  * Umeå University - November 2024
  */
 
-#ifndef TBLIS_BIND_H
-#define TBLIS_BIND_H
+#ifndef TAPP_REF_IMPL_TBLIS_BIND_TBLIS_BIND_H_
+#define TAPP_REF_IMPL_TBLIS_BIND_TBLIS_BIND_H_
 
 #ifdef __cplusplus
     #pragma GCC diagnostic push
@@ -29,5 +29,5 @@ bind_tblis_execute_product(int nmode_A, int64_t* extents_A, int64_t* strides_A, 
 
 TAPP_EXPORT int compare_tensors_(void* A, void* B, int64_t size, int datatype_tapp);
 
-#endif
+#endif /* TAPP_REF_IMPL_TBLIS_BIND_TBLIS_BIND_H_ */
 

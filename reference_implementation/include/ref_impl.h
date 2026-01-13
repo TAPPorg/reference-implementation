@@ -4,8 +4,8 @@
  * Umeå University - July 2024
  */
 
-#ifndef REF_IMP_H_
-#define REF_IMP_H_
+#ifndef TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_
+#define TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_
 
 #include <tapp.h>
 #include <stdint.h>
@@ -36,4 +36,4 @@ struct plan
     TAPP_prectype prec;
 };
 
-#endif  // REF_IMP_H_
+#endif  /* TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_ */
