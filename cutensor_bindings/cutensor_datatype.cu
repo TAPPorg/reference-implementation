@@ -33,7 +33,7 @@ cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype
 {
     switch (prec)
     {
-        case TAPP_DEFAULT_PREC: // TODO: Make dependent on datatype
+        case TAPP_DEFAULT_PREC:
             switch (datatype)
             {
             case TAPP_F32:
