@@ -12,10 +12,9 @@ TAPP_EXPORT TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
         break;
     
     default:
-        // Invalid key
-        break;
+        return 15; // Invalid key
     }
-    return 0; // TODO: implement cutensor error handling
+    return 0;
 }
 
 TAPP_EXPORT TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
@@ -28,10 +27,9 @@ TAPP_EXPORT TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
         break;
     
     default:
-        // Invalid key
-        break;
+        return 15; // Invalid key
     }
-    return 0; // TODO: implement cutensor error handling
+    return 0;
 }
 
 TAPP_EXPORT TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_key key)
@@ -47,8 +45,7 @@ TAPP_EXPORT TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_key key)
         break;
     
     default:
-        // Invalid key
-        break;
+        return 15; // Invalid key
     }
-    return 0; // TODO: implement cutensor error handling
+    return 0;
 }

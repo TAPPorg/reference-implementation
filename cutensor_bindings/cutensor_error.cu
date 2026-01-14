@@ -75,7 +75,11 @@ size_t TAPP_explain_error(TAPP_error error,
         case 14:
             str += "Extents can not be negative.";
             break;
+        case 15:
+            str += "Invalid attribute key.";
+            break;
         default:
+            str += "Unknown TAPP error code.";
             break;
         }
     }
