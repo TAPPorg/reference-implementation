@@ -152,12 +152,6 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
   # ----------------------------------------------------------------------------
   # interface
 
-  target_link_directories( # can be removed?
-    tapp-reference
-    PUBLIC
-      ${TBLIS_INSTALL_DIR}/lib
-  )
-
   target_link_libraries(
     tapp-reference
     PUBLIC
