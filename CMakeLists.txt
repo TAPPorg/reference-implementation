@@ -2,9 +2,58 @@ cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
-project(tapp-reference LANGUAGES C)
+# see https://semver.org/
+set (TAPP_REFERENCE_MAJOR_VERSION 0)
+set (TAPP_REFERENCE_MINOR_VERSION 5)
+set (TAPP_REFERENCE_PATCH_VERSION 0)
+set (TAPP_REFERENCE_PRERELEASE_ID )
+set (TAPP_REFERENCE_BUILD_ID )
 
-# this provides TAPP API target
+set(TAPP_REFERENCE_VERSION "${TAPP_REFERENCE_MAJOR_VERSION}.${TAPP_REFERENCE_MINOR_VERSION}.${TAPP_REFERENCE_PATCH_VERSION}")
+if (TAPP_REFERENCE_PRERELEASE_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}-${TAPP_REFERENCE_PRERELEASE_ID}")
+else(TAPP_REFERENCE_PRERELEASE_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}")
+endif(TAPP_REFERENCE_PRERELEASE_ID)
+if (TAPP_REFERENCE_BUILD_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_EXT_VERSION}+${TAPP_REFERENCE_BUILD_ID}")
+endif(TAPP_REFERENCE_BUILD_ID)
+
+# Extract the git revision tag information
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  find_package(Git REQUIRED)
+  execute_process(
+          COMMAND ${GIT_EXECUTABLE} rev-parse -q HEAD
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          OUTPUT_VARIABLE TAPP_REFERENCE_REVISION )
+  string(REGEX MATCH "[0-9a-f]*"
+          TAPP_REFERENCE_REVISION "${TAPP_REFERENCE_REVISION}")
+else()
+  set(TAPP_REFERENCE_REVISION "unknown")
+endif()
+
+project(tapp-reference
+        VERSION ${TAPP_REFERENCE_VERSION}
+        DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
+        LANGUAGES C
+        HOMEPAGE_URL "https://github.com/TAPPOrg/")
+
+include(GNUInstallDirs)
+
+set(TAPP_REFERENCE_INSTALL_BINDIR "bin"
+        CACHE PATH "TAPP REFERENCE binary install directory")
+set(TAPP_REFERENCE_INSTALL_INCLUDEDIR "include"
+        CACHE PATH "TAPP REFERENCE INCLUDE install directory")
+set(TAPP_REFERENCE_INSTALL_LIBDIR "lib"
+        CACHE PATH "TAPP REFERENCE LIB install directory")
+set(TAPP_REFERENCE_INSTALL_DATADIR "share/mpqc/${TAPP_REFERENCE_EXT_VERSION}/data"
+        CACHE PATH "TAPP REFERENCE DATA install directory")
+set(TAPP_REFERENCE_INSTALL_DOCDIR "share/tapp/${TAPP_REFERENCE_EXT_VERSION}/doc"
+        CACHE PATH "TAPP REFERENCE DOC install directory")
+set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
+        CACHE PATH "TAPP REFERENCE CMAKE install directory")
+
+# this provides tapp-api target
 add_subdirectory(api)
 
 add_library(tapp-reference SHARED)
@@ -161,7 +210,7 @@ target_sources(
   target_link_libraries(
    demo
    PRIVATE
-     tapp-reference # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -189,7 +238,7 @@ target_sources(
   target_link_libraries(
    driver
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -218,7 +267,7 @@ if(BUILD_EXERCISE)
   target_link_libraries(
    exercise_contraction
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -247,7 +296,7 @@ target_sources(
   target_link_libraries(
    exercise_contraction_answers
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -269,7 +318,7 @@ target_sources(
   target_link_libraries(
    exercise_tucker
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
   add_library(exercise_tucker_answers SHARED)
@@ -285,5 +334,5 @@ target_sources(
   target_link_libraries(
    exercise_tucker_answers
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
