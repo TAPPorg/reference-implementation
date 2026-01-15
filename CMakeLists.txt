@@ -90,21 +90,21 @@ target_link_libraries(tapp-reference PUBLIC tapp-api)
 
 enable_testing()
 
-option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
-option(BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
+option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
 
-option(ENABLE_F16 "Turn on F16 support" OFF)
-option(ENABLE_BF16 "Turn on BF16 support" OFF)
+option(TAPP_REFERENCE_ENABLE_F16 "Turn on F16 support" OFF)
+option(TAPP_REFERENCE_ENABLE_BF16 "Turn on BF16 support" OFF)
 
-if(ENABLE_F16)
-  target_compile_definitions(tapp-reference PRIVATE ENABLE_F16=1)
+if(TAPP_REFERENCE_ENABLE_F16)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_F16=1)
 endif()
 
-if(ENABLE_BF16)
-  target_compile_definitions(tapp-reference PRIVATE ENABLE_BF16=1)
+if(TAPP_REFERENCE_ENABLE_BF16)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_BF16=1)
 endif()
 
-if(ENABLE_TBLIS)
+if(TAPP_REFERENCE_ENABLE_TBLIS)
 
   include(CheckLanguage)
   check_language(CXX)
@@ -128,7 +128,7 @@ if(ENABLE_TBLIS)
 
   FetchContent_MakeAvailable(tblis)
 
-  target_compile_definitions(tapp-reference PRIVATE ENABLE_TBLIS=1)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
 
   target_sources(
   tapp-reference
@@ -247,7 +247,7 @@ add_test(
   COMMAND $<TARGET_FILE:driver>
   )
 
-if(BUILD_EXERCISE)
+if(TAPP_REFERENCE_BUILD_EXERCISE)
   add_executable(exercise_contraction)
   
   target_sources(
