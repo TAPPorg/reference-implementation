@@ -14,11 +14,7 @@
     #pragma GCC diagnostic pop
 #endif
 
-#include "tapp.h"
-
-#ifdef __cplusplus
-    #include "ref_impl.h"
-#endif
+#include <tapp.h>
 
 TAPP_EXPORT void
 bind_tblis_execute_product(int nmode_A, int64_t* extents_A, int64_t* strides_A, void* A, int op_A, int64_t* idx_A,
