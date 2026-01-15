@@ -1,34 +1,76 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Install Prefix" FORCE)
-set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output" FORCE)
-project(tapp LANGUAGES C)
+set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
-add_library(tapp SHARED)
+# see https://semver.org/
+set (TAPP_REFERENCE_MAJOR_VERSION 0)
+set (TAPP_REFERENCE_MINOR_VERSION 5)
+set (TAPP_REFERENCE_PATCH_VERSION 0)
+set (TAPP_REFERENCE_PRERELEASE_ID )
+set (TAPP_REFERENCE_BUILD_ID )
+
+set(TAPP_REFERENCE_VERSION "${TAPP_REFERENCE_MAJOR_VERSION}.${TAPP_REFERENCE_MINOR_VERSION}.${TAPP_REFERENCE_PATCH_VERSION}")
+if (TAPP_REFERENCE_PRERELEASE_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}-${TAPP_REFERENCE_PRERELEASE_ID}")
+else(TAPP_REFERENCE_PRERELEASE_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}")
+endif(TAPP_REFERENCE_PRERELEASE_ID)
+if (TAPP_REFERENCE_BUILD_ID)
+  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_EXT_VERSION}+${TAPP_REFERENCE_BUILD_ID}")
+endif(TAPP_REFERENCE_BUILD_ID)
+
+# Extract the git revision tag information
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  find_package(Git REQUIRED)
+  execute_process(
+          COMMAND ${GIT_EXECUTABLE} rev-parse -q HEAD
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          OUTPUT_VARIABLE TAPP_REFERENCE_REVISION )
+  string(REGEX MATCH "[0-9a-f]*"
+          TAPP_REFERENCE_REVISION "${TAPP_REFERENCE_REVISION}")
+else()
+  set(TAPP_REFERENCE_REVISION "unknown")
+endif()
+
+project(tapp-reference
+        VERSION ${TAPP_REFERENCE_VERSION}
+        DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
+        LANGUAGES C
+        HOMEPAGE_URL "https://github.com/TAPPOrg/")
+
+include(GNUInstallDirs)
+
+set(TAPP_REFERENCE_INSTALL_BINDIR "bin"
+        CACHE PATH "TAPP REFERENCE binary install directory")
+set(TAPP_REFERENCE_INSTALL_INCLUDEDIR "include"
+        CACHE PATH "TAPP REFERENCE INCLUDE install directory")
+set(TAPP_REFERENCE_INSTALL_LIBDIR "lib"
+        CACHE PATH "TAPP REFERENCE LIB install directory")
+set(TAPP_REFERENCE_INSTALL_DATADIR "share/mpqc/${TAPP_REFERENCE_EXT_VERSION}/data"
+        CACHE PATH "TAPP REFERENCE DATA install directory")
+set(TAPP_REFERENCE_INSTALL_DOCDIR "share/tapp/${TAPP_REFERENCE_EXT_VERSION}/doc"
+        CACHE PATH "TAPP REFERENCE DOC install directory")
+set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
+        CACHE PATH "TAPP REFERENCE CMAKE install directory")
+
+# this provides tapp-api target
+add_subdirectory(api)
+
+add_library(tapp-reference SHARED)
 
 target_sources(
-  tapp
-  PUBLIC
-    src/tapp.h
-    src/tapp/tapp_ex_imp.h
+  tapp-reference
   PRIVATE
-    src/tapp/tensor.h
-    src/tapp/product.h
-    src/tapp/attributes.h
-    src/tapp/datatype.h
-    src/tapp/error.c
-    src/tapp/error.h
-    src/tapp/executor.c
-    src/tapp/executor.h
-    src/tapp/handle.c
-    src/tapp/handle.h
-    src/tapp/status.h
-    src/tapp/tensor.c
-    src/tapp/product.c
+    reference_implementation/include/ref_impl.h
+    reference_implementation/src/error.c
+    reference_implementation/src/executor.c
+    reference_implementation/src/handle.c
+    reference_implementation/src/tensor.c
+    reference_implementation/src/product.c
   )
 
 set_property(
-   TARGET tapp
+   TARGET tapp-reference
    PROPERTY
      C_STANDARD 99
      C_STANDARD_REQUIRED YES
@@ -36,32 +78,33 @@ set_property(
 )
 
 target_include_directories(
-  tapp
+  tapp-reference
   PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reference_implementation/include
 )
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
-  target_link_options(tapp PRIVATE "-undefined;dynamic_lookup")
+  target_link_options(tapp-reference PRIVATE "-undefined;dynamic_lookup")
 endif()
+
+target_link_libraries(tapp-reference PUBLIC tapp-api)
 
 enable_testing()
 
-option(ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
-option(BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
+option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
 
-option(ENABLE_F16 "Turn on F16 support" OFF)
-option(ENABLE_BF16 "Turn on BF16 support" OFF)
+option(TAPP_REFERENCE_ENABLE_F16 "Turn on F16 support" OFF)
+option(TAPP_REFERENCE_ENABLE_BF16 "Turn on BF16 support" OFF)
 
-if(ENABLE_F16)
-  target_compile_definitions(tapp PRIVATE ENABLE_F16=1)
+if(TAPP_REFERENCE_ENABLE_F16)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_F16=1)
 endif()
 
-if(ENABLE_BF16)
-  target_compile_definitions(tapp PRIVATE ENABLE_BF16=1)
+if(TAPP_REFERENCE_ENABLE_BF16)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_BF16=1)
 endif()
 
-if(ENABLE_TBLIS)
+if(TAPP_REFERENCE_ENABLE_TBLIS)
 
   include(CheckLanguage)
   check_language(CXX)
@@ -85,23 +128,23 @@ if(ENABLE_TBLIS)
 
   FetchContent_MakeAvailable(tblis)
 
-  target_compile_definitions(tapp PRIVATE ENABLE_TBLIS=1)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
 
   target_sources(
-  tapp
+  tapp-reference
   PRIVATE
     tblis_bindings/tblis_bind.h
     tblis_bindings/tblis_bind.cpp
   )
   set_property(
-          TARGET tapp
+          TARGET tapp-reference
           PROPERTY
           CXX_STANDARD 20
           CXX_STANDARD_REQUIRED YES
           CXX_EXTENSIONS NO
   )
   target_include_directories(
-  tapp
+  tapp-reference
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
   )
@@ -109,14 +152,8 @@ if(ENABLE_TBLIS)
   # ----------------------------------------------------------------------------
   # interface
 
-  target_link_directories( # can be removed?
-    tapp
-    PUBLIC
-      ${TBLIS_INSTALL_DIR}/lib
-  )
-
   target_link_libraries(
-    tapp
+    tapp-reference
     PUBLIC
       tblis-static
   )
@@ -136,7 +173,7 @@ if(ENABLE_TBLIS)
   target_link_libraries(
     test++
     PRIVATE
-      tapp
+      tapp-reference
     )
 
   set_property(
@@ -167,7 +204,7 @@ target_sources(
   target_link_libraries(
    demo
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -195,7 +232,7 @@ target_sources(
   target_link_libraries(
    driver
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -204,7 +241,7 @@ add_test(
   COMMAND $<TARGET_FILE:driver>
   )
 
-if(BUILD_EXERCISE)
+if(TAPP_REFERENCE_BUILD_EXERCISE)
   add_executable(exercise_contraction)
   
   target_sources(
@@ -224,7 +261,7 @@ if(BUILD_EXERCISE)
   target_link_libraries(
    exercise_contraction
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -253,7 +290,7 @@ target_sources(
   target_link_libraries(
    exercise_contraction_answers
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
 
@@ -275,7 +312,7 @@ target_sources(
   target_link_libraries(
    exercise_tucker
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )
 
   add_library(exercise_tucker_answers SHARED)
@@ -291,5 +328,5 @@ target_sources(
   target_link_libraries(
    exercise_tucker_answers
    PRIVATE
-     tapp # Linking to tapp provides everything needed.
+     tapp-reference
   )

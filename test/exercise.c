@@ -1,8 +1,9 @@
-#include "tapp_ex_imp.h"
+#include <tapp.h>
+
 #include "helpers.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include <complex.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char const *argv[])
 {
@@ -90,7 +91,7 @@ int main(int argc, char const *argv[])
     /* Remove */ TAPP_executor exec;
 
     // Create executor
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
 
     // Declare status object
     /* Remove */ TAPP_status status;

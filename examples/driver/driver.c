@@ -4,11 +4,11 @@
  * Umeå University - September 2025
  */
 
-#include "tapp_ex_imp.h"
+#include <tapp.h>
 #include "helpers.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include <complex.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char const *argv[])
 {
@@ -87,7 +87,7 @@ int main(int argc, char const *argv[])
      */
 
     TAPP_executor exec; // Declaration of executor
-    create_executor(&exec); // Creation of executor
+    TAPP_create_executor(&exec); // Creation of executor
     // int exec_id = 1; // Choose executor
     // exec = (intptr_t)&exec_id; // Assign executor
 

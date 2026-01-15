@@ -4,7 +4,8 @@
  * Umeå University - June 2024
  */
 
-#include "product.h"
+#include <tapp.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -48,7 +49,7 @@ int main(int argc, char const *argv[])
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;

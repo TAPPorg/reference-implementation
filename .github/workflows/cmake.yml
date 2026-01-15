@@ -48,7 +48,7 @@ jobs:
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
-        -DENABLE_TBLIS=ON
+        -DTAPP_REFERENCE_ENABLE_TBLIS=ON
     steps:
     - uses: actions/checkout@v4
 
