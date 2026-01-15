@@ -6,9 +6,27 @@
 
 #include "test.h"
 
+#include <random>
+
+unsigned int current_rand_seed = 0;
+// switch this to true to use C++ random number generation everywhere
+constexpr bool use_cpp_rng = false;
+auto& rand_engine() {
+    if constexpr (use_cpp_rng) {
+        static std::mt19937 engine(current_rand_seed);
+        return engine;
+    }
+    else {
+        static std::default_random_engine engine;
+        return engine;
+    }
+}
+
 int main(int argc, char const *argv[])
 {
-    srand(time(NULL)); 
+    if (argc >= 2) current_rand_seed = std::atoi(argv[1]); // now ready to generate random numbers
+    if constexpr (!use_cpp_rng) std::srand(current_rand_seed);
+    std::cout << "Starting seed for random numbers = " << current_rand_seed << std::endl;
     std::cout << "Hadamard Product: " << str(test_hadamard_product()) << std::endl;
     std::cout << "Contraction: " << str(test_contraction()) << std::endl;
     std::cout << "Commutativity: " << str(test_commutativity()) << std::endl;
@@ -1948,19 +1966,39 @@ std::string str(bool b)
     return b ? "true" : "false";
 }
 
-int randi(int min, int max)
-{
-    return rand() % (max - min + 1) + min;
+int myrand() {
+    std::uniform_int_distribution<int> distrib(0, RAND_MAX);
+    return distrib(rand_engine());
 }
 
-float rand_s(float min, float max)
+int randi(int min, int max)
 {
-    return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max-min)));
+    if constexpr (use_cpp_rng) {
+        std::uniform_int_distribution<int> distrib(min, max);
+        return distrib(rand_engine());
+    }
+    else {
+        return rand() % (max - min + 1) + min;
+    }
+}
+
+float rand_s(float min, float max) {
+    if constexpr (use_cpp_rng) {
+        std::uniform_real_distribution<float> distrib(min, max);
+        return distrib(rand_engine());
+    }
+    else
+        return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max-min)));
 }
 
 double rand_d(double min, double max)
 {
-    return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max-min)));
+    if constexpr (use_cpp_rng) {
+        std::uniform_real_distribution<double> distrib(min, max);
+        return distrib(rand_engine());
+    }
+    else
+        return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max-min)));
 }
 
 int random_choice(int size, int* choices)
@@ -1970,22 +2008,30 @@ int random_choice(int size, int* choices)
 
 std::complex<float> rand_c(std::complex<float> min, std::complex<float> max)
 {
-    return std::complex<float>(min.real() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.imag()-min.imag()))));
+    if constexpr (use_cpp_rng) {
+        return {rand_s(min.real(), max.real()), rand_s(min.real(), max.real())};
+    }
+    else
+        return std::complex<float>(min.real() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(max.imag()-min.imag()))));
 }
 
 std::complex<double> rand_z(std::complex<double> min, std::complex<double> max)
 {
-    return std::complex<double>(min.real() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.imag()-min.imag()))));
+    if constexpr (use_cpp_rng) {
+        return {rand_d(min.real(), max.real()), rand_d(min.real(), max.real())};
+    }
+    else
+        return std::complex<double>(min.real() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.real()-min.real()))), min.imag() + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX/(max.imag()-min.imag()))));
 }
 
 float rand_s()
 {
-    return (rand() + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) * (rand() % 2 == 0 ? 1 : -1);
+    return (myrand() + static_cast <float> (myrand()) / static_cast <float> (RAND_MAX)) * (myrand() % 2 == 0 ? 1 : -1);
 }
 
 double rand_d()
 {
-    return (rand() + static_cast <double> (rand()) / static_cast <double> (RAND_MAX)) * (rand() % 2 == 0 ? 1 : -1);
+    return (myrand() + static_cast <double> (myrand()) / static_cast <double> (RAND_MAX)) * (myrand() % 2 == 0 ? 1 : -1);
 }
 
 std::complex<float> rand_c()
