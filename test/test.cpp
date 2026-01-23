@@ -27,13 +27,13 @@ int main(int argc, char const *argv[])
     //for(int i=0;i<0;i++)
     std::cout << "Zero Dim Tensor Contraction: " << test_zero_dim_tensor_contraction() << std::endl;
     std::cout << "One Dim Tensor Contraction: " << test_one_dim_tensor_contraction() << std::endl;
-    std::cout << "Subtensor Same Nmode: " << test_subtensor_same_nmode() << std::endl;
+    std::cout << "Subtensor Same Nmode: " << test_subtensor_unchanged_nmode() << std::endl;
     std::cout << "Subtensor Lower Nmode: " << test_subtensor_lower_nmode() << std::endl;
     std::cout << "Negative Strides: " << test_negative_strides() << std::endl;
-    std::cout << "Negative Strides Subtensor Same Nmode: " << test_negative_strides_subtensor_same_nmode() << std::endl;
+    std::cout << "Negative Strides Subtensor Same Nmode: " << test_negative_strides_subtensor_unchanged_nmode() << std::endl;
     std::cout << "Negative Strides Subtensor Lower Nmode: " << test_negative_strides_subtensor_lower_nmode() << std::endl;
     std::cout << "Mixed Strides: " << test_mixed_strides() << std::endl;
-    std::cout << "Mixed Strides Subtensor Same Nmode: " << test_mixed_strides_subtensor_same_nmode() << std::endl;
+    std::cout << "Mixed Strides Subtensor Same Nmode: " << test_mixed_strides_subtensor_unchanged_nmode() << std::endl;
     std::cout << "Mixed Strides Subtensor Lower Nmode: " << test_mixed_strides_subtensor_lower_nmode() << std::endl;
     std::cout << "Contraction Double Precision: " << test_contraction_double_precision() << std::endl;
     std::cout << "Contraction Complex: " << test_contraction_complex() << std::endl;
@@ -298,7 +298,7 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
                                                        isolated_indices_A, isolated_indices_B,
                                                        repeated_indices_A, repeated_indices_B);
 
-    std::unordered_map<int, int64_t> index_extent_map = generate_index_extent_map(min_extent, 4, total_unique_indices, unique_indices);
+    std::unordered_map<int, int64_t> index_extent_map = generate_index_extent_map(min_extent, 4, equal_extents_only, total_unique_indices, unique_indices);
 
     auto [extents_A, extents_B, extents_C, extents_D] = assign_extents(index_extent_map, nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D);
 
@@ -448,6 +448,22 @@ std::tuple<int, int, int, int,
                 max_hadamard_indices = std::min(max_hadamard_indices, new_max_hadamard); 
             }
         }
+        if (nmode_D != -1) // If number of modes for D is defined
+        {
+            int new_max_hadamard = nmode_D;
+            if (contracted_indices != -1)
+            {
+                new_max_hadamard -= contracted_indices;
+            }
+            if (max_hadamard_indices < 0) // If maximum hadamards is not valid, assign a new value
+            {
+                max_hadamard_indices = new_max_hadamard;
+            }
+            else // If maximum hadamards is valid, find the lowest value
+            {
+                max_hadamard_indices = std::min(max_hadamard_indices, new_max_hadamard); 
+            }
+        }
 
         if (max_hadamard_indices < 0) // If no valid max found, assign a default value
         {
@@ -492,11 +508,11 @@ std::tuple<int, int, int, int,
                 int max_contracted_indices;
                 if (nmode_D != -1)
                 {
-                    int max_contracted_indices = (((nmode_B - hadamard_indices) + (nmode_A - hadamard_indices) - (nmode_D - hadamard_indices))%2)/2;
+                    max_contracted_indices = ((nmode_B - hadamard_indices) + (nmode_A - hadamard_indices) - (nmode_D - hadamard_indices))/2;
                 }
                 else
                 {
-                    int max_contracted_indices = std::min(nmode_A, nmode_B) - hadamard_indices;
+                    max_contracted_indices = std::min(nmode_A, nmode_B) - hadamard_indices;
                 }
                 if (isolated_indices_enabled || repeated_indices_enabled)
                 {
@@ -545,7 +561,6 @@ std::tuple<int, int, int, int,
         }
     }
 
-    // TODO: When repeated indices are enabled the tensors need at least one other index. This is not yet ensured.
     if (nmode_D == -1)
     {
         nmode_D = hadamard_indices;
@@ -633,7 +648,7 @@ std::tuple<int, int, int, int,
                         max_free_indices = std::max(min_free_indices, max_free_indices - 1);
                     }
                 }
-                min_free_indices = std::max(0, nmode_D - (nmode_B - contracted_indices)); // Make sure free indices can't be negative
+                min_free_indices = std::max(0, min_free_indices); // Make sure free indices can't be negative
                 free_indices_A = rand(min_free_indices, max_free_indices);
             }
             else
@@ -728,7 +743,7 @@ int* generate_unique_indices(int64_t total_unique_indices)
     {
         unique_indices[i] = 'a' + i;
     }
-    std::shuffle(unique_indices, unique_indices + total_unique_indices, std::default_random_engine()); // Shuffle the unique indices
+    std::shuffle(unique_indices, unique_indices + total_unique_indices, rand_engine()); // Shuffle the unique indices
     return unique_indices;
 }
 
@@ -767,7 +782,7 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_in
               unique_indices + isolated_indices_A + free_indices_A + hadamard_indices + free_indices_B,
               idx_D); // Assign indices to D
 
-    std::shuffle(idx_D, idx_D + (free_indices_A + hadamard_indices + free_indices_B), std::default_random_engine()); // Shuffle indices for D
+    std::shuffle(idx_D, idx_D + (free_indices_A + hadamard_indices + free_indices_B), rand_engine()); // Shuffle indices for D
 
     std::copy(idx_D,
               idx_D + free_indices_A + hadamard_indices + free_indices_B,
@@ -783,20 +798,23 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_in
         idx_B[i + isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices] = idx_B[rand(0, isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices - 1)];
     }
 
-    std::shuffle(idx_A, idx_A + repeated_indices_A + isolated_indices_A + free_indices_A + hadamard_indices + contracted_indices, std::default_random_engine()); // Shuffle final indices for A
+    std::shuffle(idx_A, idx_A + repeated_indices_A + isolated_indices_A + free_indices_A + hadamard_indices + contracted_indices, rand_engine()); // Shuffle final indices for A
 
-    std::shuffle(idx_B, idx_B + repeated_indices_B + isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices, std::default_random_engine()); // Shuffle final indices for B
+    std::shuffle(idx_B, idx_B + repeated_indices_B + isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices, rand_engine()); // Shuffle final indices for B
     
     return {idx_A, idx_B, idx_C, idx_D};
 }
 
 std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
-                                                               int64_t total_unique_indices, int* unique_indices)
+                                                           bool equal_extents_only,
+                                                           int64_t total_unique_indices, int* unique_indices)
 {
     std::unordered_map<int, int64_t> index_to_extent;
+    int extent = rand(min_extent, max_extent);
     for (int64_t i = 0; i < total_unique_indices; i++)
     {
-        index_to_extent[unique_indices[i]] = rand(min_extent, max_extent);
+        if (!equal_extents_only) extent = rand(min_extent, max_extent);
+        index_to_extent[unique_indices[i]] = extent;
     }
     return index_to_extent;
 }
@@ -1057,15 +1075,15 @@ T rand(T min, T max)
         };
     }
     else {
-        static_assert(std::is_same_v<T, void>,
-                      "rand<T>: unsupported type");
+        static_assert(false,
+                      "Unsupported type for rand function");
     }
 }
 
 template<typename T>
 T rand()
 {
-    return rand<T>(-RAND_MAX, RAND_MAX);
+    return rand<T>(-std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
 }
 
 template<typename T>
@@ -1894,7 +1912,7 @@ bool test_one_dim_tensor_contraction()
     return result;
 }
 
-bool test_subtensor_same_nmode()
+bool test_subtensor_unchanged_nmode()
 {
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
@@ -2097,7 +2115,7 @@ bool test_negative_strides()
     return true;
 }
 
-bool test_negative_strides_subtensor_same_nmode()
+bool test_negative_strides_subtensor_unchanged_nmode()
 {
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
@@ -2300,7 +2318,7 @@ bool test_mixed_strides()
     return true;
 }
 
-bool test_mixed_strides_subtensor_same_nmode()
+bool test_mixed_strides_subtensor_unchanged_nmode()
 {
     auto [nmode_A, extents_A, strides_A, A, idx_A,
           nmode_B, extents_B, strides_B, B, idx_B,
