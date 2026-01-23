@@ -6,6 +6,12 @@
 
 #include "test.h"
 
+// TODO replace by #include of <blis.h> when possible
+extern "C" {
+  extern void bli_init();
+  extern void bli_finalize();
+}
+
 unsigned int current_rand_seed = 0;
 auto& rand_engine() {
     static std::mt19937 engine(current_rand_seed);
@@ -15,6 +21,7 @@ auto& rand_engine() {
 int main(int argc, char const *argv[])
 {
     if (argc >= 2) current_rand_seed = std::atoi(argv[1]); // now ready to generate random numbers
+    bli_init();
     std::cout << std::boolalpha;
     std::cout << "Starting seed for random numbers = " << current_rand_seed << std::endl;
     std::cout << "Hadamard Product: " << test_hadamard_product() << std::endl;
@@ -47,6 +54,7 @@ int main(int argc, char const *argv[])
     std::cout << "Error: Non Matching Extents: " << test_error_non_matching_ext() << std::endl;
     std::cout << "Error: C Other Structure: " << test_error_C_other_structure() << std::endl;
     std::cout << "Error: Aliasing Within D: " << test_error_aliasing_within_D() << std::endl;
+    bli_finalize();
     return 0;
 }
 
@@ -1073,10 +1081,6 @@ T rand(T min, T max)
             dist_real(rand_engine()),
             dist_imag(rand_engine())
         };
-    }
-    else {
-        static_assert(false,
-                      "Unsupported type for rand function");
     }
 }
 
