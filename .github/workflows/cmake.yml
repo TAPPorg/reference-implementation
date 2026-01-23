@@ -30,9 +30,11 @@ jobs:
             valgrind: true
         include:
           - os: ubuntu-24.04
+            cc: /usr/bin/gcc-14
             cxx: /usr/bin/g++-14
             sanitize_flags: -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
           - os: macos-14
+            cc: clang
             cxx: clang++
             sanitize_flags: -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
 
@@ -40,6 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CXX : ${{ matrix.cxx }}
+      CC : ${{ matrix.cc }}
       DOXYGEN_VERSION : 1.9.1
       CCACHE_DIR : ${{github.workspace}}/build/.ccache
       CCACHE_COMPRESS : true
@@ -51,6 +54,27 @@ jobs:
         -DTAPP_REFERENCE_ENABLE_TBLIS=ON
     steps:
     - uses: actions/checkout@v4
+
+    - name: Get CPU Model (Linux)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      id: linux_cpu
+      run: echo "CPU_MODEL=$(lscpu | grep 'Model name:' | cut -f 2 -d ':' | awk '{$1=$1}1')" >> $GITHUB_OUTPUT
+
+    - name: Get CPU Model (macOS)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      id: macos_cpu
+      # Using sysctl command to get the brand string
+      run: echo "CPU_MODEL=$(sysctl -n machdep.cpu.brand_string)" >> $GITHUB_OUTPUT
+
+    - name: Display CPU Model
+      run: |
+        echo "Runner OS: ${{ runner.os }}"
+        if [ "${{ runner.os }}" == "Linux" ]; then
+          echo "Processor Model: ${{ steps.linux_cpu.outputs.CPU_MODEL }}"
+        elif [ "${{ runner.os }}" == "macOS" ]; then
+          echo "Processor Model: ${{ steps.macos_cpu.outputs.CPU_MODEL }}"
+        fi
+      shell: bash
 
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
@@ -66,11 +90,11 @@ jobs:
         fi
 
     - name: Install prerequisite MacOS packages
-      if: ${{ startswith(matrix.os, 'macos') }}
+      if: ${{ startsWith(matrix.os, 'macos') }}
       run: brew install ninja ccache
 
     - name: Install prerequisites Ubuntu packages
-      if: ${{ matrix.os == 'ubuntu-24.04' }}
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: |
         sudo apt-get update
         sudo apt-get install ninja-build g++-14 liblapack-dev ccache valgrind
@@ -114,4 +138,41 @@ jobs:
       if: ${{ matrix.valgrind }}
       working-directory: ${{github.workspace}}/build
       shell: bash
-      run: valgrind --error-exitcode=1 --leak-check=full ./test++
+      run: |
+        cat > tblis.supp << 'EOF'
+        {
+           tblis_bli_l3_packa
+           Memcheck:Leak
+           match-leak-kinds: possible
+           fun:malloc
+           fun:bli_fmalloc_align
+           fun:bli_pool_alloc_block
+           fun:bli_pool_grow
+           fun:bli_pool_checkout_block
+           fun:bli_pba_acquire_m
+           fun:bli_packm_alloc_ex
+           fun:bli_packm_alloc
+           fun:_ZN5tblis15packm_blk_bsmtcEPK5obj_sPS0_PK6cntx_sPK6cntl_sP9thrinfo_s
+           fun:bli_packm_int
+           fun:bli_l3_packa
+           fun:bli_l3_int
+        }
+        {
+           tblis_bli_l3_packb
+           Memcheck:Leak
+           match-leak-kinds: possible
+           fun:malloc
+           fun:bli_fmalloc_align
+           fun:bli_pool_alloc_block
+           fun:bli_pool_grow
+           fun:bli_pool_checkout_block
+           fun:bli_pba_acquire_m
+           fun:bli_packm_alloc_ex
+           fun:bli_packm_alloc
+           fun:_ZN5tblis15packm_blk_bsmtcEPK5obj_sPS0_PK6cntx_sPK6cntl_sP9thrinfo_s
+           fun:bli_packm_int
+           fun:bli_l3_packb
+           fun:bli_l3_int
+        }
+        EOF
+        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp -s ./test++
