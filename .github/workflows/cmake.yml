@@ -30,9 +30,11 @@ jobs:
             valgrind: true
         include:
           - os: ubuntu-24.04
+            cc: /usr/bin/gcc-14
             cxx: /usr/bin/g++-14
             sanitize_flags: -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
           - os: macos-14
+            cc: clang
             cxx: clang++
             sanitize_flags: -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
 
@@ -40,6 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CXX : ${{ matrix.cxx }}
+      CC : ${{ matrix.cc }}
       DOXYGEN_VERSION : 1.9.1
       CCACHE_DIR : ${{github.workspace}}/build/.ccache
       CCACHE_COMPRESS : true
