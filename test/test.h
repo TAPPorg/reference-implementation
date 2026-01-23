@@ -71,6 +71,7 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_in
                                                                   int isolated_indices_A, int isolated_indices_B,
                                                                   int repeated_indices_A, int repeated_indices_B);
 std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
+                                                           bool equal_extents_only,
                                                            int64_t total_unique_indices, int* unique_indices);
 std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
                                                                   int nmode_A, int64_t* idx_A,
