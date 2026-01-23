@@ -1074,10 +1074,6 @@ T rand(T min, T max)
             dist_imag(rand_engine())
         };
     }
-    else {
-        static_assert(false,
-                      "Unsupported type for rand function");
-    }
 }
 
 template<typename T>
