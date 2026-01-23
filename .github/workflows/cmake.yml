@@ -138,4 +138,41 @@ jobs:
       if: ${{ matrix.valgrind }}
       working-directory: ${{github.workspace}}/build
       shell: bash
-      run: valgrind --error-exitcode=1 --leak-check=full ./test++
+      run: |
+        cat > tblis.supp << 'EOF'
+        {
+           tblis_bli_l3_packa
+           Memcheck:Leak
+           match-leak-kinds: possible
+           fun:malloc
+           fun:bli_fmalloc_align
+           fun:bli_pool_alloc_block
+           fun:bli_pool_grow
+           fun:bli_pool_checkout_block
+           fun:bli_pba_acquire_m
+           fun:bli_packm_alloc_ex
+           fun:bli_packm_alloc
+           fun:_ZN5tblis15packm_blk_bsmtcEPK5obj_sPS0_PK6cntx_sPK6cntl_sP9thrinfo_s
+           fun:bli_packm_int
+           fun:bli_l3_packa
+           fun:bli_l3_int
+        }
+        {
+           tblis_bli_l3_packb
+           Memcheck:Leak
+           match-leak-kinds: possible
+           fun:malloc
+           fun:bli_fmalloc_align
+           fun:bli_pool_alloc_block
+           fun:bli_pool_grow
+           fun:bli_pool_checkout_block
+           fun:bli_pba_acquire_m
+           fun:bli_packm_alloc_ex
+           fun:bli_packm_alloc
+           fun:_ZN5tblis15packm_blk_bsmtcEPK5obj_sPS0_PK6cntx_sPK6cntl_sP9thrinfo_s
+           fun:bli_packm_int
+           fun:bli_l3_packb
+           fun:bli_l3_int
+        }
+        EOF
+        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp -s ./test++
