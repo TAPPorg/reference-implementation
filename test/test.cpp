@@ -974,7 +974,7 @@ T* create_tensor_data(int64_t size)
 }
 
 template<typename T>
-T* create_tensor_data(int64_t size, T* min_value, T* max_value)
+T* create_tensor_data(int64_t size, T min_value, T max_value)
 {
     T* data = new T[size];
     for (size_t i = 0; i < size; i++)

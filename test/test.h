@@ -85,7 +85,7 @@ int calculate_size(int nmode, int64_t* extents);
 template<typename T>
 T* create_tensor_data(int64_t size);
 template<typename T>
-T* create_tensor_data(int64_t size, T* min_value, T* max_value);
+T* create_tensor_data(int64_t size, T min_value, T max_value);
 template<typename T>
 T* calculate_tensor_pointer(T* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides);
 void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size);
