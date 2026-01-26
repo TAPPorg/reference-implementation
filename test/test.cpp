@@ -1079,7 +1079,14 @@ T rand(T min, T max)
 template<typename T>
 T rand()
 {
-    return rand<T>(-std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
+    if constexpr (is_complex_v<T>) {
+        using value_type = typename T::value_type;
+        return rand<T>(-std::numeric_limits<value_type>::max(), std::numeric_limits<value_type>::max());
+    }
+    else
+    {
+        return rand<T>(-std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
+    }
 }
 
 template<typename T>
