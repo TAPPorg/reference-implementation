@@ -1,13 +1,10 @@
 #ifndef TAPP_TENSOR_H_
 #define TAPP_TENSOR_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
+#include "types.h"
 #include "datatype.h"
 
-typedef intptr_t TAPP_tensor_info;
 
 /*
  * TODO: what are the required error conditions? What is explicitly allowed (esp. regarding strides)?

@@ -13,6 +13,7 @@ extern "C" {
 #include "tapp/status.h"
 #include "tapp/tensor.h"
 #include "tapp/product.h"
+#include "tapp/types.h"
 
 #ifdef __cplusplus
 }

@@ -1,15 +1,9 @@
 #ifndef TAPP_PRODUCT_H_
 #define TAPP_PRODUCT_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
-#include "handle.h"
-#include "executor.h"
+#include "types.h"
 #include "datatype.h"
-#include "status.h"
-#include "tensor.h"
 
 //TODO: where should this go?
 typedef int TAPP_element_op;
@@ -27,8 +21,6 @@ enum
  * TODO: what are the required error conditions?
  * TODO: must C and D info be the same? (should they just be the same variable?)
  */
-
-typedef intptr_t TAPP_tensor_product;
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                                   TAPP_handle handle,
