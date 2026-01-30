@@ -1,8 +1,8 @@
 #include "../include/handle.h"
 
 char* paths[] = {
-    "./tapp-ref.so"
-    "./tapp-tblis.so"
+    "./libtapp-reference.so",
+    "./libtapp-tblis.so"
 };
 
 TAPP_error load_function(void* lib_handle, void** func, char* func_name, bool crucial, TAPP_error error_code);
@@ -74,7 +74,7 @@ TAPP_error TAPP_create_handle(uint64_t impl_id, TAPP_handle* handle)
         return 6; // TODO: Return error for non implemented function
     }
 
-    return multi_tapp_handle->TAPP_create_handle(impl_id, multi_tapp_handle->tapp_handle);
+    return multi_tapp_handle->TAPP_create_handle(impl_id, &multi_tapp_handle->tapp_handle);
 }
 
 TAPP_error TAPP_destroy_handle(TAPP_handle handle)
@@ -85,7 +85,7 @@ TAPP_error TAPP_destroy_handle(TAPP_handle handle)
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_destroy_handle\n");
         return 6; // TODO: Return error for non implemented function
     }
-    TAPP_error error = multi_tapp_handle->TAPP_destroy_handle(*multi_tapp_handle->tapp_handle);
+    TAPP_error error = multi_tapp_handle->TAPP_destroy_handle(multi_tapp_handle->tapp_handle);
     if (multi_tapp_handle->lib_handle)
     {
         dlclose(multi_tapp_handle->lib_handle);

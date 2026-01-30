@@ -11,7 +11,7 @@ bool TAPP_check_success(TAPP_error error, TAPP_handle handle)
         return false; // TODO: Return error for non implemented function
     }
     return error == 0;
-    return multi_tapp_handle->TAPP_check_success(error, *multi_tapp_handle->tapp_handle);
+    return multi_tapp_handle->TAPP_check_success(error, multi_tapp_handle->tapp_handle);
 }
 
 size_t TAPP_explain_error(TAPP_error error,
@@ -70,7 +70,7 @@ size_t TAPP_explain_error(TAPP_error error,
         return handle_error(message, maxlen, "Attempted use of TAPP_status from different implementation");
         break;
     default:
-        return multi_tapp_handle->TAPP_explain_error(error, *multi_tapp_handle->tapp_handle, maxlen, message);
+        return multi_tapp_handle->TAPP_explain_error(error, multi_tapp_handle->tapp_handle, maxlen, message);
         break;
     }
 }

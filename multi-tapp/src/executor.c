@@ -14,7 +14,7 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec,
     multi_tapp_exec->impl_id = multi_tapp_handle->impl_id;
     *exec = (TAPP_executor)multi_tapp_exec;
 
-    return multi_tapp_handle->TAPP_create_executor(multi_tapp_exec->exec, *multi_tapp_handle->tapp_handle);
+    return multi_tapp_handle->TAPP_create_executor(&multi_tapp_exec->exec, multi_tapp_handle->tapp_handle);
 }
 
 TAPP_error TAPP_destroy_executor(TAPP_executor exec,
@@ -33,7 +33,7 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec,
         return 8; // TODO: Return error for incompatible handle
     }
 
-    TAPP_error error = multi_tapp_handle->TAPP_destroy_executor(*multi_tapp_exec->exec, *multi_tapp_handle->tapp_handle);
+    TAPP_error error = multi_tapp_handle->TAPP_destroy_executor(multi_tapp_exec->exec, multi_tapp_handle->tapp_handle);
     free(multi_tapp_exec);
 
     return error;

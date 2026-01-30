@@ -7,7 +7,7 @@
 struct Multi_TAPP_tensor_info
 {
     uint64_t impl_id;
-    TAPP_tensor_info* info;
+    TAPP_tensor_info info;
 };
 
 #endif /* TAPP_REF_IMPL_MULTI_TAPP_TENSOR_H_ */
