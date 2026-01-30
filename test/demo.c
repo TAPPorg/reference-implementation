@@ -151,7 +151,7 @@ void contraction()
     int message_len = TAPP_explain_error(error, handle, 0, NULL);
     char *message_buff = malloc((message_len + 1) * sizeof(char));
     TAPP_explain_error(error, handle, message_len + 1, message_buff);
-    printf(message_buff);
+    printf("%s", message_buff);
     free(message_buff);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
