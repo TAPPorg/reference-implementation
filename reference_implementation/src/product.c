@@ -160,38 +160,38 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_prectype prec = plan_ptr->prec;
 
     TAPP_datatype type_A = A_info_ptr->type;
-    int nmode_A = TAPP_get_nmodes(A_info, handle);
+    int nmode_A = A_info_ptr->nmode;
     int64_t* extents_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_extents(A_info, handle, extents_A);
+    memcpy(extents_A, A_info_ptr->extents, nmode_A * sizeof(int64_t));
     int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_strides(A_info, handle, strides_A);
+    memcpy(strides_A, A_info_ptr->strides, nmode_A * sizeof(int64_t));
     int64_t* idx_A = malloc(nmode_A * sizeof(int64_t));
     memcpy(idx_A, plan_ptr->idx_A, nmode_A * sizeof(int64_t));
 
     TAPP_datatype type_B = B_info_ptr->type;
-    int nmode_B = TAPP_get_nmodes(B_info, handle);
+    int nmode_B = B_info_ptr->nmode;
     int64_t* extents_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_extents(B_info, handle, extents_B);
+    memcpy(extents_B, B_info_ptr->extents, nmode_B * sizeof(int64_t));
     int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_strides(B_info, handle, strides_B);
+    memcpy(strides_B, B_info_ptr->strides, nmode_B * sizeof(int64_t));
     int64_t* idx_B = malloc(nmode_B * sizeof(int64_t));
     memcpy(idx_B, plan_ptr->idx_B, nmode_B * sizeof(int64_t));
 
     TAPP_datatype type_C = C_info_ptr->type;
-    int nmode_C = TAPP_get_nmodes(C_info, handle);
+    int nmode_C = C_info_ptr->nmode;
     int64_t* extents_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_extents(C_info, handle, extents_C);
+    memcpy(extents_C, C_info_ptr->extents, nmode_C * sizeof(int64_t));
     int64_t* strides_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_strides(C_info, handle, strides_C);
+    memcpy(strides_C, C_info_ptr->strides, nmode_C * sizeof(int64_t));
     int64_t* idx_C = malloc(nmode_C * sizeof(int64_t));
     memcpy(idx_C, plan_ptr->idx_C, nmode_C * sizeof(int64_t));
 
     TAPP_datatype type_D = D_info_ptr->type;
-    int nmode_D = TAPP_get_nmodes(D_info, handle);
+    int nmode_D = D_info_ptr->nmode;
     int64_t* extents_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_extents(D_info, handle, extents_D);
+    memcpy(extents_D, D_info_ptr->extents, nmode_D * sizeof(int64_t));
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_strides(D_info, handle, strides_D);
+    memcpy(strides_D, D_info_ptr->strides, nmode_D * sizeof(int64_t));
     int64_t* idx_D = malloc(nmode_D * sizeof(int64_t));
     memcpy(idx_D, plan_ptr->idx_D, nmode_D * sizeof(int64_t));
 
