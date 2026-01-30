@@ -1297,6 +1297,9 @@ bool test_hadamard_product()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -1367,6 +1370,9 @@ bool test_contraction()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>();
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -1526,6 +1532,9 @@ bool test_permutations()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -1602,6 +1611,9 @@ bool test_equal_extents()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -1667,6 +1679,9 @@ bool test_outer_product()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, 0);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+    
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -1740,6 +1755,9 @@ bool test_full_contraction()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -1805,6 +1823,9 @@ bool test_zero_dim_tensor_contraction()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(0);//2,2,0,2);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+    
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -1878,6 +1899,9 @@ bool test_one_dim_tensor_contraction()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -1943,6 +1967,9 @@ bool test_subtensor_unchanged_nmode()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, true);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+    
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -2016,6 +2043,9 @@ bool test_subtensor_lower_nmode()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2085,6 +2115,9 @@ bool test_negative_strides()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2149,6 +2182,9 @@ bool test_negative_strides_subtensor_unchanged_nmode()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, true, false, true);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+    
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -2497,6 +2533,9 @@ bool test_contraction_double_precision()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2562,6 +2601,9 @@ bool test_contraction_complex()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<std::complex<float>>();
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -2636,6 +2678,9 @@ bool test_contraction_complex_double_precision()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<std::complex<double>>(2,2,0,2);//2,2,0,2);
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -2792,6 +2837,9 @@ bool test_isolated_idx()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2857,6 +2905,9 @@ bool test_repeated_idx()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, false, false, false, false, false, false, true);
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -2930,6 +2981,9 @@ bool test_hadamard_and_free()
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
     TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
@@ -2996,6 +3050,9 @@ bool test_hadamard_and_contraction()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, input_nmode, -1, input_nmode, 1, false, false, false, false, false, true);
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
@@ -3335,6 +3392,9 @@ bool test_error_aliasing_within_D()
     int scewed_index = rand(1, nmode_D - 1);
     int signs[2] = {-1, 1};
     strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - rand((int64_t)1, strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - 1));
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
 
     TAPP_handle handle;
     TAPP_create_handle(0, &handle);
