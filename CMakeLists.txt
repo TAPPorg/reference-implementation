@@ -244,6 +244,34 @@ add_test(
   COMMAND $<TARGET_FILE:driver>
   )
 
+add_executable(multi-tapp-driver)
+
+target_sources(
+  multi-tapp-driver
+  PRIVATE
+    test/multi-tapp-driver.c
+    test/helpers.c
+    test/helpers.h
+  )
+
+  target_include_directories(
+  driver
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+  )
+
+  target_link_libraries(
+   multi-tapp-driver
+   PRIVATE
+     multi-tapp
+  )
+
+
+add_test(
+  NAME multi-tapp-driver
+  COMMAND $<TARGET_FILE:driver>
+  )
+
 if(TAPP_REFERENCE_BUILD_EXERCISE)
   add_executable(exercise_contraction)
   
