@@ -54,8 +54,10 @@ void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, co
 
 // calling realloc with size 0 is nonportable, this does the "right" thing
 // see: https://valgrind.org/docs/manual/mc-manual.html#mc-manual.reallocsizezero
-void* TAPP_realloc(void *ptr, size_t size) {
-    if (size == 0) {
+void* TAPP_realloc(void *ptr, size_t size)
+{
+    if (size == 0)
+    {
         if (ptr != NULL) free(ptr);
         return NULL;
     }
@@ -80,7 +82,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_prectype prec)
 {
     struct plan* plan_ptr = malloc(sizeof(struct plan));
-    plan_ptr->handle = handle;
 
     plan_ptr->op_A = op_A;
     plan_ptr->A = A;
@@ -116,7 +117,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     return 0;
 }
 
-TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
+TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan, TAPP_handle handle)
 {
     free(((struct plan*)plan)->idx_A);
     free(((struct plan*)plan)->idx_B);
@@ -128,6 +129,7 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 }
 
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
+                                TAPP_handle handle,
                                 TAPP_executor exec,
                                 TAPP_status* status,
                                 const void* alpha,
@@ -138,7 +140,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 void* D)
 {
     struct plan* plan_ptr = (struct plan*)plan;
-    TAPP_handle handle = plan_ptr->handle;
 
     TAPP_element_op op_A = plan_ptr->op_A;
     TAPP_tensor_info A_info = (TAPP_tensor_info)(plan_ptr->A);
@@ -159,38 +160,38 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_prectype prec = plan_ptr->prec;
 
     TAPP_datatype type_A = A_info_ptr->type;
-    int nmode_A = TAPP_get_nmodes(A_info);
+    int nmode_A = TAPP_get_nmodes(A_info, handle);
     int64_t* extents_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_extents(A_info, extents_A);
+    TAPP_get_extents(A_info, handle, extents_A);
     int64_t* strides_A = malloc(nmode_A * sizeof(int64_t));
-    TAPP_get_strides(A_info, strides_A);
+    TAPP_get_strides(A_info, handle, strides_A);
     int64_t* idx_A = malloc(nmode_A * sizeof(int64_t));
     memcpy(idx_A, plan_ptr->idx_A, nmode_A * sizeof(int64_t));
 
     TAPP_datatype type_B = B_info_ptr->type;
-    int nmode_B = TAPP_get_nmodes(B_info);
+    int nmode_B = TAPP_get_nmodes(B_info, handle);
     int64_t* extents_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_extents(B_info, extents_B);
+    TAPP_get_extents(B_info, handle, extents_B);
     int64_t* strides_B = malloc(nmode_B * sizeof(int64_t));
-    TAPP_get_strides(B_info, strides_B);
+    TAPP_get_strides(B_info, handle, strides_B);
     int64_t* idx_B = malloc(nmode_B * sizeof(int64_t));
     memcpy(idx_B, plan_ptr->idx_B, nmode_B * sizeof(int64_t));
 
     TAPP_datatype type_C = C_info_ptr->type;
-    int nmode_C = TAPP_get_nmodes(C_info);
+    int nmode_C = TAPP_get_nmodes(C_info, handle);
     int64_t* extents_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_extents(C_info, extents_C);
+    TAPP_get_extents(C_info, handle, extents_C);
     int64_t* strides_C = malloc(nmode_C * sizeof(int64_t));
-    TAPP_get_strides(C_info, strides_C);
+    TAPP_get_strides(C_info, handle, strides_C);
     int64_t* idx_C = malloc(nmode_C * sizeof(int64_t));
     memcpy(idx_C, plan_ptr->idx_C, nmode_C * sizeof(int64_t));
 
     TAPP_datatype type_D = D_info_ptr->type;
-    int nmode_D = TAPP_get_nmodes(D_info);
+    int nmode_D = TAPP_get_nmodes(D_info, handle);
     int64_t* extents_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_extents(D_info, extents_D);
+    TAPP_get_extents(D_info, handle, extents_D);
     int64_t* strides_D = malloc(nmode_D * sizeof(int64_t));
-    TAPP_get_strides(D_info, strides_D);
+    TAPP_get_strides(D_info, handle, strides_D);
     int64_t* idx_D = malloc(nmode_D * sizeof(int64_t));
     memcpy(idx_D, plan_ptr->idx_D, nmode_D * sizeof(int64_t));
 
@@ -226,10 +227,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     int* exec_int_ptr = (int*) *exec_ptr;//dereference to get the int pointer
 
     void* E_ = D;
-    if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    if((*exec_int_ptr) == 12 ) // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    {
       size_D = calculate_size(extents_D, nmode_D);
       int64_t in_bytes;
-      switch (type_D) { // tapp_datatype
+      switch (type_D) // tapp_datatype
+      {
       case TAPP_F32:
         in_bytes = (size_D)*(sizeof(float));
         break;
@@ -248,7 +251,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     }
 
-    if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    if((*exec_int_ptr) == 2 || (*exec_int_ptr) == 12 ) // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    {
       // if((*exec_int_ptr) == 2) printf("tapp used2 \n");
 
 #ifdef TAPP_REFERENCE_ENABLE_TBLIS
@@ -260,7 +264,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 #endif
     }
 
-    if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    if((*exec_int_ptr) == 1 || (*exec_int_ptr) == 12 ) // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    {
       // if((*exec_int_ptr) == 1) printf("tapp used1 \n");
       compress_repeated_indices(&nmode_A, &idx_A, &extents_A, &strides_A);
       compress_repeated_indices(&nmode_B, &idx_B, &extents_B, &strides_B);
@@ -422,7 +427,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
 
     bool comp_ = true;
-    if((*exec_int_ptr) == 12 ) { // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    if((*exec_int_ptr) == 12 ) // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    {
 #ifdef TAPP_REFERENCE_ENABLE_TBLIS
       comp_ = compare_tensors_(D, E_, (int64_t)size_D, type_D);
 #endif
@@ -464,7 +470,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     return 0;
 }
 
-void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data_, TAPP_datatype type) {
+void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data_, TAPP_datatype type)
+{
 
     int64_t* coords;
     if(nmode > 0) coords = malloc(nmode * sizeof(int64_t));
@@ -485,7 +492,8 @@ void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, co
         {
             index += coords[i] * strides[i];
         }
-        switch (type) { // tapp_datatype
+        switch (type) // tapp_datatype
+        {
           case TAPP_F32:
           {
             float* datas = (float*) data_;
@@ -517,9 +525,11 @@ void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, co
         int k = 0;
         do
         {
-            if (k != 0) {
+            if (k != 0)
+            {
                 printf("\n");
-                if (i < size - 1) {
+                if (i < size - 1)
+                {
                     printf("\t");
                 }
             }
