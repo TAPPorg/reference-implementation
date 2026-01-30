@@ -739,7 +739,8 @@ extern "C" {
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, void* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D, int op_D, int64_t* idx_D,
                     void* alpha, void* beta, int datatype_tapp){
-    switch (datatype_tapp) {
+    switch (datatype_tapp)
+    {
       case TAPP_F32:
         execute_product_tblis_s(nmode_A, extents_A, strides_A, A, op_A, idx_A, nmode_B, extents_B, strides_B, B, op_B, idx_B,
                          nmode_C, extents_C, strides_C, C, op_C, idx_C, nmode_D, extents_D, strides_D, D, op_D, idx_D,
@@ -765,7 +766,8 @@ extern "C" {
 
 int compare_tensors_(void* A, void* B, int64_t size, int datatype_tapp){
     bool result = false;
-    switch (datatype_tapp) { // tapp_datatype
+    switch (datatype_tapp) // tapp_datatype
+    {
       case TAPP_F32:
         {
           float* A_ = static_cast<float*>(A);
