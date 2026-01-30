@@ -10,6 +10,6 @@
  * TODO: how to get data out? using attributes or separate standardized interface? implementation-defined?
  */
 
-TAPP_EXPORT TAPP_error TAPP_destroy_status(TAPP_status status);
+TAPP_EXPORT TAPP_error TAPP_destroy_status(TAPP_status status, TAPP_handle handle);
 
 #endif /* TAPP_STATUS_H_ */

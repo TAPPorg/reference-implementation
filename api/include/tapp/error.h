@@ -8,7 +8,7 @@
 #include "types.h"
 
 /* Return true if the error code indicates success and false otherwise. */
-TAPP_EXPORT bool TAPP_check_success(TAPP_error error);
+TAPP_EXPORT bool TAPP_check_success(TAPP_error error, TAPP_handle handle);
 
 /*
  * Fill a user-provided buffer with an implementation-defined string explaining the error code. No more than maxlen-1
@@ -21,6 +21,7 @@ TAPP_EXPORT bool TAPP_check_success(TAPP_error error);
  * TODO: should the null character be included in the return value?
  */
 TAPP_EXPORT size_t TAPP_explain_error(TAPP_error error,
+                                      TAPP_handle handle,
                                       size_t maxlen,
                                       char* message);
 

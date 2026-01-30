@@ -17,28 +17,34 @@
  */ 
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
+                                               TAPP_handle handle,
                                                TAPP_datatype type,
                                                int nmode,
                                                const int64_t* extents,
                                                const int64_t* strides);
 
-TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info);
+TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info, TAPP_handle handle);
 
-TAPP_EXPORT int TAPP_get_nmodes(TAPP_tensor_info info);
+TAPP_EXPORT int TAPP_get_nmodes(TAPP_tensor_info info, TAPP_handle handle);
 
 TAPP_EXPORT TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
+                                       TAPP_handle handle,
                                        int nmodes);
 
 TAPP_EXPORT void TAPP_get_extents(TAPP_tensor_info info,
+                                  TAPP_handle handle,
                                   int64_t* extents);
 
 TAPP_EXPORT TAPP_error TAPP_set_extents(TAPP_tensor_info info,
+                                        TAPP_handle handle,
                                         const int64_t* extents);
 
 TAPP_EXPORT void TAPP_get_strides(TAPP_tensor_info info,
+                                  TAPP_handle handle,
                                   int64_t* strides);
 
 TAPP_EXPORT TAPP_error TAPP_set_strides(TAPP_tensor_info info,
+                                        TAPP_handle handle,
                                         const int64_t* strides);
 
 #endif /* TAPP_TENSOR_H_ */
