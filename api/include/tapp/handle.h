@@ -1,12 +1,9 @@
 #ifndef TAPP_HANDLE_H_
 #define TAPP_HANDLE_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
+#include "types.h"
 
-typedef intptr_t TAPP_handle;
 
 TAPP_EXPORT TAPP_error TAPP_create_handle(TAPP_handle* handle);
 

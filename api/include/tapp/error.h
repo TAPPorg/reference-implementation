@@ -5,8 +5,7 @@
 #include <stdbool.h>
 
 #include "util.h"
-
-typedef int TAPP_error;
+#include "types.h"
 
 /* Return true if the error code indicates success and false otherwise. */
 TAPP_EXPORT bool TAPP_check_success(TAPP_error error);

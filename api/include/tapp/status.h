@@ -1,12 +1,8 @@
 #ifndef TAPP_STATUS_H_
 #define TAPP_STATUS_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
-
-typedef intptr_t TAPP_status;
+#include "types.h"
 
 /*
  * Status objects are created by execution functions (e.g. TAPP_execute_product).

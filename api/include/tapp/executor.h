@@ -1,12 +1,8 @@
 #ifndef TAPP_EXECUTOR_H_
 #define TAPP_EXECUTOR_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
-
-typedef intptr_t TAPP_executor;
+#include "types.h"
 
 TAPP_EXPORT TAPP_error TAPP_create_executor(TAPP_executor* exec);
 

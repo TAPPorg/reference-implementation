@@ -1,13 +1,8 @@
 #ifndef TAPP_ATTRIBUTES_H_
 #define TAPP_ATTRIBUTES_H_
 
-#include <stdint.h>
-
 #include "util.h"
-#include "error.h"
-
-typedef intptr_t TAPP_attr;
-typedef int TAPP_key;
+#include "types.h"
 
 //TODO: predefined attributes? error conditions?
 
