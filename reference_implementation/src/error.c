@@ -7,14 +7,17 @@
 #include <string.h>
 
 
-bool TAPP_check_success(TAPP_error error) {
+bool TAPP_check_success(TAPP_error error, TAPP_handle handle)
+{
     return error == 0;
 }
 
 
 size_t TAPP_explain_error(TAPP_error error,
+                          TAPP_handle handle,
                           size_t maxlen,
-                          char* message) {
+                          char* message)
+{
     char* error_message;
     switch (error)
     {
@@ -67,7 +70,8 @@ size_t TAPP_explain_error(TAPP_error error,
         break;
     }
     size_t message_len = strlen(error_message);
-    if (maxlen == 0) {
+    if (maxlen == 0)
+    {
         return message_len;
     }
     size_t writelen = maxlen - 1 < message_len ? maxlen - 1 : message_len;

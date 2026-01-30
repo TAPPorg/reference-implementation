@@ -6,7 +6,8 @@
 #include "ref_impl.h"
 #include <stdlib.h>
 
-TAPP_error TAPP_create_executor(TAPP_executor* exec) {
+TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_handle handle)
+{
     *exec = (TAPP_executor)malloc(sizeof(int));
     int ex = 1; // the bruteforce reference executor
 #ifdef TAPP_REFERENCE_ENABLE_TBLIS
@@ -17,7 +18,8 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec) {
     return 0;
 }
 
-TAPP_error TAPP_destroy_executor(TAPP_executor exec) {
+TAPP_error TAPP_destroy_executor(TAPP_executor exec, TAPP_handle handle)
+{
     free((void*)exec);
     return 0;
 }
