@@ -20,7 +20,7 @@ extern char *paths[];
 struct Multi_TAPP_handle
 {
     uint64_t impl_id;
-    TAPP_handle* tapp_handle;
+    TAPP_handle tapp_handle;
     void* lib_handle;
     TAPP_error (*TAPP_attr_set)(TAPP_attr attr, TAPP_handle handle, TAPP_key key, void* value);
     TAPP_error (*TAPP_attr_get)(TAPP_attr attr, TAPP_handle handle, TAPP_key key, void** value);

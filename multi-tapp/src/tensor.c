@@ -18,7 +18,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     multi_tapp_info->impl_id = multi_tapp_handle->impl_id;
     *info = (TAPP_tensor_info)multi_tapp_info;
 
-    return multi_tapp_handle->TAPP_create_tensor_info(multi_tapp_info->info, *multi_tapp_handle->tapp_handle, type, nmode, extents, strides);
+    return multi_tapp_handle->TAPP_create_tensor_info(&multi_tapp_info->info, multi_tapp_handle->tapp_handle, type, nmode, extents, strides);
 }
 
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info,
@@ -38,7 +38,7 @@ TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info,
         return 7; // TODO: Return error for incompatible tensor_info
     }
 
-    TAPP_error error = multi_tapp_handle->TAPP_destroy_tensor_info(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle);
+    TAPP_error error = multi_tapp_handle->TAPP_destroy_tensor_info(multi_tapp_info->info, multi_tapp_handle->tapp_handle);
     free(multi_tapp_info);
 
     return error;
@@ -65,7 +65,7 @@ int TAPP_get_nmodes(TAPP_tensor_info info,
         return -1;
     }
 
-    return multi_tapp_handle->TAPP_get_nmodes(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle);
+    return multi_tapp_handle->TAPP_get_nmodes(multi_tapp_info->info, multi_tapp_handle->tapp_handle);
 }
 
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
@@ -86,7 +86,7 @@ TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
         return 7; // TODO: Return error for incompatible tensor_info
     }
 
-    return multi_tapp_handle->TAPP_set_nmodes(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle, nmodes);
+    return multi_tapp_handle->TAPP_set_nmodes(multi_tapp_info->info, multi_tapp_handle->tapp_handle, nmodes);
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
@@ -111,7 +111,7 @@ void TAPP_get_extents(TAPP_tensor_info info,
         return;
     }
 
-    return multi_tapp_handle->TAPP_get_extents(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle, extents);
+    return multi_tapp_handle->TAPP_get_extents(multi_tapp_info->info, multi_tapp_handle->tapp_handle, extents);
 }
 
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
@@ -132,7 +132,7 @@ TAPP_error TAPP_set_extents(TAPP_tensor_info info,
         return 7; // TODO: Return error for incompatible tensor_info
     }
 
-    return multi_tapp_handle->TAPP_set_extents(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle, extents);
+    return multi_tapp_handle->TAPP_set_extents(multi_tapp_info->info, multi_tapp_handle->tapp_handle, extents);
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
@@ -157,7 +157,7 @@ void TAPP_get_strides(TAPP_tensor_info info,
         return;
     }
 
-    return multi_tapp_handle->TAPP_get_strides(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle, strides);
+    return multi_tapp_handle->TAPP_get_strides(multi_tapp_info->info, multi_tapp_handle->tapp_handle, strides);
 }
 
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
@@ -178,5 +178,5 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
         return 7; // TODO: Return error for incompatible tensor_info
     }
 
-    return multi_tapp_handle->TAPP_set_strides(*multi_tapp_info->info, *multi_tapp_handle->tapp_handle, strides);
+    return multi_tapp_handle->TAPP_set_strides(multi_tapp_info->info, multi_tapp_handle->tapp_handle, strides);
 }

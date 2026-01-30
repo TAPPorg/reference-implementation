@@ -7,7 +7,7 @@
 struct Multi_TAPP_status
 {
     uint64_t impl_id;
-    TAPP_status* status;
+    TAPP_status status;
 };
 
 #endif /* TAPP_REF_IMPL_MULTI_TAPP_STATUS_H_ */

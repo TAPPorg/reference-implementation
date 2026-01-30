@@ -51,12 +51,12 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     multi_tapp_plan->impl_id = multi_tapp_handle->impl_id;
     *plan = (TAPP_tensor_product)multi_tapp_plan;
 
-    return multi_tapp_handle->TAPP_create_tensor_product(multi_tapp_plan->plan,
-                                                         *multi_tapp_handle->tapp_handle,
-                                                         op_A, *multi_tapp_info_A->info, idx_A,
-                                                         op_B, *multi_tapp_info_B->info, idx_B,
-                                                         op_C, *multi_tapp_info_C->info, idx_C,
-                                                         op_D, *multi_tapp_info_D->info, idx_D,
+    return multi_tapp_handle->TAPP_create_tensor_product(&multi_tapp_plan->plan,
+                                                         multi_tapp_handle->tapp_handle,
+                                                         op_A, multi_tapp_info_A->info, idx_A,
+                                                         op_B, multi_tapp_info_B->info, idx_B,
+                                                         op_C, multi_tapp_info_C->info, idx_C,
+                                                         op_D, multi_tapp_info_D->info, idx_D,
                                                          prec);
 }
 
@@ -76,7 +76,7 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan,
         return 13; // TODO: Return error for incompatible handle
     }
 
-    TAPP_error error = multi_tapp_handle->TAPP_destroy_tensor_product(*multi_tapp_plan->plan, *multi_tapp_handle->tapp_handle);
+    TAPP_error error = multi_tapp_handle->TAPP_destroy_tensor_product(multi_tapp_plan->plan, multi_tapp_handle->tapp_handle);
     free(multi_tapp_plan);
 
     return error;
@@ -116,7 +116,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     multi_tapp_status->impl_id = multi_tapp_handle->impl_id;
     *status = (TAPP_status)multi_tapp_status;
 
-    return multi_tapp_handle->TAPP_execute_product(*multi_tapp_plan->plan, *multi_tapp_handle->tapp_handle, *multi_tapp_exec->exec, multi_tapp_status->status, alpha, A, B, beta, C, D);
+    return multi_tapp_handle->TAPP_execute_product(multi_tapp_plan->plan, multi_tapp_handle->tapp_handle, multi_tapp_exec->exec, &multi_tapp_status->status, alpha, A, B, beta, C, D);
 }
 
 TAPP_error TAPP_execute_batched_product(TAPP_tensor_product plan,
@@ -154,5 +154,5 @@ TAPP_error TAPP_execute_batched_product(TAPP_tensor_product plan,
     multi_tapp_status->impl_id = multi_tapp_handle->impl_id;
     *status = (TAPP_status)multi_tapp_status;
 
-    return multi_tapp_handle->TAPP_execute_batched_product(*multi_tapp_plan->plan, *multi_tapp_handle->tapp_handle, *multi_tapp_exec->exec, multi_tapp_status->status, num_batches, alpha, A, B, beta, C, D);
+    return multi_tapp_handle->TAPP_execute_batched_product(multi_tapp_plan->plan, multi_tapp_handle->tapp_handle, multi_tapp_exec->exec, &multi_tapp_status->status, num_batches, alpha, A, B, beta, C, D);
 }

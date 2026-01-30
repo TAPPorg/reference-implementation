@@ -13,7 +13,7 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_handle handle, TAPP_key key, void*
         return 6; // TODO: Return error for non implemented function
     }
 
-    return multi_tapp_handle->TAPP_attr_set(attr, *multi_tapp_handle->tapp_handle, key, value);
+    return multi_tapp_handle->TAPP_attr_set(attr, multi_tapp_handle->tapp_handle, key, value);
 }
 
 TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_handle handle, TAPP_key key, void** value)
@@ -25,7 +25,7 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_handle handle, TAPP_key key, void*
         return 6; // TODO: Return error for non implemented function
     }
 
-    return multi_tapp_handle->TAPP_attr_get(attr, *multi_tapp_handle->tapp_handle, key, value);
+    return multi_tapp_handle->TAPP_attr_get(attr, multi_tapp_handle->tapp_handle, key, value);
 }
 
 TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_handle handle, TAPP_key key)
@@ -37,5 +37,5 @@ TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_handle handle, TAPP_key key)
         return 6; // TODO: Return error for non implemented function
     }
 
-    return multi_tapp_handle->TAPP_attr_clear(attr, *multi_tapp_handle->tapp_handle, key);
+    return multi_tapp_handle->TAPP_attr_clear(attr, multi_tapp_handle->tapp_handle, key);
 }

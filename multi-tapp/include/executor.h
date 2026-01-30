@@ -8,7 +8,7 @@
 struct Multi_TAPP_executor
 {
     uint64_t impl_id;
-    TAPP_executor* exec;
+    TAPP_executor exec;
 };
 
 #endif /* TAPP_REF_IMPL_MULTI_TAPP_EXECUTOR_H_ */

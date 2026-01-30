@@ -16,7 +16,7 @@ TAPP_error TAPP_destroy_status(TAPP_status status,
         return 14; // TODO: Return error for incompatible handle
     }
 
-    TAPP_error error = multi_tapp_handle->TAPP_destroy_status(*multi_tapp_status->status, *multi_tapp_handle->tapp_handle);
+    TAPP_error error = multi_tapp_handle->TAPP_destroy_status(multi_tapp_status->status, multi_tapp_handle->tapp_handle);
     free(multi_tapp_status);
 
     return error;
