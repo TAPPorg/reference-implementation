@@ -1294,14 +1294,17 @@ bool test_hadamard_product()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     int op_A = 0;
     int op_B = 0;
@@ -1309,15 +1312,13 @@ bool test_hadamard_product()
     int op_D = 0;
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                    nmode_B, extents_B, strides_B, B, op_B, idx_B,
@@ -1327,13 +1328,13 @@ bool test_hadamard_product()
 
     bool result = compare_tensors(D, E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] strides_A;
     delete[] extents_B;
@@ -1367,25 +1368,26 @@ bool test_contraction()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1395,13 +1397,13 @@ bool test_contraction()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1439,17 +1441,18 @@ bool test_commutativity()
 
     auto [G, data_G] = copy_tensor_data(size_D, data_D, D);
 
-    TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
-    TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
-    TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-
     TAPP_handle handle;
-    TAPP_create_handle(&handle);
+    TAPP_create_handle(0, &handle);
+
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
+
     TAPP_tensor_product planAB;
     TAPP_create_tensor_product(&planAB, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_tensor_product planBA;
@@ -1457,9 +1460,9 @@ bool test_commutativity()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(planAB, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(planAB, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1467,7 +1470,7 @@ bool test_commutativity()
                    nmode_D, extents_D, strides_D, E, 0, idx_D,
                    alpha, beta);
 
-    TAPP_execute_product(planBA, exec, &status, (void*)&alpha, (void*)B, (void*)A, (void*)&beta, (void*)C, (void*)F);
+    TAPP_execute_product(planBA, handle, exec, &status, (void*)&alpha, (void*)B, (void*)A, (void*)&beta, (void*)C, (void*)F);
 
     run_tblis_mult(nmode_B, extents_B, strides_B, B, 0, idx_B,
                    nmode_A, extents_A, strides_A, A, 0, idx_A,
@@ -1477,14 +1480,14 @@ bool test_commutativity()
 
     bool result = compare_tensors(data_D, data_E, size_D) && compare_tensors(data_F, data_G, size_D) && compare_tensors(data_D, data_F, size_D);
     
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(planAB, handle);
+    TAPP_destroy_tensor_product(planBA, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(planAB);
-    TAPP_destroy_tensor_product(planBA);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1520,29 +1523,30 @@ bool test_permutations()
           
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
     
     bool result = true;
 
     for (int i = 0; i < nmode_D; i++)
     {
         TAPP_tensor_info info_C;
-        TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+        TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
         TAPP_tensor_info info_D;
-        TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+        TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
         TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-        TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+        TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
         run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                     nmode_B, extents_B, strides_B, B, 0, idx_B,
                     nmode_C, extents_C, strides_C, C, 0, idx_D,
@@ -1553,15 +1557,15 @@ bool test_permutations()
 
         rotate_indices(idx_C, nmode_C, extents_C, strides_C);
         rotate_indices(idx_D, nmode_D, extents_D, strides_D);
-        TAPP_destroy_tensor_info(info_C);
-        TAPP_destroy_tensor_info(info_D);
-        TAPP_destroy_tensor_product(plan);
+        TAPP_destroy_tensor_info(info_C, handle);
+        TAPP_destroy_tensor_info(info_D, handle);
+        TAPP_destroy_tensor_product(plan, handle);
     }
     
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1595,25 +1599,26 @@ bool test_equal_extents()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1623,13 +1628,13 @@ bool test_equal_extents()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1663,25 +1668,26 @@ bool test_outer_product()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
     
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1691,13 +1697,13 @@ bool test_outer_product()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1731,25 +1737,26 @@ bool test_full_contraction()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1759,13 +1766,13 @@ bool test_full_contraction()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1799,25 +1806,26 @@ bool test_zero_dim_tensor_contraction()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1827,13 +1835,13 @@ bool test_zero_dim_tensor_contraction()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1867,25 +1875,26 @@ bool test_one_dim_tensor_contraction()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1895,13 +1904,13 @@ bool test_one_dim_tensor_contraction()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -1935,25 +1944,26 @@ bool test_subtensor_unchanged_nmode()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1963,13 +1973,13 @@ bool test_subtensor_unchanged_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2003,25 +2013,26 @@ bool test_subtensor_lower_nmode()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2031,13 +2042,13 @@ bool test_subtensor_lower_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2071,24 +2082,25 @@ bool test_negative_strides()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);    
+    TAPP_create_executor(&exec, handle);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);    
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2098,13 +2110,13 @@ bool test_negative_strides()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2138,25 +2150,26 @@ bool test_negative_strides_subtensor_unchanged_nmode()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2166,13 +2179,13 @@ bool test_negative_strides_subtensor_unchanged_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2206,25 +2219,26 @@ bool test_negative_strides_subtensor_lower_nmode()
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
     
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+    
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2234,13 +2248,13 @@ bool test_negative_strides_subtensor_lower_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2273,25 +2287,26 @@ bool test_mixed_strides()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, false, false, false, true);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_create_executor(&exec, handle);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2301,13 +2316,13 @@ bool test_mixed_strides()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2340,26 +2355,27 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, true, false, false, true);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2369,13 +2385,13 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2408,26 +2424,27 @@ bool test_mixed_strides_subtensor_lower_nmode()
           size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, -1, -1, -1, 1, false, true, true, false, true);
     
     auto[E, data_E] = copy_tensor_data(size_D, data_D, D);
+
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
     
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2437,13 +2454,13 @@ bool test_mixed_strides_subtensor_lower_nmode()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2477,25 +2494,26 @@ bool test_contraction_double_precision()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2505,13 +2523,13 @@ bool test_contraction_double_precision()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2545,14 +2563,17 @@ bool test_contraction_complex()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_C32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_C32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_C32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_C32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_C32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_C32, nmode_D, extents_D, strides_D);
 
     int op_A = rand(0, 1);
     int op_B = rand(0, 1);
@@ -2560,15 +2581,13 @@ bool test_contraction_complex()
     int op_D = rand(0, 1);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                    nmode_B, extents_B, strides_B, B, op_B, idx_B,
@@ -2578,13 +2597,13 @@ bool test_contraction_complex()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2618,14 +2637,17 @@ bool test_contraction_complex_double_precision()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_C64, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_C64, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_C64, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_C64, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_C64, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_C64, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_C64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_C64, nmode_D, extents_D, strides_D);
 
     int op_A = rand(0, 1);
     int op_B = rand(0, 1);
@@ -2633,15 +2655,13 @@ bool test_contraction_complex_double_precision()
     int op_D = rand(0, 1);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    int terr = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int terr = TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, op_A, idx_A,
                      nmode_B, extents_B, strides_B, B, op_B, idx_B,
@@ -2652,13 +2672,13 @@ bool test_contraction_complex_double_precision()
     // data_D[0] = data_D[0]*zma;
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2700,25 +2720,26 @@ bool test_zero_stride()
         strides_B[0] = 0;
     }
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2728,13 +2749,13 @@ bool test_zero_stride()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2768,25 +2789,26 @@ bool test_isolated_idx()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2796,13 +2818,13 @@ bool test_isolated_idx()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2836,25 +2858,26 @@ bool test_repeated_idx()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                    nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -2864,13 +2887,13 @@ bool test_repeated_idx()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2904,25 +2927,26 @@ bool test_hadamard_and_free()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, data_A, 0, idx_A,
                    nmode_B, extents_B, strides_B, data_B, 0, idx_B,
@@ -2932,13 +2956,13 @@ bool test_hadamard_and_free()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -2973,25 +2997,26 @@ bool test_hadamard_and_contraction()
 
     auto [E, data_E] = copy_tensor_data(size_D, data_D, D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
+    TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, data_A, 0, idx_A,
                    nmode_B, extents_B, strides_B, data_B, 0, idx_B,
@@ -3001,13 +3026,13 @@ bool test_hadamard_and_contraction()
 
     bool result = compare_tensors(data_D, data_E, size_D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3064,33 +3089,34 @@ bool test_error_too_many_idx_D()
 
     add_incorrect_idx(max_idx, &nmode_D, &idx_D, &extents_D, &strides_D);
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int error_status = TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3155,33 +3181,34 @@ bool test_error_non_matching_ext()
         break;
     }
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int error_status = TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3247,33 +3274,34 @@ bool test_error_C_other_structure()
         break;
     }
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int error_status = TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;
@@ -3308,33 +3336,34 @@ bool test_error_aliasing_within_D()
     int signs[2] = {-1, 1};
     strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - rand((int64_t)1, strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - 1));
 
+    TAPP_handle handle;
+    TAPP_create_handle(0, &handle);
+
     TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A);
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, handle);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    int error_status = TAPP_execute_product(plan, handle, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
     delete[] extents_A;
     delete[] extents_B;
     delete[] extents_C;

@@ -34,12 +34,14 @@ TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture(
 
 TAPP_destroy_tensor_product = CDLL(tapp_so).TAPP_destroy_tensor_product
 TAPP_destroy_tensor_product.restype = c_int
-TAPP_destroy_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # plan 
+TAPP_destroy_tensor_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # plan 
+										c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 										]
 
 TAPP_execute_product = CDLL(tapp_so).TAPP_execute_product
 TAPP_execute_product.restype = c_int
 TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # plan
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
 								 POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # status
 								 c_void_p, # alpha
@@ -53,60 +55,70 @@ TAPP_execute_product.argtypes = [c_int32 if platform.architecture()[0] == '32bit
 TAPP_create_tensor_info = CDLL(tapp_so).TAPP_create_tensor_info
 TAPP_create_tensor_info.restype = c_int
 TAPP_create_tensor_info.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # info
-                                    c_int, # type
-                                    c_int, # nmode
-                                    POINTER(c_int64), # extents
-                                    POINTER(c_int64), # strides
+									c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
+									c_int, # type
+									c_int, # nmode
+									POINTER(c_int64), # extents
+									POINTER(c_int64), # strides
 									]
 
 TAPP_destroy_tensor_info = CDLL(tapp_so).TAPP_destroy_tensor_info
 TAPP_destroy_tensor_info.restype = c_int
-TAPP_destroy_tensor_info.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # info
+TAPP_destroy_tensor_info.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+									 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 									 ]
 
 TAPP_get_nmodes = CDLL(tapp_so).TAPP_get_nmodes
 TAPP_get_nmodes.restype = c_int
 TAPP_get_nmodes.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							]
 
 TAPP_set_nmodes = CDLL(tapp_so).TAPP_set_nmodes
 TAPP_set_nmodes.restype = c_int
 TAPP_set_nmodes.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							c_int, # nmodes
 							]
 
 TAPP_get_extents = CDLL(tapp_so).TAPP_get_extents
 TAPP_get_extents.restype = None
 TAPP_get_extents.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							 POINTER(c_int64), # extents
 							 ]
 
 TAPP_set_extents = CDLL(tapp_so).TAPP_set_extents
 TAPP_set_extents.restype = c_int
 TAPP_set_extents.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							 POINTER(c_int64), # extents
 							 ]
 
 TAPP_get_strides = CDLL(tapp_so).TAPP_get_strides
 TAPP_get_strides.restype = None
 TAPP_get_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							 POINTER(c_int64), # strides
 							 ]
 
 TAPP_set_strides = CDLL(tapp_so).TAPP_set_strides
 TAPP_set_strides.restype = c_int
 TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # info
+							 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 							 POINTER(c_int64), # strides
 							 ]
 
 TAPP_create_executor = CDLL(tapp_so).TAPP_create_executor
 TAPP_create_executor.restype = c_int
-TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # exec
-							]
+TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # exec
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
+								 ]
 
 TAPP_destroy_executor = CDLL(tapp_so).TAPP_destroy_executor
 TAPP_destroy_executor.restype = c_int
-TAPP_destroy_executor.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # exec
+TAPP_destroy_executor.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
+								  c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
 								  ]
 
 TAPP_create_handle = CDLL(tapp_so).TAPP_create_handle
@@ -120,41 +132,41 @@ TAPP_destroy_handle.argtypes = [c_int32 if platform.architecture()[0] == '32bit'
 								]
 
 def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D):
+	handle = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
+	TAPP_create_handle(byref(handle))
+
 	nmode_A = c_int(A.ndim)
 	extents_A = (c_int64 * len(A.shape))(*A.shape)
 	strides_A = (c_int64 * len(A.strides))(*[s // A.itemsize for s in A.strides])
 	
 	tensor_info_A = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_A), 1 if A.dtype == 'float64' else 3, nmode_A, extents_A, strides_A)
+	TAPP_create_tensor_info(byref(tensor_info_A), handle, 1 if A.dtype == 'float64' else 3, nmode_A, extents_A, strides_A)
 
 	nmode_B = c_int(B.ndim)
 	extents_B = (c_int64 * len(B.shape))(*B.shape)
 	strides_B = (c_int64 * len(B.strides))(*[s // B.itemsize for s in B.strides])
 
 	tensor_info_B = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_B), 1 if A.dtype == 'float64' else 3, nmode_B, extents_B, strides_B)
+	TAPP_create_tensor_info(byref(tensor_info_B), handle, 1 if A.dtype == 'float64' else 3, nmode_B, extents_B, strides_B)
 
 	nmode_C = c_int(C.ndim)
 	extents_C = (c_int64 * len(C.shape))(*C.shape)
 	strides_C = (c_int64 * len(C.strides))(*[s // C.itemsize for s in C.strides])
 
 	tensor_info_C = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_C), 1 if A.dtype == 'float64' else 3, nmode_C, extents_C, strides_C)
+	TAPP_create_tensor_info(byref(tensor_info_C), handle, 1 if A.dtype == 'float64' else 3, nmode_C, extents_C, strides_C)
 
 	nmode_D = c_int(D.ndim)
 	extents_D = (c_int64 * len(D.shape))(*D.shape)
 	strides_D = (c_int64 * len(D.strides))(*[s // D.itemsize for s in D.strides])
 
 	tensor_info_D = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_info(byref(tensor_info_D), 1 if A.dtype == 'float64' else 3, nmode_D, extents_D, strides_D)
+	TAPP_create_tensor_info(byref(tensor_info_D), handle, 1 if A.dtype == 'float64' else 3, nmode_D, extents_D, strides_D)
 
 	idx_A_c = (c_int64 * len(idx_A))(*idx_A)
 	idx_B_c = (c_int64 * len(idx_B))(*idx_B)
 	idx_C_c = (c_int64 * len(idx_C))(*idx_C)
 	idx_D_c = (c_int64 * len(idx_D))(*idx_D)
-
-	handle = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_handle(byref(handle))
 
 	plan = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
 	TAPP_create_tensor_product(byref(plan), handle,
@@ -165,22 +177,22 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 							-1)
 	
 	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_executor(byref(exec))
+	TAPP_create_executor(byref(exec), handle)
 	status = c_int64(0)
 	A_ptr = A.ctypes.data_as(POINTER(c_double))
 	B_ptr = B.ctypes.data_as(POINTER(c_double))
 	C_ptr = C.ctypes.data_as(POINTER(c_double))
 	D_ptr = D.ctypes.data_as(POINTER(c_double))
 	
-	TAPP_execute_product(plan, exec, byref(status), byref(c_double(alpha)), A_ptr, B_ptr, byref(c_double(beta)), C_ptr, D_ptr)
+	TAPP_execute_product(plan, handle, exec, byref(status), byref(c_double(alpha)), A_ptr, B_ptr, byref(c_double(beta)), C_ptr, D_ptr)
 
+	TAPP_destroy_executor(exec, handle)
+	TAPP_destroy_tensor_product(plan, handle)
+	TAPP_destroy_tensor_info(tensor_info_A, handle)
+	TAPP_destroy_tensor_info(tensor_info_B, handle)
+	TAPP_destroy_tensor_info(tensor_info_C, handle)
+	TAPP_destroy_tensor_info(tensor_info_D, handle)
 	TAPP_destroy_handle(handle)
-	TAPP_destroy_executor(exec)
-	TAPP_destroy_tensor_product(plan)
-	TAPP_destroy_tensor_info(tensor_info_A)
-	TAPP_destroy_tensor_info(tensor_info_B)
-	TAPP_destroy_tensor_info(tensor_info_C)
-	TAPP_destroy_tensor_info(tensor_info_D)
 
 	return D
 
