@@ -12,6 +12,9 @@
 
 int main(int argc, char const *argv[])
 {
+    TAPP_handle handle; // Declare handle (not yet in use)
+    TAPP_create_handle(0, &handle);
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -30,34 +33,32 @@ int main(int argc, char const *argv[])
 
     TAPP_tensor_info info_A; // Declare the variable that holds the tensor structure
 
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F32, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
 
     // Tensor B
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F32, nmode_B, extents_B, strides_B);
 
     // Tensor C
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F32, nmode_C, extents_C, strides_C);
 
     // Output tensor D
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F32, nmode_D, extents_D, strides_D);
 
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
      */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
 
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A
@@ -87,7 +88,7 @@ int main(int argc, char const *argv[])
      */
 
     TAPP_executor exec; // Declaration of executor
-    TAPP_create_executor(&exec); // Creation of executor
+    TAPP_create_executor(&exec, handle); // Creation of executor
     // int exec_id = 1; // Choose executor
     // exec = (intptr_t)&exec_id; // Assign executor
 
@@ -155,16 +156,16 @@ int main(int argc, char const *argv[])
      * Execution 
      */
 
-    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D); // Execute the product with a plan, executor, status object and data, returning an error object
+    TAPP_error error = TAPP_execute_product(plan, handle, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D); // Execute the product with a plan, executor, status object and data, returning an error object
 
     /*
      * Error handling
      */
 
-    printf(TAPP_check_success(error) ? "Success\n" : "Fail\n"); // Print whether or not the operation was successful
-    int message_len = TAPP_explain_error(error, 0, NULL); // Get size of error message
+    printf(TAPP_check_success(error, handle) ? "Success\n" : "Fail\n"); // Print whether or not the operation was successful
+    int message_len = TAPP_explain_error(error, handle, 0, NULL); // Get size of error message
     char *message_buff = malloc((message_len + 1) * sizeof(char)); // Allocate buffer for message, including null terminator
-    TAPP_explain_error(error, message_len + 1, message_buff); // Fetch error message
+    TAPP_explain_error(error, handle, message_len + 1, message_buff); // Fetch error message
     printf("%s", message_buff); // Print message
     free(message_buff); // Free buffer
     printf("\n");
@@ -175,12 +176,13 @@ int main(int argc, char const *argv[])
      * Free structures
      */
 
-    TAPP_destroy_tensor_product(plan);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_executor(exec);
+    TAPP_destroy_tensor_product(plan, handle);
+    TAPP_destroy_tensor_info(info_A, handle);
+    TAPP_destroy_tensor_info(info_B, handle);
+    TAPP_destroy_tensor_info(info_C, handle);
+    TAPP_destroy_tensor_info(info_D, handle);
+    TAPP_destroy_executor(exec, handle);
+    TAPP_destroy_handle(handle);
 
     return 0;
 }
