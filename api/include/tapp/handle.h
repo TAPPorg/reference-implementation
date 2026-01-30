@@ -5,7 +5,7 @@
 #include "types.h"
 
 
-TAPP_EXPORT TAPP_error TAPP_create_handle(TAPP_handle* handle);
+TAPP_EXPORT TAPP_error TAPP_create_handle(uint64_t lib_id, TAPP_handle* handle);
 
 /*
  * TODO: implementation-defined creation of handles or "wrapper" to get all implementations and select one?
