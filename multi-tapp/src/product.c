@@ -111,6 +111,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     {
         return 8; // TODO: Return error for incompatible handle
     }
+    
+    if (multi_tapp_handle->TAPP_destroy_status == NULL) // Guard clause, if destroy_status isn't implemented, status is assumed to not be implemented at all
+    {
+        return multi_tapp_handle->TAPP_execute_product(multi_tapp_plan->plan, multi_tapp_handle->tapp_handle, multi_tapp_exec->exec, NULL, alpha, A, B, beta, C, D);
+    }
 
     struct Multi_TAPP_status* multi_tapp_status = malloc(sizeof(struct Multi_TAPP_status));
     multi_tapp_status->impl_id = multi_tapp_handle->impl_id;
