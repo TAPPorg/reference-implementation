@@ -20,7 +20,6 @@ struct tensor_info
 
 struct plan
 {
-    TAPP_handle handle;
     TAPP_element_op op_A;
     TAPP_tensor_info A;
     int64_t* idx_A;
