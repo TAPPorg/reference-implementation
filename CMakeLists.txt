@@ -56,6 +56,9 @@ set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
 # this provides tapp-api target
 add_subdirectory(api)
 
+# this provides multi-tapp target
+add_subdirectory(multi-tapp)
+
 add_library(tapp-reference SHARED)
 
 target_sources(
