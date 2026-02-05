@@ -173,9 +173,6 @@ void contraction(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
@@ -294,9 +291,6 @@ void hadamard(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
@@ -399,9 +393,6 @@ void complex_num(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
     int64_t strides_A[2] = {1, 3};
@@ -483,9 +474,6 @@ void conjugate(struct imp imp)
 {
     TAPP_handle handle;
     imp.TAPP_create_handle(&handle);
-
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -658,9 +646,6 @@ void one_ext_contracted(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
@@ -772,9 +757,6 @@ void one_ext_transfered(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
     int64_t strides_A[4] = {1, 4, 4, 12};
@@ -882,9 +864,6 @@ void chained_diff_op(struct imp imp)
 {
     TAPP_handle handle;
     imp.TAPP_create_handle(&handle);
-
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -1027,9 +1006,6 @@ void chained_same_op(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
     int64_t strides_A[2] = {1, 4};
@@ -1145,9 +1121,6 @@ void negative_str(struct imp imp)
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
-
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {-1, -4, -12};
@@ -1258,9 +1231,6 @@ void subtensors(struct imp imp)
 {
     TAPP_handle handle;
     imp.TAPP_create_handle(&handle);
-
-    bool use_device_memory = false; // CuTensor specific attribute
-    imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
