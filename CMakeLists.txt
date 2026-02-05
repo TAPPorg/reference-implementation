@@ -74,6 +74,9 @@ add_subdirectory(reference_implementation)
 # ----------------------------------------------------------------------------
 # cutensor
 if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
+  include(CheckLanguage)
+  check_language(CXX)
+  check_language(CUDA)
   if(CMAKE_CUDA_COMPILER)
     enable_language(CXX)
     enable_language(CUDA)
