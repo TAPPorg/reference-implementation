@@ -4,13 +4,16 @@
 #include <string>
 #include <complex>
 #include <algorithm>
+#include <unordered_map>
+#include <type_traits>
 #include <dlfcn.h>  // POSIX dynamic loading, TODO: fix for windows
+
 extern "C" {
-    #include "tapp_ex_imp.h"
+    #include <tapp.h>
 }
 
-const char* pathA = "./libtapp.so";
-const char* pathB = "./_deps/tblis-build/lib/libtblis.so";
+const char* pathA = "./libtapp-reference.so";
+const char* pathB = "./libcutensor_binds.so";
 struct imp
 {
     void* handle;
@@ -19,9 +22,9 @@ struct imp
     TAPP_error (*TAPP_attr_clear)(TAPP_attr attr, TAPP_key key);
     bool (*TAPP_check_success)(TAPP_error error);
     size_t (*TAPP_explain_error)(TAPP_error error, size_t maxlen, char* message);
-    TAPP_error (*create_executor)(TAPP_executor* exec);
+    TAPP_error (*TAPP_create_executor)(TAPP_executor* exec);
     TAPP_error (*TAPP_destroy_executor)(TAPP_executor exec);
-    TAPP_error (*create_handle)(TAPP_handle* handle);
+    TAPP_error (*TAPP_create_handle)(TAPP_handle* handle);
     TAPP_error (*TAPP_destroy_handle)(TAPP_handle handle);
     TAPP_error (*TAPP_create_tensor_product)(TAPP_tensor_product* plan,
                                              TAPP_handle handle,
@@ -74,107 +77,87 @@ struct imp
     TAPP_error (*TAPP_set_strides)(TAPP_tensor_info info, const int64_t* strides);
 };
 
-bool compare_tensors_s(float* A, float* B, int size);
-std::tuple<int, int64_t*, int64_t*, float*, int64_t*,
-           int, int64_t*, int64_t*, float*, int64_t*,
-           int, int64_t*, int64_t*, float*, int64_t*,
-           int, int64_t*, int64_t*, float*, int64_t*,
-           float, float,
-           float*, float*, float*, float*,
-           int64_t, int64_t, int64_t, int64_t> generate_contraction_s(int nmode_A, int nmode_B, int nmode_D, 
-                                                                       int contractions, int min_extent,
-                                                                       bool equal_extents, bool lower_extents,
-                                                                       bool lower_idx, bool negative_str,
-                                                                       bool unique_idx, bool repeated_idx,
-                                                                       bool mixed_str);
-float rand_s(float min, float max);
-float rand_s();
-void print_tensor_s(int nmode, int64_t* extents, int64_t* strides, float* data);
-std::tuple<float*, float*> copy_tensor_data_s(int64_t size, float* data, float* pointer);
-float* copy_tensor_data_s(int size, float* data);
-float* create_tensor_data_s(int64_t size);
-bool compare_tensors_d(double* A, double* B, int size);
-std::tuple<int, int64_t*, int64_t*, double*, int64_t*,
-           int, int64_t*, int64_t*, double*, int64_t*,
-           int, int64_t*, int64_t*, double*, int64_t*,
-           int, int64_t*, int64_t*, double*, int64_t*,
-           double, double,
-           double*, double*, double*, double*,
-           int64_t, int64_t, int64_t, int64_t> generate_contraction_d(int nmode_A, int nmode_B, int nmode_D, 
-                                                                       int contractions, int min_extent,
-                                                                       bool equal_extents, bool lower_extents,
-                                                                       bool lower_idx, bool negative_str,
-                                                                       bool unique_idx, bool repeated_idx,
-                                                                       bool mixed_str);
-double rand_d(double min, double max);
-double rand_d();
-void print_tensor_d(int nmode, int64_t* extents, int64_t* strides, double* data);
-float* copy_tensor_data_d(int size, float* data);
-std::tuple<double*, double*> copy_tensor_data_d(int64_t size, double* data, double* pointer);
-double* create_tensor_data_d(int64_t size);
+void load_implementation(struct imp* imp, const char* path);
+void unload_implementation(struct imp* imp);
 
-void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::complex<float>* A, int op_A, int64_t* idx_A,
-                    int nmode_B, int64_t* extents_B, int64_t* strides_B, std::complex<float>* B, int op_B, int64_t* idx_B,
-                    int nmode_C, int64_t* extents_C, int64_t* strides_C, std::complex<float>* C, int op_C, int64_t* idx_C,
-                    int nmode_D, int64_t* extents_D, int64_t* strides_D, std::complex<float>* D, int op_D, int64_t* idx_D,
-                    std::complex<float> alpha, std::complex<float> beta);
-bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size);
-std::tuple<int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<float>*, int64_t*,
-           std::complex<float>, std::complex<float>,
-           std::complex<float>*, std::complex<float>*, std::complex<float>*, std::complex<float>*,
-           int64_t, int64_t, int64_t, int64_t> generate_contraction_c(int nmode_A, int nmode_B, int nmode_D, 
-                                                                       int contractions, int min_extent,
-                                                                       bool equal_extents, bool lower_extents,
-                                                                       bool lower_idx, bool negative_str,
-                                                                       bool unique_idx, bool repeated_idx,
-                                                                       bool mixed_str);
-std::complex<float> rand_c(std::complex<float> min, std::complex<float> max);
-std::complex<float> rand_c();
-void print_tensor_c(int nmode, int64_t* extents, int64_t* strides, std::complex<float>* data);
-float* copy_tensor_data_c(int size, float* data);
-std::tuple<std::complex<float>*, std::complex<float>*> copy_tensor_data_c(int64_t size, std::complex<float>* data, std::complex<float>* pointer);
-std::complex<float>* create_tensor_data_c(int64_t size);
+template<typename T>
+struct is_complex : std::false_type {};
+template<typename T>
+struct is_complex<std::complex<T>> : std::true_type {};
+template<typename T>
+inline constexpr bool is_complex_v = is_complex<T>::value;
 
-bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int size);
-std::tuple<int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
-           int, int64_t*, int64_t*, std::complex<double>*, int64_t*,
-           std::complex<double>, std::complex<double>,
-           std::complex<double>*, std::complex<double>*, std::complex<double>*, std::complex<double>*,
-           int64_t, int64_t, int64_t, int64_t> generate_contraction_z(int nmode_A, int nmode_B, int nmode_D, 
-                                                                       int contractions, int min_extent,
-                                                                       bool equal_extents, bool lower_extents,
-                                                                       bool lower_idx, bool negative_str,
-                                                                       bool unique_idx, bool repeated_idx,
-                                                                       bool mixed_str);
-std::complex<double> rand_z(std::complex<double> min, std::complex<double> max);
-std::complex<double> rand_z();
-void print_tensor_z(int nmode, int64_t* extents, int64_t* strides, std::complex<double>* data);
-float* copy_tensor_data_z(int size, float* data);
-std::tuple<std::complex<double>*, std::complex<double>*> copy_tensor_data_z(int64_t size, std::complex<double>* data, std::complex<double>* pointer);
-std::complex<double>* create_tensor_data_z(int64_t size);
+template<typename T>
+T rand(T min, T max);
+template<typename T>
+T rand();
 
-
-
-std::string str(bool b);
-int randi(int min, int max);
-char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D);
-void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
-void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
+template<typename T, typename U>
+U* change_array_type(T* array, int size);
+template<typename T>
+bool compare_tensors(T* A, T* B, int64_t size);
+template<typename T>
+std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
+           int, int64_t*, int64_t*, T*, int64_t*,
+           int, int64_t*, int64_t*, T*, int64_t*,
+           int, int64_t*, int64_t*, T*, int64_t*,
+           T, T,
+           T*, T*, T*, T*,
+           int64_t, int64_t, int64_t, int64_t> generate_pseudorandom_contraction(int nmode_A = -1, int nmode_B = -1,
+                                                                                 int nmode_D = -1, int contracted_indices = -1,
+                                                                                 int hadamard_indices = -1,
+                                                                                 int min_extent = 1, bool equal_extents_only = false,
+                                                                                 bool subtensor_on_extents = false, bool subtensor_on_nmode = false,
+                                                                                 bool negative_strides_enabled = false, bool mixed_strides_enabled = false,
+                                                                                 bool hadamard_indices_enabled = false, bool hadamard_only = false,
+                                                                                 bool repeated_indices_enabled = false, bool isolated_indices_enabled = false);
+std::tuple<int, int, int, int,
+           int, int, int, int,
+           int, int, int, int> generate_index_configuration(int nmode_A = -1, int nmode_B = -1, int nmode_D = -1,
+                                                            int contracted_indices = -1, int hadamard_indices = -1,
+                                                            bool hadamard_only = false, bool hadamard_indices_enabled = false,
+                                                            bool isolated_indices_enabled = false, bool repeated_indices_enabled = false);
+int* generate_unique_indices(int64_t total_unique_indices);
+std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
+                                                                  int contracted_modes, int hadamard_modes,
+                                                                  int free_indices_A, int free_indices_B,
+                                                                  int isolated_indices_A, int isolated_indices_B,
+                                                                  int repeated_indices_A, int repeated_indices_B);
+std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
+                                                           bool equal_extents_only,
+                                                           int64_t total_unique_indices, int* unique_indices);
+std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
+                                                                  int nmode_A, int64_t* idx_A,
+                                                                  int nmode_B, int64_t* idx_B,
+                                                                  int nmode_D, int64_t* idx_D);
 int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str);
 bool* choose_subtensor_dims(int nmode, int outer_nmode);
 int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents);
 int64_t* calculate_offsets(int nmode, int outer_nmode, int64_t* extents, int64_t* outer_extents, bool* subtensor_dims, bool lower_extents);
 int64_t* calculate_strides(int nmode, int outer_nmode, int64_t* outer_extents, int* stride_signs, bool* subtensor_dims);
 int calculate_size(int nmode, int64_t* extents);
+template<typename T>
+T* create_tensor_data(int64_t size);
+template<typename T>
+T* create_tensor_data(int64_t size, T min_value, T max_value);
+template<typename T>
+T* calculate_tensor_pointer(T* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides);
 void* calculate_tensor_pointer(void* pointer, int nmode, int64_t* extents, int64_t* offsets, int64_t* strides, unsigned long data_size);
-
-void load_implementation(struct imp* imp, const char* path);
-void unload_implementation(struct imp* imp);
+template<typename T>
+std::tuple<T*, T*> copy_tensor_data(int64_t size, T* data, T* pointer);
+template<typename T>
+T* copy_tensor_data(int64_t size, T* data);
+int calculate_tensor_size(int nmode, int* extents);
+template<typename T>
+T random_choice(int size, T* choices);
+char* swap_indices(char* indices, int nmode_A, int nmode_B, int nmode_D);
+void rotate_indices(int64_t* idx, int nmode, int64_t* extents, int64_t* strides);
+void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
+void print_tensor(int nmode, int64_t* extents, int64_t* strides);
+template<typename T>
+void print_tensor(int nmode, int64_t* extents, int64_t* strides, T* data);
+void add_incorrect_idx(int64_t max_idx, int* nmode, int64_t** idx, int64_t** extents, int64_t** strides);
+void add_idx(int* nmode, int64_t** idx, int64_t** extents, int64_t** strides, int64_t additional_idx, int64_t additional_extents, int64_t additional_strides);
 
 // Tests
 bool test_hadamard_product(struct imp impA, struct imp impB);
