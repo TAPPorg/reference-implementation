@@ -1,6 +1,6 @@
 #include "cutensor_bind.h"
 
-TAPP_EXPORT TAPP_error TAPP_create_executor(TAPP_executor* exec)
+TAPP_error TAPP_create_executor(TAPP_executor* exec)
 {
     cudaStream_t* stream = (cudaStream_t*)malloc(sizeof(cudaStream_t));
     cudaError_t cerr;
@@ -10,7 +10,7 @@ TAPP_EXPORT TAPP_error TAPP_create_executor(TAPP_executor* exec)
     return pack_error(0, cerr);
 }
 
-TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor exec)
+TAPP_error TAPP_destroy_executor(TAPP_executor exec)
 {
     cudaStream_t* stream = (cudaStream_t*)exec;
     cudaError_t cerr;

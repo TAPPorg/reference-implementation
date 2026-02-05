@@ -1,7 +1,7 @@
 #include "cutensor_bind.h"
 #include "../src/tapp/handle.h"
 
-TAPP_EXPORT TAPP_EXPORTTAPP_error TAPP_create_handle(TAPP_handle* handle)
+TAPP_error TAPP_create_handle(TAPP_handle* handle)
 {
     cutensorHandle_t* libhandle = new cutensorHandle_t;
     cutensorStatus_t err = cutensorCreate(libhandle);
@@ -19,7 +19,7 @@ TAPP_EXPORT TAPP_EXPORTTAPP_error TAPP_create_handle(TAPP_handle* handle)
     return 0; 
 }
 
-TAPP_EXPORT TAPP_error TAPP_destroy_handle(TAPP_handle handle)
+TAPP_error TAPP_destroy_handle(TAPP_handle handle)
 {
     struct handle* handle_struct = (struct handle*) handle;
     cutensorStatus_t err = cutensorDestroy(*handle_struct->libhandle);
