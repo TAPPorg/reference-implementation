@@ -1,12 +1,12 @@
 #include "../src/tapp/tensor.h"
 #include "cutensor_bind.h"
 
-TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
-                                               TAPP_handle handle,
-                                               TAPP_datatype type,
-                                               int nmode,
-                                               const int64_t* extents,
-                                               const int64_t* strides)
+TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
+                                   TAPP_handle handle,
+                                   TAPP_datatype type,
+                                   int nmode,
+                                   const int64_t* extents,
+                                   const int64_t* strides)
 {
     struct tensor_info* tensor_info = new struct tensor_info;
     tensor_info->desc = new cutensorTensorDescriptor_t;
@@ -54,7 +54,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     return 0;
 }
 
-TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
+TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
 {
     struct tensor_info* tensor_info = (struct tensor_info*) info;
     cutensorStatus_t err = cutensorDestroyTensorDescriptor(*tensor_info->desc);
@@ -69,39 +69,39 @@ TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
     return 0;
 }
 
-TAPP_EXPORT int TAPP_get_nmodes(TAPP_tensor_info info)
+int TAPP_get_nmodes(TAPP_tensor_info info)
 {
     return ((struct tensor_info*) info)->nmode;
 }
 
-TAPP_EXPORT TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
-                                       int nmodes)
+TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
+                           int nmodes)
 {
     return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing nmodes after creation, so this would require recreating the descriptor, would need handle
 }
 
-TAPP_EXPORT void TAPP_get_extents(TAPP_tensor_info info,
-                                  int64_t* extents)
+void TAPP_get_extents(TAPP_tensor_info info,
+                      int64_t* extents)
 {
     memcpy(extents, ((struct tensor_info*) info)->extents, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
     return; // TODO: correctly implement, currently placeholder
 }
 
-TAPP_EXPORT TAPP_error TAPP_set_extents(TAPP_tensor_info info,
-                                        const int64_t* extents)
+TAPP_error TAPP_set_extents(TAPP_tensor_info info,
+                            const int64_t* extents)
 {
     return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing extents after creation, so this would require recreating the descriptor, would need handle
 }
 
-TAPP_EXPORT void TAPP_get_strides(TAPP_tensor_info info,
-                                  int64_t* strides)
+void TAPP_get_strides(TAPP_tensor_info info,
+                      int64_t* strides)
 {
     memcpy(strides, ((struct tensor_info*) info)->strides, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
     return; // TODO: correctly implement, currently placeholder
 }
 
-TAPP_EXPORT TAPP_error TAPP_set_strides(TAPP_tensor_info info,
-                                        const int64_t* strides)
+TAPP_error TAPP_set_strides(TAPP_tensor_info info,
+                            const int64_t* strides)
 {
     return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing strides after creation, so this would require recreating the descriptor, would need handle
 }

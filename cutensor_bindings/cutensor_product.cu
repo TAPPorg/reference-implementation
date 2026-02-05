@@ -8,21 +8,21 @@ int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* stri
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
 cutensorOperator_t translate_operator(TAPP_element_op op);
 
-TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
-                                                  TAPP_handle handle,
-                                                  TAPP_element_op op_A,
-                                                  TAPP_tensor_info A,
-                                                  const int64_t* idx_A,
-                                                  TAPP_element_op op_B,
-                                                  TAPP_tensor_info B,
-                                                  const int64_t* idx_B,
-                                                  TAPP_element_op op_C,
-                                                  TAPP_tensor_info C,
-                                                  const int64_t* idx_C,
-                                                  TAPP_element_op op_D,
-                                                  TAPP_tensor_info D,
-                                                  const int64_t* idx_D,
-                                                  TAPP_prectype prec)
+TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
+                                      TAPP_handle handle,
+                                      TAPP_element_op op_A,
+                                      TAPP_tensor_info A,
+                                      const int64_t* idx_A,
+                                      TAPP_element_op op_B,
+                                      TAPP_tensor_info B,
+                                      const int64_t* idx_B,
+                                      TAPP_element_op op_C,
+                                      TAPP_tensor_info C,
+                                      const int64_t* idx_C,
+                                      TAPP_element_op op_D,
+                                      TAPP_tensor_info D,
+                                      const int64_t* idx_D,
+                                      TAPP_prectype prec)
 {
     struct product_plan* plan_struct = new struct product_plan;
     plan_struct->handle = ((cutensorHandle_t*) handle);
@@ -154,7 +154,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     return pack_error(0, err); 
 }
 
-TAPP_EXPORT TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
+TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
     struct product_plan* plan_struct = (struct product_plan*) plan;
     cutensorStatus_t err;
@@ -170,15 +170,15 @@ TAPP_EXPORT TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     return pack_error(0, err); 
 }
  
-TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
-                                            TAPP_executor exec,
-                                            TAPP_status* status,
-                                            const void* alpha,
-                                            const void* A,
-                                            const void* B,
-                                            const void* beta,
-                                            const void* C,
-                                                  void* D)
+TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
+                                TAPP_executor exec,
+                                TAPP_status* status,
+                                const void* alpha,
+                                const void* A,
+                                const void* B,
+                                const void* beta,
+                                const void* C,
+                                        void* D)
 {
     void *A_d, *B_d, *C_d, *D_d, *E_d;
     struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
