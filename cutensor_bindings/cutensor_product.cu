@@ -1,4 +1,3 @@
-#include "../src/tapp/product.h"
 #include "cutensor_bind.h"
 #include <algorithm>
 //make -j CC=gcc CC_VENDOR=gcc

@@ -1,4 +1,3 @@
-#include "../src/tapp/tensor.h"
 #include "cutensor_bind.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,

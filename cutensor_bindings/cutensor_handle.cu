@@ -1,5 +1,4 @@
 #include "cutensor_bind.h"
-#include "../src/tapp/handle.h"
 
 TAPP_error TAPP_create_handle(TAPP_handle* handle)
 {
