@@ -4,7 +4,7 @@
  * Umeå University - September 2024
  */
 
-#include "tapp_ex_imp.h"
+#include <tapp.h>
 #include "helpers.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,9 +21,9 @@ struct imp
     TAPP_error (*TAPP_attr_clear)(TAPP_attr attr, TAPP_key key);
     bool (*TAPP_check_success)(TAPP_error error);
     size_t (*TAPP_explain_error)(TAPP_error error, size_t maxlen, char* message);
-    TAPP_error (*create_executor)(TAPP_executor* exec);
+    TAPP_error (*TAPP_create_executor)(TAPP_executor* exec);
     TAPP_error (*TAPP_destroy_executor)(TAPP_executor exec);
-    TAPP_error (*create_handle)(TAPP_handle* handle);
+    TAPP_error (*TAPP_create_handle)(TAPP_handle* handle);
     TAPP_error (*TAPP_destroy_handle)(TAPP_handle handle);
     TAPP_error (*TAPP_create_tensor_product)(TAPP_tensor_product* plan,
                                              TAPP_handle handle,
@@ -76,18 +76,17 @@ struct imp
     TAPP_error (*TAPP_set_strides)(TAPP_tensor_info info, const int64_t* strides);
 };
 
-
-void contraction();
-void hadamard();
-void complex_num();
-void conjugate();
-void zero_dim();
-void one_ext_contracted();
-void one_ext_transfered();
-void chained_diff_op();
-void chained_same_op();
-void negative_str();
-void subtensors();
+void contraction(struct imp imp);
+void hadamard(struct imp imp);
+void complex_num(struct imp imp);
+void conjugate(struct imp imp);
+void zero_dim(struct imp imp);
+void one_ext_contracted(struct imp imp);
+void one_ext_transfered(struct imp imp);
+void chained_diff_op(struct imp imp);
+void chained_same_op(struct imp imp);
+void negative_str(struct imp imp);
+void subtensors(struct imp imp);
 
 void load_implementation(struct imp* imp) {
     imp->handle = dlopen(path, RTLD_LAZY);
@@ -101,9 +100,9 @@ void load_implementation(struct imp* imp) {
     *(void**)(&imp->TAPP_attr_clear) = dlsym(imp->handle, "TAPP_attr_clear");
     *(void**)(&imp->TAPP_check_success) = dlsym(imp->handle, "TAPP_check_success");
     *(void**)(&imp->TAPP_explain_error) = dlsym(imp->handle, "TAPP_explain_error");
-    *(void**)(&imp->create_executor) = dlsym(imp->handle, "create_executor");
+    *(void**)(&imp->TAPP_create_executor) = dlsym(imp->handle, "TAPP_create_executor");
     *(void**)(&imp->TAPP_destroy_executor) = dlsym(imp->handle, "TAPP_destroy_executor");
-    *(void**)(&imp->create_handle) = dlsym(imp->handle, "create_handle");
+    *(void**)(&imp->TAPP_create_handle) = dlsym(imp->handle, "TAPP_create_handle");
     *(void**)(&imp->TAPP_destroy_handle) = dlsym(imp->handle, "TAPP_destroy_handle");
     *(void**)(&imp->TAPP_create_tensor_product) = dlsym(imp->handle, "TAPP_create_tensor_product");
     *(void**)(&imp->TAPP_destroy_tensor_product) = dlsym(imp->handle, "TAPP_destroy_tensor_product");
@@ -169,7 +168,7 @@ int main(int argc, char const *argv[])
 void contraction(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -210,7 +209,7 @@ void contraction(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     // int exec_id = 1;
     // exec = (intptr_t)&exec_id;
     TAPP_status status;
@@ -287,7 +286,7 @@ void contraction(struct imp imp)
 void hadamard(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -329,7 +328,7 @@ void hadamard(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -389,7 +388,7 @@ void hadamard(struct imp imp)
 void complex_num(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -431,7 +430,7 @@ void complex_num(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float complex alpha = 1;
@@ -474,7 +473,7 @@ void complex_num(struct imp imp)
 void conjugate(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -516,7 +515,7 @@ void conjugate(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float complex alpha = 1;
@@ -559,7 +558,7 @@ void conjugate(struct imp imp)
 void zero_dim(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -601,7 +600,7 @@ void zero_dim(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -642,7 +641,7 @@ void zero_dim(struct imp imp)
 void one_ext_contracted(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -684,7 +683,7 @@ void one_ext_contracted(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -753,7 +752,7 @@ void one_ext_contracted(struct imp imp)
 void one_ext_transfered(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -795,7 +794,7 @@ void one_ext_transfered(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -864,7 +863,7 @@ void one_ext_transfered(struct imp imp)
 void chained_diff_op(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -906,7 +905,7 @@ void chained_diff_op(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 2;
@@ -1002,7 +1001,7 @@ void chained_diff_op(struct imp imp)
 void chained_same_op(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -1044,7 +1043,7 @@ void chained_same_op(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -1117,7 +1116,7 @@ void chained_same_op(struct imp imp)
 void negative_str(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -1159,7 +1158,7 @@ void negative_str(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -1231,7 +1230,7 @@ void negative_str(struct imp imp)
 void subtensors(struct imp imp)
 {
     TAPP_handle handle;
-    imp.create_handle(&handle);
+    imp.TAPP_create_handle(&handle);
 
     bool use_device_memory = false; // CuTensor specific attribute
     imp.TAPP_attr_set(handle, 0, (void*)&use_device_memory); // CuTensor specific attribute
@@ -1273,7 +1272,7 @@ void subtensors(struct imp imp)
     imp.TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    imp.create_executor(&exec);
+    imp.TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
