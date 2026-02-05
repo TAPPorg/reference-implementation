@@ -58,7 +58,7 @@ int main(int argc, char const *argv[])
 void contraction()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
@@ -97,7 +97,7 @@ void contraction()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     // int exec_id = 1;
     // exec = (intptr_t)&exec_id;
     TAPP_status status;
@@ -195,7 +195,7 @@ void contraction()
 void hadamard()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
@@ -234,7 +234,7 @@ void hadamard()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -315,7 +315,7 @@ void hadamard()
 void complex_num()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
@@ -354,7 +354,7 @@ void complex_num()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     std::complex<float> alpha = 1;
@@ -418,7 +418,7 @@ void complex_num()
 void conjugate()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 2;
     int64_t extents_A[2] = {3, 3};
@@ -457,7 +457,7 @@ void conjugate()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     std::complex<float> alpha = 1;
@@ -521,7 +521,7 @@ void conjugate()
 void zero_dim()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 0;
     int64_t extents_A[0] = {};
@@ -560,7 +560,7 @@ void zero_dim()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -622,7 +622,7 @@ void zero_dim()
 void one_ext_contracted()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
@@ -661,7 +661,7 @@ void one_ext_contracted()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -751,7 +751,7 @@ void one_ext_contracted()
 void one_ext_transfered()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 4;
     int64_t extents_A[4] = {4, 1, 3, 3};
@@ -790,7 +790,7 @@ void one_ext_transfered()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -880,7 +880,7 @@ void one_ext_transfered()
 void chained_diff_op()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
@@ -919,7 +919,7 @@ void chained_diff_op()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 2;
@@ -1047,7 +1047,7 @@ void chained_diff_op()
 void chained_same_op()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 2;
     int64_t extents_A[2] = {4, 4};
@@ -1086,7 +1086,7 @@ void chained_same_op()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 3;
@@ -1190,7 +1190,7 @@ void chained_same_op()
 /*void negative_str() //cutensor does not support negative strides
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
@@ -1229,7 +1229,7 @@ void chained_same_op()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
@@ -1301,7 +1301,7 @@ void chained_same_op()
 void subtensors()
 {
     TAPP_handle handle;
-    create_handle(&handle);
+    TAPP_create_handle(&handle);
 
     int nmode_A = 3;
     int64_t extents_A[3] = {3, 2, 2};
@@ -1340,7 +1340,7 @@ void subtensors()
     TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    create_executor(&exec);
+    TAPP_create_executor(&exec);
     TAPP_status status;
 
     float alpha = 1;
