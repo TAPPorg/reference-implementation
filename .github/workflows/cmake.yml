@@ -54,7 +54,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
         -DTAPP_REFERENCE_ENABLE_TBLIS=ON
-        -TAPP_REFERENCE_BUILD_CUTENSOR_BINDS=${{ matrix.cuda && 'ON' || 'OFF' }}
+        -DTAPP_REFERENCE_BUILD_CUTENSOR_BINDS=${{ matrix.cuda && 'ON' || 'OFF' }}
 
     steps:
     - uses: actions/checkout@v4
