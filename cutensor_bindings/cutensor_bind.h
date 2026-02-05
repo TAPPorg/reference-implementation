@@ -13,7 +13,7 @@
 #include <complex>
 #include <cstdint> // uint64_t
 
-#include "../src/tapp.h"
+#include <tapp.h>
 
 #define ATTR_KEY_USE_DEVICE_MEMORY 0
 
