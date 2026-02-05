@@ -23,10 +23,6 @@ cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype
 
 cutensorOperator_t translate_operator(TAPP_element_op op);
 
-TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle);
-
-TAPP_EXPORT TAPP_error create_executor(TAPP_executor* exec);
-
 size_t sizeof_datatype(TAPP_datatype type);
 
 int pack_error(int current_value, int tapp_err);

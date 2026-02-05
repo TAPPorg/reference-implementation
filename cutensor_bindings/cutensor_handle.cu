@@ -1,7 +1,7 @@
 #include "cutensor_bind.h"
 #include "../src/tapp/handle.h"
 
-TAPP_EXPORT TAPP_error create_handle(TAPP_handle* handle)//TAPP_error create_TAPP_handle(TAPP_handle* handle)
+TAPP_EXPORT TAPP_EXPORTTAPP_error TAPP_create_handle(TAPP_handle* handle)
 {
     cutensorHandle_t* libhandle = new cutensorHandle_t;
     cutensorStatus_t err = cutensorCreate(libhandle);
