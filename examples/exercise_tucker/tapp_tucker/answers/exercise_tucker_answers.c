@@ -108,7 +108,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
         int message_len = TAPP_explain_error(error, 0, NULL); // Get size of error message
         char *message_buff = malloc((message_len + 1) * sizeof(char)); // Allocate buffer for message, including null terminator
         TAPP_explain_error(error, message_len + 1, message_buff); // Fetch error message
-        printf(message_buff); // Print message
+        printf("%s", message_buff); // Print message
         free(message_buff); // Free buffer
         printf("\n");
     }
