@@ -35,7 +35,7 @@ endif()
 project(tapp-reference
         VERSION ${TAPP_REFERENCE_VERSION}
         DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
-        LANGUAGES C CUDA
+        LANGUAGES C
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 include(GNUInstallDirs)
@@ -163,6 +163,9 @@ endif()
 # cutensor bindings
 
 if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
+  include(CheckLanguage)
+  check_language(CXX)
+  check_language(CUDA)
   if(CMAKE_CUDA_COMPILER)
     enable_language(CXX)
     enable_language(CUDA)
