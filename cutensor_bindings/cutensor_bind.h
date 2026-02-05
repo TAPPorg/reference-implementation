@@ -1,3 +1,6 @@
+#ifndef TAPP_REF_IMPL_CUTENSOR_BIND_CUTENSOR_BIND_H_
+#define TAPP_REF_IMPL_CUTENSOR_BIND_CUTENSOR_BIND_H_
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -68,3 +71,5 @@ struct product_plan
     cutensorPlan_t* permutation_plan;
     cutensorHandle_t* handle;
 };
+
+#endif  /* TAPP_REF_IMPL_CUTENSOR_BIND_CUTENSOR_BIND_H_ */
