@@ -72,7 +72,7 @@ add_subdirectory(api)
 add_subdirectory(reference_implementation)
 
 # ----------------------------------------------------------------------------
-# cutensor
+# cutensor bindings
 
 if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
   include(CheckLanguage)
@@ -207,36 +207,6 @@ if(BUILD_TESTING)
   endif()
 
   # ----------------------------------------------------------------------------
-  # test dynamic
-
-  add_executable(tapp-reference-test-dynamic)
-
-  target_sources(
-    tapp-reference-test-dynamic
-    PRIVATE
-      test/test_dynamic.cpp
-      test/test_dynamic.h
-      src/tapp/tapp_ex_imp.h
-  )
-
-  target_link_libraries(
-    tapp-reference-test-dynamic
-    PRIVATE
-      ${CMAKE_DL_LIBS}
-  )
-
-  target_include_directories(
-    tapp-reference-test-dynamic
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
-  )
-
-  add_test(
-    NAME tapp-reference-test-dynamic
-    COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
-  )
-
-  # ----------------------------------------------------------------------------
   # demo
 
   add_executable(tapp-reference-demo)
@@ -259,38 +229,11 @@ if(BUILD_TESTING)
     NAME tapp-reference-demo
     COMMAND $<TARGET_FILE:tapp-reference-demo>
   )
-
-  # ----------------------------------------------------------------------------
-  # demo dynamic
-
-  add_executable(tapp-reference-demo-dynamic)
-
-  target_sources(
-    tapp-reference-demo-dynamic
-    PRIVATE
-      test/demo_dynamic.c
-      test/helpers.c
-      test/helpers.h
-      src/tapp/tapp_ex_imp.h
-  )
-
-  target_link_libraries(
-    tapp-reference-demo-dynamic
-    PRIVATE
-      ${CMAKE_DL_LIBS}
-  )
-
-  target_include_directories(
-    tapp-reference-demo-dynamic
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
-  )
-
-  add_test(
-    NAME tapp-reference-demo-dynamic
-    COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
-  )
   
+  # ----------------------------------------------------------------------------
+  # cutensor specific code
+
+  if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
   # ----------------------------------------------------------------------------
   # cutensor demo
 
@@ -322,6 +265,70 @@ if(BUILD_TESTING)
     NAME tapp-cutensor-demo
     COMMAND $<TARGET_FILE:tapp-cutensor-demo>
   )
+
+
+  # ----------------------------------------------------------------------------
+  # demo using dynamic library
+
+  add_executable(tapp-reference-demo-dynamic)
+
+  target_sources(
+    tapp-reference-demo-dynamic
+    PRIVATE
+      test/demo_dynamic.c
+      test/helpers.c
+      test/helpers.h
+      src/tapp/tapp_ex_imp.h
+  )
+
+  target_link_libraries(
+    tapp-reference-demo-dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
+  )
+
+  target_include_directories(
+    tapp-reference-demo-dynamic
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+  )
+
+  add_test(
+    NAME tapp-reference-demo-dynamic
+    COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
+  )
+
+  # ----------------------------------------------------------------------------
+  # test using dynamic library
+
+  add_executable(tapp-reference-test-dynamic)
+
+  target_sources(
+    tapp-reference-test-dynamic
+    PRIVATE
+      test/test_dynamic.cpp
+      test/test_dynamic.h
+      src/tapp/tapp_ex_imp.h
+  )
+
+  target_link_libraries(
+    tapp-reference-test-dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
+  )
+
+  target_include_directories(
+    tapp-reference-test-dynamic
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+  )
+
+  add_test(
+    NAME tapp-reference-test-dynamic
+    COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
+  )
+
+  endif()
 
   # ----------------------------------------------------------------------------
   # driver
