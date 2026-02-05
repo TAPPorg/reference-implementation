@@ -340,6 +340,11 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/api/include
   )
+
+  add_test(
+    NAME test_dynamic
+    COMMAND $<TARGET_FILE:test_dynamic>
+  )
 endif()
 
 add_executable(demo)
@@ -361,11 +366,6 @@ target_link_libraries(
 add_test(
   NAME demo
   COMMAND $<TARGET_FILE:demo>
-)
-
-add_test(
-  NAME test_dynamic
-  COMMAND $<TARGET_FILE:test_dynamic>
 )
 
 
