@@ -1,6 +1,4 @@
 #include "cutensor_bind.h"
-#include "../src/tapp/handle.h"
-#include "../src/tapp/attributes.h"
 
 TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
 {
