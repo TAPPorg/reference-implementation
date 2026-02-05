@@ -88,8 +88,9 @@ endif()
 
 target_link_libraries(tapp-reference PUBLIC tapp-api)
 
-option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
+option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings." OFF)
 option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
+option(TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS "Build CuTensor bindings and dependent executables." OFF)
 
 option(TAPP_REFERENCE_ENABLE_F16 "Turn on F16 support" OFF)
 option(TAPP_REFERENCE_ENABLE_BF16 "Turn on BF16 support" OFF)
@@ -159,83 +160,85 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 endif()
 
 # ----------------------------------------------------------------------------
-# cutensor
+# cutensor bindings
 
-if(CMAKE_CUDA_COMPILER)
-  enable_language(CXX)
-  enable_language(CUDA)
-else()
-  message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
-endif()
+if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CXX)
+    enable_language(CUDA)
+  else()
+    message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
+  endif()
 
-set(CUTENSOR_ROOT "/usr/local/cutensor")
-set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
-set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" "${CUTENSOR_ROOT}/lib/11")
+  set(CUTENSOR_ROOT "/usr/local/cutensor")
+  set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
+  set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" "${CUTENSOR_ROOT}/lib/11")
 
-find_library(
-  CUTENSOR_LIB
-  NAMES cutensor
-  PATHS ${CUTENSOR_LIBRARY_DIR}
-)
-
-if (NOT CUTENSOR_LIB)
-  message(FATAL_ERROR "cuTENSOR library not found. Set CUTENSOR_ROOT correctly.")
-endif()
-
-message(STATUS "Found cuTENSOR: ${CUTENSOR_LIB}")
-
-add_library(cutensor_binds SHARED)
-
-target_sources(
-  cutensor_binds
-  PUBLIC
-    src/tapp.h
-    cutensor_bindings/cutensor_bind.h
-  PRIVATE
-    src/tapp/tensor.h
-    src/tapp/product.h
-    src/tapp/attributes.h
-    src/tapp/datatype.h
-    src/tapp/error.h
-    src/tapp/executor.h
-    src/tapp/handle.h
-    src/tapp/status.h
-
-    cutensor_bindings/cutensor_attributes.cu
-    cutensor_bindings/cutensor_executor.cu
-    cutensor_bindings/cutensor_error.cu
-    cutensor_bindings/cutensor_handle.cu
-    cutensor_bindings/cutensor_tensor.cu
-    cutensor_bindings/cutensor_product.cu
-    cutensor_bindings/cutensor_datatype.cu
+  find_library(
+    CUTENSOR_LIB
+    NAMES cutensor
+    PATHS ${CUTENSOR_LIBRARY_DIR}
   )
 
-set_property(
-  TARGET cutensor_binds
-  PROPERTY
-    CUDA_SEPARABLE_COMPILATION ON
-    POSITION_INDEPENDENT_CODE ON
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
-    CUDA_STANDARD 20
-)
+  if (NOT CUTENSOR_LIB)
+    message(FATAL_ERROR "cuTENSOR library not found. Set CUTENSOR_ROOT correctly.")
+  endif()
 
-set_property(TARGET cutensor_binds PROPERTY CUDA_ARCHITECTURES OFF)
+  message(STATUS "Found cuTENSOR: ${CUTENSOR_LIB}")
 
-target_include_directories(
-  cutensor_binds
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tapp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cutensor_bindings
-  PRIVATE
-    ${CUTENSOR_INCLUDE_DIR}
-)
+  add_library(cutensor_binds SHARED)
 
-target_link_libraries(cutensor_binds PRIVATE ${CUTENSOR_LIB})
+  target_sources(
+    cutensor_binds
+    PUBLIC
+      api/include/tapp.h
+      cutensor_bindings/cutensor_bind.h
+    PRIVATE
+      api/include/tapp/tensor.h
+      api/include/tapp/product.h
+      api/include/tapp/attributes.h
+      api/include/tapp/datatype.h
+      api/include/tapp/error.h
+      api/include/tapp/executor.h
+      api/include/tapp/handle.h
+      api/include/tapp/status.h
 
-if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
-  target_link_options(cutensor_binds PRIVATE "-undefined;dynamic_lookup")
+      cutensor_bindings/cutensor_attributes.cu
+      cutensor_bindings/cutensor_executor.cu
+      cutensor_bindings/cutensor_error.cu
+      cutensor_bindings/cutensor_handle.cu
+      cutensor_bindings/cutensor_tensor.cu
+      cutensor_bindings/cutensor_product.cu
+      cutensor_bindings/cutensor_datatype.cu
+    )
+
+  set_property(
+    TARGET cutensor_binds
+    PROPERTY
+      CUDA_SEPARABLE_COMPILATION ON
+      POSITION_INDEPENDENT_CODE ON
+      CXX_STANDARD 20
+      CXX_STANDARD_REQUIRED YES
+      CUDA_STANDARD 20
+  )
+
+  set_property(TARGET cutensor_binds PROPERTY CUDA_ARCHITECTURES OFF)
+
+  target_include_directories(
+    cutensor_binds
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/cutensor_bindings
+    PRIVATE
+      ${CUTENSOR_INCLUDE_DIR}
+  )
+
+  target_link_libraries(cutensor_binds PRIVATE ${CUTENSOR_LIB})
+
+  if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
+    target_link_options(cutensor_binds PRIVATE "-undefined;dynamic_lookup")
+  endif()
 endif()
 
 # ----------------------------------------------------------------------------
@@ -303,34 +306,89 @@ if(BUILD_TESTING)
     )
   
   # ----------------------------------------------------------------------------
-  # cutensor demo
+  # cutensor specific code
 
-  add_executable(tapp-reference-cutensor-demo)
+  if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
+    # ----------------------------------------------------------------------------
+    # cutensor demo
 
-  target_sources(
-    tapp-reference-cutensor-demo
-    PRIVATE
-      test/cudemo.cu
-      test/helpers.c
-      test/helpers.h
-  )
+    add_executable(tapp-reference-cutensor-demo)
 
-  target_link_libraries(
-    tapp-reference-cutensor-demo
-    PRIVATE
-      cutensor_binds
-  )
+    target_sources(
+      tapp-reference-cutensor-demo
+      PRIVATE
+        test/cudemo.cu
+        test/helpers.c
+        test/helpers.h
+    )
 
-  target_include_directories(
-    tapp-reference-cutensor-demo
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
+    target_link_libraries(
+      tapp-reference-cutensor-demo
+      PRIVATE
+        cutensor_binds
+    )
 
-  add_test(
-    NAME tapp-reference-cutensor-demo
-    COMMAND $<TARGET_FILE:tapp-reference-cutensor-demo>
-  )
+    target_include_directories(
+      tapp-reference-cutensor-demo
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+
+    add_test(
+      NAME tapp-reference-cutensor-demo
+      COMMAND $<TARGET_FILE:tapp-reference-cutensor-demo>
+    )
+
+    # ----------------------------------------------------------------------------
+    # demo using dynamic library
+
+    add_executable(tapp-reference-demo-dynamic)
+
+    target_sources(
+      tapp-reference-demo-dynamic
+      PRIVATE
+        test/demo_dynamic.c
+        test/helpers.c
+        test/helpers.h
+        api/include/tapp.h
+    )
+
+    target_include_directories(
+      tapp-reference-demo-dynamic
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+    )
+
+    add_test(
+      NAME tapp-reference-demo-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
+    )
+
+    # ----------------------------------------------------------------------------
+    # test using dynamic library
+
+    add_executable(tapp-reference-test-dynamic)
+
+    target_sources(
+      tapp-reference-test-dynamic
+      PRIVATE
+        test/test_dynamic.cpp
+        test/test_dynamic.h
+        api/include/tapp.h
+    )
+
+    target_include_directories(
+      tapp-reference-test-dynamic
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+    )
+    
+    add_test(
+      NAME tapp-reference-test-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
+    )
+
+  endif()
 
   # ----------------------------------------------------------------------------
   # driver
