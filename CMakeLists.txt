@@ -88,8 +88,6 @@ endif()
 
 target_link_libraries(tapp-reference PUBLIC tapp-api)
 
-enable_testing()
-
 option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
 
@@ -158,175 +156,200 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
       tblis-static
   )
 
-  # ----------------------------------------------------------------------------
-  # testing
+endif()
 
-  add_executable(test++)
+# ----------------------------------------------------------------------------
+# testing
+
+include(CTest)
+
+if(BUILD_TESTING)
+
+  # ----------------------------------------------------------------------------
+  # TBLIS test
+
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-test++)
+
+    target_sources(
+      tapp-reference-test++
+      PRIVATE
+        test/test.cpp
+        test/test.h
+      )
+
+    target_link_libraries(
+      tapp-reference-test++
+      PRIVATE
+        tapp-reference
+      )
+
+    set_property(
+      TARGET tapp-reference-test++
+      PROPERTY
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+    )
+
+    add_test(
+      NAME tapp-reference-test++
+      COMMAND $<TARGET_FILE:tapp-reference-test++>
+      )
+  endif()
+
+  # ----------------------------------------------------------------------------
+  # demo
+
+  add_executable(tapp-reference-demo)
 
   target_sources(
-    test++
+    tapp-reference-demo
     PRIVATE
-      test/test.cpp
-      test/test.h
+      test/demo.c
+      test/helpers.c
+      test/helpers.h
     )
 
   target_link_libraries(
-    test++
+    tapp-reference-demo
     PRIVATE
       tapp-reference
     )
 
-  set_property(
-    TARGET test++
-    PROPERTY
-      CXX_STANDARD 20
-      CXX_STANDARD_REQUIRED YES
-      CXX_EXTENSIONS NO
-  )
-
   add_test(
-    NAME test++
-    COMMAND $<TARGET_FILE:test++>
+    NAME tapp-reference-demo
+    COMMAND $<TARGET_FILE:tapp-reference-demo>
     )
 
-endif()
+  # ----------------------------------------------------------------------------
+  # driver
 
-add_executable(demo)
+  add_executable(tapp-reference-driver)
 
-target_sources(
-  demo
-  PRIVATE
-    test/demo.c
-    test/helpers.c
-    test/helpers.h
-  )
-
-  target_link_libraries(
-   demo
-   PRIVATE
-     tapp-reference
-  )
-
-
-add_test(
-  NAME demo
-  COMMAND $<TARGET_FILE:demo>
-  )
-
-add_executable(driver)
-
-target_sources(
-  driver
-  PRIVATE
-    examples/driver/driver.c
-    test/helpers.c
-    test/helpers.h
-  )
-
-  target_include_directories(
-  driver
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
-
-  target_link_libraries(
-   driver
-   PRIVATE
-     tapp-reference
-  )
-
-
-add_test(
-  NAME driver
-  COMMAND $<TARGET_FILE:driver>
-  )
-
-if(TAPP_REFERENCE_BUILD_EXERCISE)
-  add_executable(exercise_contraction)
-  
   target_sources(
-    exercise_contraction
+    tapp-reference-driver
     PRIVATE
-      examples/exercise_contraction/exercise_contraction.c
+      examples/driver/driver.c
       test/helpers.c
       test/helpers.h
     )
-  
-    target_include_directories(
-    exercise_contraction
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
-
-  target_link_libraries(
-   exercise_contraction
-   PRIVATE
-     tapp-reference
-  )
-
-
-  add_test(
-    NAME exercise_contraction
-    COMMAND $<TARGET_FILE:exercise_contraction>
-    )
-endif()
-
-add_executable(exercise_contraction_answers)
-
-target_sources(
-  exercise_contraction_answers
-  PRIVATE
-    examples/exercise_contraction/answers/exercise_contraction_answers.c
-    test/helpers.c
-    test/helpers.h
-  )
 
   target_include_directories(
-  exercise_contraction_answers
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
+    tapp-reference-driver
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
 
   target_link_libraries(
-   exercise_contraction_answers
-   PRIVATE
-     tapp-reference
-  )
+    tapp-reference-driver
+    PRIVATE
+      tapp-reference
+    )
 
+  add_test(
+    NAME tapp-reference-driver
+    COMMAND $<TARGET_FILE:tapp-reference-driver>
+    )
 
-add_test(
-  NAME exercise_contraction_answers
-  COMMAND $<TARGET_FILE:exercise_contraction_answers>
-  )
+  # ----------------------------------------------------------------------------
+  # exercise: contraction
 
-  add_library(exercise_tucker SHARED)
+  if(TAPP_REFERENCE_BUILD_EXERCISE)
+    add_executable(tapp-reference-exercise_contraction)
 
-target_sources(
-  exercise_tucker
-  PUBLIC
-    examples/exercise_tucker/tapp_tucker/exercise_tucker.h
-  PRIVATE
-    examples/exercise_tucker/tapp_tucker/exercise_tucker.c
-  )
+    target_sources(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        examples/exercise_contraction/exercise_contraction.c
+        test/helpers.c
+        test/helpers.h
+      )
+
+    target_include_directories(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+      )
+
+    target_link_libraries(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        tapp-reference
+      )
+
+    add_test(
+      NAME tapp-reference-exercise_contraction
+      COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction>
+      )
+  endif()
+
+  # ----------------------------------------------------------------------------
+  # exercise: contraction answers
+
+  add_executable(tapp-reference-exercise_contraction_answers)
+
+  target_sources(
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      examples/exercise_contraction/answers/exercise_contraction_answers.c
+      test/helpers.c
+      test/helpers.h
+    )
+
+  target_include_directories(
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
 
   target_link_libraries(
-   exercise_tucker
-   PRIVATE
-     tapp-reference
-  )
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      tapp-reference
+    )
 
-  add_library(exercise_tucker_answers SHARED)
+  add_test(
+    NAME tapp-reference-exercise_contraction_answers
+    COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction_answers>
+    )
 
-target_sources(
-  exercise_tucker_answers
-  PUBLIC
-    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
-  PRIVATE
-    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
-  )
+  # ----------------------------------------------------------------------------
+  # exercise: tucker
+
+  add_library(tapp-reference-exercise_tucker SHARED)
+
+  target_sources(
+    tapp-reference-exercise_tucker
+    PUBLIC
+      examples/exercise_tucker/tapp_tucker/exercise_tucker.h
+    PRIVATE
+      examples/exercise_tucker/tapp_tucker/exercise_tucker.c
+    )
 
   target_link_libraries(
-   exercise_tucker_answers
-   PRIVATE
-     tapp-reference
-  )
+    tapp-reference-exercise_tucker
+    PRIVATE
+      tapp-reference
+    )
+
+  # ----------------------------------------------------------------------------
+  # exercise: tucker answers
+
+  add_library(tapp-reference-exercise_tucker_answers SHARED)
+
+  target_sources(
+    tapp-reference-exercise_tucker_answers
+    PUBLIC
+      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
+    PRIVATE
+      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
+    )
+
+  target_link_libraries(
+    tapp-reference-exercise_tucker_answers
+    PRIVATE
+      tapp-reference
+    )
+
+endif()
