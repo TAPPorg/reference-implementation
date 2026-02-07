@@ -40,35 +40,16 @@ project(tapp-api
 
 include(GNUInstallDirs)
 
-set(TAPP_API_INSTALL_BINDIR "bin"
-        CACHE PATH "TAPP API binary install directory")
-set(TAPP_API_INSTALL_INCLUDEDIR "include"
-        CACHE PATH "TAPP API INCLUDE install directory")
-set(TAPP_API_INSTALL_LIBDIR "lib"
-        CACHE PATH "TAPP API LIB install directory")
-set(TAPP_API_INSTALL_DATADIR "share/mpqc/${TAPP_API_EXT_VERSION}/data"
-        CACHE PATH "TAPP API DATA install directory")
-set(TAPP_API_INSTALL_DOCDIR "share/tapp/${TAPP_API_EXT_VERSION}/doc"
-        CACHE PATH "TAPP API DOC install directory")
-set(TAPP_API_INSTALL_CMAKEDIR "lib/cmake/mpqc"
-        CACHE PATH "TAPP API CMAKE install directory")
+# Install directory variables are set by the parent project (TAPP_INSTALL_*).
+# When built standalone, define them here as fallback.
+if (NOT DEFINED TAPP_INSTALL_INCLUDEDIR)
+  set(TAPP_INSTALL_INCLUDEDIR "include"
+          CACHE PATH "TAPP include install directory")
+endif()
 
 add_library(tapp-api INTERFACE)
-
-target_sources(
-  tapp-api
-  PUBLIC
-    include/tapp.h
-  PRIVATE
-    include/tapp/tensor.h
-    include/tapp/product.h
-    include/tapp/attributes.h
-    include/tapp/datatype.h
-    include/tapp/error.h
-    include/tapp/executor.h
-    include/tapp/handle.h
-    include/tapp/status.h
-  )
+set_property(TARGET tapp-api PROPERTY EXPORT_NAME api)
+add_library(tapp::api ALIAS tapp-api)
 
 set_property(
    TARGET tapp-api
@@ -80,5 +61,11 @@ set_property(
 
 target_include_directories(tapp-api INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${TAPP_INTERFACE_INSTALL_INCLUDEDIR}>
+        $<INSTALL_INTERFACE:${TAPP_INSTALL_INCLUDEDIR}>
 )
+
+install(TARGETS tapp-api EXPORT tapp
+        COMPONENT tapp-api)
+install(DIRECTORY include/
+        COMPONENT tapp-api
+        DESTINATION "${TAPP_INSTALL_INCLUDEDIR}")
