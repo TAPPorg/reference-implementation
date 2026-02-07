@@ -149,3 +149,30 @@ jobs:
         }
         EOF
         valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp ./tapp-reference-test++
+
+    - name: Consume from build tree
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: |
+        cmake -S $GITHUB_WORKSPACE/test/consume -B ${{github.workspace}}/consume-build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -Dtapp_DIR=${{github.workspace}}/build
+        cmake --build ${{github.workspace}}/consume-build
+        ctest --test-dir ${{github.workspace}}/consume-build --output-on-failure
+
+    - name: Install
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
+
+    - name: Consume from install tree
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: |
+        cmake -S $GITHUB_WORKSPACE/test/consume -B ${{github.workspace}}/consume-install \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_PREFIX_PATH=${{github.workspace}}/install
+        cmake --build ${{github.workspace}}/consume-install
+        ctest --test-dir ${{github.workspace}}/consume-install --output-on-failure
