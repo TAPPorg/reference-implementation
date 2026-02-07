@@ -51,7 +51,7 @@ jobs:
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
-        -DTAPP_REFERENCE_ENABLE_TBLIS=ON
+        -DTAPP_REFERENCE_ENABLE_TBLIS=${{ !matrix.valgrind }}
     steps:
     - uses: actions/checkout@v4
 
@@ -136,19 +136,8 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: |
-        cat > tblis.supp << 'EOF'
-        # Suppress uninitialized value errors in TBLIS/BLIS packm functions
-        # These occur in architecture-specific packing code (zen3, haswell, etc.)
-        # and appear to be false positives in the BLIS library
-        {
-           tblis_packm_bsmtc_uninit
-           Memcheck:Cond
-           ...
-           fun:*tblis*packm*bsmtc*
-           ...
-        }
-        EOF
-        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp ./tapp-reference-test++
+        valgrind --error-exitcode=1 --leak-check=full ./tapp-reference-demo
+        valgrind --error-exitcode=1 --leak-check=full ./tapp-reference-driver
 
     - name: Consume from build tree
       if: ${{ !matrix.valgrind && !matrix.sanitize }}
