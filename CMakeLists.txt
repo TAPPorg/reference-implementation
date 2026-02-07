@@ -116,18 +116,30 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
   endif()
 
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
+  # Option to provide custom path to tblis source
+  set(TAPP_REFERENCE_TBLIS_SOURCE_DIR "" CACHE PATH "Path to existing tblis source directory (if empty, will default to fetching from GitHub)")
 
-  include(FetchContent)
+  if(TAPP_REFERENCE_TBLIS_SOURCE_DIR)
+    # Use user-provided tblis source directory
+    if(NOT EXISTS "${TAPP_REFERENCE_TBLIS_SOURCE_DIR}/CMakeLists.txt")
+      message(FATAL_ERROR "TAPP_REFERENCE_TBLIS_SOURCE_DIR is set to '${TAPP_REFERENCE_TBLIS_SOURCE_DIR}' but no CMakeLists.txt found there")
+    endif()
+    message(STATUS "Using tblis from: ${TAPP_REFERENCE_TBLIS_SOURCE_DIR}")
+    add_subdirectory(${TAPP_REFERENCE_TBLIS_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis-build)
+  else()
+    # Fetch tblis from GitHub
+    include(FetchContent)
 
-  FetchContent_Declare(
-    tblis
-    GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
-    GIT_TAG 9b95712
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
-    UPDATE_DISCONNECTED TRUE
-  )
+    FetchContent_Declare(
+      tblis
+      GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
+      GIT_TAG 9b95712
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
+      UPDATE_DISCONNECTED TRUE
+    )
 
-  FetchContent_MakeAvailable(tblis)
+    FetchContent_MakeAvailable(tblis)
+  endif()
 
   target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
 
@@ -206,7 +218,8 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
 
   set(CUTENSOR_ROOT "/usr/local/cutensor")
   set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
-  set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" "${CUTENSOR_ROOT}/lib/11")
+  file(GLOB CUTENSOR_VERSIONED_DIRS "${CUTENSOR_ROOT}/lib/[0-9]*")
+  set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" ${CUTENSOR_VERSIONED_DIRS})
 
   find_library(
     CUTENSOR_LIB
@@ -216,9 +229,18 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
 
   if (NOT CUTENSOR_LIB)
     message(FATAL_ERROR "cuTENSOR library not found. Set CUTENSOR_ROOT correctly.")
+  else()
+    get_filename_component(CUTENSOR_LIBRARY_DIR ${CUTENSOR_LIB} DIRECTORY)
+    if(CUTENSOR_LIBRARY_DIR MATCHES "/[0-9]+$")
+      get_filename_component(CUTENSOR_LIBRARY_DIR ${CUTENSOR_LIBRARY_DIR} DIRECTORY)
+    endif()
+    get_filename_component(CUTENSOR_ROOT ${CUTENSOR_LIBRARY_DIR} DIRECTORY)
+
+    set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
   endif()
 
   message(STATUS "Found cuTENSOR: ${CUTENSOR_LIB}")
+  message(STATUS "cuTENSOR include dir: ${CUTENSOR_INCLUDE_DIR}")
 
   add_library(cutensor_binds SHARED)
 
@@ -294,6 +316,8 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
     cudemo
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/test
+    PRIVATE
+      ${CUTENSOR_INCLUDE_DIR}
   )
 
   add_test(
@@ -318,11 +342,16 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
       ${CMAKE_CURRENT_SOURCE_DIR}/api/include
   )
 
+  target_link_libraries(
+    demo_dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
+  )
+
   add_test(
     NAME demo_dynamic
     COMMAND $<TARGET_FILE:demo_dynamic>
   )
-
 
   add_executable(test_dynamic)
 
@@ -338,6 +367,12 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
     test_dynamic
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+  )
+
+  target_link_libraries(
+    test_dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
   )
 
   add_test(
