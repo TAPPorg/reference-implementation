@@ -65,7 +65,7 @@ target_include_directories(tapp-api INTERFACE
 )
 
 install(TARGETS tapp-api EXPORT tapp
-        COMPONENT tapp-api)
+        COMPONENT api)
 install(DIRECTORY include/
-        COMPONENT tapp-api
+        COMPONENT api
         DESTINATION "${TAPP_INSTALL_INCLUDEDIR}")

@@ -287,7 +287,7 @@ install(EXPORT tapp
     FILE "tapp-targets.cmake"
     DESTINATION "${TAPP_INSTALL_CMAKEDIR}"
     NAMESPACE tapp::
-    COMPONENT tapp-reference)
+    COMPONENT reference)
 
 # configure the config file
 configure_package_config_file(cmake/tapp-config.cmake.in
@@ -298,4 +298,4 @@ install(FILES
     "${PROJECT_BINARY_DIR}/tapp-config.cmake"
     "${PROJECT_BINARY_DIR}/tapp-config-version.cmake"
     DESTINATION "${TAPP_INSTALL_CMAKEDIR}"
-    COMPONENT tapp-reference)
+    COMPONENT reference)

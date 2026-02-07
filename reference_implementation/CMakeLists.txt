@@ -96,10 +96,10 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 endif()
 
 install(TARGETS tapp-reference EXPORT tapp
-        COMPONENT tapp-reference
+        COMPONENT reference
         LIBRARY DESTINATION "${TAPP_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${TAPP_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${TAPP_INSTALL_BINDIR}")
 install(DIRECTORY include/
-        COMPONENT tapp-reference
+        COMPONENT reference
         DESTINATION "${TAPP_INSTALL_INCLUDEDIR}")
