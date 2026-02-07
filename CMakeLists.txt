@@ -85,7 +85,8 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
 
   set(CUTENSOR_ROOT "/usr/local/cutensor")
   set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
-  set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" "${CUTENSOR_ROOT}/lib/11")
+  file(GLOB CUTENSOR_VERSIONED_DIRS "${CUTENSOR_ROOT}/lib/[0-9]*")
+  set(CUTENSOR_LIBRARY_DIR "${CUTENSOR_ROOT}/lib" ${CUTENSOR_VERSIONED_DIRS})
 
   find_library(
     CUTENSOR_LIB
@@ -95,9 +96,18 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
 
   if (NOT CUTENSOR_LIB)
     message(FATAL_ERROR "cuTENSOR library not found. Set CUTENSOR_ROOT correctly.")
+  else()
+    get_filename_component(CUTENSOR_LIBRARY_DIR ${CUTENSOR_LIB} DIRECTORY)
+    if(CUTENSOR_LIBRARY_DIR MATCHES "/[0-9]+$")
+      get_filename_component(CUTENSOR_LIBRARY_DIR ${CUTENSOR_LIBRARY_DIR} DIRECTORY)
+    endif()
+    get_filename_component(CUTENSOR_ROOT ${CUTENSOR_LIBRARY_DIR} DIRECTORY)
+
+    set(CUTENSOR_INCLUDE_DIR "${CUTENSOR_ROOT}/include")
   endif()
 
   message(STATUS "Found cuTENSOR: ${CUTENSOR_LIB}")
+  message(STATUS "cuTENSOR include dir: ${CUTENSOR_INCLUDE_DIR}")
 
   add_library(cutensor_binds SHARED)
 
@@ -196,7 +206,7 @@ if(BUILD_TESTING)
   endif()
 
   # ----------------------------------------------------------------------------
-  # Test dynamic
+  # test dynamic
 
   add_executable(tapp-reference-test-dynamic)
 
@@ -206,6 +216,12 @@ if(BUILD_TESTING)
       test/test_dynamic.cpp
       test/test_dynamic.h
       src/tapp/tapp_ex_imp.h
+  )
+
+  target_link_libraries(
+    tapp-reference-test-dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
   )
 
   target_include_directories(
@@ -257,6 +273,12 @@ if(BUILD_TESTING)
       src/tapp/tapp_ex_imp.h
   )
 
+  target_link_libraries(
+    tapp-reference-demo-dynamic
+    PRIVATE
+      ${CMAKE_DL_LIBS}
+  )
+
   target_include_directories(
     tapp-reference-demo-dynamic
     PUBLIC
@@ -291,6 +313,8 @@ if(BUILD_TESTING)
     tapp-cutensor-demo
     PUBLIC
       ${CMAKE_CURRENT_SOURCE_DIR}/test
+    PRIVATE
+      ${CUTENSOR_INCLUDE_DIR}
   )
 
   add_test(
