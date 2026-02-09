@@ -1,4 +1,4 @@
-#include "cutensor_bind.h"
+#include "../include/error.h"
 
 // pack multiple types of error codes into one int
 constexpr int TAPP_BITS   = 5;

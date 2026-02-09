@@ -10,7 +10,7 @@
 #include <cuda_runtime.h>
 #include <cutensor.h>
 #include <assert.h>
-#include "cutensor_bind.h"
+#include <tapp.h>
 extern "C" {
     #include "helpers.h"
 }

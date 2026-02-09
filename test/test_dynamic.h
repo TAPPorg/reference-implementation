@@ -13,7 +13,7 @@ extern "C" {
 }
 
 const char* pathA = "./libtapp-reference.so";
-const char* pathB = "./libcutensor_binds.so";
+const char* pathB = "./cutensor_bindings/libcutensor_bindings.so";
 struct imp
 {
     void* handle;
