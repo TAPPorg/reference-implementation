@@ -12,13 +12,14 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
+    TAPP_handle handle; // Declare handle
+    TAPP_create_handle(&handle); // Create handle
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
      * The operation requires four tensors that all needs to be initialized.
      */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
 
     // Initialize the structures of the tensors
 
@@ -46,7 +47,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_create_tensor_info(&info_D, handle, TAPP_F64, nmode_D, extents_D, strides_D);
 
     /*
-     * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
+     * Decide how the calculation should be executed, which indices to contract, elemental operations and precision.
      */
 
     // Decide elemental operations (conjugate available for complex datatypes)

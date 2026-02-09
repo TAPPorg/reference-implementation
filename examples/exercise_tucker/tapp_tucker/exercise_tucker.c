@@ -12,6 +12,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
+    TAPP_handle handle; // Declare handle
+    TAPP_create_handle(&handle); // Create handle
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -25,17 +28,11 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_tensor_info info_A; // Declare the variable that holds the tensor structure
 
     /*
-     * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
-     */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
-
-    /*
      * TODO 3: Complete the function call.
      * Uncomment function call
      * Add: nmode_A, extents_A, and strides_A
      */
-    //TAPP_create_tensor_info(&info_A, TAPP_F64, , , ); // Assign the structure to the variable, including datatype
+    //TAPP_create_tensor_info(&info_A, handle, TAPP_F64, , , ); // Assign the structure to the variable, including datatype
 
     // Tensor B
     TAPP_tensor_info info_B;
@@ -48,6 +45,10 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     // Output tensor D
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, handle, TAPP_F64, nmode_D, extents_D, strides_D);
+
+    /*
+     * Decide how the calculation should be executed, which indices to contract, elemental operations and precision.
+     */
 
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A

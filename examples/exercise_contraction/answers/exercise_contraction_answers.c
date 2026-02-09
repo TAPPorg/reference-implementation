@@ -17,8 +17,9 @@
 
 int main(int argc, char const *argv[])
 {
-    // Declare handle (no assignment)
+    // Declare handle
     TAPP_handle handle;
+    TAPP_create_handle(&handle);
     
     /*
      * Create the tensor structures for tensor A, B, C and D.
