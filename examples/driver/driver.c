@@ -12,6 +12,9 @@
 
 int main(int argc, char const *argv[])
 {
+    TAPP_handle handle; // Declare handle
+    TAPP_create_handle(&handle); // Create handle
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -21,8 +24,6 @@ int main(int argc, char const *argv[])
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
      */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
 
     // Initialize the structures of the tensors
 
@@ -181,6 +182,7 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 
     return 0;
 }
