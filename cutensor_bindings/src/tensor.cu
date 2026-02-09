@@ -76,31 +76,31 @@ int TAPP_get_nmodes(TAPP_tensor_info info)
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes)
 {
-    return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing nmodes after creation, so this would require recreating the descriptor, would need handle
+    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
                       int64_t* extents)
 {
     memcpy(extents, ((struct tensor_info*) info)->extents, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
-    return; // TODO: correctly implement, currently placeholder
+    return; 
 }
 
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
                             const int64_t* extents)
 {
-    return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing extents after creation, so this would require recreating the descriptor, would need handle
+    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
                       int64_t* strides)
 {
     memcpy(strides, ((struct tensor_info*) info)->strides, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
-    return; // TODO: correctly implement, currently placeholder
+    return; 
 }
 
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
                             const int64_t* strides)
 {
-    return 0; // TODO: correctly implement, currently placeholder. Cutensor does not support changing strides after creation, so this would require recreating the descriptor, would need handle
+    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
 }
