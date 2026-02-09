@@ -12,7 +12,7 @@
 #include <dlfcn.h>  // POSIX dynamic loading, TODO: fix for windows
 #include <unistd.h>
 
-const char* path = "./libcutensor_binds.so";
+const char* path = "./cutensor_bindings/libcutensor_bindings.so";
 struct imp
 {
     void* handle;

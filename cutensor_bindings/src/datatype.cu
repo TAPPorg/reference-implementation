@@ -1,4 +1,4 @@
-#include "cutensor_bind.h"
+#include "../include/datatype.h"
 
 cutensorDataType_t translate_datatype(TAPP_datatype type)
 {

@@ -1,7 +1,4 @@
-#include "cutensor_bind.h"
-#include <algorithm>
-//make -j CC=gcc CC_VENDOR=gcc
-//cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+#include "../include/product.h"
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
@@ -177,7 +174,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* B,
                                 const void* beta,
                                 const void* C,
-                                        void* D)
+                                      void* D)
 {
     void *A_d, *B_d, *C_d, *D_d, *E_d;
     struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
@@ -267,7 +264,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 *permutation_plan,
                 perm_scalar_ptr,
                 E_d,
-                D,
+                D_d,
                 *(cudaStream_t*)exec);
     if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
 

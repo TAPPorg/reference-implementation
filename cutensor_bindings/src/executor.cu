@@ -1,4 +1,4 @@
-#include "cutensor_bind.h"
+#include "../include/executor.h"
 
 TAPP_error TAPP_create_executor(TAPP_executor* exec)
 {
