@@ -88,11 +88,9 @@ endif()
 
 target_link_libraries(tapp-reference PUBLIC tapp-api)
 
-enable_testing()
-
 option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings." OFF)
 option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
-option(TAPP_REFERENCE_BUILD_CUTENSOR_BINDS "Build CuTensor bindings and dependent executables." OFF)
+option(TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS "Build CuTensor bindings and dependent executables." OFF)
 
 option(TAPP_REFERENCE_ENABLE_F16 "Turn on F16 support" OFF)
 option(TAPP_REFERENCE_ENABLE_BF16 "Turn on BF16 support" OFF)
@@ -171,47 +169,18 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
       tblis-static
   )
 
-  # ----------------------------------------------------------------------------
-  # testing
-
-  add_executable(test++)
-
-  target_sources(
-    test++
-    PRIVATE
-      test/test.cpp
-      test/test.h
-    )
-
-  target_link_libraries(
-    test++
-    PRIVATE
-      tapp-reference
-    )
-
-  set_property(
-    TARGET test++
-    PROPERTY
-      CXX_STANDARD 20
-      CXX_STANDARD_REQUIRED YES
-      CXX_EXTENSIONS NO
-  )
-
-  add_test(
-    NAME test++
-    COMMAND $<TARGET_FILE:test++>
-  )
-
 endif()
 
 # ----------------------------------------------------------------------------
-# cutensor
-if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
+# cutensor bindings
+
+if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
   include(CheckLanguage)
   check_language(CXX)
   check_language(CUDA)
   if(CMAKE_CUDA_COMPILER)
-    enable_language(C CXX CUDA)
+    enable_language(CXX)
+    enable_language(CUDA)
   else()
     message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
   endif()
@@ -295,229 +264,299 @@ if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDS)
   if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
     target_link_options(cutensor_binds PRIVATE "-undefined;dynamic_lookup")
   endif()
-
-  add_executable(cudemo)
-
-  target_sources(
-    cudemo
-    PRIVATE
-      test/cudemo.cu
-      test/helpers.c
-      test/helpers.h
-  )
-
-  target_link_libraries(
-    cudemo
-    PRIVATE
-      cutensor_binds # Linking to tapp provides everything needed.
-  )
-
-  target_include_directories(
-    cudemo
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/test
-    PRIVATE
-      ${CUTENSOR_INCLUDE_DIR}
-  )
-
-  add_test(
-    NAME cudemo
-    COMMAND $<TARGET_FILE:cudemo>
-  )
-
-  add_executable(demo_dynamic)
-
-  target_sources(
-    demo_dynamic
-    PRIVATE
-      test/demo_dynamic.c
-      test/helpers.c
-      test/helpers.h
-      api/include/tapp.h
-  )
-
-  target_include_directories(
-    demo_dynamic
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
-  )
-
-  target_link_libraries(
-    demo_dynamic
-    PRIVATE
-      ${CMAKE_DL_LIBS}
-  )
-
-  add_test(
-    NAME demo_dynamic
-    COMMAND $<TARGET_FILE:demo_dynamic>
-  )
-
-  add_executable(test_dynamic)
-
-  target_sources(
-    test_dynamic
-    PRIVATE
-      test/test_dynamic.cpp
-      test/test_dynamic.h
-      api/include/tapp.h
-  )
-
-  target_include_directories(
-    test_dynamic
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
-  )
-
-  target_link_libraries(
-    test_dynamic
-    PRIVATE
-      ${CMAKE_DL_LIBS}
-  )
-
-  add_test(
-    NAME test_dynamic
-    COMMAND $<TARGET_FILE:test_dynamic>
-  )
 endif()
 
-add_executable(demo)
+# ----------------------------------------------------------------------------
+# testing
 
-target_sources(
-  demo
-  PRIVATE
-    test/demo.c
-    test/helpers.c
-    test/helpers.h
-)
+include(CTest)
 
-target_link_libraries(
-  demo
-  PRIVATE
-    tapp-reference
-)
+if(BUILD_TESTING)
 
-add_test(
-  NAME demo
-  COMMAND $<TARGET_FILE:demo>
-)
+  # ----------------------------------------------------------------------------
+  # TBLIS test
 
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-test++)
 
-add_executable(driver)
+    target_sources(
+      tapp-reference-test++
+      PRIVATE
+        test/test.cpp
+        test/test.h
+      )
 
-target_sources(
-  driver
-  PRIVATE
-    examples/driver/driver.c
-    test/helpers.c
-    test/helpers.h
-)
+    target_link_libraries(
+      tapp-reference-test++
+      PRIVATE
+        tapp-reference
+      )
 
-target_include_directories(
-  driver
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-)
+    set_property(
+      TARGET tapp-reference-test++
+      PROPERTY
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+    )
 
-target_link_libraries(
-  driver
-  PRIVATE
-    tapp-reference
-)
+    add_test(
+      NAME tapp-reference-test++
+      COMMAND $<TARGET_FILE:tapp-reference-test++>
+      )
+  endif()
 
-add_test(
-  NAME driver
-  COMMAND $<TARGET_FILE:driver>
-)
+  # ----------------------------------------------------------------------------
+  # demo
 
-if(TAPP_REFERENCE_BUILD_EXERCISE)
-  add_executable(exercise_contraction)
-  
+  add_executable(tapp-reference-demo)
+
   target_sources(
-    exercise_contraction
+    tapp-reference-demo
     PRIVATE
-      examples/exercise_contraction/exercise_contraction.c
+      test/demo.c
       test/helpers.c
       test/helpers.h
-  )
-  
-  target_include_directories(
-    exercise_contraction
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
+    )
 
   target_link_libraries(
-   exercise_contraction
-   PRIVATE
-     tapp-reference
-  )
-
+    tapp-reference-demo
+    PRIVATE
+      tapp-reference
+    )
 
   add_test(
-    NAME exercise_contraction
-    COMMAND $<TARGET_FILE:exercise_contraction>
-  )
+    NAME tapp-reference-demo
+    COMMAND $<TARGET_FILE:tapp-reference-demo>
+    )
+  
+  # ----------------------------------------------------------------------------
+  # cutensor specific code
+
+  if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
+    # ----------------------------------------------------------------------------
+    # cutensor demo
+
+    add_executable(tapp-reference-cutensor-demo)
+
+    target_sources(
+      tapp-reference-cutensor-demo
+      PRIVATE
+        test/cudemo.cu
+        test/helpers.c
+        test/helpers.h
+    )
+
+    target_link_libraries(
+      tapp-reference-cutensor-demo
+      PRIVATE
+        cutensor_binds
+    )
+
+    target_include_directories(
+      tapp-reference-cutensor-demo
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+      PRIVATE
+        ${CUTENSOR_INCLUDE_DIR}
+    )
+
+    add_test(
+      NAME tapp-reference-cutensor-demo
+      COMMAND $<TARGET_FILE:tapp-reference-cutensor-demo>
+    )
+
+    # ----------------------------------------------------------------------------
+    # demo using dynamic library
+
+    add_executable(tapp-reference-demo-dynamic)
+
+    target_sources(
+      tapp-reference-demo-dynamic
+      PRIVATE
+        test/demo_dynamic.c
+        test/helpers.c
+        test/helpers.h
+        api/include/tapp.h
+    )
+
+    target_include_directories(
+      tapp-reference-demo-dynamic
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+    )
+
+    add_test(
+      NAME tapp-reference-demo-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
+    )
+    
+    target_link_libraries(
+      tapp-reference-demo-dynamic
+      PRIVATE
+        ${CMAKE_DL_LIBS}
+    )
+
+    # ----------------------------------------------------------------------------
+    # test using dynamic library
+
+    add_executable(tapp-reference-test-dynamic)
+
+    target_sources(
+      tapp-reference-test-dynamic
+      PRIVATE
+        test/test_dynamic.cpp
+        test/test_dynamic.h
+        api/include/tapp.h
+    )
+
+    target_include_directories(
+      tapp-reference-test-dynamic
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+    )
+    
+    add_test(
+      NAME tapp-reference-test-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
+    )
+    
+    target_link_libraries(
+      tapp-reference-test-dynamic
+      PRIVATE
+        ${CMAKE_DL_LIBS}
+    )
+
+  endif()
+
+  # ----------------------------------------------------------------------------
+  # driver
+
+  add_executable(tapp-reference-driver)
+
+  target_sources(
+    tapp-reference-driver
+    PRIVATE
+      examples/driver/driver.c
+      test/helpers.c
+      test/helpers.h
+    )
+
+  target_include_directories(
+    tapp-reference-driver
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+
+  target_link_libraries(
+    tapp-reference-driver
+    PRIVATE
+      tapp-reference
+    )
+
+  add_test(
+    NAME tapp-reference-driver
+    COMMAND $<TARGET_FILE:tapp-reference-driver>
+    )
+
+  # ----------------------------------------------------------------------------
+  # exercise: contraction
+
+  if(TAPP_REFERENCE_BUILD_EXERCISE)
+    add_executable(tapp-reference-exercise_contraction)
+
+    target_sources(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        examples/exercise_contraction/exercise_contraction.c
+        test/helpers.c
+        test/helpers.h
+      )
+
+    target_include_directories(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+      )
+
+    target_link_libraries(
+      tapp-reference-exercise_contraction
+      PRIVATE
+        tapp-reference
+      )
+
+    add_test(
+      NAME tapp-reference-exercise_contraction
+      COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction>
+      )
+  endif()
+
+  # ----------------------------------------------------------------------------
+  # exercise: contraction answers
+
+  add_executable(tapp-reference-exercise_contraction_answers)
+
+  target_sources(
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      examples/exercise_contraction/answers/exercise_contraction_answers.c
+      test/helpers.c
+      test/helpers.h
+    )
+
+  target_include_directories(
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+
+  target_link_libraries(
+    tapp-reference-exercise_contraction_answers
+    PRIVATE
+      tapp-reference
+    )
+
+  add_test(
+    NAME tapp-reference-exercise_contraction_answers
+    COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction_answers>
+    )
+
+  # ----------------------------------------------------------------------------
+  # exercise: tucker
+
+  add_library(tapp-reference-exercise_tucker SHARED)
+
+  target_sources(
+    tapp-reference-exercise_tucker
+    PUBLIC
+      examples/exercise_tucker/tapp_tucker/exercise_tucker.h
+    PRIVATE
+      examples/exercise_tucker/tapp_tucker/exercise_tucker.c
+    )
+
+  target_link_libraries(
+    tapp-reference-exercise_tucker
+    PRIVATE
+      tapp-reference
+    )
+
+  # ----------------------------------------------------------------------------
+  # exercise: tucker answers
+
+  add_library(tapp-reference-exercise_tucker_answers SHARED)
+
+  target_sources(
+    tapp-reference-exercise_tucker_answers
+    PUBLIC
+      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
+    PRIVATE
+      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
+    )
+
+  target_link_libraries(
+    tapp-reference-exercise_tucker_answers
+    PRIVATE
+      tapp-reference
+    )
+
 endif()
-
-
-add_executable(exercise_contraction_answers)
-
-target_sources(
-  exercise_contraction_answers
-  PRIVATE
-    examples/exercise_contraction/answers/exercise_contraction_answers.c
-    test/helpers.c
-    test/helpers.h
-)
-
-target_include_directories(
-  exercise_contraction_answers
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-)
-
-target_link_libraries(
-  exercise_contraction_answers
-  PRIVATE
-    tapp-reference
-)
-
-add_test(
-  NAME exercise_contraction_answers
-  COMMAND $<TARGET_FILE:exercise_contraction_answers>
-)
-
-
-add_library(exercise_tucker SHARED)
-
-target_sources(
-  exercise_tucker
-  PUBLIC
-    examples/exercise_tucker/tapp_tucker/exercise_tucker.h
-  PRIVATE
-    examples/exercise_tucker/tapp_tucker/exercise_tucker.c
-)
-
-target_link_libraries(
-  exercise_tucker
-  PRIVATE
-    tapp-reference
-)
-
-
-add_library(exercise_tucker_answers SHARED)
-
-target_sources(
-  exercise_tucker_answers
-  PUBLIC
-    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
-  PRIVATE
-    examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
-)
-
-target_link_libraries(
-  exercise_tucker_answers
-  PRIVATE
-    tapp-reference
-)

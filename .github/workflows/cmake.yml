@@ -166,4 +166,4 @@ jobs:
            ...
         }
         EOF
-        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp ./test++
+        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp ./tapp-reference-test++
