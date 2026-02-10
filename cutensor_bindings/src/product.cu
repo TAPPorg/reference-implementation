@@ -184,10 +184,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     TAPP_attr_get((TAPP_handle)handle_struct, ATTR_KEY_USE_DEVICE_MEMORY, (void*)&use_device_memory);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
     cudaError_t cerr;
-    
+
     void *E_d = nullptr;
     if (do_permutation) {
-        cudaMalloc((void**)&E_d, ((struct product_plan*)plan)->copy_size_D);
+        cerr = cudaMallocAsync((void**)&E_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
     }
     
     if (use_device_memory)
@@ -199,15 +200,19 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     else
     {
-        cudaMalloc((void**)&A_d, ((struct product_plan*)plan)->copy_size_A);
-        cudaMalloc((void**)&B_d, ((struct product_plan*)plan)->copy_size_B);
-        cudaMalloc((void**)&C_d, ((struct product_plan*)plan)->copy_size_C);
-        cudaMalloc((void**)&D_d, ((struct product_plan*)plan)->copy_size_D);
-        cerr = cudaMemcpy(A_d, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&A_d, ((struct product_plan*)plan)->copy_size_A, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(B_d, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&B_d, ((struct product_plan*)plan)->copy_size_B, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(C_d, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&C_d, ((struct product_plan*)plan)->copy_size_C, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMallocAsync((void**)&D_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(A_d, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(B_d, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(C_d, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
         A_d = (void*)((intptr_t)A_d + ((struct product_plan*)plan)->data_offset_A);
         B_d = (void*)((intptr_t)B_d + ((struct product_plan*)plan)->data_offset_B);
@@ -237,7 +242,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     void *contraction_work = nullptr;
     if (contraction_actual_workspace_size > 0)
     {
-        cerr = cudaMalloc(&contraction_work, contraction_actual_workspace_size);
+        cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
         assert(uintptr_t(contraction_work) % 128 == 0);
     }
@@ -288,9 +293,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     if (!use_device_memory)
     {
-        cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return pack_error(0, cerr);
-
         int64_t section_coordinates_D[((struct product_plan*)plan)->sections_nmode_D];
         for (size_t i = 0; i < ((struct product_plan*)plan)->sections_nmode_D; i++)
         {
@@ -300,7 +302,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         for (size_t i = 0; i < ((struct product_plan*)plan)->sections_D; i++)
         {
             int64_t index = compute_index(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_strides_D);
-            cerr = cudaMemcpy((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost);
+            cerr = cudaMemcpyAsync((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
+                (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
+                ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost, *(cudaStream_t*)exec);
             if (cerr != cudaSuccess) return pack_error(0, cerr);
             increment_coordinates(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_extents_D);
         }
@@ -310,10 +314,22 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         C_d = (void*)((intptr_t)C_d - ((struct product_plan*)plan)->data_offset_C);
         D_d = (void*)((intptr_t)D_d - ((struct product_plan*)plan)->data_offset_D);
 
-        if (A_d) cudaFree(A_d);
-        if (B_d) cudaFree(B_d);
-        if (C_d) cudaFree(C_d);
-        if (D_d) cudaFree(D_d);
+        if (A_d) { 
+            cerr = cudaFreeAsync(A_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (B_d) {
+            cerr = cudaFreeAsync(B_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (C_d) { 
+            cerr = cudaFreeAsync(C_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (D_d) {
+            cerr = cudaFreeAsync(D_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
     }
 
     if (E_d)
@@ -322,9 +338,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         {
             E_d = (void*)((intptr_t)E_d - ((struct product_plan*)plan)->data_offset_D);
         }
-        cudaFree(E_d);
+        cerr = cudaFreeAsync(E_d, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
     }
-    if (contraction_work) cudaFree(contraction_work);
+    if (contraction_work) {
+        cerr = cudaFreeAsync(contraction_work, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+    }
 
     return pack_error(0, err); 
 }
