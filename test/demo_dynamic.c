@@ -279,8 +279,8 @@ void contraction(struct imp imp)
     imp.TAPP_destroy_tensor_info(info_B);
     imp.TAPP_destroy_tensor_info(info_C);
     imp.TAPP_destroy_tensor_info(info_D);
-    // imp.TAPP_destroy_executor(exec);
-    // imp.TAPP_destroy_handle(handle);
+    imp.TAPP_destroy_executor(exec);
+    imp.TAPP_destroy_handle(handle);
 }
 
 void hadamard(struct imp imp)
