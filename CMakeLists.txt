@@ -203,6 +203,14 @@ if(BUILD_TESTING)
       test/helpers.h
       src/tapp/tapp_ex_imp.h
   )
+  
+  target_include_directories(
+    tapp-reference-demo-dynamic
+    PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+    PRIVATE
+      ${CUTENSOR_INCLUDE_DIR}
+  )
 
   target_link_libraries(
     tapp-reference-demo-dynamic
@@ -224,32 +232,34 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # test using dynamic library
 
-  add_executable(tapp-reference-test-dynamic)
+    add_executable(tapp-reference-test-dynamic)
 
-  target_sources(
-    tapp-reference-test-dynamic
-    PRIVATE
-      test/test_dynamic.cpp
-      test/test_dynamic.h
-      src/tapp/tapp_ex_imp.h
-  )
-
-  target_link_libraries(
-    tapp-reference-test-dynamic
-    PRIVATE
-      ${CMAKE_DL_LIBS}
-  )
-
-  target_include_directories(
-    tapp-reference-test-dynamic
-    PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/api/include
-  )
-
-  add_test(
-    NAME tapp-reference-test-dynamic
-    COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
-  )
+    target_sources(
+      tapp-reference-test-dynamic
+      PRIVATE
+        test/test_dynamic.cpp
+        test/test_dynamic.h
+        src/tapp/tapp_ex_imp.h
+    )
+    
+    target_include_directories(
+      tapp-reference-test-dynamic
+      PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+      PRIVATE
+        ${CUTENSOR_INCLUDE_DIR}
+    )
+    
+    add_test(
+      NAME tapp-reference-test-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
+    )
+    
+    target_link_libraries(
+      tapp-reference-test-dynamic
+      PRIVATE
+        ${CMAKE_DL_LIBS}
+    )
 
   endif()
 

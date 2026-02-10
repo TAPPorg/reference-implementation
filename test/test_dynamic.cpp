@@ -8,6 +8,12 @@
 
 unsigned int current_rand_seed = 0;
 
+// TODO include ATTR_KEY_USE_DEVICE_MEMORY from cutensor_bindings attributes header
+bool use_device_memory = false; // Global variable to control device memory usage in tests
+inline void set_use_device_memory(struct imp& implementation, TAPP_handle handle) {
+    implementation.TAPP_attr_set(handle, 0, (void*)&use_device_memory);
+}
+
 auto& rand_engine() {
     static std::mt19937 engine(current_rand_seed);
     return engine;
@@ -1179,6 +1185,7 @@ bool test_hadamard_product(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1275,6 +1282,7 @@ bool test_contraction(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1375,6 +1383,7 @@ bool test_commutativity(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1483,6 +1492,7 @@ bool test_permutations(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1585,6 +1595,7 @@ bool test_equal_extents(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1681,6 +1692,7 @@ bool test_outer_product(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1777,6 +1789,7 @@ bool test_full_contraction(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1873,6 +1886,7 @@ bool test_zero_dim_tensor_contraction(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -1969,6 +1983,7 @@ bool test_one_dim_tensor_contraction(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2065,6 +2080,7 @@ bool test_subtensor_same_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2161,6 +2177,7 @@ bool test_subtensor_lower_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2257,6 +2274,7 @@ bool test_negative_strides(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2353,6 +2371,7 @@ bool test_negative_strides_subtensor_same_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2449,6 +2468,7 @@ bool test_negative_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2545,6 +2565,7 @@ bool test_mixed_strides(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2641,6 +2662,7 @@ bool test_mixed_strides_subtensor_same_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2737,6 +2759,7 @@ bool test_mixed_strides_subtensor_lower_idx(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -2833,6 +2856,7 @@ bool test_contraction_double_precision(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F64, nmode_A, extents_A, strides_A);
@@ -2929,6 +2953,7 @@ bool test_contraction_complex(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
     
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_C32, nmode_A, extents_A, strides_A);
@@ -3025,6 +3050,7 @@ bool test_contraction_complex_double_precision(struct imp impA, struct imp impB)
 
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_C64, nmode_A, extents_A, strides_A);
@@ -3129,6 +3155,7 @@ bool test_zero_stride(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3321,6 +3348,7 @@ bool test_repeated_idx(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3417,6 +3445,7 @@ bool test_hadamard_and_free(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3514,6 +3543,7 @@ bool test_hadamard_and_contraction(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3633,6 +3663,7 @@ bool test_error_too_many_idx_D(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3758,6 +3789,7 @@ bool test_error_non_matching_ext(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3884,6 +3916,7 @@ bool test_error_C_other_structure(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
@@ -3979,6 +4012,7 @@ bool test_error_aliasing_within_D(struct imp impA, struct imp impB)
     
     TAPP_handle handle_B;
     impB.TAPP_create_handle(&handle_B);
+    set_use_device_memory(impB, handle_B);
 
     TAPP_tensor_info info_A_A;
     impA.TAPP_create_tensor_info(&info_A_A, handle_A, TAPP_F32, nmode_A, extents_A, strides_A);
