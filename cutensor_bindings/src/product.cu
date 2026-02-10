@@ -286,11 +286,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(perm_scalar_ptr);
     }
 
-    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
-
     if (!use_device_memory)
     {
+        cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+
         int64_t section_coordinates_D[((struct product_plan*)plan)->sections_nmode_D];
         for (size_t i = 0; i < ((struct product_plan*)plan)->sections_nmode_D; i++)
         {
