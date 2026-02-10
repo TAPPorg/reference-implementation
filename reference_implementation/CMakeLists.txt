@@ -100,6 +100,4 @@ install(TARGETS tapp-reference EXPORT tapp
         LIBRARY DESTINATION "${TAPP_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${TAPP_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${TAPP_INSTALL_BINDIR}")
-install(DIRECTORY include/
-        COMPONENT reference
-        DESTINATION "${TAPP_INSTALL_INCLUDEDIR}")
+# N.B. no headers need to be installed! Can use API headers directly
