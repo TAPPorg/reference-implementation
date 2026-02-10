@@ -16,9 +16,13 @@ endif()
 
 # component checking
 set(_tapp_supported_components api reference)
-# if no components requested, default to reference (which pulls in api transitively)
+# if no components requested, default to all available components
 if(NOT tapp_FIND_COMPONENTS)
-  set(tapp_FIND_COMPONENTS reference)
+  foreach(_comp ${_tapp_supported_components})
+    if(TARGET tapp::${_comp})
+      list(APPEND tapp_FIND_COMPONENTS ${_comp})
+    endif()
+  endforeach()
 endif()
 
 foreach(_comp ${tapp_FIND_COMPONENTS})
