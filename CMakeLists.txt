@@ -306,6 +306,8 @@ if(BUILD_TESTING)
       tapp-reference-demo-dynamic
       PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+      PRIVATE
+        ${CUTENSOR_INCLUDE_DIR}
     )
 
     add_test(
@@ -336,6 +338,8 @@ if(BUILD_TESTING)
       tapp-reference-test-dynamic
       PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/api/include
+      PRIVATE
+        ${CUTENSOR_INCLUDE_DIR}
     )
     
     add_test(

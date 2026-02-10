@@ -17,7 +17,7 @@ struct imp
 {
     void* handle;
     TAPP_error (*TAPP_attr_set)(TAPP_attr attr, TAPP_key key, void* value);
-    TAPP_error (*TAPP_attr_get)(TAPP_attr attr, TAPP_key key, void** value);
+    TAPP_error (*TAPP_attr_get)(TAPP_attr attr, TAPP_key key, void* value);
     TAPP_error (*TAPP_attr_clear)(TAPP_attr attr, TAPP_key key);
     bool (*TAPP_check_success)(TAPP_error error);
     size_t (*TAPP_explain_error)(TAPP_error error, size_t maxlen, char* message);
@@ -279,8 +279,8 @@ void contraction(struct imp imp)
     imp.TAPP_destroy_tensor_info(info_B);
     imp.TAPP_destroy_tensor_info(info_C);
     imp.TAPP_destroy_tensor_info(info_D);
-    imp.TAPP_destroy_executor(exec);
-    imp.TAPP_destroy_handle(handle);
+    // imp.TAPP_destroy_executor(exec);
+    // imp.TAPP_destroy_handle(handle);
 }
 
 void hadamard(struct imp imp)
