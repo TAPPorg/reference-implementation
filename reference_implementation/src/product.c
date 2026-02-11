@@ -3,14 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "ref_impl.h"
-#include <complex.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#ifdef TAPP_REFERENCE_ENABLE_TBLIS
-#include "tblis_bind.h"
-#endif
+#include "../include/product.h"
 
 int extract_binary_contractions_indices(int nmode_A, int nmode_B, int nmode_D, const int64_t* idx_A, const int64_t* idx_B, const int64_t* idx_D, int64_t** idx_contraction_ptr);
 int extract_unary_contracted_indices(int nmode, int64_t* idx, int nmode_1, int64_t* idx_1, int nmode_2, int64_t* idx_2, int64_t** idx_unary_contractions_ptr);

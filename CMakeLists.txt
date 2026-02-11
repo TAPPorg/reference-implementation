@@ -61,12 +61,16 @@ add_library(tapp-reference SHARED)
 target_sources(
   tapp-reference
   PRIVATE
-    reference_implementation/include/ref_impl.h
     reference_implementation/src/error.c
     reference_implementation/src/executor.c
     reference_implementation/src/handle.c
     reference_implementation/src/tensor.c
     reference_implementation/src/product.c
+    reference_implementation/include/error.h
+    reference_implementation/include/executor.h
+    reference_implementation/include/handle.h
+    reference_implementation/include/tensor.h
+    reference_implementation/include/product.h
   )
 
 set_property(

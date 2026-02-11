@@ -3,8 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - September 2024
  */
-#include "ref_impl.h"
-#include <stdlib.h>
+#include "../include/handle.h"
 
 TAPP_error TAPP_create_handle(TAPP_handle* handle) {
     *handle = (TAPP_handle)malloc(sizeof(TAPP_handle));

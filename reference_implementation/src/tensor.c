@@ -3,10 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "ref_impl.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "../include/tensor.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_datatype type,

@@ -3,8 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - October 2024
  */
-#include "ref_impl.h"
-#include <string.h>
+#include "../include/error.h"
 
 
 bool TAPP_check_success(TAPP_error error) {
