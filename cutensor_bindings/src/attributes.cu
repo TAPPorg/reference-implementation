@@ -15,7 +15,7 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
     return 0;
 }
 
-TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void* value)
+TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
 {
     struct handle* handle_struct = (struct handle*) attr;
     switch (key)
