@@ -3167,17 +3167,21 @@ bool test_error_non_matching_ext()
     TAPP_tensor_product plan;
     TAPP_handle handle;
     TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    int error_status;
+    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
     TAPP_create_executor(&exec);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    if (error_status == 0)
+    {
+        error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+        TAPP_destroy_tensor_product(plan);
+    }
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
@@ -3259,17 +3263,21 @@ bool test_error_C_other_structure()
     TAPP_tensor_product plan;
     TAPP_handle handle;
     TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    int error_status;
+    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
     TAPP_create_executor(&exec);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    if (error_status == 0)
+    {
+        error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+        TAPP_destroy_tensor_product(plan);
+    }
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
@@ -3320,17 +3328,21 @@ bool test_error_aliasing_within_D()
     TAPP_tensor_product plan;
     TAPP_handle handle;
     TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    int error_status;
+    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
     TAPP_create_executor(&exec);
 
-    int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+    if (error_status == 0)
+    {
+        error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
+        TAPP_destroy_tensor_product(plan);
+    }
 
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
