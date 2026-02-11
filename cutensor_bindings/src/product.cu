@@ -1,5 +1,4 @@
 #include "../include/product.h"
-#include "../include/attributes.h"
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
@@ -180,8 +179,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 {
     void *A_d, *B_d, *C_d, *D_d;
     struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
-    bool use_device_memory;
-    TAPP_attr_get((TAPP_handle)handle_struct, ATTR_KEY_USE_DEVICE_MEMORY, (void*)&use_device_memory);
+    bool use_device_memory = *(bool*)((handle_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
     cudaError_t cerr;
 

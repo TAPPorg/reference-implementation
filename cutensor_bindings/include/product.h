@@ -12,6 +12,7 @@
 #include "error.h"
 #include "handle.h"
 #include "tensor.h"
+#include "attributes.h"
 
 struct product_plan
 {
