@@ -115,6 +115,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     plan_struct->section_strides_D = new int64_t[TAPP_get_nmodes(D)];
     plan_struct->section_extents_D = new int64_t[TAPP_get_nmodes(D)];
     plan_struct->type_D = ((struct tensor_info*)D)->type;
+    plan_struct->op_D = op_D;
     int64_t sorted_strides_D[TAPP_get_nmodes(D)];
     memcpy(sorted_strides_D, ((struct tensor_info*)D)->strides, TAPP_get_nmodes(D) * sizeof(int64_t));
     auto compare = [](int64_t a, int64_t b) { return std::abs(a) < std::abs(b); };
@@ -176,11 +177,18 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* C,
                                       void* D)
 {
-    void *A_d, *B_d, *C_d, *D_d, *E_d;
+    void *A_d, *B_d, *C_d, *D_d;
     struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
-    bool use_device_memory = *(bool*)((handle_struct->attributes)[0]);
+    bool use_device_memory = *(bool*)((handle_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
+    const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
     cudaError_t cerr;
-    cudaMalloc((void**)&E_d, ((struct product_plan*)plan)->copy_size_D);
+
+    void *E_d = nullptr;
+    if (do_permutation) {
+        cerr = cudaMallocAsync((void**)&E_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+    }
+    
     if (use_device_memory)
     {
         A_d = (void*)A;
@@ -190,21 +198,27 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     else
     {
-        cudaMalloc((void**)&A_d, ((struct product_plan*)plan)->copy_size_A);
-        cudaMalloc((void**)&B_d, ((struct product_plan*)plan)->copy_size_B);
-        cudaMalloc((void**)&C_d, ((struct product_plan*)plan)->copy_size_C);
-        cudaMalloc((void**)&D_d, ((struct product_plan*)plan)->copy_size_D);
-        cerr = cudaMemcpy(A_d, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&A_d, ((struct product_plan*)plan)->copy_size_A, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(B_d, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&B_d, ((struct product_plan*)plan)->copy_size_B, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(C_d, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice);
+        cerr = cudaMallocAsync((void**)&C_d, ((struct product_plan*)plan)->copy_size_C, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMallocAsync((void**)&D_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(A_d, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(B_d, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMemcpyAsync(C_d, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
         A_d = (void*)((intptr_t)A_d + ((struct product_plan*)plan)->data_offset_A);
         B_d = (void*)((intptr_t)B_d + ((struct product_plan*)plan)->data_offset_B);
         C_d = (void*)((intptr_t)C_d + ((struct product_plan*)plan)->data_offset_C);
         D_d = (void*)((intptr_t)D_d + ((struct product_plan*)plan)->data_offset_D);
-        E_d = (void*)((intptr_t)E_d + ((struct product_plan*)plan)->data_offset_D);
+        if (do_permutation) {
+            E_d = (void*)((intptr_t)E_d + ((struct product_plan*)plan)->data_offset_D);
+        }
         assert(uintptr_t(A_d) % 128 == 0);
         assert(uintptr_t(B_d) % 128 == 0);
         assert(uintptr_t(C_d) % 128 == 0);
@@ -220,57 +234,60 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 sizeof(contraction_actual_workspace_size));
     if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
 
+    // TODO Recommended minimum 128 MB workspace 
+    // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
+    // contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB
     void *contraction_work = nullptr;
     if (contraction_actual_workspace_size > 0)
     {
-        cerr = cudaMalloc(&contraction_work, contraction_actual_workspace_size);
+        cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
         if (cerr != cudaSuccess) return pack_error(0, cerr);
         assert(uintptr_t(contraction_work) % 128 == 0);
     }
 
-    cutensorPlan_t* permutation_plan = ((struct product_plan*) plan)->permutation_plan;
-
-    void* perm_scalar_ptr = NULL;
-
-    if (((struct product_plan*)plan)->type_D == TAPP_F32)
-    {
-        perm_scalar_ptr = malloc(sizeof(float));
-        *(float*)perm_scalar_ptr = 1.0f;
-    }
-    else if (((struct product_plan*)plan)->type_D == TAPP_F64)
-    {
-        perm_scalar_ptr = malloc(sizeof(double));
-        *(double*)perm_scalar_ptr = 1.0;
-    }
-    else if (((struct product_plan*)plan)->type_D == TAPP_C32)
-    {
-        perm_scalar_ptr = malloc(sizeof(std::complex<float>));
-        *(std::complex<float>*)perm_scalar_ptr = 1.0f;
-    }
-    else if (((struct product_plan*)plan)->type_D == TAPP_C64)
-    {
-        perm_scalar_ptr = malloc(sizeof(std::complex<double>));
-        *(std::complex<double>*)perm_scalar_ptr = 1.0;
-    }
-
+    void* contraction_output = do_permutation ? E_d : D_d;
     err = cutensorContract(*handle_struct->libhandle,
                 *contraction_plan,
                 alpha, A_d, B_d,
-                beta,  C_d, E_d, 
+                beta,  C_d, contraction_output, 
                 contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
     if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
 
-    err = cutensorPermute(*handle_struct->libhandle,
-                *permutation_plan,
-                perm_scalar_ptr,
-                E_d,
-                D_d,
-                *(cudaStream_t*)exec);
-    if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
+    if (do_permutation)
+    {
+        cutensorPlan_t* permutation_plan = ((struct product_plan*) plan)->permutation_plan;
+        void* perm_scalar_ptr = NULL;
 
-    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
+        if (((struct product_plan*)plan)->type_D == TAPP_F32)
+        {
+            perm_scalar_ptr = malloc(sizeof(float));
+            *(float*)perm_scalar_ptr = 1.0f;
+        }
+        else if (((struct product_plan*)plan)->type_D == TAPP_F64)
+        {
+            perm_scalar_ptr = malloc(sizeof(double));
+            *(double*)perm_scalar_ptr = 1.0;
+        }
+        else if (((struct product_plan*)plan)->type_D == TAPP_C32)
+        {
+            perm_scalar_ptr = malloc(sizeof(std::complex<float>));
+            *(std::complex<float>*)perm_scalar_ptr = 1.0f;
+        }
+        else if (((struct product_plan*)plan)->type_D == TAPP_C64)
+        {
+            perm_scalar_ptr = malloc(sizeof(std::complex<double>));
+            *(std::complex<double>*)perm_scalar_ptr = 1.0;
+        }
 
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
+        err = cutensorPermute(*handle_struct->libhandle,
+                    *permutation_plan,
+                    perm_scalar_ptr,
+                    E_d,
+                    D_d,
+                    *(cudaStream_t*)exec);
+        if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
+        free(perm_scalar_ptr);
+    }
 
     if (!use_device_memory)
     {
@@ -283,7 +300,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         for (size_t i = 0; i < ((struct product_plan*)plan)->sections_D; i++)
         {
             int64_t index = compute_index(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_strides_D);
-            cerr = cudaMemcpy((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost);
+            cerr = cudaMemcpyAsync((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
+                (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
+                ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost, *(cudaStream_t*)exec);
             if (cerr != cudaSuccess) return pack_error(0, cerr);
             increment_coordinates(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_extents_D);
         }
@@ -293,15 +312,37 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         C_d = (void*)((intptr_t)C_d - ((struct product_plan*)plan)->data_offset_C);
         D_d = (void*)((intptr_t)D_d - ((struct product_plan*)plan)->data_offset_D);
 
-        if (A_d) cudaFree(A_d);
-        if (B_d) cudaFree(B_d);
-        if (C_d) cudaFree(C_d);
-        if (D_d) cudaFree(D_d);
+        if (A_d) { 
+            cerr = cudaFreeAsync(A_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (B_d) {
+            cerr = cudaFreeAsync(B_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (C_d) { 
+            cerr = cudaFreeAsync(C_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
+        if (D_d) {
+            cerr = cudaFreeAsync(D_d, *(cudaStream_t*)exec);
+            if (cerr != cudaSuccess) return pack_error(0, cerr);
+        }
     }
 
-    if (E_d) cudaFree(E_d);
-    if (contraction_work) cudaFree(contraction_work);
-    free(perm_scalar_ptr);
+    if (E_d)
+    {
+        if (!use_device_memory)
+        {
+            E_d = (void*)((intptr_t)E_d - ((struct product_plan*)plan)->data_offset_D);
+        }
+        cerr = cudaFreeAsync(E_d, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+    }
+    if (contraction_work) {
+        cerr = cudaFreeAsync(contraction_work, *(cudaStream_t*)exec);
+        if (cerr != cudaSuccess) return pack_error(0, cerr);
+    }
 
     return pack_error(0, err); 
 }
