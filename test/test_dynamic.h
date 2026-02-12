@@ -111,25 +111,25 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
                                                                                  bool negative_strides_enabled = false, bool mixed_strides_enabled = false,
                                                                                  bool hadamard_indices_enabled = false, bool hadamard_only = false,
                                                                                  bool repeated_indices_enabled = false, bool isolated_indices_enabled = false);
-std::tuple<int, int, int, int,
+std::tuple<int, int, int,
            int, int, int, int,
            int, int, int, int> generate_index_configuration(int nmode_A = -1, int nmode_B = -1, int nmode_D = -1,
                                                             int contracted_indices = -1, int hadamard_indices = -1,
                                                             bool hadamard_only = false, bool hadamard_indices_enabled = false,
                                                             bool isolated_indices_enabled = false, bool repeated_indices_enabled = false);
 int* generate_unique_indices(int64_t total_unique_indices);
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
-                                                                  int contracted_modes, int hadamard_modes,
-                                                                  int free_indices_A, int free_indices_B,
-                                                                  int isolated_indices_A, int isolated_indices_B,
-                                                                  int repeated_indices_A, int repeated_indices_B);
+std::tuple<int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
+                                                        int contracted_modes, int hadamard_modes,
+                                                        int free_indices_A, int free_indices_B,
+                                                        int isolated_indices_A, int isolated_indices_B,
+                                                        int repeated_indices_A, int repeated_indices_B);
 std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
                                                            bool equal_extents_only,
                                                            int64_t total_unique_indices, int* unique_indices);
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
-                                                                  int nmode_A, int64_t* idx_A,
-                                                                  int nmode_B, int64_t* idx_B,
-                                                                  int nmode_D, int64_t* idx_D);
+std::tuple<int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
+                                                        int nmode_A, int64_t* idx_A,
+                                                        int nmode_B, int64_t* idx_B,
+                                                        int nmode_D, int64_t* idx_D);
 int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str);
 bool* choose_subtensor_dims(int nmode, int outer_nmode);
 int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents);
