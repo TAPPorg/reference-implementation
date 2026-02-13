@@ -1,6 +1,3 @@
-# cuTENSOR discovery
-find_package(CUDAToolkit REQUIRED)
-
 # cuTENSOR is not part of the CUDA toolkit; look for it separately
 if(NOT TARGET cutensor::cutensor)
   find_path(CUTENSOR_INCLUDE_DIR
@@ -22,7 +19,7 @@ if(NOT TARGET cutensor::cutensor)
   message(STATUS "Found cuTENSOR: ${CUTENSOR_LIBRARY}")
   message(STATUS "cuTENSOR include: ${CUTENSOR_INCLUDE_DIR}")
 
-  add_library(cutensor::cutensor UNKNOWN IMPORTED)
+  add_library(cutensor::cutensor UNKNOWN IMPORTED GLOBAL)
   set_target_properties(cutensor::cutensor PROPERTIES
     IMPORTED_LOCATION "${CUTENSOR_LIBRARY}"
     INTERFACE_INCLUDE_DIRECTORIES "${CUTENSOR_INCLUDE_DIR}"
@@ -32,6 +29,11 @@ endif()
 add_library(tapp-cutensor SHARED)
 set_property(TARGET tapp-cutensor PROPERTY EXPORT_NAME cutensor)
 add_library(tapp::cutensor ALIAS tapp-cutensor)
+target_link_libraries(
+        cutensor::cutensor
+        INTERFACE
+        CUDA::cudart
+)
 
 target_sources(tapp-cutensor
   PRIVATE

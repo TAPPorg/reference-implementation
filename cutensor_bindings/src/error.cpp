@@ -1,5 +1,7 @@
 #include "../include/error.h"
 
+#include <cstring>
+
 // pack multiple types of error codes into one int
 constexpr int TAPP_BITS   = 5;
 constexpr int CUTENSOR_BITS = 9;

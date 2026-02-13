@@ -4,13 +4,15 @@
  * Umeå University - December 2025
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <complex>
-#include <cuda_runtime.h>
-#include <cutensor.h>
-#include <assert.h>
 #include <tapp.h>
+
+#include <cuda_runtime.h>
+
+#include <cstdlib>
+#include <cstdio>
+#include <complex>
+#include <cassert>
+
 extern "C" {
     #include "helpers.h"
 }

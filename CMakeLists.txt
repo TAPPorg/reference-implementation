@@ -75,9 +75,7 @@ add_subdirectory(reference_implementation)
 # cutensor bindings
 option(TAPP_CUTENSOR "Build cuTensor bindings" OFF)
 if (TAPP_CUTENSOR)
-  if(CMAKE_VERSION VERSION_LESS 3.17)
-    message(FATAL_ERROR "TAPP_CUTENSOR requires CMake 3.17+")
-  endif()
+  # enable_language must be called at the top level
   include(CheckLanguage)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
@@ -85,6 +83,10 @@ if (TAPP_CUTENSOR)
   else()
     message(FATAL_ERROR "Cannot build cuTENSOR bindings due to missing CXX language support")
   endif()
+  # since CUDAToolkit will be needed in tests/ also, load it here
+  cmake_minimum_required(VERSION 3.17) # CUDAToolkit
+  find_package(CUDAToolkit REQUIRED)
+
   add_subdirectory(cutensor_bindings)
 endif()
 
@@ -173,9 +175,8 @@ if(BUILD_TESTING)
     target_link_libraries(
       tapp-reference-cutensor-demo
       PRIVATE
-        tapp-cutensor
+        tapp::cutensor
         CUDA::cudart
-        cutensor::cutensor
     )
 
     target_include_directories(
