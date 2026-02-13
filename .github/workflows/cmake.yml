@@ -53,7 +53,7 @@ jobs:
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
-        -DTAPP_REFERENCE_ENABLE_TBLIS=ON
+        -DTAPP_REFERENCE_ENABLE_TBLIS=${{ !matrix.valgrind }}
         -DTAPP_REFERENCE_BUILD_CUTENSOR_BINDS=${{ matrix.cuda && 'ON' || 'OFF' }}
 
     steps:
@@ -84,14 +84,6 @@ jobs:
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{github.workspace}}/build
-
-    - name: Set sanitizer flags
-      if: ${{ matrix.sanitize }}
-      shell: bash
-      run: |
-        if [[ '${{ matrix.sanitize }}' = 'true' ]]; then
-          echo "CXXFLAGS=${{ matrix.sanitize_flags }}" >> "$GITHUB_ENV"
-        fi
 
     - name: Install prerequisite MacOS packages
       if: ${{ startsWith(matrix.os, 'macos') }}
@@ -127,14 +119,19 @@ jobs:
         restore-keys: |
           ${{ matrix.config.name }}-ccache-
     - name: Configure CMake
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
       shell: bash
       working-directory: ${{github.workspace}}/build
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BUILD_CONFIG
+      # Pass sanitizer flags via CMAKE_{C,CXX}_FLAGS (not CFLAGS/CXXFLAGS env vars)
+      # to prevent them from leaking into BLIS's autotools build via the environment
+      run: |
+        cmake_args=($BUILD_CONFIG)
+        if [[ "${{ matrix.sanitize }}" == "true" ]]; then
+          cmake_args+=(
+            "-DCMAKE_C_FLAGS=${{ matrix.sanitize_flags }}"
+            "-DCMAKE_CXX_FLAGS=${{ matrix.sanitize_flags }}"
+          )
+        fi
+        cmake $GITHUB_WORKSPACE "${cmake_args[@]}"
 
 
     - name: Build
@@ -154,16 +151,32 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: |
-        cat > tblis.supp << 'EOF'
-        # Suppress uninitialized value errors in TBLIS/BLIS packm functions
-        # These occur in architecture-specific packing code (zen3, haswell, etc.)
-        # and appear to be false positives in the BLIS library
-        {
-           tblis_packm_bsmtc_uninit
-           Memcheck:Cond
-           ...
-           fun:*tblis*packm*bsmtc*
-           ...
-        }
-        EOF
-        valgrind --error-exitcode=1 --leak-check=full --suppressions=tblis.supp ./tapp-reference-test++
+        valgrind --error-exitcode=1 --leak-check=full ./tapp-reference-demo
+        valgrind --error-exitcode=1 --leak-check=full ./tapp-reference-driver
+
+    - name: Consume from build tree
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: |
+        cmake -S $GITHUB_WORKSPACE/test/consume -B ${{github.workspace}}/consume-build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -Dtapp_DIR=${{github.workspace}}/build
+        cmake --build ${{github.workspace}}/consume-build
+        ctest --test-dir ${{github.workspace}}/consume-build --output-on-failure
+
+    - name: Install
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
+
+    - name: Consume from install tree
+      if: ${{ !matrix.valgrind && !matrix.sanitize }}
+      shell: bash
+      run: |
+        cmake -S $GITHUB_WORKSPACE/test/consume -B ${{github.workspace}}/consume-install \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_PREFIX_PATH=${{github.workspace}}/install
+        cmake --build ${{github.workspace}}/consume-install
+        ctest --test-dir ${{github.workspace}}/consume-install --output-on-failure

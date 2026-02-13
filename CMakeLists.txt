@@ -3,21 +3,21 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
 # see https://semver.org/
-set (TAPP_REFERENCE_MAJOR_VERSION 0)
-set (TAPP_REFERENCE_MINOR_VERSION 5)
-set (TAPP_REFERENCE_PATCH_VERSION 0)
-set (TAPP_REFERENCE_PRERELEASE_ID )
-set (TAPP_REFERENCE_BUILD_ID )
+set (TAPP_MAJOR_VERSION 0)
+set (TAPP_MINOR_VERSION 5)
+set (TAPP_PATCH_VERSION 0)
+set (TAPP_PRERELEASE_ID )
+set (TAPP_BUILD_ID )
 
-set(TAPP_REFERENCE_VERSION "${TAPP_REFERENCE_MAJOR_VERSION}.${TAPP_REFERENCE_MINOR_VERSION}.${TAPP_REFERENCE_PATCH_VERSION}")
-if (TAPP_REFERENCE_PRERELEASE_ID)
-  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}-${TAPP_REFERENCE_PRERELEASE_ID}")
-else(TAPP_REFERENCE_PRERELEASE_ID)
-  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_VERSION}")
-endif(TAPP_REFERENCE_PRERELEASE_ID)
-if (TAPP_REFERENCE_BUILD_ID)
-  set(TAPP_REFERENCE_EXT_VERSION "${TAPP_REFERENCE_EXT_VERSION}+${TAPP_REFERENCE_BUILD_ID}")
-endif(TAPP_REFERENCE_BUILD_ID)
+set(TAPP_VERSION "${TAPP_MAJOR_VERSION}.${TAPP_MINOR_VERSION}.${TAPP_PATCH_VERSION}")
+if (TAPP_PRERELEASE_ID)
+  set(TAPP_EXT_VERSION "${TAPP_VERSION}-${TAPP_PRERELEASE_ID}")
+else(TAPP_PRERELEASE_ID)
+  set(TAPP_EXT_VERSION "${TAPP_VERSION}")
+endif(TAPP_PRERELEASE_ID)
+if (TAPP_BUILD_ID)
+  set(TAPP_EXT_VERSION "${TAPP_EXT_VERSION}+${TAPP_BUILD_ID}")
+endif(TAPP_BUILD_ID)
 
 # Extract the git revision tag information
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
@@ -25,86 +25,22 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   execute_process(
           COMMAND ${GIT_EXECUTABLE} rev-parse -q HEAD
           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-          OUTPUT_VARIABLE TAPP_REFERENCE_REVISION )
+          OUTPUT_VARIABLE TAPP_REVISION )
   string(REGEX MATCH "[0-9a-f]*"
-          TAPP_REFERENCE_REVISION "${TAPP_REFERENCE_REVISION}")
+          TAPP_REVISION "${TAPP_REVISION}")
 else()
-  set(TAPP_REFERENCE_REVISION "unknown")
+  set(TAPP_REVISION "unknown")
 endif()
 
-project(tapp-reference
-        VERSION ${TAPP_REFERENCE_VERSION}
-        DESCRIPTION "Reference Implementation of TAPP (Tensor Algebra Processing Primitives)"
+project(tapp
+        VERSION ${TAPP_VERSION}
+        DESCRIPTION "TAPP (Tensor Algebra Processing Primitives)"
         LANGUAGES C
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
-include(GNUInstallDirs)
-
-set(TAPP_REFERENCE_INSTALL_BINDIR "bin"
-        CACHE PATH "TAPP REFERENCE binary install directory")
-set(TAPP_REFERENCE_INSTALL_INCLUDEDIR "include"
-        CACHE PATH "TAPP REFERENCE INCLUDE install directory")
-set(TAPP_REFERENCE_INSTALL_LIBDIR "lib"
-        CACHE PATH "TAPP REFERENCE LIB install directory")
-set(TAPP_REFERENCE_INSTALL_DATADIR "share/mpqc/${TAPP_REFERENCE_EXT_VERSION}/data"
-        CACHE PATH "TAPP REFERENCE DATA install directory")
-set(TAPP_REFERENCE_INSTALL_DOCDIR "share/tapp/${TAPP_REFERENCE_EXT_VERSION}/doc"
-        CACHE PATH "TAPP REFERENCE DOC install directory")
-set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
-        CACHE PATH "TAPP REFERENCE CMAKE install directory")
-
-# this provides tapp-api target
-add_subdirectory(api)
-
-add_library(tapp-reference SHARED)
-
-target_sources(
-  tapp-reference
-  PRIVATE
-    reference_implementation/include/ref_impl.h
-    reference_implementation/src/error.c
-    reference_implementation/src/executor.c
-    reference_implementation/src/handle.c
-    reference_implementation/src/tensor.c
-    reference_implementation/src/product.c
-  )
-
-set_property(
-   TARGET tapp-reference
-   PROPERTY
-     C_STANDARD 99
-     C_STANDARD_REQUIRED YES
-     C_EXTENSIONS NO
-)
-
-target_include_directories(
-  tapp-reference
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/reference_implementation/include
-)
-if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
-  target_link_options(tapp-reference PRIVATE "-undefined;dynamic_lookup")
-endif()
-
-target_link_libraries(tapp-reference PUBLIC tapp-api)
-
-option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings." OFF)
-option(TAPP_REFERENCE_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
-option(TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS "Build CuTensor bindings and dependent executables." OFF)
-
-option(TAPP_REFERENCE_ENABLE_F16 "Turn on F16 support" OFF)
-option(TAPP_REFERENCE_ENABLE_BF16 "Turn on BF16 support" OFF)
-
-if(TAPP_REFERENCE_ENABLE_F16)
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_F16=1)
-endif()
-
-if(TAPP_REFERENCE_ENABLE_BF16)
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_BF16=1)
-endif()
-
+# TBLIS requires CXX; enable_language must be called at the top level
+option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
 if(TAPP_REFERENCE_ENABLE_TBLIS)
-
   include(CheckLanguage)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
@@ -112,70 +48,34 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
   else()
     message(FATAL_ERROR "Cannot build TBLIS as part of TAPP due to missing CXX language support; ensure that the CXX compiler can be discovered")
   endif()
-
-  set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
-  # Option to provide custom path to tblis source
-  set(TAPP_REFERENCE_TBLIS_SOURCE_DIR "" CACHE PATH "Path to existing tblis source directory (if empty, will default to fetching from GitHub)")
-
-  if(TAPP_REFERENCE_TBLIS_SOURCE_DIR)
-    # Use user-provided tblis source directory
-    if(NOT EXISTS "${TAPP_REFERENCE_TBLIS_SOURCE_DIR}/CMakeLists.txt")
-      message(FATAL_ERROR "TAPP_REFERENCE_TBLIS_SOURCE_DIR is set to '${TAPP_REFERENCE_TBLIS_SOURCE_DIR}' but no CMakeLists.txt found there")
-    endif()
-    message(STATUS "Using tblis from: ${TAPP_REFERENCE_TBLIS_SOURCE_DIR}")
-    add_subdirectory(${TAPP_REFERENCE_TBLIS_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis-build)
-  else()
-    # Fetch tblis from GitHub
-    include(FetchContent)
-
-    FetchContent_Declare(
-      tblis
-      GIT_REPOSITORY https://github.com/devinamatthews/tblis.git
-      GIT_TAG 9b95712
-      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_deps/tblis
-      UPDATE_DISCONNECTED TRUE
-    )
-
-    FetchContent_MakeAvailable(tblis)
-  endif()
-
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
-
-  target_sources(
-  tapp-reference
-  PRIVATE
-    tblis_bindings/tblis_bind.h
-    tblis_bindings/tblis_bind.cpp
-  )
-  set_property(
-          TARGET tapp-reference
-          PROPERTY
-          CXX_STANDARD 20
-          CXX_STANDARD_REQUIRED YES
-          CXX_EXTENSIONS NO
-  )
-  target_include_directories(
-  tapp-reference
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
-  )
-
-  # ----------------------------------------------------------------------------
-  # interface
-
-  target_link_libraries(
-    tapp-reference
-    PUBLIC
-      tblis-static
-  )
-
 endif()
+
+include(GNUInstallDirs)
+
+set(TAPP_INSTALL_BINDIR "bin"
+        CACHE PATH "TAPP binary install directory")
+set(TAPP_INSTALL_INCLUDEDIR "include"
+        CACHE PATH "TAPP include install directory")
+set(TAPP_INSTALL_LIBDIR "lib"
+        CACHE PATH "TAPP library install directory")
+set(TAPP_INSTALL_CMAKEDIR "lib/cmake/tapp"
+        CACHE PATH "TAPP CMake config install directory")
+set(TAPP_INSTALL_DATADIR "share/tapp/${TAPP_EXT_VERSION}/data"
+        CACHE PATH "TAPP data install directory")
+set(TAPP_INSTALL_DOCDIR "share/tapp/${TAPP_EXT_VERSION}/doc"
+        CACHE PATH "TAPP doc install directory")
+
+# this provides tapp-api target
+add_subdirectory(api)
+
+# this provides tapp-reference target
+add_subdirectory(reference_implementation)
 
 # ----------------------------------------------------------------------------
 # cutensor bindings
 
 if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
-  add_subdirectory(cutensor_bindings)
+    add_subdirectory(cutensor_bindings)
 endif()
 
 # ----------------------------------------------------------------------------
@@ -202,6 +102,7 @@ if(BUILD_TESTING)
       tapp-reference-test++
       PRIVATE
         tapp-reference
+        tblis-static
       )
 
     set_property(
@@ -241,7 +142,7 @@ if(BUILD_TESTING)
     NAME tapp-reference-demo
     COMMAND $<TARGET_FILE:tapp-reference-demo>
     )
-  
+
   # ----------------------------------------------------------------------------
   # cutensor specific code
 
@@ -258,7 +159,7 @@ if(BUILD_TESTING)
     else()
       message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
     endif()
-    
+
     add_executable(tapp-reference-cutensor-demo)
 
     target_sources(
@@ -314,7 +215,7 @@ if(BUILD_TESTING)
       NAME tapp-reference-demo-dynamic
       COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
     )
-    
+
     target_link_libraries(
       tapp-reference-demo-dynamic
       PRIVATE
@@ -341,12 +242,12 @@ if(BUILD_TESTING)
       PRIVATE
         ${CUTENSOR_INCLUDE_DIR}
     )
-    
+
     add_test(
       NAME tapp-reference-test-dynamic
       COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
     )
-    
+
     target_link_libraries(
       tapp-reference-test-dynamic
       PRIVATE
@@ -388,7 +289,7 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # exercise: contraction
 
-  if(TAPP_REFERENCE_BUILD_EXERCISE)
+  if(TAPP_BUILD_EXERCISE)
     add_executable(tapp-reference-exercise_contraction)
 
     target_sources(
@@ -486,3 +387,33 @@ if(BUILD_TESTING)
     )
 
 endif()
+
+# ============================================================================
+# CMake package config / export
+# ============================================================================
+include(CMakePackageConfigHelpers)
+
+# version file
+write_basic_package_version_file(tapp-config-version.cmake
+    VERSION ${TAPP_VERSION} COMPATIBILITY AnyNewerVersion)
+
+# export targets for the build tree
+export(EXPORT tapp
+       NAMESPACE tapp::
+       FILE "${PROJECT_BINARY_DIR}/tapp-targets.cmake")
+
+# install target export file
+install(EXPORT tapp
+    FILE "tapp-targets.cmake"
+    DESTINATION "${TAPP_INSTALL_CMAKEDIR}"
+    NAMESPACE tapp::)
+
+# configure the config file
+configure_package_config_file(cmake/tapp-config.cmake.in
+    "${PROJECT_BINARY_DIR}/tapp-config.cmake"
+    INSTALL_DESTINATION "${TAPP_INSTALL_CMAKEDIR}")
+
+install(FILES
+    "${PROJECT_BINARY_DIR}/tapp-config.cmake"
+    "${PROJECT_BINARY_DIR}/tapp-config-version.cmake"
+    DESTINATION "${TAPP_INSTALL_CMAKEDIR}")
