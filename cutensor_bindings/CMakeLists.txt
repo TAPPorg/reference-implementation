@@ -59,7 +59,7 @@ target_include_directories(tapp-cutensor
 
 target_link_libraries(tapp-cutensor
   PUBLIC
-    tapp-api
+    tapp::api
   PRIVATE
     cutensor::cutensor
     CUDA::cudart
