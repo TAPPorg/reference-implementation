@@ -9,7 +9,7 @@
 TAPP_error TAPP_create_executor(TAPP_executor* exec) {
     *exec = (TAPP_executor)malloc(sizeof(int));
     int ex = 1; // the bruteforce reference executor
-#ifdef TAPP_REFERENCE_ENABLE_TBLIS
+#ifdef TAPP_REFERENCE_USE_TBLIS
     // ex = 2; // TBLIS used as executor, use 12 for debug mode
 #endif
     *((int*)(*exec)) = ex;

@@ -32,12 +32,10 @@ jobs:
           - os: ubuntu-24.04
             cc: /usr/bin/gcc-14
             cxx: /usr/bin/g++-14
-            cuda: true
             sanitize_flags: -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
           - os: macos-14
             cc: clang
             cxx: clang++
-            cuda: false
             sanitize_flags: -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-var-tracking
 
     name: "${{ matrix.valgrind && 'Valgrind' || matrix.sanitize && 'Sanitizers' || '' }} ${{ matrix.os }}: ${{ matrix.cxx }} ${{ matrix.build_type }}"
@@ -53,8 +51,7 @@ jobs:
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
-        -DTAPP_REFERENCE_ENABLE_TBLIS=${{ !matrix.valgrind }}
-        -DTAPP_REFERENCE_BUILD_CUTENSOR_BINDS=${{ matrix.cuda && 'ON' || 'OFF' }}
+        -DTAPP_REFERENCE_USE_TBLIS=${{ !matrix.valgrind }}
 
     steps:
     - uses: actions/checkout@v4
@@ -94,16 +91,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install ninja-build g++-14 liblapack-dev ccache valgrind
-
-    - name: Install prerequisites CUDA Toolkit (Ubuntu only)
-      if: ${{ matrix.cuda }}
-      run: |
-        sudo apt-get install -y nvidia-cuda-toolkit
-
-    - name: Set CUDA host compiler
-      if: ${{ matrix.cuda }}
-      run: |
-        echo "CUDAHOSTCXX=${{ matrix.cxx }}" >> $GITHUB_ENV
 
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp

@@ -46,7 +46,7 @@ if(TAPP_REFERENCE_ENABLE_BF16)
   target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_BF16=1)
 endif()
 
-if(TAPP_REFERENCE_ENABLE_TBLIS)
+if(TAPP_REFERENCE_USE_TBLIS)
 
   set(TBLIS_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/tblis)
 
@@ -63,7 +63,7 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 
   FetchContent_MakeAvailable(tblis)
 
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_USE_TBLIS=1)
 
   target_sources(
   tapp-reference

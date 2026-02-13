@@ -39,8 +39,8 @@ project(tapp
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 # TBLIS requires CXX; enable_language must be called at the top level
-option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
-if(TAPP_REFERENCE_ENABLE_TBLIS)
+option(TAPP_REFERENCE_USE_TBLIS "TAPP-Reference will use TBLIS to implement TAPP_product" OFF)
+if(TAPP_REFERENCE_USE_TBLIS)
   include(CheckLanguage)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
@@ -73,9 +73,19 @@ add_subdirectory(reference_implementation)
 
 # ----------------------------------------------------------------------------
 # cutensor bindings
-
-if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
-    add_subdirectory(cutensor_bindings)
+option(TAPP_CUTENSOR "Build cuTensor bindings" OFF)
+if (TAPP_CUTENSOR)
+  if(CMAKE_VERSION VERSION_LESS 3.17)
+    message(FATAL_ERROR "TAPP_CUTENSOR requires CMake 3.17+")
+  endif()
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build cuTENSOR bindings due to missing CXX language support")
+  endif()
+  add_subdirectory(cutensor_bindings)
 endif()
 
 # ----------------------------------------------------------------------------
@@ -88,7 +98,7 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # TBLIS test
 
-  if(TAPP_REFERENCE_ENABLE_TBLIS)
+  if(TAPP_REFERENCE_USE_TBLIS)
     add_executable(tapp-reference-test++)
 
     target_sources(
@@ -146,26 +156,16 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # cutensor specific code
 
-  if (TAPP_REFERENCE_BUILD_CUTENSOR_BINDINGS)
+  if (TAPP_CUTENSOR)
     # ----------------------------------------------------------------------------
     # cutensor demo
-
-    include(CheckLanguage)
-    check_language(CXX)
-    check_language(CUDA)
-    if(CMAKE_CUDA_COMPILER)
-      enable_language(CXX)
-      enable_language(CUDA)
-    else()
-      message(FATAL_ERROR "Cannot build cuTENSOR bindings as part of TAPP due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
-    endif()
 
     add_executable(tapp-reference-cutensor-demo)
 
     target_sources(
       tapp-reference-cutensor-demo
       PRIVATE
-        test/cutensor_demo.cu
+        test/cutensor_demo.cpp
         test/helpers.c
         test/helpers.h
     )
@@ -173,15 +173,15 @@ if(BUILD_TESTING)
     target_link_libraries(
       tapp-reference-cutensor-demo
       PRIVATE
-        cutensor_bindings
+        tapp-cutensor
+        CUDA::cudart
+        cutensor::cutensor
     )
 
     target_include_directories(
       tapp-reference-cutensor-demo
-      PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/test
       PRIVATE
-        ${CUTENSOR_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
     )
 
     add_test(
