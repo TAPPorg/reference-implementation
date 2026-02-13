@@ -12,6 +12,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
+    TAPP_handle handle; // Declare handle
+    TAPP_create_handle(&handle); // Create handle
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -29,25 +32,23 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Uncomment function call
      * Add: nmode_A, extents_A, and strides_A
      */
-    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    TAPP_create_tensor_info(&info_A, handle, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
 
     // Tensor B
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, handle, TAPP_F64, nmode_B, extents_B, strides_B);
 
     // Tensor C
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_C, handle, TAPP_F64, nmode_D, extents_D, strides_D);
 
     // Output tensor D
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, handle, TAPP_F64, nmode_D, extents_D, strides_D);
 
     /*
-     * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
+     * Decide how the calculation should be executed, which indices to contract, elemental operations and precision.
      */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
 
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A
@@ -108,7 +109,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
         int message_len = TAPP_explain_error(error, 0, NULL); // Get size of error message
         char *message_buff = malloc((message_len + 1) * sizeof(char)); // Allocate buffer for message, including null terminator
         TAPP_explain_error(error, message_len + 1, message_buff); // Fetch error message
-        printf(message_buff); // Print message
+        printf("%s", message_buff); // Print message
         free(message_buff); // Free buffer
         printf("\n");
     }
@@ -122,6 +123,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+    TAPP_destroy_handle(handle);
 
     return D;
 }

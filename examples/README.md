@@ -9,7 +9,7 @@ for cmake: (Unix commands)
     Run CMake from directory: "cmake .."
     Run make from directory: "make -j"
     All files are created in the build directory
-    For use of TBLIS (not needed for the exercise) add: "-DTAPP_REFERENCE_ENABLE_TBLIS=1" after "cmake .."
+    For use of TBLIS (not needed for the exercise) add: "-DTAPP_REFERENCE_USE_TBLIS=1" after "cmake .."
 With TBLIS a file called test++ will be compiled
 
 2. Exercise contraction (try writing a tensor contraction with tapp)

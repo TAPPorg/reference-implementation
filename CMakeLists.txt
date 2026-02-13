@@ -39,8 +39,8 @@ project(tapp
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 # TBLIS requires CXX; enable_language must be called at the top level
-option(TAPP_REFERENCE_ENABLE_TBLIS "Build and link TBLIS and TBLIS bindings" OFF)
-if(TAPP_REFERENCE_ENABLE_TBLIS)
+option(TAPP_REFERENCE_USE_TBLIS "TAPP-Reference will use TBLIS to implement TAPP_product" OFF)
+if(TAPP_REFERENCE_USE_TBLIS)
   include(CheckLanguage)
   check_language(CXX)
   if(CMAKE_CXX_COMPILER)
@@ -65,11 +65,30 @@ set(TAPP_INSTALL_DATADIR "share/tapp/${TAPP_EXT_VERSION}/data"
 set(TAPP_INSTALL_DOCDIR "share/tapp/${TAPP_EXT_VERSION}/doc"
         CACHE PATH "TAPP doc install directory")
 
-# this provides tapp-api target
+# this provides tapp::api target
 add_subdirectory(api)
 
-# this provides tapp-reference target
+# this provides tapp::reference target
 add_subdirectory(reference_implementation)
+
+# ----------------------------------------------------------------------------
+# cutensor bindings
+option(TAPP_CUTENSOR "Build cuTensor bindings" OFF)
+if (TAPP_CUTENSOR)
+  # enable_language must be called at the top level
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build cuTENSOR bindings due to missing CXX language support")
+  endif()
+  # since CUDAToolkit will be needed in tests/ also, load it here
+  cmake_minimum_required(VERSION 3.17) # CUDAToolkit
+  find_package(CUDAToolkit REQUIRED)
+
+  add_subdirectory(cutensor_bindings)
+endif()
 
 # ----------------------------------------------------------------------------
 # testing
@@ -77,195 +96,8 @@ add_subdirectory(reference_implementation)
 include(CTest)
 
 if(BUILD_TESTING)
-
-  # ----------------------------------------------------------------------------
-  # TBLIS test
-
-  if(TAPP_REFERENCE_ENABLE_TBLIS)
-    add_executable(tapp-reference-test++)
-
-    target_sources(
-      tapp-reference-test++
-      PRIVATE
-        test/test.cpp
-        test/test.h
-      )
-
-    target_link_libraries(
-      tapp-reference-test++
-      PRIVATE
-        tapp-reference
-        tblis-static
-      )
-
-    set_property(
-      TARGET tapp-reference-test++
-      PROPERTY
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-    )
-
-    add_test(
-      NAME tapp-reference-test++
-      COMMAND $<TARGET_FILE:tapp-reference-test++>
-      )
-  endif()
-
-  # ----------------------------------------------------------------------------
-  # demo
-
-  add_executable(tapp-reference-demo)
-
-  target_sources(
-    tapp-reference-demo
-    PRIVATE
-      test/demo.c
-      test/helpers.c
-      test/helpers.h
-    )
-
-  target_link_libraries(
-    tapp-reference-demo
-    PRIVATE
-      tapp-reference
-    )
-
-  add_test(
-    NAME tapp-reference-demo
-    COMMAND $<TARGET_FILE:tapp-reference-demo>
-    )
-
-  # ----------------------------------------------------------------------------
-  # driver
-
-  add_executable(tapp-reference-driver)
-
-  target_sources(
-    tapp-reference-driver
-    PRIVATE
-      examples/driver/driver.c
-      test/helpers.c
-      test/helpers.h
-    )
-
-  target_include_directories(
-    tapp-reference-driver
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/test
-    )
-
-  target_link_libraries(
-    tapp-reference-driver
-    PRIVATE
-      tapp-reference
-    )
-
-  add_test(
-    NAME tapp-reference-driver
-    COMMAND $<TARGET_FILE:tapp-reference-driver>
-    )
-
-  # ----------------------------------------------------------------------------
-  # exercise: contraction
-
-  if(TAPP_BUILD_EXERCISE)
-    add_executable(tapp-reference-exercise_contraction)
-
-    target_sources(
-      tapp-reference-exercise_contraction
-      PRIVATE
-        examples/exercise_contraction/exercise_contraction.c
-        test/helpers.c
-        test/helpers.h
-      )
-
-    target_include_directories(
-      tapp-reference-exercise_contraction
-      PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/test
-      )
-
-    target_link_libraries(
-      tapp-reference-exercise_contraction
-      PRIVATE
-        tapp-reference
-      )
-
-    add_test(
-      NAME tapp-reference-exercise_contraction
-      COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction>
-      )
-  endif()
-
-  # ----------------------------------------------------------------------------
-  # exercise: contraction answers
-
-  add_executable(tapp-reference-exercise_contraction_answers)
-
-  target_sources(
-    tapp-reference-exercise_contraction_answers
-    PRIVATE
-      examples/exercise_contraction/answers/exercise_contraction_answers.c
-      test/helpers.c
-      test/helpers.h
-    )
-
-  target_include_directories(
-    tapp-reference-exercise_contraction_answers
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/test
-    )
-
-  target_link_libraries(
-    tapp-reference-exercise_contraction_answers
-    PRIVATE
-      tapp-reference
-    )
-
-  add_test(
-    NAME tapp-reference-exercise_contraction_answers
-    COMMAND $<TARGET_FILE:tapp-reference-exercise_contraction_answers>
-    )
-
-  # ----------------------------------------------------------------------------
-  # exercise: tucker
-
-  add_library(tapp-reference-exercise_tucker SHARED)
-
-  target_sources(
-    tapp-reference-exercise_tucker
-    PUBLIC
-      examples/exercise_tucker/tapp_tucker/exercise_tucker.h
-    PRIVATE
-      examples/exercise_tucker/tapp_tucker/exercise_tucker.c
-    )
-
-  target_link_libraries(
-    tapp-reference-exercise_tucker
-    PRIVATE
-      tapp-reference
-    )
-
-  # ----------------------------------------------------------------------------
-  # exercise: tucker answers
-
-  add_library(tapp-reference-exercise_tucker_answers SHARED)
-
-  target_sources(
-    tapp-reference-exercise_tucker_answers
-    PUBLIC
-      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.h
-    PRIVATE
-      examples/exercise_tucker/tapp_tucker/answers/exercise_tucker_answers.c
-    )
-
-  target_link_libraries(
-    tapp-reference-exercise_tucker_answers
-    PRIVATE
-      tapp-reference
-    )
-
+  add_subdirectory(test)
+  add_subdirectory(examples)
 endif()
 
 # ============================================================================
