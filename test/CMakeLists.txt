@@ -63,10 +63,10 @@ if (TAPP_CUTENSOR)
   # ----------------------------------------------------------------------------
   # cutensor demo
 
-  add_executable(tapp-reference-cutensor-demo)
+  add_executable(tapp-cutensor-demo)
 
   target_sources(
-    tapp-reference-cutensor-demo
+    tapp-cutensor-demo
     PRIVATE
       cutensor_demo.cpp
       helpers.c
@@ -74,21 +74,21 @@ if (TAPP_CUTENSOR)
   )
 
   target_link_libraries(
-    tapp-reference-cutensor-demo
+    tapp-cutensor-demo
     PRIVATE
       tapp::cutensor
       CUDA::cudart
   )
 
   target_include_directories(
-    tapp-reference-cutensor-demo
+    tapp-cutensor-demo
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
   add_test(
-    NAME tapp-reference-cutensor-demo
-    COMMAND $<TARGET_FILE:tapp-reference-cutensor-demo>
+    NAME tapp-cutensor-demo
+    COMMAND $<TARGET_FILE:tapp-cutensor-demo>
   )
 
   # ----------------------------------------------------------------------------
