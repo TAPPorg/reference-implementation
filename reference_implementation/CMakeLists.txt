@@ -31,7 +31,7 @@ if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp-reference PRIVATE "-undefined;dynamic_lookup")
 endif()
 
-target_link_libraries(tapp-reference PUBLIC tapp-api)
+target_link_libraries(tapp-reference PUBLIC tapp::api)
 
 option(TAPP_BUILD_EXERCISE "Build contraction exercise with TODOs in it." OFF)
 
