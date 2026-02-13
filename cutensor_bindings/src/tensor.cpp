@@ -1,5 +1,7 @@
 #include "../include/tensor.h"
 
+#include <cstring>
+
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_handle handle,
                                    TAPP_datatype type,

@@ -1,5 +1,7 @@
 #include "../include/attributes.h"
 
+#include <cstring>
+
 TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
 {
     struct handle* handle_struct = (struct handle*) attr;
