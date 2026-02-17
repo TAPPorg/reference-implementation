@@ -26,7 +26,7 @@ void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, T* A, i
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, T* D, int op_D, int64_t* idx_D,
                     T alpha, T beta);
 template<typename T>
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> reduce_isolated_indices(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_X, tblis::label_type* idx_X, int nmode_Y, tblis::label_type* idx_Y)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> reduce_isolated_indices(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_X, tblis::label_type* idx_X, int nmode_Y, tblis::label_type* idx_Y);
 
 template<typename T>
 struct is_complex : std::false_type {};
