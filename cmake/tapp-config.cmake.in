@@ -1,0 +1,55 @@
+# tapp CMake config
+# Provides package "tapp" with components: api, reference
+#
+# Imported targets:
+#   tapp::api        - TAPP C API headers (INTERFACE library)
+#   tapp::reference  - TAPP reference implementation (shared library)
+
+@PACKAGE_INIT@
+
+set(tapp_VERSION "@TAPP_VERSION@")
+
+# load targets (both api and reference are in the same export set)
+if(NOT TARGET tapp::api)
+  include("${CMAKE_CURRENT_LIST_DIR}/tapp-targets.cmake")
+endif()
+
+# component checking
+set(_tapp_supported_components api reference)
+# if no components requested, default to all available components
+if(NOT tapp_FIND_COMPONENTS)
+  foreach(_comp ${_tapp_supported_components})
+    if(TARGET tapp::${_comp})
+      list(APPEND tapp_FIND_COMPONENTS ${_comp})
+    endif()
+  endforeach()
+endif()
+
+foreach(_comp ${tapp_FIND_COMPONENTS})
+  if(_comp STREQUAL "api")
+    if(TARGET tapp::api)
+      set(tapp_api_FOUND TRUE)
+    else()
+      set(tapp_api_FOUND FALSE)
+      if(tapp_FIND_REQUIRED_api)
+        message(FATAL_ERROR "tapp component 'api' not found (target tapp::api missing)")
+      endif()
+    endif()
+  elseif(_comp STREQUAL "reference")
+    if(TARGET tapp::reference)
+      set(tapp_reference_FOUND TRUE)
+    else()
+      set(tapp_reference_FOUND FALSE)
+      if(tapp_FIND_REQUIRED_reference)
+        message(FATAL_ERROR "tapp component 'reference' not found (target tapp::reference missing)")
+      endif()
+    endif()
+  else()
+    set(tapp_${_comp}_FOUND FALSE)
+    if(tapp_FIND_REQUIRED_${_comp})
+      message(FATAL_ERROR "tapp: unknown component '${_comp}' requested")
+    endif()
+  endif()
+endforeach()
+
+check_required_components(tapp)
