@@ -119,9 +119,9 @@ void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, T* A, i
         }
     }
 
-    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx<T>(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = reduce_isolated_indices<T>(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
 
-    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx<T>(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);    
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = reduce_isolated_indices<T>(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
 
     tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
@@ -143,41 +143,47 @@ void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, T* A, i
     delete[] tblis_len_D;
     delete[] tblis_stride_D;
 
-    delete[] tblis_idx_A_reduced;
-    delete[] tblis_len_A_reduced;
-    delete[] tblis_stride_A_reduced;
-    delete[] tblis_data_A_reduced;
-    delete tblis_A_reduced;
+    if (tblis_A_reduced != &tblis_A)
+    {
+        delete[] tblis_idx_A_reduced;
+        delete[] tblis_len_A_reduced;
+        delete[] tblis_stride_A_reduced;
+        delete[] tblis_data_A_reduced;
+        delete tblis_A_reduced;
+    }
 
-    delete[] tblis_idx_B_reduced;
-    delete[] tblis_len_B_reduced;
-    delete[] tblis_stride_B_reduced;
-    delete[] tblis_data_B_reduced;
-    delete tblis_B_reduced;
+    if (tblis_B_reduced != &tblis_B)
+    {
+        delete[] tblis_idx_B_reduced;
+        delete[] tblis_len_B_reduced;
+        delete[] tblis_stride_B_reduced;
+        delete[] tblis_data_B_reduced;
+        delete tblis_B_reduced;
+    }
 }
 
 template<typename T>
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> contract_unique_idx(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> reduce_isolated_indices(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_X, tblis::label_type* idx_X, int nmode_Y, tblis::label_type* idx_Y)
 {
-    int nmode_reduced = 0;
-    int64_t size_reduced = 1;
-    tblis::tblis_tensor* tblis_reduced = new tblis::tblis_tensor;
-    tblis::len_type* len_reduced = new tblis::len_type[tensor->ndim];
-    tblis::stride_type* stride_reduced = new tblis::stride_type[tensor->ndim];
-    tblis::label_type* idx_reduced = new tblis::label_type[tensor->ndim+1];
+    int new_nmode = 0;
+    int64_t new_size = 1;
+    tblis::tblis_tensor* new_tensor = new tblis::tblis_tensor;
+    tblis::len_type* new_len = new tblis::len_type[tensor->ndim];
+    tblis::stride_type* new_stride = new tblis::stride_type[tensor->ndim];
+    tblis::label_type* new_idx = new tblis::label_type[tensor->ndim+1];
     for (size_t i = 0; i < tensor->ndim; i++)
     {
         bool found = false;
-        for (size_t j = 0; j < nmode_1; j++)
+        for (size_t j = 0; j < nmode_X; j++)
         {
-            if (idx[i] == idx_1[j]) 
+            if (idx[i] == idx_X[j]) 
             {
                 found = true;
             }
         }
-        for (size_t j = 0; j < nmode_2; j++)
+        for (size_t j = 0; j < nmode_Y; j++)
         {
-            if (idx[i] == idx_2[j]) 
+            if (idx[i] == idx_Y[j]) 
             {
                 found = true;
             }
@@ -185,43 +191,51 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
         
         if (found)
         {
-            len_reduced[nmode_reduced] = tensor->len[i];
-            stride_reduced[nmode_reduced] = nmode_reduced == 0 ? 1 : stride_reduced[nmode_reduced - 1] * len_reduced[nmode_reduced - 1];
-            idx_reduced[nmode_reduced] = idx[i];
-            size_reduced *= len_reduced[nmode_reduced];
-            nmode_reduced++;
+            new_len[new_nmode] = tensor->len[i];
+            new_stride[new_nmode] = new_nmode == 0 ? 1 : new_stride[new_nmode - 1] * new_len[new_nmode - 1];
+            new_idx[new_nmode] = idx[i];
+            new_size *= new_len[new_nmode];
+            new_nmode++;
         }
     }
-    idx_reduced[nmode_reduced] = '\0';
+    new_idx[new_nmode] = '\0';
 
-    T* data_reduced = new T[size_reduced];
-    for (size_t i = 0; i < size_reduced; i++)
+    if (new_nmode == tensor->ndim)
     {
-        data_reduced[i] = 0;
+        delete new_tensor;
+        delete[] new_len;
+        delete[] new_stride;
+        delete[] new_idx;
+        return {tensor, idx, (tblis::len_type*)NULL, (tblis::stride_type*)NULL, (T*)NULL};
+    }
+    T* new_data = new T[new_size];
+    for (size_t i = 0; i < new_size; i++)
+    {
+        new_data[i] = 0;
     }
 
     if constexpr (std::is_same_v<T, float>)
     {
-        tblis_init_tensor_s(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+        tblis_init_tensor_s(new_tensor, new_nmode, new_len, new_data, new_stride);
     }
     else if constexpr (std::is_same_v<T, double>)
     {
-        tblis_init_tensor_d(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+        tblis_init_tensor_d(new_tensor, new_nmode, new_len, new_data, new_stride);
     }
     else if constexpr (is_complex_v<T>) 
     {
         using value_type = typename T::value_type;
         if constexpr (std::is_same_v<value_type, float>)
         {
-            tblis_init_tensor_c(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+            tblis_init_tensor_c(new_tensor, new_nmode, new_len, new_data, new_stride);
         }
         else if constexpr (std::is_same_v<value_type, double>)
         {
-            tblis_init_tensor_z(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
+            tblis_init_tensor_z(new_tensor, new_nmode, new_len, new_data, new_stride);
         }
     }
-    tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
-    return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
+    tblis_tensor_add(tblis_single, NULL, tensor, idx, new_tensor, new_idx);
+    return {new_tensor, new_idx, new_len, new_stride, new_data};
 }
 
 template<typename T, typename U>
