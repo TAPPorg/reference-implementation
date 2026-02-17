@@ -20,6 +20,15 @@
 #include <tapp.h>
 
 template<typename T>
+void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, T* A, int op_A, int64_t* idx_A,
+                    int nmode_B, int64_t* extents_B, int64_t* strides_B, T* B, int op_B, int64_t* idx_B,
+                    int nmode_C, int64_t* extents_C, int64_t* strides_C, T* C, int op_C, int64_t* idx_C,
+                    int nmode_D, int64_t* extents_D, int64_t* strides_D, T* D, int op_D, int64_t* idx_D,
+                    T alpha, T beta);
+template<typename T>
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> reduce_isolated_indices(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_X, tblis::label_type* idx_X, int nmode_Y, tblis::label_type* idx_Y);
+
+template<typename T>
 struct is_complex : std::false_type {};
 template<typename T>
 struct is_complex<std::complex<T>> : std::true_type {};
@@ -30,14 +39,7 @@ template<typename T>
 T rand(T min, T max);
 template<typename T>
 T rand();
-template<typename T>
-void run_tblis_mult(int nmode_A, int64_t* extents_A, int64_t* strides_A, T* A, int op_A, int64_t* idx_A,
-                    int nmode_B, int64_t* extents_B, int64_t* strides_B, T* B, int op_B, int64_t* idx_B,
-                    int nmode_C, int64_t* extents_C, int64_t* strides_C, T* C, int op_C, int64_t* idx_C,
-                    int nmode_D, int64_t* extents_D, int64_t* strides_D, T* D, int op_D, int64_t* idx_D,
-                    T alpha, T beta);
-template<typename T>
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, T*> contract_unique_idx(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+
 template<typename T, typename U>
 U* change_array_type(T* array, int size);
 template<typename T>
@@ -57,25 +59,25 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
                                                                                  bool negative_strides_enabled = false, bool mixed_strides_enabled = false,
                                                                                  bool hadamard_indices_enabled = false, bool hadamard_only = false,
                                                                                  bool repeated_indices_enabled = false, bool isolated_indices_enabled = false);
-std::tuple<int, int, int, int,
+std::tuple<int, int, int,
            int, int, int, int,
            int, int, int, int> generate_index_configuration(int nmode_A = -1, int nmode_B = -1, int nmode_D = -1,
                                                             int contracted_indices = -1, int hadamard_indices = -1,
                                                             bool hadamard_only = false, bool hadamard_indices_enabled = false,
                                                             bool isolated_indices_enabled = false, bool repeated_indices_enabled = false);
 int* generate_unique_indices(int64_t total_unique_indices);
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
-                                                                  int contracted_modes, int hadamard_modes,
-                                                                  int free_indices_A, int free_indices_B,
-                                                                  int isolated_indices_A, int isolated_indices_B,
-                                                                  int repeated_indices_A, int repeated_indices_B);
+std::tuple<int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
+                                                        int contracted_modes, int hadamard_modes,
+                                                        int free_indices_A, int free_indices_B,
+                                                        int isolated_indices_A, int isolated_indices_B,
+                                                        int repeated_indices_A, int repeated_indices_B);
 std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
                                                            bool equal_extents_only,
                                                            int64_t total_unique_indices, int* unique_indices);
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
-                                                                  int nmode_A, int64_t* idx_A,
-                                                                  int nmode_B, int64_t* idx_B,
-                                                                  int nmode_D, int64_t* idx_D);
+std::tuple<int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
+                                                        int nmode_A, int64_t* idx_A,
+                                                        int nmode_B, int64_t* idx_B,
+                                                        int nmode_D, int64_t* idx_D);
 int* choose_stride_signs(int nmode, bool negative_str, bool mixed_str);
 bool* choose_subtensor_dims(int nmode, int outer_nmode);
 int64_t* calculate_outer_extents(int outer_nmode, int64_t* extents, bool* subtensor_dims, bool lower_extents);

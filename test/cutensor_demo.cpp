@@ -1,15 +1,21 @@
 /*
  * Niklas Hörnblad
  * Paolo Bientinesi
- * Umeå University - September 2024
+ * Umeå University - December 2025
  */
 
 #include <tapp.h>
 
-#include "helpers.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <complex.h>
+#include <cuda_runtime.h>
+
+#include <cstdlib>
+#include <cstdio>
+#include <complex>
+#include <cassert>
+
+extern "C" {
+    #include "helpers.h"
+}
 
 void contraction();
 void hadamard();
@@ -22,6 +28,7 @@ void chained_diff_op();
 void chained_same_op();
 void negative_str();
 void subtensors();
+void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data);
 
 int main(int argc, char const *argv[])
 {
@@ -147,16 +154,37 @@ void contraction()
         1, 2, 3, 4,
         5, 6, 7, 8};
 
-    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_error error = TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
     printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
     int message_len = TAPP_explain_error(error, 0, NULL);
-    char *message_buff = malloc((message_len + 1) * sizeof(char));
+    char *message_buff = (char*)malloc((message_len + 1) * sizeof(char));
     TAPP_explain_error(error, message_len + 1, message_buff);
     printf("%s", message_buff);
     free(message_buff);
 
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
+
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -252,10 +280,31 @@ void hadamard()
         16,
     };
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 16 * sizeof(float));
+    cudaMalloc((void**)&B_d, 16 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 16 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 16 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -310,34 +359,55 @@ void complex_num()
     TAPP_create_executor(&exec);
     TAPP_status status;
 
-    float complex alpha = 1;
+    std::complex<float> alpha = 1;
 
-    float complex A[9] = {
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I};
+    std::complex<float> A[9] = {
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3}};
 
-    float complex B[9] = {
-        1 + 1 * I, 1 + 1 * I, 1 + 1 * I,
-        2 + 2 * I, 2 + 2 * I, 2 + 2 * I,
-        3 + 3 * I, 3 + 3 * I, 3 + 3 * I};
+    std::complex<float> B[9] = {
+        {1, 1}, {1, 1}, {1, 1},
+        {2, 2}, {2, 2}, {2, 2},
+        {3, 3}, {3, 3}, {3, 3}};
 
-    float complex beta = 1 * I;
+    std::complex<float> beta = {0, 1};
 
-    float complex C[9] = {
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I};
+    std::complex<float> C[9] = {
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1}};
 
-    float complex D[9] = {
-        1 + 1 * I, 2 + 2 * I, 3 + 3 * I,
-        4 + 4 * I, 5 + 5 * I, 6 + 6 * I,
-        7 + 7 * I, 8 + 8 * I, 9 + 2 * I};
+    std::complex<float> D[9] = {
+        {1, 1}, {2, 2}, {3, 3},
+        {4, 4}, {5, 5}, {6, 6},
+        {7, 7}, {8, 8}, {9, 2}};
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&B_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&C_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&D_d, 9 * sizeof(std::complex<float>));
 
-    print_tensor_c(nmode_D, extents_D, strides_D, D);
+    cudaMemcpy(A_d, (void*)A, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
 
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
+
+    print_tensor_c_cpp(nmode_D, extents_D, strides_D, D);
+
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -392,34 +462,55 @@ void conjugate()
     TAPP_create_executor(&exec);
     TAPP_status status;
 
-    float complex alpha = 1;
+    std::complex<float> alpha = 1;
 
-    float complex A[9] = {
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I,
-        1 + 1 * I, 3 + 2 * I, 5 + 3 * I};
+    std::complex<float> A[9] = {
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3}};
 
-    float complex B[9] = {
-        1 + 1 * I, 1 + 1 * I, 1 + 1 * I,
-        2 + 2 * I, 2 + 2 * I, 2 + 2 * I,
-        3 + 3 * I, 3 + 3 * I, 3 + 3 * I};
+    std::complex<float> B[9] = {
+        {1, 1}, {1, 1}, {1, 1},
+        {2, 2}, {2, 2}, {2, 2},
+        {3, 3}, {3, 3}, {3, 3}};
 
-    float complex beta = 1 * I;
+    std::complex<float> beta = {0, 1};
 
-    float complex C[9] = {
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I,
-        1 + 2 * I, 2 + 1 * I, 3 + 1 * I};
+    std::complex<float> C[9] = {
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1}};
 
-    float complex D[9] = {
-        1 + 1 * I, 2 + 2 * I, 3 + 3 * I,
-        4 + 4 * I, 5 + 5 * I, 6 + 6 * I,
-        7 + 7 * I, 8 + 8 * I, 9 + 2 * I};
+    std::complex<float> D[9] = {
+        {1, 1}, {2, 2}, {3, 3},
+        {4, 4}, {5, 5}, {6, 6},
+        {7, 7}, {8, 8}, {9, 2}};
+        
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&B_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&C_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&D_d, 9 * sizeof(std::complex<float>));
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    cudaMemcpy(A_d, (void*)A, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
 
-    print_tensor_c(nmode_D, extents_D, strides_D, D);
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
 
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(float), cudaMemcpyDeviceToHost);
+
+    print_tensor_c_cpp(nmode_D, extents_D, strides_D, D);
+
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -495,11 +586,32 @@ void zero_dim()
         2, 2, 2,
         2, 2, 2,
         2, 2, 2};
+        
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 1 * sizeof(float));
+    cudaMalloc((void**)&B_d, 9 * sizeof(float));
+    cudaMalloc((void**)&C_d, 9 * sizeof(float));
+    cudaMalloc((void**)&D_d, 9 * sizeof(float));
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    cudaMemcpy(A_d, (void*)A, 1 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 9 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 9 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(float), cudaMemcpyDeviceToHost);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -604,10 +716,31 @@ void one_ext_contracted()
         1, 2, 3, 4,
         5, 6, 7, 8};
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -712,10 +845,31 @@ void one_ext_transfered()
         1, 2, 3, 4,
         5, 6, 7, 8};
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -820,7 +974,24 @@ void chained_diff_op()
         1, 2, 3, 4,
         5, 6, 7, 8};
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -844,11 +1015,26 @@ void chained_diff_op()
 
         1, 2, 3, 4,
         5, 6, 7, 8};
-    TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D, (void *)C, (void *)&beta, (void *)C, (void *)E);
+
+    void* E_d; // Device pointer
+    cudaMalloc((void**)&E_d, 16 * sizeof(float));
+
+    cudaMemcpy(E_d, (void*)E, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(E_d) % 128 == 0);
+    
+    TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D_d, (void *)C_d, (void *)&beta, (void *)C_d, (void *)E_d);
+
+    cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     printf("\tOperation 2:\n");
     print_tensor_s(nmode_E, extents_E, strides_E, E);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
+    if (E_d) cudaFree(E_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_product(plan2);
     TAPP_destroy_tensor_info(info_A);
@@ -933,7 +1119,24 @@ void chained_same_op()
         9, 10, 11, 12,
         13, 14, 15, 16};
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 16 * sizeof(float));
+    cudaMalloc((void**)&B_d, 16 * sizeof(float));
+    cudaMalloc((void**)&C_d, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d, 16 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A, 16 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 16 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
+
+    cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -958,11 +1161,25 @@ void chained_same_op()
         15,
         16,
     };
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)D, (void *)&beta, (void *)C, (void *)E);
 
+    void* E_d; // Device pointer
+    cudaMalloc((void**)&E_d, 16 * sizeof(float));
+
+    cudaMemcpy(E_d, (void*)E, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(E_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)D_d, (void *)&beta, (void *)C_d, (void *)E_d);
+
+    cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
+    
     printf("\tOperation 2:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, E);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -972,7 +1189,7 @@ void chained_same_op()
     TAPP_destroy_handle(handle);
 }
 
-void negative_str()
+/*void negative_str() //cutensor does not support negative strides
 {
     TAPP_handle handle;
     TAPP_create_handle(&handle);
@@ -1081,7 +1298,7 @@ void negative_str()
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
-}
+}*/
 
 void subtensors()
 {
@@ -1219,12 +1436,34 @@ void subtensors()
 
     float *B_ptr = &B[1];
 
-    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_ptr, (void *)B_ptr, (void *)&beta, (void *)C, (void *)D);
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 43 * sizeof(float));
+    cudaMalloc((void**)&B_d, 35 * sizeof(float));
+    cudaMalloc((void**)&C_d, 9 * sizeof(float));
+    cudaMalloc((void**)&D_d, 12 * sizeof(float));
+
+    cudaMemcpy(A_d, (void*)A_ptr, 43 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B_ptr, 35 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 9 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(D_d, (void*)D, 12 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+    assert(uintptr_t(D_d) % 128 == 0);
+
+    TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
 
     int64_t super_extents_D[2] = {4, 3};
     int64_t super_strides_D[2] = {1, 4};
+
+    cudaMemcpy((void*)D, (void*)D_d, 12 * sizeof(float), cudaMemcpyDeviceToHost);
     print_tensor_s(nmode_D, super_extents_D, super_strides_D, D);
 
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    if (D_d) cudaFree(D_d);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1232,4 +1471,48 @@ void subtensors()
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
+}
+
+void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data)
+{
+    int64_t *coords = (int64_t *)malloc(nmode * sizeof(int64_t));
+    int64_t size = 1;
+    for (size_t i = 0; i < nmode; i++)
+    {
+        coords[i] = 0;
+        size *= extents[i];
+    }
+    printf("\t");
+    for (size_t j = 0; j < size; j++)
+    {
+        int64_t index = 0;
+        for (size_t i = 0; i < nmode; i++)
+        {
+            index += coords[i] * strides[i];
+        }
+        printf("%.3f+%.3fi", data[index].real(), data[index].imag());
+
+        if (nmode <= 0)
+            continue;
+
+        int k = 0;
+        do
+        {
+            if (k != 0)
+            {
+                printf("\n");
+                if (j < size - 1)
+                {
+                    printf("\t");
+                }
+            }
+            else
+            {
+                printf(" ");
+            }
+            coords[k] = (coords[k] + 1) % extents[k];
+            k++;
+        } while (coords[k - 1] == 0 && k < nmode);
+    }
+    free(coords);
 }

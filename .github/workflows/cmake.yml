@@ -51,7 +51,8 @@ jobs:
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' || matrix.valgrind }}
-        -DTAPP_REFERENCE_ENABLE_TBLIS=${{ !matrix.valgrind }}
+        -DTAPP_REFERENCE_USE_TBLIS=${{ !matrix.valgrind }}
+
     steps:
     - uses: actions/checkout@v4
 
@@ -90,6 +91,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install ninja-build g++-14 liblapack-dev ccache valgrind
+
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}
