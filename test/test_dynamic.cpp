@@ -242,8 +242,8 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
     T* C = calculate_tensor_pointer<T>(data_C, nmode_C, extents_C, offsets_D, strides_C);
     T* D = calculate_tensor_pointer<T>(data_D, nmode_D, extents_D, offsets_D, strides_D);
 
-    T alpha = rand<T>();
-    T beta = rand<T>();
+    T alpha = rand<T>(-10, 10);
+    T beta = rand<T>(-10, 10z);
 
     delete[] unique_indices;
 
@@ -964,11 +964,11 @@ T rand()
 {
     if constexpr (is_complex_v<T>) {
         using value_type = typename T::value_type;
-        return rand<T>(-std::numeric_limits<value_type>::max(), std::numeric_limits<value_type>::max());
+        return rand<T>(-std::numeric_limits<value_type>::min(), std::numeric_limits<value_type>::max());
     }
     else
     {
-        return rand<T>(-std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
+        return rand<T>(-std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
     }
 }
 
