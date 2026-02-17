@@ -5,6 +5,7 @@
 
 #include <cutensor.h>
 
+#include <cstring>
 #include <string>
 
 int pack_error(int current_value, int tapp_err);

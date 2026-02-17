@@ -1,7 +1,5 @@
 #include "../include/product.h"
 
-#include <cstring>
-
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
 cutensorOperator_t translate_operator(TAPP_element_op op);

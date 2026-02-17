@@ -5,6 +5,8 @@
 
 #include <cutensor/types.h>
 
+#include <cstring>
+
 #include "error.h"
 #include "handle.h"
 #include "datatype.h"

@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <assert.h>
+#include <cstring>
 
 #include "error.h"
 #include "handle.h"
