@@ -22,10 +22,10 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
                        const int nmode_Y, const int64_t* idx_y,
                        const int nmode_Z, const int64_t* idx_Z,
                        int64_t** IX_idx_ptr);
-void extract_typed_extents(const int nmode_X, const int64_t* idx_X, const int64_t* extents_X,
-                           const int T_nmode, const int64_t* T_idx, int64_t** T_extents_X_ptr);
-void extract_typed_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
-                           const int T_nmode, const int64_t* T_idx, int64_t** T_strides_X_ptr);
+void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int64_t* extents_X,
+                           const int G_nmode, const int64_t* G_idx, int64_t** G_extents_X_ptr);
+void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
+                           const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr);
 void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
 void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec);
 void calculate_beta_C(const void* beta, TAPP_datatype type_beta, bool is_complex_beta, const void* value_C, TAPP_datatype type_C, bool is_complex_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum);
@@ -158,24 +158,24 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                             ((struct tensor_info*)D)->nmode, idx_D,
                                             &plan_ptr->IB_idx);
 
-    extract_typed_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_extents);
-    extract_typed_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_extents);
-    extract_typed_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_extents);
-    extract_typed_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_extents);
-    extract_typed_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_extents);
-    extract_typed_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_extents);
+    extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_extents);
+    extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_extents);
+    extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_extents);
+    extract_grouped_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_extents);
+    extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_extents);
+    extract_grouped_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_extents);
     
-    extract_typed_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_A);
-    extract_typed_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_B);
-    extract_typed_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_D);
-    extract_typed_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_strides_A);
-    extract_typed_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_strides_B);
-    extract_typed_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_strides_A);
-    extract_typed_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_strides_D);
-    extract_typed_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_strides_B);
-    extract_typed_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_strides_D);
-    extract_typed_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_strides_A);
-    extract_typed_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_strides_B);
+    extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_A);
+    extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_B);
+    extract_grouped_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_D);
+    extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_strides_A);
+    extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_strides_B);
+    extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_strides_A);
+    extract_grouped_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->FA_nmode, plan_ptr->FA_idx, &plan_ptr->FA_strides_D);
+    extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_strides_B);
+    extract_grouped_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_strides_D);
+    extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_strides_A);
+    extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_strides_B);
 
     plan_ptr->H_size = calculate_size(plan_ptr->H_extents, plan_ptr->H_nmode);
     plan_ptr->P_size = calculate_size(plan_ptr->P_extents, plan_ptr->P_nmode);
@@ -332,34 +332,34 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
     return IX_nmode;
 }
 
-void extract_typed_extents(const int nmode_X, const int64_t* idx_X, const int64_t* extents_X,
-                           const int T_nmode, const int64_t* T_idx, int64_t** T_extents_X_ptr)
+void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int64_t* extents_X,
+                           const int G_nmode, const int64_t* G_idx, int64_t** G_extents_X_ptr)
 {
-    *T_extents_X_ptr = malloc(T_nmode * sizeof(int64_t));
-    for (size_t i = 0; i < T_nmode; i++)
+    *G_extents_X_ptr = malloc(G_nmode * sizeof(int64_t));
+    for (size_t i = 0; i < G_nmode; i++)
     {
-        (*T_extents_X_ptr)[i] = 0;
+        (*G_extents_X_ptr)[i] = 0;
         for (size_t j = 0; j < nmode_X; j++)
         {
-            if (T_idx[i] == idx_X[j]) {
-                (*T_extents_X_ptr)[i] = extents_X[j];
+            if (G_idx[i] == idx_X[j]) {
+                (*G_extents_X_ptr)[i] = extents_X[j];
                 break;
             }
         }
     }
 }
 
-void extract_typed_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
-                           const int T_nmode, const int64_t* T_idx, int64_t** T_strides_X_ptr)
+void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
+                           const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr)
 {
-    *T_strides_X_ptr = malloc(T_nmode * sizeof(int64_t));
-    for (size_t i = 0; i < T_nmode; i++)
+    *G_strides_X_ptr = malloc(G_nmode * sizeof(int64_t));
+    for (size_t i = 0; i < G_nmode; i++)
     {
-        (*T_strides_X_ptr)[i] = 0;
+        (*G_strides_X_ptr)[i] = 0;
         for (size_t j = 0; j < nmode_X; j++)
         {
-            if (T_idx[i] == idx_X[j]) {
-                (*T_strides_X_ptr)[i] += strides_X[j];
+            if (G_idx[i] == idx_X[j]) {
+                (*G_strides_X_ptr)[i] += strides_X[j];
                 break;
             }
         }
