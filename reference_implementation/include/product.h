@@ -62,6 +62,13 @@ struct plan
     int64_t* IB_strides_B;
     int64_t IB_size;
 
+    // Broadcasted indices info (isolated D)
+    int B_nmode;
+    int64_t* B_idx;
+    int64_t* B_extents;
+    int64_t* B_strides;
+    int64_t B_size;
+
     TAPP_prectype prec;
     TAPP_datatype type_A;
     TAPP_datatype type_B;
