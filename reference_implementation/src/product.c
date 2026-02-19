@@ -52,6 +52,7 @@ void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype p
 bool is_complex(TAPP_datatype type);
 void set_typed_scalar_to_zero(void* sum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
 void set_typed_accum_to_zero(void* accum, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
+void add_to_typed_accum(void* accum, const void* value, TAPP_prectype prec, TAPP_datatype type, bool is_complex);
 bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_datatype comp_type);
 void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data, TAPP_datatype type);
 
@@ -157,6 +158,10 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                             ((struct tensor_info*)A)->nmode, idx_A,
                                             ((struct tensor_info*)D)->nmode, idx_D,
                                             &plan_ptr->IB_idx);
+    plan_ptr->B_nmode = extract_IX_indices(((struct tensor_info*)D)->nmode, idx_D,
+                                           ((struct tensor_info*)A)->nmode, idx_A,
+                                           ((struct tensor_info*)B)->nmode, idx_B,
+                                           &plan_ptr->B_idx);
 
     extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_extents);
     extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->P_nmode, plan_ptr->P_idx, &plan_ptr->P_extents);
@@ -164,6 +169,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     extract_grouped_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_extents);
     extract_grouped_extents(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->extents, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_extents);
     extract_grouped_extents(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->extents, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_extents);
+    extract_grouped_extents(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->extents, plan_ptr->B_nmode, plan_ptr->B_idx, &plan_ptr->B_extents);
     
     extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_A);
     extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->H_nmode, plan_ptr->H_idx, &plan_ptr->H_strides_B);
@@ -176,6 +182,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     extract_grouped_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->FB_nmode, plan_ptr->FB_idx, &plan_ptr->FB_strides_D);
     extract_grouped_strides(((struct tensor_info*)A)->nmode, idx_A, ((struct tensor_info*)A)->strides, plan_ptr->IA_nmode, plan_ptr->IA_idx, &plan_ptr->IA_strides_A);
     extract_grouped_strides(((struct tensor_info*)B)->nmode, idx_B, ((struct tensor_info*)B)->strides, plan_ptr->IB_nmode, plan_ptr->IB_idx, &plan_ptr->IB_strides_B);
+    extract_grouped_strides(((struct tensor_info*)D)->nmode, idx_D, ((struct tensor_info*)D)->strides, plan_ptr->B_nmode, plan_ptr->B_idx, &plan_ptr->B_strides);
 
     plan_ptr->H_size = calculate_size(plan_ptr->H_extents, plan_ptr->H_nmode);
     plan_ptr->P_size = calculate_size(plan_ptr->P_extents, plan_ptr->P_nmode);
@@ -183,6 +190,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     plan_ptr->FB_size = calculate_size(plan_ptr->FB_extents, plan_ptr->FB_nmode);
     plan_ptr->IA_size = calculate_size(plan_ptr->IA_extents, plan_ptr->IA_nmode);
     plan_ptr->IB_size = calculate_size(plan_ptr->IB_extents, plan_ptr->IB_nmode);
+    plan_ptr->B_size = calculate_size(plan_ptr->B_extents, plan_ptr->B_nmode);
 
     *plan = (TAPP_tensor_product)plan_ptr;
 
@@ -389,12 +397,14 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     free(((struct plan*)plan)->FB_idx);
     free(((struct plan*)plan)->IA_idx);
     free(((struct plan*)plan)->IB_idx);
+    free(((struct plan*)plan)->B_idx);
     free(((struct plan*)plan)->H_extents);
     free(((struct plan*)plan)->P_extents);
     free(((struct plan*)plan)->FA_extents);
     free(((struct plan*)plan)->FB_extents);
     free(((struct plan*)plan)->IA_extents);
     free(((struct plan*)plan)->IB_extents);
+    free(((struct plan*)plan)->B_extents);
     free(((struct plan*)plan)->H_strides_A);
     free(((struct plan*)plan)->H_strides_B);
     free(((struct plan*)plan)->H_strides_D);
@@ -406,6 +416,7 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     free(((struct plan*)plan)->FB_strides_D);
     free(((struct plan*)plan)->IA_strides_A);
     free(((struct plan*)plan)->IB_strides_B);
+    free(((struct plan*)plan)->B_strides);
     free((struct plan*)plan);
 
     return 0;
@@ -487,6 +498,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         // if((*exec_int_ptr) == 1) printf("tapp used1 \n");
 
         void* accum = alloc_accum(plan_ptr->prec, plan_ptr->type_D);
+        void* accum_aAB = alloc_accum(plan_ptr->prec, plan_ptr->type_D);
+        void* accum_bC = alloc_accum(plan_ptr->prec, plan_ptr->type_D);
         void* sum_A = alloc_typed_value(plan_ptr->prec, plan_ptr->type_A);
         void* sum_B = alloc_typed_value(plan_ptr->prec, plan_ptr->type_B);
         void* value_C = alloc_typed_value(plan_ptr->prec, plan_ptr->type_C);
@@ -499,8 +512,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         bool is_complex_D = is_complex(plan_ptr->type_D);
 
         float value_zero = 0;
-        bool beta_is_zero = !is_equal(beta, plan_ptr->type_D, &value_zero, TAPP_F32);
-        
+        bool beta_is_zero = is_equal(beta, plan_ptr->type_D, &value_zero, TAPP_F32);
+
+        set_typed_accum_to_zero(accum_bC, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
+
         int64_t* H_coords = malloc(plan_ptr->H_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->H_nmode; i++) H_coords[i] = 0;
 
@@ -519,6 +534,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         int64_t* IB_coords = malloc(plan_ptr->IB_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->IB_nmode; i++) IB_coords[i] = 0;
 
+        int64_t* B_coords = malloc(plan_ptr->B_nmode * sizeof(int64_t));
+        for (int i = 0; i < plan_ptr->B_nmode; i++) B_coords[i] = 0;
+
         for (int h = 0; h < plan_ptr->H_nmode; h++)
         {
             int H_offset_A = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_A);
@@ -535,17 +553,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                     int FB_offset_B = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_B);
                     int FB_offset_D = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_D);
 
-                    int offset_D = H_offset_D + FA_offset_D + FB_offset_D;
-
-                    if (beta_is_zero)
-                    {
-                        get_typed_value(value_C, C, offset_D, plan_ptr->type_C, plan_ptr->prec);
-                        calculate_beta_C(prec_beta, plan_ptr->type_D, is_complex_D, value_C, plan_ptr->type_C, is_complex_C, plan_ptr->op_C, plan_ptr->prec, accum, plan_ptr->type_D, is_complex_D);
-                    }
-                    else
-                    {
-                        set_typed_accum_to_zero(accum, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
-                    }
+                    set_typed_accum_to_zero(accum_aAB, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
 
                     for (int p = 0; p < plan_ptr->P_nmode; p++)
                     {
@@ -570,14 +578,33 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                             increment_coordinates(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_extents);
                         }
 
-                        calculate_alpha_A_B(prec_alpha, plan_ptr->type_D, is_complex_D, sum_A, plan_ptr->type_A, is_complex_A, sum_B, plan_ptr->type_B, is_complex_B, plan_ptr->prec, accum, plan_ptr->type_D, is_complex_D);
+                        calculate_alpha_A_B(prec_alpha, plan_ptr->type_D, is_complex_D, sum_A, plan_ptr->type_A, is_complex_A, sum_B, plan_ptr->type_B, is_complex_B, plan_ptr->prec, accum_aAB, plan_ptr->type_D, is_complex_D);
 
                         increment_coordinates(P_coords, plan_ptr->P_nmode, plan_ptr->P_extents);
                     }
 
-                    calculate_op_D(accum, plan_ptr->type_D, plan_ptr->op_D, plan_ptr->prec);
+                    for (int b = 0; b < plan_ptr->B_nmode; b++)
+                    {
+                        int B_offset = calcualte_offset(B_coords, plan_ptr->B_nmode, plan_ptr->B_strides);
+                        int offset_D = H_offset_D + FA_offset_D + FB_offset_D + B_offset;
 
-                    assign_D(D, plan_ptr->type_D, offset_D, accum, plan_ptr->prec);
+                        set_typed_accum_to_zero(accum_aAB, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
+
+                        add_to_typed_accum(accum, accum_aAB, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
+
+                        if (!beta_is_zero)
+                        {
+                            get_typed_value(value_C, C, offset_D, plan_ptr->type_C, plan_ptr->prec);
+                            calculate_beta_C(prec_beta, plan_ptr->type_D, is_complex_D, value_C, plan_ptr->type_C, is_complex_C, plan_ptr->op_C, plan_ptr->prec, accum_bC, plan_ptr->type_D, is_complex_D);
+                            add_to_typed_accum(accum, accum_bC, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
+                        }
+                    
+                        calculate_op_D(accum, plan_ptr->type_D, plan_ptr->op_D, plan_ptr->prec);
+
+                        assign_D(D, plan_ptr->type_D, offset_D, accum, plan_ptr->prec);
+
+                        increment_coordinates(B_coords, plan_ptr->B_nmode, plan_ptr->B_extents);
+                    }
 
                     increment_coordinates(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_extents);
                 }
@@ -589,6 +616,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         }
 
         free(accum);
+        free(accum_aAB);
+        free(accum_bC);
         free(sum_A);
         free(sum_B);
         free(value_C);
@@ -600,6 +629,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(FB_coords);
         free(IA_coords);
         free(IB_coords);
+        free(B_coords);
     }
 
     bool comp_ = true;
@@ -1595,6 +1625,82 @@ void set_typed_accum_to_zero(void* accum, TAPP_prectype prec, TAPP_datatype type
         else
         {
             *(_Float16*)accum = 0;
+        }
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
+void add_to_typed_accum(void* accum, const void* value, TAPP_prectype prec, TAPP_datatype type, bool is_complex)
+{
+    switch (prec)
+    {
+    case TAPP_DEFAULT_PREC:
+        switch (type)
+        {
+        case TAPP_F32:
+            *((float*)accum) += *(float*)value;
+            break;
+        case TAPP_F64:
+            *((double*)accum) += *(double*)value;
+            break;
+        case TAPP_C32:
+            *((complex float*)accum) += *(complex float*)value;
+            break;
+        case TAPP_C64:
+            *((complex double*)accum) += *(complex double*)value;
+            break;
+#ifdef TAPP_REFERENCE_ENABLE_F16
+        case TAPP_F16:
+            *((_Float16*)accum) += *(_Float16*)value;
+            break;
+#endif
+#ifdef TAPP_REFERENCE_ENABLE_BF16
+        case TAPP_BF16:
+            *((__bf16*)accum) += *(__bf16*)value;
+            break;
+#endif
+        default:
+            break;
+        }
+        break;
+    case TAPP_F32F32_ACCUM_F32:
+#ifdef TAPP_REFERENCE_ENABLE_F16
+    case TAPP_F16F16_ACCUM_F32:
+#endif
+#ifdef TAPP_REFERENCE_ENABLE_BF16
+    case TAPP_BF16BF16_ACCUM_F32:
+#endif
+        if (is_complex)
+        {
+            *(complex float*)accum += *(complex float*)value;
+        }
+        else
+        {
+            *(float*)accum += *(float*)value;
+        }
+        break;
+    case TAPP_F64F64_ACCUM_F64:
+        if (is_complex)
+        {
+            *(complex double*)accum += *(complex double*)value;
+        }
+        else
+        {
+            *(double*)accum += *(double*)value;
+        }
+        break;
+#ifdef TAPP_REFERENCE_ENABLE_F16
+    case TAPP_F16F16_ACCUM_F16:
+        if (is_complex)
+        {
+            *(complex _Float16*)accum += *(complex _Float16*)value;
+        }
+        else
+        {
+            *(_Float16*)accum += *(_Float16*)value;
         }
         break;
 #endif
