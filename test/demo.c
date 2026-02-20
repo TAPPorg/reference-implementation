@@ -1069,7 +1069,7 @@ void subtensors()
 
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
-    int64_t strides_C[2] = {1, 3};
+    int64_t strides_C[2] = {1, 4};
     TAPP_tensor_info info_C;
     TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
 
@@ -1173,10 +1173,10 @@ void subtensors()
 
     float beta = 0.5;
 
-    float C[9] = {
-        2, 4, 6,
-        2, 4, 6,
-        2, 4, 6};
+    float C[12] = {
+        2, 4, 6, 8,
+        2, 4, 6, 8,
+        2, 4, 6, 8};
 
     float D[12] = {
         1, 2, 3, 4,

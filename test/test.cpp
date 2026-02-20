@@ -282,9 +282,9 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
                                                                                  bool hadamard_indices_enabled, bool hadamard_only,
                                                                                  bool repeated_indices_enabled, bool isolated_indices_enabled)
 {
-    int nmode_C, free_indices_A, free_indices_B, isolated_indices_A, isolated_indices_B, repeated_indices_A, repeated_indices_B;
+    int free_indices_A, free_indices_B, isolated_indices_A, isolated_indices_B, repeated_indices_A, repeated_indices_B;
 
-    std::tie(nmode_A, nmode_B, nmode_C, nmode_D,
+    std::tie(nmode_A, nmode_B, nmode_D,
              contracted_indices, hadamard_indices,
              free_indices_A, free_indices_B,
              isolated_indices_A, isolated_indices_B,
@@ -292,6 +292,7 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
                                                                                     contracted_indices, hadamard_indices,
                                                                                     hadamard_only, hadamard_indices_enabled,
                                                                                     isolated_indices_enabled, repeated_indices_enabled);
+    int nmode_C = nmode_D;
 
     int64_t total_unique_indices = contracted_indices + hadamard_indices +
                                    free_indices_A + free_indices_B +
@@ -300,50 +301,50 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
 
     int* unique_indices = generate_unique_indices(total_unique_indices);
 
-    auto [idx_A, idx_B, idx_C, idx_D] = assign_indices(unique_indices,
-                                                       contracted_indices, hadamard_indices,
-                                                       free_indices_A, free_indices_B,
-                                                       isolated_indices_A, isolated_indices_B,
-                                                       repeated_indices_A, repeated_indices_B);
+    auto [idx_A, idx_B, idx_D] = assign_indices(unique_indices,
+                                                contracted_indices, hadamard_indices,
+                                                free_indices_A, free_indices_B,
+                                                isolated_indices_A, isolated_indices_B,
+                                                repeated_indices_A, repeated_indices_B);
+    int64_t* idx_C = new int64_t[nmode_C];
+    std::copy(idx_D, idx_D + nmode_D, idx_C);
 
     std::unordered_map<int, int64_t> index_extent_map = generate_index_extent_map(min_extent, 4, equal_extents_only, total_unique_indices, unique_indices);
 
-    auto [extents_A, extents_B, extents_C, extents_D] = assign_extents(index_extent_map, nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D);
+    auto [extents_A, extents_B, extents_D] = assign_extents(index_extent_map, nmode_A, idx_A, nmode_B, idx_B, nmode_D, idx_D);
+    int64_t* extents_C = new int64_t[nmode_C];
+    std::copy(extents_D, extents_D + nmode_D, extents_C);
 
     int outer_nmode_A = subtensor_on_nmode ? nmode_A + rand(1, 4) : nmode_A;
     int outer_nmode_B = subtensor_on_nmode ? nmode_B + rand(1, 4) : nmode_B;
-    int outer_nmode_C = subtensor_on_nmode ? nmode_C + rand(1, 4) : nmode_C;
     int outer_nmode_D = subtensor_on_nmode ? nmode_D + rand(1, 4) : nmode_D;
 
     int* stride_signs_A = choose_stride_signs(nmode_A, negative_strides_enabled, mixed_strides_enabled);
     int* stride_signs_B = choose_stride_signs(nmode_B, negative_strides_enabled, mixed_strides_enabled);
-    int* stride_signs_C = choose_stride_signs(nmode_C, negative_strides_enabled, mixed_strides_enabled);
     int* stride_signs_D = choose_stride_signs(nmode_D, negative_strides_enabled, mixed_strides_enabled);
 
     bool* subtensor_dims_A = choose_subtensor_dims(nmode_A, outer_nmode_A);
     bool* subtensor_dims_B = choose_subtensor_dims(nmode_B, outer_nmode_B);
-    bool* subtensor_dims_C = choose_subtensor_dims(nmode_C, outer_nmode_C);
     bool* subtensor_dims_D = choose_subtensor_dims(nmode_D, outer_nmode_D);
 
     int64_t* outer_extents_A = calculate_outer_extents(outer_nmode_A, extents_A, subtensor_dims_A, subtensor_on_extents);
     int64_t* outer_extents_B = calculate_outer_extents(outer_nmode_B, extents_B, subtensor_dims_B, subtensor_on_extents);
-    int64_t* outer_extents_C = calculate_outer_extents(outer_nmode_C, extents_C, subtensor_dims_C, subtensor_on_extents);
     int64_t* outer_extents_D = calculate_outer_extents(outer_nmode_D, extents_D, subtensor_dims_D, subtensor_on_extents);
 
     int64_t* offsets_A = calculate_offsets(nmode_A, outer_nmode_A, extents_A, outer_extents_A, subtensor_dims_A, subtensor_on_extents);
     int64_t* offsets_B = calculate_offsets(nmode_B, outer_nmode_B, extents_B, outer_extents_B, subtensor_dims_B, subtensor_on_extents);
-    int64_t* offsets_C = calculate_offsets(nmode_C, outer_nmode_C, extents_C, outer_extents_C, subtensor_dims_C, subtensor_on_extents);
     int64_t* offsets_D = calculate_offsets(nmode_D, outer_nmode_D, extents_D, outer_extents_D, subtensor_dims_D, subtensor_on_extents);
 
     int64_t* strides_A = calculate_strides(nmode_A, outer_nmode_A, outer_extents_A, stride_signs_A, subtensor_dims_A);
     int64_t* strides_B = calculate_strides(nmode_B, outer_nmode_B, outer_extents_B, stride_signs_B, subtensor_dims_B);
-    int64_t* strides_C = calculate_strides(nmode_C, outer_nmode_C, outer_extents_C, stride_signs_C, subtensor_dims_C);
     int64_t* strides_D = calculate_strides(nmode_D, outer_nmode_D, outer_extents_D, stride_signs_D, subtensor_dims_D);
+    int64_t* strides_C = new int64_t[nmode_C];
+    std::copy(strides_D, strides_D + nmode_D, strides_C);
     
     int64_t size_A = calculate_size(outer_nmode_A, outer_extents_A);
     int64_t size_B = calculate_size(outer_nmode_B, outer_extents_B);
-    int64_t size_C = calculate_size(outer_nmode_C, outer_extents_C);
     int64_t size_D = calculate_size(outer_nmode_D, outer_extents_D);
+    int64_t size_C = size_D;
 
     T* data_A = create_tensor_data<T>(size_A);
     T* data_B = create_tensor_data<T>(size_B);
@@ -352,32 +353,28 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
 
     T* A = calculate_tensor_pointer<T>(data_A, nmode_A, extents_A, offsets_A, strides_A);
     T* B = calculate_tensor_pointer<T>(data_B, nmode_B, extents_B, offsets_B, strides_B);
-    T* C = calculate_tensor_pointer<T>(data_C, nmode_C, extents_C, offsets_C, strides_C);
+    T* C = calculate_tensor_pointer<T>(data_C, nmode_C, extents_C, offsets_D, strides_C);
     T* D = calculate_tensor_pointer<T>(data_D, nmode_D, extents_D, offsets_D, strides_D);
 
-    T alpha = rand<T>();
-    T beta = rand<T>();
+    T alpha = rand<T>(-10, 10);
+    T beta = rand<T>(-10, 10);
 
     delete[] unique_indices;
 
     delete[] subtensor_dims_A;
     delete[] subtensor_dims_B;
-    delete[] subtensor_dims_C;
     delete[] subtensor_dims_D;
 
     delete[] outer_extents_A;
     delete[] outer_extents_B;
-    delete[] outer_extents_C;
     delete[] outer_extents_D;
 
     delete[] stride_signs_A;
     delete[] stride_signs_B;
-    delete[] stride_signs_C;
     delete[] stride_signs_D;
 
     delete[] offsets_A;
     delete[] offsets_B;
-    delete[] offsets_C;
     delete[] offsets_D;
     
     return {nmode_A, extents_A, strides_A, A, idx_A,
@@ -391,7 +388,7 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
 
 // nmode_A, nmode_B, nmode_C, nmode_D, contracted_modes, hadamard_modes, free_indices_A, free_indices_B, isolated_indices_A, isolated_indices_B, repeated_indices_A, repeated_indices_B
 // OBS: If something is enabled at least one of those instances will be generated
-std::tuple<int, int, int, int,
+std::tuple<int, int, int,
            int, int, int, int,
            int, int, int, int> generate_index_configuration(int nmode_A, int nmode_B, int nmode_D,
                                                             int contracted_indices, int hadamard_indices,
@@ -741,7 +738,7 @@ std::tuple<int, int, int, int,
         }
     }
 
-    return {nmode_A, nmode_B, nmode_D, nmode_D, contracted_indices, hadamard_indices, free_indices_A, free_indices_B, isolated_indices_A, isolated_indices_B, repeated_indices_A, repeated_indices_B};
+    return {nmode_A, nmode_B, nmode_D, contracted_indices, hadamard_indices, free_indices_A, free_indices_B, isolated_indices_A, isolated_indices_B, repeated_indices_A, repeated_indices_B};
 }
 
 int* generate_unique_indices(int64_t total_unique_indices)
@@ -755,16 +752,15 @@ int* generate_unique_indices(int64_t total_unique_indices)
     return unique_indices;
 }
 
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
-                                                                  int contracted_indices, int hadamard_indices,
-                                                                  int free_indices_A, int free_indices_B,
-                                                                  int isolated_indices_A, int isolated_indices_B,
-                                                                  int repeated_indices_A, int repeated_indices_B)
+std::tuple<int64_t*, int64_t*, int64_t*> assign_indices(int* unique_indices,
+                                                        int contracted_indices, int hadamard_indices,
+                                                        int free_indices_A, int free_indices_B,
+                                                        int isolated_indices_A, int isolated_indices_B,
+                                                        int repeated_indices_A, int repeated_indices_B)
 {
     // Create index arrays
     int64_t* idx_A = new int64_t[repeated_indices_A + isolated_indices_A + free_indices_A + hadamard_indices + contracted_indices];
     int64_t* idx_B = new int64_t[repeated_indices_B + isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices];
-    int64_t* idx_C = new int64_t[free_indices_A + hadamard_indices + free_indices_B];
     int64_t* idx_D = new int64_t[free_indices_A + hadamard_indices + free_indices_B];
 
     /*
@@ -792,10 +788,6 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_in
 
     std::shuffle(idx_D, idx_D + (free_indices_A + hadamard_indices + free_indices_B), rand_engine()); // Shuffle indices for D
 
-    std::copy(idx_D,
-              idx_D + free_indices_A + hadamard_indices + free_indices_B,
-              idx_C); // C has the same indices as D
-
     for (int i = 0; i < repeated_indices_A; i++) // Add repeated indices to A
     {
         idx_A[i + isolated_indices_A + free_indices_A + hadamard_indices + contracted_indices] = idx_A[rand(0, isolated_indices_A + free_indices_A + hadamard_indices + contracted_indices - 1)];
@@ -810,7 +802,7 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_indices(int* unique_in
 
     std::shuffle(idx_B, idx_B + repeated_indices_B + isolated_indices_B + free_indices_B + hadamard_indices + contracted_indices, rand_engine()); // Shuffle final indices for B
     
-    return {idx_A, idx_B, idx_C, idx_D};
+    return {idx_A, idx_B, idx_D};
 }
 
 std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, int64_t max_extent,
@@ -827,7 +819,7 @@ std::unordered_map<int, int64_t> generate_index_extent_map(int64_t min_extent, i
     return index_to_extent;
 }
 
-std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
+std::tuple<int64_t*, int64_t*, int64_t*> assign_extents(std::unordered_map<int, int64_t> index_extent_map,
                                                                   int nmode_A, int64_t* idx_A,
                                                                   int nmode_B, int64_t* idx_B,
                                                                   int nmode_D, int64_t* idx_D)
@@ -835,7 +827,6 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered
     // Create extent arrays
     int64_t* extents_A = new int64_t[nmode_A];
     int64_t* extents_B = new int64_t[nmode_B];
-    int64_t* extents_C = new int64_t[nmode_D];
     int64_t* extents_D = new int64_t[nmode_D];
 
     // Map extents to tensors based on their indices
@@ -852,9 +843,7 @@ std::tuple<int64_t*, int64_t*, int64_t*, int64_t*> assign_extents(std::unordered
         extents_D[i] = index_extent_map[idx_D[i]]; // Assign extents to D
     }
 
-    std::copy(extents_D, extents_D + nmode_D, extents_C);
-
-    return {extents_A, extents_B, extents_C, extents_D};
+    return {extents_A, extents_B, extents_D};
 }
 
 int* choose_stride_signs(int nmode, bool negative_strides_enabled, bool mixed_strides_enabled)
