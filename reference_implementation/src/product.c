@@ -201,6 +201,16 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
     int H_nmode = 0;
     for (size_t i = 0; i < nmode_A; i++)
     {
+        bool already_handled = false;
+        for (size_t j = 0; j < i; j++)
+        {
+            if (idx_A[i] == idx_A[j]) {
+                already_handled = true;
+                break;
+            }
+        }
+        if (already_handled) continue;
+
         bool in_B = false;
         for (size_t j = 0; j < nmode_B; j++)
         {
@@ -210,6 +220,7 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
             }
         }
         if (!in_B) continue;
+
         bool in_D = false;
         for (size_t j = 0; j < nmode_D; j++)
         {
@@ -219,6 +230,7 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
             }
         }
         if (!in_D) continue;
+
         (*H_idx_ptr)[H_nmode] = idx_A[i];
         H_nmode++;
     }
@@ -237,6 +249,16 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
     int P_nmode = 0;
     for (size_t i = 0; i < nmode_A; i++)
     {
+        bool already_handled = false;
+        for (size_t j = 0; j < i; j++)
+        {
+            if (idx_A[i] == idx_A[j]) {
+                already_handled = true;
+                break;
+            }
+        }
+        if (already_handled) continue;
+
         bool in_B = false;
         for (size_t j = 0; j < nmode_B; j++)
         {
@@ -246,6 +268,7 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
             }
         }
         if (!in_B) continue;
+
         bool in_D = false;
         for (size_t j = 0; j < nmode_D; j++)
         {
@@ -255,6 +278,7 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
             }
         }
         if (in_D) continue;
+
         (*P_idx_ptr)[P_nmode] = idx_A[i];
         P_nmode++;
     }
@@ -272,6 +296,16 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
     int FX_nmode = 0;
     for (size_t i = 0; i < nmode_X; i++)
     {
+        bool already_handled = false;
+        for (size_t j = 0; j < i; j++)
+        {
+            if (idx_X[i] == idx_X[j]) {
+                already_handled = true;
+                break;
+            }
+        }
+        if (already_handled) continue;
+
         bool in_Y = false;
         for (size_t j = 0; j < nmode_Y; j++)
         {
@@ -281,6 +315,7 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
             }
         }
         if (in_Y) continue;
+
         bool in_D = false;
         for (size_t j = 0; j < nmode_D; j++)
         {
@@ -290,6 +325,7 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
             }
         }
         if (!in_D) continue;
+
         (*FX_idx_ptr)[FX_nmode] = idx_X[i];
         FX_nmode++;
     }
@@ -307,6 +343,16 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
     int IX_nmode = 0;
     for (size_t i = 0; i < nmode_X; i++)
     {
+        bool already_handled = false;
+        for (size_t j = 0; j < i; j++)
+        {
+            if (idx_X[i] == idx_X[j]) {
+                already_handled = true;
+                break;
+            }
+        }
+        if (already_handled) continue;
+
         bool in_Y = false;
         for (size_t j = 0; j < nmode_Y; j++)
         {
@@ -316,6 +362,7 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
             }
         }
         if (in_Y) continue;
+
         bool in_D = false;
         for (size_t j = 0; j < nmode_Z; j++)
         {
@@ -325,6 +372,7 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
             }
         }
         if (in_D) continue;
+
         (*IX_idx_ptr)[IX_nmode] = idx_X[i];
         IX_nmode++;
     }
@@ -350,7 +398,7 @@ void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int6
 }
 
 void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
-                           const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr)
+                             const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr)
 {
     *G_strides_X_ptr = malloc(G_nmode * sizeof(int64_t));
     for (size_t i = 0; i < G_nmode; i++)
@@ -360,11 +408,9 @@ void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int6
         {
             if (G_idx[i] == idx_X[j]) {
                 (*G_strides_X_ptr)[i] += strides_X[j];
-                break;
             }
         }
     }
-    
 }
 
 int64_t calculate_size(const int64_t* extents, const int nmode)
@@ -519,18 +565,18 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         int64_t* IB_coords = malloc(plan_ptr->IB_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->IB_nmode; i++) IB_coords[i] = 0;
 
-        for (int h = 0; h < plan_ptr->H_nmode; h++)
+        for (int h = 0; h < plan_ptr->H_size; h++)
         {
             int H_offset_A = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_A);
             int H_offset_B = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_B);
             int H_offset_D = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_D);
 
-            for (int fa = 0; fa < plan_ptr->FA_nmode; fa++)
+            for (int fa = 0; fa < plan_ptr->FA_size; fa++)
             {
                 int FA_offset_A = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_A);
                 int FA_offset_D = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_D);
 
-                for (int fb = 0; fb < plan_ptr->FB_nmode; fb++)
+                for (int fb = 0; fb < plan_ptr->FB_size; fb++)
                 {
                     int FB_offset_B = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_B);
                     int FB_offset_D = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_D);
@@ -547,25 +593,25 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                         set_typed_accum_to_zero(accum, plan_ptr->prec, plan_ptr->type_D, is_complex_D);
                     }
 
-                    for (int p = 0; p < plan_ptr->P_nmode; p++)
+                    for (int p = 0; p < plan_ptr->P_size; p++)
                     {
                         int P_offset_A = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_A);
                         int P_offset_B = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_B);
 
                         set_typed_scalar_to_zero(sum_A, plan_ptr->prec, plan_ptr->type_A, is_complex_A);
-                        for (int ia = 0; ia < plan_ptr->IA_nmode; ia++)
+                        for (int ia = 0; ia < plan_ptr->IA_size; ia++)
                         {
                             int IA_offset_A = calcualte_offset(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_strides_A);
-                            int offset_A = H_offset_A + FA_offset_A + IA_offset_A + P_offset_A;
+                            int offset_A = H_offset_A + FA_offset_A + P_offset_A + IA_offset_A;
                             sum_unary_contractions(sum_A, A, offset_A, plan_ptr->op_A, plan_ptr->type_A, plan_ptr->prec);
                             increment_coordinates(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_extents);
                         }
 
                         set_typed_scalar_to_zero(sum_B, plan_ptr->prec, plan_ptr->type_B, is_complex_B);
-                        for (int ib = 0; ib < plan_ptr->IB_nmode; ib++)
+                        for (int ib = 0; ib < plan_ptr->IB_size; ib++)
                         {
                             int IB_offset_B = calcualte_offset(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_strides_B);
-                            int offset_B = H_offset_B + FB_offset_B + IB_offset_B + P_offset_B;
+                            int offset_B = H_offset_B + FB_offset_B + P_offset_B + IB_offset_B;
                             sum_unary_contractions(sum_B, B, offset_B, plan_ptr->op_B, plan_ptr->type_B, plan_ptr->prec);
                             increment_coordinates(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_extents);
                         }
