@@ -3,7 +3,7 @@
 
 #include <tapp/datatype.h>
 
-#include <cutensor/types.h>
+#include <cutensor.h>
 
 #include <complex>
 
