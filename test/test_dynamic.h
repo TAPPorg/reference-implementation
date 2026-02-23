@@ -12,8 +12,8 @@ extern "C" {
     #include <tapp.h>
 }
 
-const char* pathA = "./libtapp-reference.so";
-const char* pathB = "./cutensor_bindings/libcutensor_bindings.so";
+const char* pathA = "./reference_implementation/libtapp-reference.so";
+const char* pathB = "./cutensor_bindings/libtapp-cutensor.so";
 struct imp
 {
     void* handle;
