@@ -243,7 +243,7 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
     T* D = calculate_tensor_pointer<T>(data_D, nmode_D, extents_D, offsets_D, strides_D);
 
     T alpha = rand<T>(-10, 10);
-    T beta = rand<T>(-10, 10z);
+    T beta = rand<T>(-10, 10);
 
     delete[] unique_indices;
 
