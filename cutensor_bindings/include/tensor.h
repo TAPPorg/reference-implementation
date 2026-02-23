@@ -3,7 +3,7 @@
 
 #include <tapp/tensor.h>
 
-#include <cutensor/types.h>
+#include <cutensor.h>
 
 #include <cstring>
 
