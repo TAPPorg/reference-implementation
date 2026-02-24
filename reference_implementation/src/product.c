@@ -1837,7 +1837,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
     return false;
 }
 
-void sum_reduction(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
+void sum_reduction(void* sum, const void* tensor, int64_t index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
 {
     switch (prec)
     {
