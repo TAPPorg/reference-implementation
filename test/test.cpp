@@ -12,7 +12,7 @@ extern "C" {
   extern void bli_finalize();
 }
 
-unsigned int current_rand_seed = 0;
+unsigned int current_rand_seed = 1;
 
 auto& rand_engine() {
     static std::mt19937 engine(current_rand_seed);

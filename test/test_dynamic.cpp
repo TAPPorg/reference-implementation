@@ -6,7 +6,7 @@
 
 #include "test_dynamic.h"
 
-unsigned int current_rand_seed = 0;
+unsigned int current_rand_seed = 1;
 
 // TODO include ATTR_KEY_USE_DEVICE_MEMORY from cutensor_bindings attributes header
 bool use_device_memory = false; // Global variable to control device memory usage in tests
