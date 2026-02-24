@@ -27,7 +27,7 @@ void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int6
 void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
                            const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr);
 void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
-void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec);
+void sum_reduction(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec);
 void calculate_beta_C(const void* beta, TAPP_datatype type_beta, bool is_complex_beta, const void* value_C, TAPP_datatype type_C, bool is_complex_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_accum, bool is_complex_accum);
 void calculate_beta_C_default(const void* beta, TAPP_datatype type_beta, const void* value_C, TAPP_datatype type_C, TAPP_element_op op_C, void* accum, TAPP_datatype type_accum);
 void calculate_beta_C_prec(const void* beta, bool is_complex_beta, const void* value_C, bool is_complex_C, TAPP_prectype prec, void* accum, bool is_complex_accum);
@@ -603,7 +603,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                         {
                             int IA_offset_A = calcualte_offset(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_strides_A);
                             int offset_A = H_offset_A + FA_offset_A + P_offset_A + IA_offset_A;
-                            sum_unary_contractions(sum_A, A, offset_A, plan_ptr->op_A, plan_ptr->type_A, plan_ptr->prec);
+                            sum_reduction(sum_A, A, offset_A, plan_ptr->op_A, plan_ptr->type_A, plan_ptr->prec);
                             increment_coordinates(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_extents);
                         }
 
@@ -612,7 +612,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                         {
                             int IB_offset_B = calcualte_offset(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_strides_B);
                             int offset_B = H_offset_B + FB_offset_B + P_offset_B + IB_offset_B;
-                            sum_unary_contractions(sum_B, B, offset_B, plan_ptr->op_B, plan_ptr->type_B, plan_ptr->prec);
+                            sum_reduction(sum_B, B, offset_B, plan_ptr->op_B, plan_ptr->type_B, plan_ptr->prec);
                             increment_coordinates(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_extents);
                         }
 
@@ -1837,7 +1837,7 @@ bool is_equal(const void* val, TAPP_datatype type, const void* comp_val, TAPP_da
     return false;
 }
 
-void sum_unary_contractions(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
+void sum_reduction(void* sum, const void* tensor, int index, TAPP_element_op op, TAPP_datatype type, TAPP_prectype prec)
 {
     switch (prec)
     {
