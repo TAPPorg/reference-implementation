@@ -35,7 +35,7 @@ endif()
 project(tapp
         VERSION ${TAPP_VERSION}
         DESCRIPTION "TAPP (Tensor Algebra Processing Primitives)"
-        LANGUAGES C CUDA
+        LANGUAGES C
         HOMEPAGE_URL "https://github.com/TAPPOrg/")
 
 # TBLIS requires CXX; enable_language must be called at the top level
