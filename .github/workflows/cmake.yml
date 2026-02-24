@@ -139,7 +139,7 @@ jobs:
       shell: bash
       run: |
         valgrind --error-exitcode=1 --leak-check=full ./test/tapp-reference-demo
-        valgrind --error-exitcode=1 --leak-check=full ./test/tapp-reference-driver
+        valgrind --error-exitcode=1 --leak-check=full ./examples/tapp-reference-driver
 
     - name: Consume from build tree
       if: ${{ !matrix.valgrind && !matrix.sanitize }}
