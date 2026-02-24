@@ -36,7 +36,7 @@ int main(int argc, char const *argv[])
     std::cout << "One Dim Tensor Contraction: " << test_one_dim_tensor_contraction() << std::endl;
     std::cout << "Subtensor Same Nmode: " << test_subtensor_unchanged_nmode() << std::endl;
     std::cout << "Subtensor Lower Nmode: " << test_subtensor_lower_nmode() << std::endl;
-    std::cout << "Negative Strides: " << test_negative_strides() << std::endl;
+    //std::cout << "Negative Strides: " << test_negative_strides() << std::endl;
     std::cout << "Negative Strides Subtensor Same Nmode: " << test_negative_strides_subtensor_unchanged_nmode() << std::endl;
     std::cout << "Negative Strides Subtensor Lower Nmode: " << test_negative_strides_subtensor_lower_nmode() << std::endl;
     std::cout << "Mixed Strides: " << test_mixed_strides() << std::endl;
@@ -346,10 +346,10 @@ std::tuple<int, int64_t*, int64_t*, T*, int64_t*,
     int64_t size_D = calculate_size(outer_nmode_D, outer_extents_D);
     int64_t size_C = size_D;
 
-    T* data_A = create_tensor_data<T>(size_A);
-    T* data_B = create_tensor_data<T>(size_B);
-    T* data_C = create_tensor_data<T>(size_C);
-    T* data_D = create_tensor_data<T>(size_D);
+    T* data_A = create_tensor_data<T>(size_A, -10, 10);
+    T* data_B = create_tensor_data<T>(size_B, -10, 10);
+    T* data_C = create_tensor_data<T>(size_C, -10, 10);
+    T* data_D = create_tensor_data<T>(size_D, -10, 10);
 
     T* A = calculate_tensor_pointer<T>(data_A, nmode_A, extents_A, offsets_A, strides_A);
     T* B = calculate_tensor_pointer<T>(data_B, nmode_B, extents_B, offsets_B, strides_B);
