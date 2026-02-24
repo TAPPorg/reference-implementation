@@ -567,21 +567,21 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
         for (int64_t h = 0; h < plan_ptr->H_size; h++)
         {
-            int H_offset_A = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_A);
-            int H_offset_B = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_B);
-            int H_offset_D = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_D);
+            int64_t H_offset_A = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_A);
+            int64_t H_offset_B = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_B);
+            int64_t H_offset_D = calcualte_offset(H_coords, plan_ptr->H_nmode, plan_ptr->H_strides_D);
 
             for (int64_t fa = 0; fa < plan_ptr->FA_size; fa++)
             {
-                int FA_offset_A = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_A);
-                int FA_offset_D = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_D);
+                int64_t FA_offset_A = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_A);
+                int64_t FA_offset_D = calcualte_offset(FA_coords, plan_ptr->FA_nmode, plan_ptr->FA_strides_D);
 
                 for (int64_t fb = 0; fb < plan_ptr->FB_size; fb++)
                 {
-                    int FB_offset_B = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_B);
-                    int FB_offset_D = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_D);
+                    int64_t FB_offset_B = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_B);
+                    int64_t FB_offset_D = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_D);
 
-                    int offset_D = H_offset_D + FA_offset_D + FB_offset_D;
+                    int64_t offset_D = H_offset_D + FA_offset_D + FB_offset_D;
 
                     if (beta_is_zero)
                     {
@@ -595,14 +595,14 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
                     for (int64_t p = 0; p < plan_ptr->P_size; p++)
                     {
-                        int P_offset_A = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_A);
-                        int P_offset_B = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_B);
+                        int64_t P_offset_A = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_A);
+                        int64_t P_offset_B = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_B);
 
                         set_typed_scalar_to_zero(sum_A, plan_ptr->prec, plan_ptr->type_A, is_complex_A);
                         for (int64_t ia = 0; ia < plan_ptr->IA_size; ia++)
                         {
-                            int IA_offset_A = calcualte_offset(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_strides_A);
-                            int offset_A = H_offset_A + FA_offset_A + P_offset_A + IA_offset_A;
+                            int64_t IA_offset_A = calcualte_offset(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_strides_A);
+                            int64_t offset_A = H_offset_A + FA_offset_A + P_offset_A + IA_offset_A;
                             sum_reduction(sum_A, A, offset_A, plan_ptr->op_A, plan_ptr->type_A, plan_ptr->prec);
                             increment_coordinates(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_extents);
                         }
@@ -610,8 +610,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                         set_typed_scalar_to_zero(sum_B, plan_ptr->prec, plan_ptr->type_B, is_complex_B);
                         for (int64_t ib = 0; ib < plan_ptr->IB_size; ib++)
                         {
-                            int IB_offset_B = calcualte_offset(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_strides_B);
-                            int offset_B = H_offset_B + FB_offset_B + P_offset_B + IB_offset_B;
+                            int64_t IB_offset_B = calcualte_offset(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_strides_B);
+                            int64_t offset_B = H_offset_B + FB_offset_B + P_offset_B + IB_offset_B;
                             sum_reduction(sum_B, B, offset_B, plan_ptr->op_B, plan_ptr->type_B, plan_ptr->prec);
                             increment_coordinates(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_extents);
                         }
