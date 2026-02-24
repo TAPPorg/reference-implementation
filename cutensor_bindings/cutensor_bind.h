@@ -19,4 +19,8 @@
 
 
 
+<<<<<<< HEAD
 #endif  /* TAPP_REF_IMPL_CUTENSOR_BIND_CUTENSOR_BIND_H_ */
+=======
+#endif  /* TAPP_REF_IMPL_CUTENSOR_BIND_CUTENSOR_BIND_H_ */
+>>>>>>> 9de9a8860bb68e9a6b85a478c3a07274d4ab4907
