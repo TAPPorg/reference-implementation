@@ -2,24 +2,24 @@
 # TBLIS test
 
 if(TAPP_REFERENCE_USE_TBLIS)
-  add_executable(tapp-reference-test++)
+  add_executable(tapp-reference-test)
 
   target_sources(
-    tapp-reference-test++
+    tapp-reference-test
     PRIVATE
       test.cpp
       test.h
     )
 
   target_link_libraries(
-    tapp-reference-test++
+    tapp-reference-test
     PRIVATE
       tapp::reference
       tblis-static
     )
 
   set_property(
-    TARGET tapp-reference-test++
+    TARGET tapp-reference-test
     PROPERTY
       CXX_STANDARD 20
       CXX_STANDARD_REQUIRED YES
@@ -27,8 +27,8 @@ if(TAPP_REFERENCE_USE_TBLIS)
   )
 
   add_test(
-    NAME tapp-reference-test++
-    COMMAND $<TARGET_FILE:tapp-reference-test++>
+    NAME tapp-reference-test
+    COMMAND $<TARGET_FILE:tapp-reference-test>
     )
 endif()
 
@@ -120,12 +120,18 @@ if (TAPP_CUTENSOR)
   # test using dynamic library
 
   add_executable(tapp-reference-test-dynamic)
+  
+  target_compile_definitions(
+    tapp-reference-test-dynamic
+    PRIVATE
+      TAPP_DYNAMIC_LAUNCH
+  )
 
   target_sources(
     tapp-reference-test-dynamic
     PRIVATE
-      test_dynamic.cpp
-      test_dynamic.h
+      test.cpp
+      test.h
   )
 
   target_link_libraries(
