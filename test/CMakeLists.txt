@@ -95,11 +95,17 @@ if (TAPP_CUTENSOR)
   # demo using dynamic library
 
   add_executable(tapp-reference-demo-dynamic)
+  
+  target_compile_definitions(
+    tapp-reference-demo-dynamic
+    PRIVATE
+      TAPP_DYNAMIC_LAUNCH
+  )
 
   target_sources(
     tapp-reference-demo-dynamic
     PRIVATE
-      demo_dynamic.c
+      demo.c
       helpers.c
       helpers.h
   )
