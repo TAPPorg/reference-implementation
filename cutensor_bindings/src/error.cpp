@@ -31,7 +31,7 @@ size_t TAPP_explain_error(TAPP_error error,
     uint64_t tappVal = code & TAPP_FIELD_MASK;
     if (tappVal != 0) {
         str += " [TAPP Error]: ";
-        switch (error)
+        switch (tappVal)
         {
         case 1:
             str += "The extents for the indices shared between tensor A and B does not match.";
