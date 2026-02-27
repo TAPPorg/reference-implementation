@@ -503,7 +503,7 @@ void conjugate()
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
 
-    cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
 
     print_tensor_c_cpp(nmode_D, extents_D, strides_D, D);
 
