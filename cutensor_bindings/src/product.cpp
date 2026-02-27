@@ -21,7 +21,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_prectype prec)
 {
     struct product_plan* plan_struct = new struct product_plan;
-    plan_struct->handle = ((cutensorHandle_t*) handle);
+    plan_struct->handle = handle;
     struct handle* handle_struct = (struct handle*) plan_struct->handle;
     std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + TAPP_get_nmodes(A));
     std::vector<int32_t> cuidx_B = std::vector<int32_t>(idx_B, idx_B + TAPP_get_nmodes(B));

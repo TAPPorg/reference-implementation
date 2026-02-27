@@ -34,7 +34,7 @@ struct product_plan
     TAPP_element_op op_D;
     cutensorPlan_t* contraction_plan;
     cutensorPlan_t* permutation_plan;
-    cutensorHandle_t* handle;
+    TAPP_handle handle;
 };
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_PRODUCT_H_ */
