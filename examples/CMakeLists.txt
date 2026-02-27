@@ -125,5 +125,5 @@ target_sources(
 target_link_libraries(
   tapp-reference-exercise_tucker_answers
   PRIVATE
-    tapp-reference
+    tapp::reference
   )
