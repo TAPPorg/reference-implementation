@@ -234,16 +234,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 sizeof(contraction_actual_workspace_size));
     if (err != CUTENSOR_STATUS_SUCCESS) return pack_error(0, err);
 
-    // TODO Recommended minimum 128 MB workspace 
-    // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
-    // contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB
+    contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB recomended minimum size https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
     void *contraction_work = nullptr;
-    if (contraction_actual_workspace_size > 0)
-    {
-        cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return pack_error(0, cerr);
-        assert(uintptr_t(contraction_work) % 128 == 0);
-    }
+    cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
+    if (cerr != cudaSuccess) return pack_error(0, cerr);
+    assert(uintptr_t(contraction_work) % 128 == 0);
 
     void* contraction_output = do_permutation ? E_d : D_d;
     err = cutensorContract(*handle_struct->libhandle,
