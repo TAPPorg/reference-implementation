@@ -62,27 +62,35 @@ int main(int argc, char const *argv[])
 {
     int nocc = 20; // Default value
     int nvirt = 200; 
+    int nocc_PH = 100; 
+    int nvirt_PH = 200; 
 
     try {
-        if (argc >= 3) {
+        if (argc >= 5) {
             nocc = std::stoi(argv[1]);
             nvirt = std::stoi(argv[2]);
+            nocc_PH = std::stoi(argv[3]);
+            nvirt_PH = std::stoi(argv[4]);
         }
-        else if (argc >= 2) {
-            nvirt = std::stoi(argv[1]);
+        else if (argc >= 3) {
+            nocc = std::stoi(argv[1]);
+            nvirt = std::stoi(argv[2]);
+            nocc_PH = nocc;
+            nvirt_PH = nvirt;
         }
     } catch (...) {
         std::cout << "Invalid input. Using defaults.\n";
     }
 
-    std::cout << "test size: nocc: " << nocc << " nvirt: " << nvirt << "\n";
     std::cout << "double complex datatype \n";
     
     // Run the benchmark
     std::cout << "running contraction particle-particle ladder R_abij += 0.5 * V_abcd * t_cdij \n";
+    std::cout << "PP with test size: nocc: " << nocc << " nvirt: " << nvirt << "\n";
     contraction_PPL(nocc, nvirt);
     std::cout << "running contraction particle-hole ladder R_abij += V_kbcj * t_acik \n";
-    contraction_PHL(nocc, nvirt);
+    std::cout << "PH with test size: nocc: " << nocc_PH << " nvirt: " << nvirt_PH << "\n";
+    contraction_PHL(nocc_PH, nvirt_PH);
     
     return 0;
 }
