@@ -83,6 +83,7 @@ if (TAPP_CUTENSOR)
   else()
     message(FATAL_ERROR "Cannot build cuTENSOR bindings due to missing CXX language support")
   endif()
+  enable_language(CUDA)
   # since CUDAToolkit will be needed in tests/ also, load it here
   cmake_minimum_required(VERSION 3.17) # CUDAToolkit
   find_package(CUDAToolkit REQUIRED)

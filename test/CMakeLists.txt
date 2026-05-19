@@ -91,6 +91,38 @@ if (TAPP_CUTENSOR)
     COMMAND $<TARGET_FILE:tapp-cutensor-demo>
   )
 
+  # cutensor benchmark
+
+	set_source_files_properties(cutensor_benchmark.cpp PROPERTIES LANGUAGE CUDA)
+
+  add_executable(tapp-cutensor-benchmark)
+
+  target_sources(
+    tapp-cutensor-benchmark
+    PRIVATE
+      cutensor_benchmark.cpp
+      helpers.c
+      helpers.h
+  )
+
+  target_link_libraries(
+    tapp-cutensor-benchmark
+    PRIVATE
+      tapp::cutensor
+      CUDA::cudart
+  )
+
+  target_include_directories(
+    tapp-cutensor-benchmark
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+# add_test(
+#    NAME tapp-cutensor-benchmark
+#    COMMAND $<TARGET_FILE:tapp-cutensor-demo>
+#  )
+
+
   # ----------------------------------------------------------------------------
   # demo using dynamic library
 
