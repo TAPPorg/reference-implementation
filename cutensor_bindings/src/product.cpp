@@ -1,4 +1,5 @@
 #include "../include/product.h"
+#include "../include/status.h"
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
@@ -339,7 +340,14 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         if (cerr != cudaSuccess) return pack_error(0, cerr);
     }
 
-    return pack_error(0, err); 
+    TAPP_error status_err = create_status(*(cudaStream_t*)exec, status);
+    if (!TAPP_check_success(status_err)) return status_err;
+
+    // For the moment execution is synchronous: block until all stream work completes.
+    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
+    if (cerr != cudaSuccess) return pack_error(0, cerr);
+
+    return pack_error(0, err);
 }
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides)

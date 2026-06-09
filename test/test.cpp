@@ -442,6 +442,7 @@ TAPP_error run_product(
     auto fn_create_executor = TAPP_create_executor;
     auto fn_destroy_executor = TAPP_destroy_executor;
     auto fn_execute_product = TAPP_execute_product;
+    auto fn_destroy_status = TAPP_destroy_status;
 #else
     auto fn_create_handle = impl.TAPP_create_handle;
     auto fn_destroy_handle = impl.TAPP_destroy_handle;
@@ -452,6 +453,7 @@ TAPP_error run_product(
     auto fn_create_executor = impl.TAPP_create_executor;
     auto fn_destroy_executor = impl.TAPP_destroy_executor;
     auto fn_execute_product = impl.TAPP_execute_product;
+    auto fn_destroy_status = impl.TAPP_destroy_status;
 #endif
 
     TAPP_error error_status;
@@ -511,7 +513,8 @@ TAPP_error run_product(
     if (error_status != 0) goto at_free_plan;
 
     error_status = fn_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-    
+    if (error_status == 0) fn_destroy_status(status);
+
     fn_destroy_executor(exec);
     at_free_plan:
     fn_destroy_tensor_product(plan);

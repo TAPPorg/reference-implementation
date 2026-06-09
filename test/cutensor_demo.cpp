@@ -190,6 +190,7 @@ void contraction()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -310,6 +311,7 @@ void hadamard()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -413,6 +415,7 @@ void complex_num()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -516,6 +519,7 @@ void conjugate()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -617,6 +621,7 @@ void zero_dim()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -746,6 +751,7 @@ void one_ext_contracted()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -875,6 +881,7 @@ void one_ext_transfered()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -1023,6 +1030,7 @@ void chained_diff_op()
 
     assert(uintptr_t(E_d) % 128 == 0);
     
+    TAPP_destroy_status(status);
     TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D_d, (void *)C_d, (void *)&beta, (void *)C_d, (void *)E_d);
 
     cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
@@ -1042,6 +1050,7 @@ void chained_diff_op()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_tensor_info(info_E);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -1169,6 +1178,7 @@ void chained_same_op()
 
     assert(uintptr_t(E_d) % 128 == 0);
 
+    TAPP_destroy_status(status);
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)D_d, (void *)&beta, (void *)C_d, (void *)E_d);
 
     cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
@@ -1185,6 +1195,7 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }
@@ -1296,6 +1307,7 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }*/
@@ -1469,6 +1481,7 @@ void subtensors()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
     TAPP_destroy_handle(handle);
 }

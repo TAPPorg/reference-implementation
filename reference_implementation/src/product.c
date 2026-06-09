@@ -460,6 +460,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     free(strides_C);
     free(strides_D);
 
+    if (status != NULL) {
+        struct status* stat = malloc(sizeof(struct status));
+        stat->completion = TAPP_COMPLETE;
+        *status = (TAPP_status)stat;
+    }
+
     if(!comp_) return 137;
     return 0;
 }

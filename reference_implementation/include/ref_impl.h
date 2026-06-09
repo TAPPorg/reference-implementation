@@ -36,4 +36,9 @@ struct plan
     TAPP_prectype prec;
 };
 
+struct status
+{
+    TAPP_completion completion;
+};
+
 #endif  /* TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_ */

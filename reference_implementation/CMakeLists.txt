@@ -11,6 +11,7 @@ target_sources(
     src/handle.c
     src/tensor.c
     src/product.c
+    src/status.c
   )
 
 set_property(

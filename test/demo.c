@@ -141,7 +141,7 @@ void load_implementation() {
     fn_TAPP_destroy_tensor_product = TAPP_destroy_tensor_product;
     fn_TAPP_execute_product = TAPP_execute_product;
     //fn_TAPP_execute_batched_product = TAPP_execute_batched_product; Not implemented in the reference implementation
-    //fn_TAPP_destroy_status = TAPP_destroy_status; Not implemented in the reference implementation
+    fn_TAPP_destroy_status = TAPP_destroy_status;
     fn_TAPP_create_tensor_info = TAPP_create_tensor_info;
     fn_TAPP_destroy_tensor_info = TAPP_destroy_tensor_info;
     fn_TAPP_get_nmodes = TAPP_get_nmodes;
@@ -312,6 +312,7 @@ void contraction()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -416,6 +417,7 @@ void hadamard()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -503,6 +505,7 @@ void complex_num()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -590,6 +593,7 @@ void conjugate()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -675,6 +679,7 @@ void zero_dim()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -788,6 +793,7 @@ void one_ext_contracted()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -901,6 +907,7 @@ void one_ext_transfered()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -1006,6 +1013,7 @@ void chained_diff_op()
         5, 6, 7, 8};
 
     fn_TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    fn_TAPP_destroy_status(status);
 
     printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -1041,6 +1049,7 @@ void chained_diff_op()
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
     fn_TAPP_destroy_tensor_info(info_E);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -1124,6 +1133,7 @@ void chained_same_op()
         13, 14, 15, 16};
 
     fn_TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A, (void *)B, (void *)&beta, (void *)C, (void *)D);
+    fn_TAPP_destroy_status(status);
 
     printf("\tOperation 1:\n");
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -1158,6 +1168,7 @@ void chained_same_op()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -1274,6 +1285,7 @@ void negative_str()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
@@ -1430,6 +1442,7 @@ void subtensors()
     fn_TAPP_destroy_tensor_info(info_B);
     fn_TAPP_destroy_tensor_info(info_C);
     fn_TAPP_destroy_tensor_info(info_D);
+    fn_TAPP_destroy_status(status);
     fn_TAPP_destroy_executor(exec);
     fn_TAPP_destroy_handle(handle);
 }
