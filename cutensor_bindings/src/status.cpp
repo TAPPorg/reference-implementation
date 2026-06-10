@@ -21,23 +21,34 @@ TAPP_error create_status(cudaStream_t stream, TAPP_status* status)
     return 0;
 }
 
-TAPP_error TAPP_status_check_completion(TAPP_status status, TAPP_completion* completion)
+TAPP_error TAPP_status_check_completion(TAPP_status status, TAPP_completion* completion, TAPP_error* error)
 {
-    if (completion == nullptr) return 0;
     cudaError_t cerr = cudaEventQuery(((struct status*)status)->event);
+    TAPP_completion comp;
+    TAPP_error op_error = 0;
     if (cerr == cudaSuccess)
     {
-        *completion = TAPP_COMPLETE;
+        comp = TAPP_COMPLETE;
     }
     else if (cerr == cudaErrorNotReady)
     {
-        *completion = TAPP_INCOMPLETE;
+        comp = TAPP_INCOMPLETE;
     }
     else
     {
-        return pack_error(0, cerr);
+        comp = TAPP_FAILED;
+        op_error = pack_error(0, cerr);
     }
+    if (completion != nullptr) *completion = comp;
+    if (error != nullptr) *error = op_error;
     return 0;
+}
+
+TAPP_error TAPP_status_get_error(TAPP_status status)
+{
+    cudaError_t cerr = cudaEventQuery(((struct status*)status)->event);
+    if (cerr == cudaSuccess) return 0;
+    return pack_error(0, cerr);
 }
 
 TAPP_error TAPP_status_wait(TAPP_status status)

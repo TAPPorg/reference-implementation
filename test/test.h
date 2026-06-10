@@ -29,6 +29,7 @@ struct impl
     size_t (*TAPP_explain_error)(TAPP_error error, size_t maxlen, char* message);
     TAPP_error (*TAPP_create_executor)(TAPP_executor* exec);
     TAPP_error (*TAPP_destroy_executor)(TAPP_executor exec);
+    TAPP_error (*TAPP_executor_wait)(TAPP_executor exec);
     TAPP_error (*TAPP_create_handle)(TAPP_handle* handle);
     TAPP_error (*TAPP_destroy_handle)(TAPP_handle handle);
     TAPP_error (*TAPP_create_tensor_product)(TAPP_tensor_product* plan,
@@ -67,6 +68,7 @@ struct impl
                                                const void** C,
                                                      void** D);
     TAPP_error (*TAPP_destroy_status)(TAPP_status status);
+    TAPP_error (*TAPP_status_check_completion)(TAPP_status status, TAPP_completion* completion, TAPP_error* error);
     TAPP_error (*TAPP_create_tensor_info)(TAPP_tensor_info* info,
                                           TAPP_handle handle,
                                           TAPP_datatype type,

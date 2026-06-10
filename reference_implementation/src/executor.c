@@ -29,6 +29,7 @@ TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status) {
     struct status* stat = malloc(sizeof(struct status));
     // All work submitted to a synchronous executor has finished by the time we get here.
     stat->completion = TAPP_COMPLETE;
+    stat->error = 0;
     *status = (TAPP_status)stat;
     return 0;
 }

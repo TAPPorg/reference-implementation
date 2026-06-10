@@ -463,6 +463,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (status != NULL) {
         struct status* stat = malloc(sizeof(struct status));
         stat->completion = TAPP_COMPLETE;
+        stat->error = 0;
         *status = (TAPP_status)stat;
     }
 

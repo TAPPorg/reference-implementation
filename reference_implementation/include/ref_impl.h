@@ -39,6 +39,7 @@ struct plan
 struct status
 {
     TAPP_completion completion;
+    TAPP_error error;
 };
 
 #endif  /* TAPP_REF_IMPL_REF_IMPL_REF_IMPL_H_ */

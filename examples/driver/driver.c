@@ -94,8 +94,8 @@ int main(int argc, char const *argv[])
 
     /*
      * Status objects are used to know the status of the execution process. The execution
-     * fills it in (when not NULL); it can then be queried with TAPP_status_check_completion
-     * or waited on with TAPP_status_wait, and must be released with TAPP_destroy_status.
+     * fills it in (when not NULL); after waiting on the executor it can be queried with
+     * TAPP_status_check_completion, and must be released with TAPP_destroy_status.
      */
 
     TAPP_status status; // Declare status object
@@ -174,13 +174,18 @@ int main(int argc, char const *argv[])
 
     print_tensor_s(nmode_D, extents_D, strides_D, D); // Print tensor
 
-    // Wait for completion, query the status, then release it
+    // Wait on the executor, then check whether the operation itself succeeded
     if (TAPP_check_success(error)) {
-        TAPP_status_wait(status);
-        TAPP_completion completion;
-        TAPP_status_check_completion(status, &completion);
-        printf(completion == TAPP_COMPLETE ? "Complete\n" : "Incomplete\n");
+        TAPP_executor_wait(exec);
+        TAPP_error op_error = TAPP_status_get_error(status);
         TAPP_destroy_status(status);
+        if (!TAPP_check_success(op_error)) {
+            int len = TAPP_explain_error(op_error, 0, NULL);
+            char *buff = malloc((len + 1) * sizeof(char));
+            TAPP_explain_error(op_error, len + 1, buff);
+            printf("Failed: %s\n", buff);
+            free(buff);
+        }
     }
 
     /*

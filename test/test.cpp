@@ -197,6 +197,7 @@ int load_implementation(struct impl* impl, const char* path) {
     *(void**)(&impl->TAPP_explain_error) = dlsym(impl->handle, "TAPP_explain_error");
     *(void**)(&impl->TAPP_create_executor) = dlsym(impl->handle, "TAPP_create_executor");
     *(void**)(&impl->TAPP_destroy_executor) = dlsym(impl->handle, "TAPP_destroy_executor");
+    *(void**)(&impl->TAPP_executor_wait) = dlsym(impl->handle, "TAPP_executor_wait");
     *(void**)(&impl->TAPP_create_handle) = dlsym(impl->handle, "TAPP_create_handle");
     *(void**)(&impl->TAPP_destroy_handle) = dlsym(impl->handle, "TAPP_destroy_handle");
     *(void**)(&impl->TAPP_create_tensor_product) = dlsym(impl->handle, "TAPP_create_tensor_product");
@@ -204,6 +205,7 @@ int load_implementation(struct impl* impl, const char* path) {
     *(void**)(&impl->TAPP_execute_product) = dlsym(impl->handle, "TAPP_execute_product");
     *(void**)(&impl->TAPP_execute_batched_product) = dlsym(impl->handle, "TAPP_execute_batched_product");
     *(void**)(&impl->TAPP_destroy_status) = dlsym(impl->handle, "TAPP_destroy_status");
+    *(void**)(&impl->TAPP_status_check_completion) = dlsym(impl->handle, "TAPP_status_check_completion");
     *(void**)(&impl->TAPP_create_tensor_info) = dlsym(impl->handle, "TAPP_create_tensor_info");
     *(void**)(&impl->TAPP_destroy_tensor_info) = dlsym(impl->handle, "TAPP_destroy_tensor_info");
     *(void**)(&impl->TAPP_get_nmodes) = dlsym(impl->handle, "TAPP_get_nmodes");
@@ -441,8 +443,10 @@ TAPP_error run_product(
     auto fn_destroy_tensor_product = TAPP_destroy_tensor_product;
     auto fn_create_executor = TAPP_create_executor;
     auto fn_destroy_executor = TAPP_destroy_executor;
+    auto fn_executor_wait = TAPP_executor_wait;
     auto fn_execute_product = TAPP_execute_product;
     auto fn_destroy_status = TAPP_destroy_status;
+    auto fn_status_check_completion = TAPP_status_check_completion;
 #else
     auto fn_create_handle = impl.TAPP_create_handle;
     auto fn_destroy_handle = impl.TAPP_destroy_handle;
@@ -452,8 +456,10 @@ TAPP_error run_product(
     auto fn_destroy_tensor_product = impl.TAPP_destroy_tensor_product;
     auto fn_create_executor = impl.TAPP_create_executor;
     auto fn_destroy_executor = impl.TAPP_destroy_executor;
+    auto fn_executor_wait = impl.TAPP_executor_wait;
     auto fn_execute_product = impl.TAPP_execute_product;
     auto fn_destroy_status = impl.TAPP_destroy_status;
+    auto fn_status_check_completion = impl.TAPP_status_check_completion;
 #endif
 
     TAPP_error error_status;
@@ -513,7 +519,14 @@ TAPP_error run_product(
     if (error_status != 0) goto at_free_plan;
 
     error_status = fn_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-    if (error_status == 0) fn_destroy_status(status);
+    if (error_status == 0) {
+        fn_executor_wait(exec);
+        TAPP_completion completion;
+        TAPP_error op_error;
+        fn_status_check_completion(status, &completion, &op_error);
+        if (completion == TAPP_FAILED) error_status = op_error;
+        fn_destroy_status(status);
+    }
 
     fn_destroy_executor(exec);
     at_free_plan:
