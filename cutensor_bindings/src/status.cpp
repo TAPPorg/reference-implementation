@@ -51,13 +51,6 @@ TAPP_error TAPP_status_get_error(TAPP_status status)
     return pack_error(0, cerr);
 }
 
-TAPP_error TAPP_status_wait(TAPP_status status)
-{
-    cudaError_t cerr = cudaEventSynchronize(((struct status*)status)->event);
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
-    return 0;
-}
-
 TAPP_error TAPP_destroy_status(TAPP_status status)
 {
     cudaError_t cerr = cudaEventDestroy(((struct status*)status)->event);
