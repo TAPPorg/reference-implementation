@@ -12,6 +12,21 @@ static bool is_supported_datatype(TAPP_datatype type)
            type == TAPP_C32 || type == TAPP_C64;
 }
 
+// TTGT assumes a dense, positive-stride layout. A non-positive stride on an
+// axis with extent > 1 means a negative stride (reversal) or a zero stride
+// (broadcast/diagonal), neither of which TTGT supports; worse, a negative
+// stride makes the host<->device copy-size computation underflow and request a
+// huge allocation. Reject such tensors so they are reported as unsupported
+// rather than producing a wrong result or exhausting device memory. The stride
+// of an extent-1 (or extent-0) axis is irrelevant and is ignored.
+static bool tensor_strides_supported(const struct tensor_info* t)
+{
+    for (int i = 0; i < t->nmode; i++)
+        if (t->extents[i] > 1 && t->strides[i] <= 0)
+            return false;
+    return true;
+}
+
 // Is the scalar in `storage` (of the given datatype) non-zero? Used to decide
 // whether tensor C must be read.
 static bool scalar_is_nonzero(const void* storage, TAPP_datatype type)
@@ -131,6 +146,19 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     plan_struct->failed = false;
     plan_struct->ttgt_plan = new TTGTPlan(TransposeBackend::CUTT);
+
+    // TTGT only supports dense, positive-stride tensors. Reject anything else
+    // up front (the plan stays valid and destroyable; execute reports an error).
+    // The TTGTPlan constructor leaves the transpose flags cleared, so a plan
+    // whose optimize() never runs destructs safely.
+    if (!tensor_strides_supported(A_info) || !tensor_strides_supported(B_info) ||
+        !tensor_strides_supported(C_info) || !tensor_strides_supported(D_info))
+    {
+        plan_struct->failed = true;
+        *plan = (TAPP_tensor_product) plan_struct;
+        return pack_error(0, 16);
+    }
+
     TTGTOptimizerOptions options;
     try
     {
