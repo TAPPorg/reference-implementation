@@ -153,3 +153,37 @@ if (TAPP_CUTENSOR)
   )
 
 endif()
+
+# ----------------------------------------------------------------------------
+# cublas specific code
+
+if (TAPP_CUBLAS)
+  # ----------------------------------------------------------------------------
+  # cublas demo
+
+  add_executable(tapp-cublas-demo)
+
+  target_sources(
+    tapp-cublas-demo
+    PRIVATE
+      cublas_demo.cpp
+  )
+
+  target_link_libraries(
+    tapp-cublas-demo
+    PRIVATE
+      tapp::cublas
+      CUDA::cudart
+  )
+
+  target_include_directories(
+    tapp-cublas-demo
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  add_test(
+    NAME tapp-cublas-demo
+    COMMAND $<TARGET_FILE:tapp-cublas-demo>
+  )
+endif()

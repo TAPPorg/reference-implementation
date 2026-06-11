@@ -91,6 +91,31 @@ if (TAPP_CUTENSOR)
 endif()
 
 # ----------------------------------------------------------------------------
+# cublas bindings (TTGT)
+option(TAPP_CUBLAS "Build cuBLAS/TTGT bindings" OFF)
+if (TAPP_CUBLAS)
+  # enable_language must be called at the top level
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build cuBLAS bindings due to missing CXX language support")
+  endif()
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  else()
+    message(FATAL_ERROR "Cannot build cuBLAS bindings due to missing CUDA language support")
+  endif()
+  # CUDAToolkit provides CUDA::cudart and CUDA::cublas
+  cmake_minimum_required(VERSION 3.18) # CUDA_ARCHITECTURES native
+  find_package(CUDAToolkit REQUIRED)
+
+  add_subdirectory(cublas_bindings)
+endif()
+
+# ----------------------------------------------------------------------------
 # testing
 
 include(CTest)
