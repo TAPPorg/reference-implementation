@@ -372,32 +372,23 @@ TTGTPlan::optimize (const TTGTOptimizerOptions options,
                   // A
                   if (this->transposeA)
                      {
-                        cuttCheck (cuttPlan (
-                            //&this->planA, info.rankA, info.dimA,
-                            // permutationA,
-                            // sizeof_datatype(info.datatypeA), streamA
-                            &this->planA, rankA, dimA, permutationA,
-                            sizeof_datatypeA, 0));
+                        cutt_plan_checked (&this->planA, rankA, dimA,
+                                           permutationA, sizeof_datatypeA,
+                                           "A");
                      }
                   // B
                   if (this->transposeB)
                      {
-                        cuttCheck (cuttPlan (
-                            //&this->planB, info.rankB, info.dimB,
-                            // permutationB,
-                            // sizeof_datatype(info.datatypeB), streamB
-                            &this->planB, rankB, dimB, permutationB,
-                            sizeof_datatypeB, 0));
+                        cutt_plan_checked (&this->planB, rankB, dimB,
+                                           permutationB, sizeof_datatypeB,
+                                           "B");
                      }
                   // C
                   if (this->transposeC)
                      {
-                        cuttCheck (cuttPlan (
-                            //&this->planC, info.rankC, dimCT,
-                            // permutationC,
-                            // sizeof_datatype(info.datatypeC), streamC
-                            &this->planC, rankC, dimCT, permutationC,
-                            sizeof_datatypeC, 0));
+                        cutt_plan_checked (&this->planC, rankC, dimCT,
+                                           permutationC, sizeof_datatypeC,
+                                           "C");
                      }
                }
             // cudaStreamDestroy(streamA);

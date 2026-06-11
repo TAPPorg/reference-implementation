@@ -51,6 +51,30 @@ gpuAssert (cudaError_t code, const char *file, int line, bool abort = true)
       }                                                                       \
    while (0)
 
+// Create a cuTT transpose plan, printing the exact rank/dims/permutation if
+// cuTT rejects them (helps diagnose CUTT_INVALID_PARAMETER), then throwing so
+// the TAPP binding can report the failure rather than aborting.
+inline void
+cutt_plan_checked (cuttHandle *plan, int rank, int *dim, int *permutation,
+                   size_t sizeofType, const char *which)
+{
+   cuttResult err = cuttPlan (plan, rank, dim, permutation, sizeofType, 0);
+   if (err != CUTT_SUCCESS)
+      {
+         fprintf (stderr,
+                  "TTGT: cuttPlan failed for tensor %s (err=%d): rank=%d "
+                  "elemsize=%zu dim=[",
+                  which, err, rank, sizeofType);
+         for (int i = 0; i < rank; i++)
+            fprintf (stderr, "%d%s", dim[i], i + 1 < rank ? "," : "");
+         fprintf (stderr, "] perm=[");
+         for (int i = 0; i < rank; i++)
+            fprintf (stderr, "%d%s", permutation[i], i + 1 < rank ? "," : "");
+         fprintf (stderr, "]\n");
+         throw std::runtime_error ("cuTT plan creation failed");
+      }
+}
+
 enum TransposeBackend
 {
    CUTT
