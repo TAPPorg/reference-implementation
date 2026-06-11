@@ -55,12 +55,11 @@ set_target_properties(tapp-cublas PROPERTIES
   CUDA_STANDARD_REQUIRED YES
 )
 
+# Pass -DCMAKE_CUDA_ARCHITECTURES=<arch> to target a specific GPU (e.g. 80 for
+# A100, 90 for H100/Grace-Hopper). When unset, fall back to a portable list
+# rather than "native" so the library can be built on a GPU-less login node.
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
-    set_target_properties(tapp-cublas PROPERTIES CUDA_ARCHITECTURES native)
-  else()
-    set_target_properties(tapp-cublas PROPERTIES CUDA_ARCHITECTURES "70;80;90")
-  endif()
+  set_target_properties(tapp-cublas PROPERTIES CUDA_ARCHITECTURES "70;80;90")
 endif()
 
 target_compile_definitions(tapp-cublas PRIVATE EMULATION=${TAPP_CUBLAS_EMULATION})

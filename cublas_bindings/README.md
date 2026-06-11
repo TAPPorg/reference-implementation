@@ -18,10 +18,14 @@ cuBLAS ships with the CUDA toolkit; cuTT does not. Point `CUTT_ROOT` at a cuTT
 install prefix (expects `lib/libcutt.a` and `include/cutt.h`):
 
 ```sh
-cmake -B build -DTAPP_CUBLAS=ON -DCUTT_ROOT=/path/to/cutt
+cmake -B build -DTAPP_CUBLAS=ON -DCUTT_ROOT=/path/to/cutt -DCMAKE_CUDA_ARCHITECTURES=80
 cmake --build build
 ctest --test-dir build -R tapp-cublas-demo
 ```
+
+Set `CMAKE_CUDA_ARCHITECTURES` to your target GPU (e.g. `80` for A100, `90` for
+H100 / Grace-Hopper). It is required when building on a GPU-less login node; if
+left unset it defaults to a portable `70;80;90` list.
 
 `-DTAPP_CUBLAS=ON` also requires a CUDA compiler and `CUDAToolkit` (CMake finds
 `CUDA::cudart` / `CUDA::cublas`). The demo lives in
