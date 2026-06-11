@@ -18,8 +18,12 @@ get_bounded_indices (int32_t **bounded_indices, int32_t *n_bounded_indices,
             }
       }
    // copy data back to bounded_indices
+   // NOTE (TAPP cuBLAS bindings): the upstream my-ttgt loop bound here was
+   // rankA, which wrote past the end of this *n_bounded_indices-sized buffer
+   // whenever the tensor had free indices (n_bounded_indices < rankA),
+   // corrupting the heap. Copy exactly *n_bounded_indices elements.
    *bounded_indices = new int32_t[*n_bounded_indices];
-   for (int i = 0; i < rankA; i++)
+   for (int i = 0; i < *n_bounded_indices; i++)
       {
          (*bounded_indices)[i] = bounded_indices_tmp[i];
       }
