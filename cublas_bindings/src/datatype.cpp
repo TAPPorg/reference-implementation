@@ -1,25 +1,5 @@
 #include "../include/datatype.h"
 
-DataType translate_datatype(TAPP_datatype type)
-{
-    switch (type)
-    {
-    case TAPP_F32:
-        return DataType::FLOAT32;
-    case TAPP_F64:
-        return DataType::FLOAT64;
-    case TAPP_C32:
-        return DataType::COMPLEX32;
-    case TAPP_C64:
-        return DataType::COMPLEX64;
-    default:
-        // F16/BF16 (and anything else) are unsupported by the TTGT/cuBLAS-GEMM
-        // back-end. The product layer rejects these before reaching here; fall
-        // back to FLOAT32 to keep this translation total.
-        return DataType::FLOAT32;
-    }
-}
-
 cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype)
 {
     switch (prec)
@@ -42,6 +22,23 @@ cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatyp
         return CUBLAS_COMPUTE_64F;
     default:
         return CUBLAS_COMPUTE_32F;
+    }
+}
+
+cudaDataType get_cuda_datatype(TAPP_datatype type)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+        return CUDA_R_32F;
+    case TAPP_F64:
+        return CUDA_R_64F;
+    case TAPP_C32:
+        return CUDA_C_32F;
+    case TAPP_C64:
+        return CUDA_C_64F;
+    default:
+        return CUDA_R_32F;
     }
 }
 

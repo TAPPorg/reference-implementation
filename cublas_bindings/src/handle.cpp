@@ -1,11 +1,18 @@
 #include "../include/handle.h"
+#include "../include/attributes.h"
 
 TAPP_error TAPP_create_handle(TAPP_handle* handle)
 {
     struct handle* handle_struct = new struct handle;
-    bool* use_device_memory = new bool(true);
-    handle_struct->attributes = new intptr_t[1];
-    handle_struct->attributes[0] = (intptr_t) use_device_memory;
+    cublasStatus_t stat = cublasCreate(&handle_struct->cublas);
+    if (stat != CUBLAS_STATUS_SUCCESS)
+    {
+        delete handle_struct;
+        return pack_error(0, stat);
+    }
+    handle_struct->attributes = new intptr_t[ATTR_COUNT];
+    handle_struct->attributes[ATTR_KEY_USE_DEVICE_MEMORY] = (intptr_t) new bool(true);
+    handle_struct->attributes[ATTR_KEY_PRECISION_DIGITS] = (intptr_t) new int(0);
     *handle = (TAPP_handle) handle_struct;
     return 0;
 }
@@ -13,8 +20,11 @@ TAPP_error TAPP_create_handle(TAPP_handle* handle)
 TAPP_error TAPP_destroy_handle(TAPP_handle handle)
 {
     struct handle* handle_struct = (struct handle*) handle;
-    delete (bool*)handle_struct->attributes[0];
+    cublasStatus_t stat = cublasDestroy(handle_struct->cublas);
+    delete (bool*)handle_struct->attributes[ATTR_KEY_USE_DEVICE_MEMORY];
+    delete (int*)handle_struct->attributes[ATTR_KEY_PRECISION_DIGITS];
     delete[] handle_struct->attributes;
     delete handle_struct;
+    if (stat != CUBLAS_STATUS_SUCCESS) return pack_error(0, stat);
     return 0;
 }

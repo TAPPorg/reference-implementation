@@ -3,13 +3,16 @@
 
 #include <tapp/handle.h>
 
+#include <cublas_v2.h>
+
 #include "error.h"
 
-// The cuBLAS/TTGT back-end does not need a persistent library handle (the
-// vendored TTGTPlan creates its own cublasHandle_t per plan). The handle only
-// carries the implementation attribute store, mirroring the cuTENSOR bindings.
+// The TAPP library handle owns the back-end state: a cuBLAS handle (created once
+// here rather than per tensor-product plan) and the implementation attribute
+// store.
 struct handle
 {
+    cublasHandle_t cublas;
     intptr_t* attributes;
 };
 

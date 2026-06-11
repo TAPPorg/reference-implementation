@@ -1,12 +1,12 @@
 # cuBLAS/TTGT bindings for TAPP.
 #
-# Implements TAPP_execute_product via the vendored TTGT (transpose-transpose-
-# GEMM-transpose) implementation under ttgt/, which drives cuBLAS GEMM and cuTT
-# transposes. cuBLAS ships with the CUDA toolkit; cuTT does not and is located
-# via CUTT_ROOT (same convention as the standalone my-ttgt project).
+# Implements the TAPP tensor-product API directly in src/ using the TTGT
+# (transpose-transpose-GEMM-transpose) scheme: cuBLAS GEMM plus cuTT transposes.
+# cuBLAS ships with the CUDA toolkit; cuTT does not and is located via CUTT_ROOT.
 
-# EMULATION toggles the cuBLAS FP64 emulation code paths in the vendored TTGT
-# sources. Off by default; requires CUDA >= 13.
+# EMULATION enables the cuBLAS fixed-point FP64 emulation path (variable mantissa
+# size, driven by the requested precision digits). Off by default; requires
+# CUDA >= 13.
 if(NOT DEFINED TAPP_CUBLAS_EMULATION)
   set(TAPP_CUBLAS_EMULATION 0)
 endif()
@@ -33,10 +33,6 @@ add_library(tapp::cublas ALIAS tapp-cublas)
 
 target_sources(tapp-cublas
   PRIVATE
-    # vendored TTGT implementation (CUDA)
-    ttgt/ttgt_plan.cu
-    ttgt/ttgt_utils.cu
-    # binding layer
     src/product.cu
     src/attributes.cpp
     src/datatype.cpp
@@ -67,7 +63,6 @@ target_compile_definitions(tapp-cublas PRIVATE EMULATION=${TAPP_CUBLAS_EMULATION
 target_include_directories(tapp-cublas
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/ttgt
 )
 
 target_link_libraries(tapp-cublas

@@ -3,14 +3,17 @@
 A TAPP back-end that implements `TAPP_execute_product` via the **TTGT**
 (transpose-transpose-GEMM-transpose) scheme: tensors are permuted into matrices
 with [cuTT](https://github.com/ap-hynninen/cutt), multiplied with cuBLAS
-`cublasGemmEx`, and the result permuted back. The TTGT implementation under
-[`ttgt/`](ttgt/) is vendored from the standalone `my-ttgt` project.
+`cublasGemmEx`, and the result permuted back. The TTGT scheme (originally from
+the standalone `my-ttgt` project) is integrated directly into the binding, using
+TAPP's own structures rather than parallel ones.
 
 The layout mirrors [`../cutensor_bindings`](../cutensor_bindings): one
 TAPP object per file (`handle`, `tensor`, `executor`, `attributes`, `status`,
 `error`, `datatype`) plus the contraction itself in
-[`src/product.cu`](src/product.cu), where `TAPP_create_tensor_product` builds a
-`TTGTPlan` (`optimize`) and `TAPP_execute_product` runs it (`execute`).
+[`src/product.cu`](src/product.cu), where `TAPP_create_tensor_product` computes
+the transpose + GEMM schedule (the TTGT "optimize" step) into the `product_plan`
+and `TAPP_execute_product` runs it (the "execute" step). The cuBLAS handle lives
+in the TAPP library handle.
 
 ## Building
 
@@ -44,9 +47,27 @@ cuTENSOR bindings:
   contiguous data and does not honour arbitrary / negative strides the way the
   cuTENSOR binding does.
 - **Datatypes**: `F32`, `F64`, `C32`, `C64`. `F16` / `BF16` are rejected.
-- **Execution is synchronous**: TTGT runs on the default stream with its own
-  cuBLAS handle, so transfers block and the executor stream is used only to
-  record the status object.
+- **Execution is synchronous**: the GEMM and cuTT transposes run on the default
+  stream, so transfers block (`cudaDeviceSynchronize`) and the executor stream is
+  used only to record the status object.
 
 Unsupported inputs return TAPP error code 16 ("Unsupported datatype for the
 cuBLAS/TTGT back-end") rather than producing a wrong result.
+
+## FP64 emulation (variable precision)
+
+When built with `-DTAPP_CUBLAS_EMULATION=1` (requires CUDA >= 13), the back-end
+can use cuBLAS fixed-point FP64 emulation with a variable mantissa size. The
+caller requests a number of **decimal digits** of precision via the
+`ATTR_KEY_PRECISION_DIGITS` (= 1) attribute on the handle before creating a plan:
+
+```c
+int digits = 7;
+TAPP_attr_set(handle, ATTR_KEY_PRECISION_DIGITS, &digits);
+TAPP_create_tensor_product(&plan, handle, /* ... */);  // captures the setting
+```
+
+The digit count is converted to a max mantissa bit count
+(`ceil(log2(10) * digits)`) and applied to the GEMM. It only affects `F64`/`C64`
+outputs; for other datatypes (or when `digits == 0`, the default) the normal
+compute type is used. Without `EMULATION` the attribute is accepted but ignored.
