@@ -291,10 +291,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     for (int i = 0; i < rankB; i++) { dimB[i] = (int)B_info->extents[i]; modeB[i] = (int)idx_B[i]; }
     for (int i = 0; i < rankC; i++) { dimC[i] = (int)D_info->extents[i]; modeC[i] = (int)idx_D[i]; }
 
-    std::vector<int> modeAT(sz(rankA)), modeBT(sz(rankB)), modeCT(sz(rankC));
-    std::vector<int> permA(sz(rankA)), permB(sz(rankB)), permC(sz(rankC));
-    std::vector<int> dimCT(sz(rankC));
-
     p->m = p->n = p->k = p->lda = p->ldb = p->ldc = 1;
 
     // --- BASELINE TTGT index scheme ---
@@ -306,12 +302,34 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         get_bounded_indices(&bounded, &n_bounded, modeB.data(), rankB, modeC.data(), rankC);
 
     int n_freeA = rankA - n_bounded;
+    int n_freeB = rankB - n_bounded;
+
+    // n_bounded is the contracted-index count of the larger of A/B; the simple
+    // TTGT bookkeeping assumes both share it. With repeated index labels (Case
+    // 3) the counts disagree and a free-index count can go negative, which would
+    // turn the memcpy lengths below into huge sizes. Reject rather than corrupt
+    // memory; this case is outside the supported simple-contraction subset.
+    if (n_freeA < 0 || n_freeB < 0)
+    {
+        delete[] bounded;
+        p->failed = true;
+        *plan = (TAPP_tensor_product)p;
+        return pack_error(0, 16);
+    }
+
     std::vector<int> freeA(n_freeA > 0 ? n_freeA : 1);
     get_free_indices(freeA.data(), n_freeA, modeA.data(), rankA, modeC.data(), rankC);
-
-    int n_freeB = rankB - n_bounded;
     std::vector<int> freeB(n_freeB > 0 ? n_freeB : 1);
     get_free_indices(freeB.data(), n_freeB, modeB.data(), rankB, modeC.data(), rankC);
+
+    // modeAT/modeBT always receive exactly rankA/rankB labels. modeCT receives
+    // n_freeA+n_freeB, which EXCEEDS rankC when a Hadamard index is shared (it
+    // appears in both free sets); size it to the real write length so the copy
+    // never overflows. get_permutation reads only the first rankC entries.
+    std::vector<int> modeAT(sz(rankA)), modeBT(sz(rankB));
+    std::vector<int> modeCT(std::max((size_t)(n_freeA + n_freeB), sz(rankC)));
+    std::vector<int> permA(sz(rankA)), permB(sz(rankB)), permC(sz(rankC));
+    std::vector<int> dimCT(sz(rankC));
 
     // Tensor A: keep the leading index in place where possible (col-major).
     if (std::find(freeA.data(), freeA.data() + n_freeA, modeA[0]) != freeA.data() + n_freeA)
