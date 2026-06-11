@@ -51,28 +51,70 @@ gpuAssert (cudaError_t code, const char *file, int line, bool abort = true)
       }                                                                       \
    while (0)
 
-// Create a cuTT transpose plan, printing the exact rank/dims/permutation if
-// cuTT rejects them (helps diagnose CUTT_INVALID_PARAMETER), then throwing so
-// the TAPP binding can report the failure rather than aborting.
-inline void
-cutt_plan_checked (cuttHandle *plan, int rank, int *dim, int *permutation,
-                   size_t sizeofType, const char *which)
+// Create a cuTT transpose plan after squeezing out extent-1 axes.
+//
+// cuTT rejects any transpose whose dims contain a size-1 axis (and any rank<2
+// transpose) with CUTT_INVALID_PARAMETER. A size-1 axis carries no data, so it
+// can be removed from (rank, dim, permutation) without changing which bytes
+// move. After squeezing:
+//   - if the transpose reduces to the identity (or fewer than 2 axes), it moves
+//     no data: no plan is created and the function returns false, signalling
+//     that the source buffer is already in the target layout (the caller should
+//     treat the tensor as not transposed);
+//   - otherwise a plan is built on the reduced dims and the function returns
+//     true.
+// On a genuine cuTT failure the offending (reduced) parameters are printed and
+// an exception is thrown so the TAPP binding can report it instead of aborting.
+inline bool
+cutt_plan_squeezed (cuttHandle *plan, int rank, const int *dim,
+                    const int *permutation, size_t sizeofType,
+                    const char *which)
 {
-   cuttResult err = cuttPlan (plan, rank, dim, permutation, sizeofType, 0);
+   std::vector<int> old_to_new (rank, -1);
+   std::vector<int> sdim;
+   int new_rank = 0;
+   for (int i = 0; i < rank; i++)
+      if (dim[i] != 1)
+         {
+            old_to_new[i] = new_rank++;
+            sdim.push_back (dim[i]);
+         }
+
+   std::vector<int> sperm;
+   for (int i = 0; i < rank; i++)
+      {
+         int axis = permutation[i];
+         if (dim[axis] != 1)
+            sperm.push_back (old_to_new[axis]);
+      }
+
+   bool identity = true;
+   for (int i = 0; i < new_rank; i++)
+      if (sperm[i] != i)
+         {
+            identity = false;
+            break;
+         }
+   if (new_rank < 2 || identity)
+      return false; // no data movement needed
+
+   cuttResult err
+       = cuttPlan (plan, new_rank, sdim.data (), sperm.data (), sizeofType, 0);
    if (err != CUTT_SUCCESS)
       {
          fprintf (stderr,
                   "TTGT: cuttPlan failed for tensor %s (err=%d): rank=%d "
                   "elemsize=%zu dim=[",
-                  which, err, rank, sizeofType);
-         for (int i = 0; i < rank; i++)
-            fprintf (stderr, "%d%s", dim[i], i + 1 < rank ? "," : "");
+                  which, err, new_rank, sizeofType);
+         for (int i = 0; i < new_rank; i++)
+            fprintf (stderr, "%d%s", sdim[i], i + 1 < new_rank ? "," : "");
          fprintf (stderr, "] perm=[");
-         for (int i = 0; i < rank; i++)
-            fprintf (stderr, "%d%s", permutation[i], i + 1 < rank ? "," : "");
+         for (int i = 0; i < new_rank; i++)
+            fprintf (stderr, "%d%s", sperm[i], i + 1 < new_rank ? "," : "");
          fprintf (stderr, "]\n");
          throw std::runtime_error ("cuTT plan creation failed");
       }
+   return true;
 }
 
 enum TransposeBackend

@@ -369,26 +369,29 @@ TTGTPlan::optimize (const TTGTOptimizerOptions options,
                }
             else
                {
-                  // A
+                  // A. cutt_plan_squeezed returns false when, after dropping
+                  // extent-1 axes, no data movement is needed; in that case the
+                  // source buffer is already in the target layout, so clear the
+                  // transpose flag and feed it straight to the GEMM.
                   if (this->transposeA)
                      {
-                        cutt_plan_checked (&this->planA, rankA, dimA,
-                                           permutationA, sizeof_datatypeA,
-                                           "A");
+                        this->transposeA = cutt_plan_squeezed (
+                            &this->planA, rankA, dimA, permutationA,
+                            sizeof_datatypeA, "A");
                      }
                   // B
                   if (this->transposeB)
                      {
-                        cutt_plan_checked (&this->planB, rankB, dimB,
-                                           permutationB, sizeof_datatypeB,
-                                           "B");
+                        this->transposeB = cutt_plan_squeezed (
+                            &this->planB, rankB, dimB, permutationB,
+                            sizeof_datatypeB, "B");
                      }
                   // C
                   if (this->transposeC)
                      {
-                        cutt_plan_checked (&this->planC, rankC, dimCT,
-                                           permutationC, sizeof_datatypeC,
-                                           "C");
+                        this->transposeC = cutt_plan_squeezed (
+                            &this->planC, rankC, dimCT, permutationC,
+                            sizeof_datatypeC, "C");
                      }
                }
             // cudaStreamDestroy(streamA);
