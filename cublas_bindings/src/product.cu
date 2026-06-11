@@ -118,26 +118,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         plan_struct->alpha_storage, plan_struct->beta_storage,
         translate_prectype(prec, D_info->type));
 
-    plan_struct->ttgt_plan = new TTGTPlan(TransposeBackend::CUTT);
-    TTGTOptimizerOptions options;
-    try
-    {
-        plan_struct->ttgt_plan->optimize(options, *plan_struct->info);
-    }
-    catch (const std::exception& e)
-    {
-        delete plan_struct->ttgt_plan;
-        delete plan_struct->info;
-        delete[] plan_struct->dimA;
-        delete[] plan_struct->dimB;
-        delete[] plan_struct->dimC;
-        delete[] plan_struct->modeA;
-        delete[] plan_struct->modeB;
-        delete[] plan_struct->modeC;
-        delete plan_struct;
-        return pack_error(0, 16);
-    }
-
     plan_struct->copy_size_A = A_info->copy_size;
     plan_struct->data_offset_A = A_info->data_offset;
     plan_struct->copy_size_B = B_info->copy_size;
@@ -149,8 +129,27 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     plan_struct->type_D = D_info->type;
     plan_struct->op_D = op_D;
 
+    plan_struct->failed = false;
+    plan_struct->ttgt_plan = new TTGTPlan(TransposeBackend::CUTT);
+    TTGTOptimizerOptions options;
+    try
+    {
+        plan_struct->ttgt_plan->optimize(options, *plan_struct->info);
+    }
+    catch (const std::exception& e)
+    {
+        // TTGT/cuTT could not build a plan for this contraction. Keep the plan
+        // object valid (so the caller can destroy it) but mark it failed and
+        // neutralize the transpose flags so the TTGTPlan destructor will not
+        // touch the partially-built cuTT handles.
+        plan_struct->failed = true;
+        plan_struct->ttgt_plan->transposeA = false;
+        plan_struct->ttgt_plan->transposeB = false;
+        plan_struct->ttgt_plan->transposeC = false;
+    }
+
     *plan = (TAPP_tensor_product) plan_struct;
-    return 0;
+    return plan_struct->failed ? pack_error(0, 16) : 0;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
@@ -179,6 +178,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                       void* D)
 {
     struct product_plan* plan_struct = (struct product_plan*) plan;
+    if (plan_struct->failed) return pack_error(0, 16); // unsupported by TTGT
     struct handle* handle_struct = (struct handle*) plan_struct->handle;
     bool use_device_memory = *(bool*)((handle_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     TAPP_datatype type_D = plan_struct->type_D;
@@ -245,6 +245,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     catch (const std::exception& e)
     {
+        if (!use_device_memory)
+        {
+            if (A_base) cudaFree(A_base);
+            if (B_base) cudaFree(B_base);
+            if (D_base) cudaFree(D_base);
+        }
         return pack_error(0, 16);
     }
 

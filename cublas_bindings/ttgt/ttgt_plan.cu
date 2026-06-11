@@ -2,6 +2,12 @@
 
 TTGTPlan::TTGTPlan (const TransposeBackend backend)
 {
+   // Initialize the transpose flags so a plan whose optimize() never ran (or
+   // failed part-way) destructs without touching uninitialized cuTT handles.
+   this->transposeA = false;
+   this->transposeB = false;
+   this->transposeC = false;
+
    this->set_transpose_backend (backend);
 
    cublasStatus_t stat = cublasCreate (&(this->handle));
@@ -15,12 +21,14 @@ TTGTPlan::TTGTPlan (const TransposeBackend backend)
 
 TTGTPlan::~TTGTPlan ()
 {
+   // Do not use cuttCheck here: it throws, and throwing from a destructor would
+   // terminate. Ignore cuttDestroy errors during teardown.
    if (this->transposeA)
-      cuttCheck (cuttDestroy (this->planA));
+      cuttDestroy (this->planA);
    if (this->transposeB)
-      cuttCheck (cuttDestroy (this->planB));
+      cuttDestroy (this->planB);
    if (this->transposeC)
-      cuttCheck (cuttDestroy (this->planC));
+      cuttDestroy (this->planC);
    cublasDestroy (this->handle);
 }
 

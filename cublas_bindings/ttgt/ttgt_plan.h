@@ -13,8 +13,14 @@
 #include <cuda/std/complex>
 #include <cuda_runtime.h>
 #include <cutt.h>
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 
+// NOTE (TAPP cuBLAS bindings): the upstream my-ttgt macros call exit() on a
+// CUDA/cuTT error. A library must never terminate the host process, so here
+// they throw std::runtime_error instead; the TAPP binding (product.cu) catches
+// it and reports a TAPP error code, leaving the harness running.
 #define cudaCheck(ans)                                                        \
    {                                                                          \
       gpuAssert ((ans), __FILE__, __LINE__);                                  \
@@ -27,7 +33,8 @@ gpuAssert (cudaError_t code, const char *file, int line, bool abort = true)
          fprintf (stderr, "GPUassert: %s %s %d\n", cudaGetErrorString (code),
                   file, line);
          if (abort)
-            exit (code);
+            throw std::runtime_error (std::string ("CUDA error: ")
+                                      + cudaGetErrorString (code));
       }
 }
 
@@ -39,7 +46,7 @@ gpuAssert (cudaError_t code, const char *file, int line, bool abort = true)
             {                                                                 \
                fprintf (stderr, "%s in file %s, function %s, error=%d\n",     \
                         #stmt, __FILE__, __FUNCTION__, err);                  \
-               exit (1);                                                      \
+               throw std::runtime_error ("cuTT error in " #stmt);             \
             }                                                                 \
       }                                                                       \
    while (0)

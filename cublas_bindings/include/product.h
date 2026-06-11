@@ -27,6 +27,11 @@ struct product_plan
     TTGTPlan* ttgt_plan;
     ContractionInfo* info;
 
+    // Set when TTGT could not build a plan for this contraction (e.g. cuTT
+    // rejected the transpose, or the case is outside TTGT's supported subset).
+    // The plan object stays valid and destroyable; execute reports an error.
+    bool failed;
+
     // Backing storage referenced by *info.
     int* dimA;
     int* dimB;
