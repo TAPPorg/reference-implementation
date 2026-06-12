@@ -91,11 +91,58 @@ if (TAPP_CUTENSOR)
     COMMAND $<TARGET_FILE:tapp-cutensor-demo>
   )
 
+endif()
+
+# ----------------------------------------------------------------------------
+# cublas specific code
+
+if (TAPP_CUBLAS)
   # ----------------------------------------------------------------------------
-  # demo using dynamic library
+  # cublas demo
+
+  add_executable(tapp-cublas-demo)
+
+  target_sources(
+    tapp-cublas-demo
+    PRIVATE
+      cublas_demo.cpp
+  )
+
+  target_link_libraries(
+    tapp-cublas-demo
+    PRIVATE
+      tapp::cublas
+      CUDA::cudart
+  )
+
+  target_include_directories(
+    tapp-cublas-demo
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  add_test(
+    NAME tapp-cublas-demo
+    COMMAND $<TARGET_FILE:tapp-cublas-demo>
+  )
+endif()
+
+# ----------------------------------------------------------------------------
+# dynamic-launch demo and test
+#
+# These load TAPP implementations from shared libraries at runtime (dlopen)
+# rather than linking them. The test is the cross-implementation check: it loads
+# two backends and compares their results. They are therefore built whenever any
+# non-reference backend is available, and a comparison is registered per enabled
+# backend (reference vs. that backend). The library to use is passed on the
+# command line, so the binaries are backend-agnostic.
+
+if (TAPP_CUTENSOR OR TAPP_CUBLAS)
+  # --------------------------------------------------------------------------
+  # demo using a dynamically loaded library (single implementation)
 
   add_executable(tapp-reference-demo-dynamic)
-  
+
   target_compile_definitions(
     tapp-reference-demo-dynamic
     PRIVATE
@@ -117,16 +164,11 @@ if (TAPP_CUTENSOR)
       ${CMAKE_DL_LIBS}
   )
 
-  add_test(
-    NAME tapp-reference-demo-dynamic
-    COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic>
-  )
-
-  # ----------------------------------------------------------------------------
-  # test using dynamic library
+  # --------------------------------------------------------------------------
+  # test comparing two dynamically loaded implementations
 
   add_executable(tapp-reference-test-dynamic)
-  
+
   target_compile_definitions(
     tapp-reference-test-dynamic
     PRIVATE
@@ -147,9 +189,27 @@ if (TAPP_CUTENSOR)
       ${CMAKE_DL_LIBS}
   )
 
-  add_test(
-    NAME tapp-reference-test-dynamic
-    COMMAND $<TARGET_FILE:tapp-reference-test-dynamic>
-  )
+  # Per-backend registrations: run the demo against each backend, and compare
+  # the reference implementation against each backend.
+  if (TAPP_CUTENSOR)
+    add_test(
+      NAME tapp-cutensor-demo-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic> $<TARGET_FILE:tapp-cutensor>
+    )
+    add_test(
+      NAME tapp-cutensor-test-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-test-dynamic> $<TARGET_FILE:tapp-reference> $<TARGET_FILE:tapp-cutensor>
+    )
+  endif()
 
+  if (TAPP_CUBLAS)
+    add_test(
+      NAME tapp-cublas-demo-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-demo-dynamic> $<TARGET_FILE:tapp-cublas>
+    )
+    add_test(
+      NAME tapp-cublas-test-dynamic
+      COMMAND $<TARGET_FILE:tapp-reference-test-dynamic> $<TARGET_FILE:tapp-reference> $<TARGET_FILE:tapp-cublas>
+    )
+  endif()
 endif()

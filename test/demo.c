@@ -164,8 +164,14 @@ void unload_implementation() {
 
 int main(int argc, char const *argv[])
 {
+#ifdef TAPP_DYNAMIC_LAUNCH
+    if (argc >= 2) path = argv[1]; // override the implementation library to load
+#else
+    (void)argc;
+    (void)argv;
+#endif
     load_implementation();
-    
+
     printf("Contraction: \n");
     contraction();
     printf("Hadamard: \n");
