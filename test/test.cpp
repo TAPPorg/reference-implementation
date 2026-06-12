@@ -3514,7 +3514,7 @@ bool test_error_too_many_idx_D()
     delete[] data_C;
     delete[] data_D;
 
-    return error_status == 7; // && error_status_B == 7; Error status isn't the same for CuTensor and reference imp
+    return error_status.code == TAPP_ERR_EXTENTS_CD; // && error_status_B == 7; Error status isn't the same for CuTensor and reference imp
 }
 
 bool test_error_non_matching_ext()
@@ -3591,7 +3591,7 @@ bool test_error_non_matching_ext()
     delete[] data_C;
     delete[] data_D;
 
-    return (error_status == 1 || error_status == 2 || error_status == 3); // && (error_status_B == 1 || error_status_B == 2 || error_status_B == 3); Error status isn't the same for CuTensor and reference imp
+    return (error_status.code == TAPP_ERR_EXTENTS_AB || error_status.code == TAPP_ERR_EXTENTS_AD || error_status.code == TAPP_ERR_EXTENTS_BD); // && (error_status_B == 1 || error_status_B == 2 || error_status_B == 3); Error status isn't the same for CuTensor and reference imp
 }
 
 bool test_error_C_other_structure()
@@ -3670,7 +3670,7 @@ bool test_error_C_other_structure()
     delete[] data_C;
     delete[] data_D;
 
-    return (error_status == 5 || error_status == 6 || error_status == 7); // && (error_status_B == 5 || error_status_B == 6 || error_status_B == 7); Error status isn't the same for CuTensor and reference imp
+    return (error_status.code == TAPP_ERR_CD_NDIM || error_status.code == TAPP_ERR_CD_IDX || error_status.code == TAPP_ERR_EXTENTS_CD); // && (error_status_B == 5 || error_status_B == 6 || error_status_B == 7); Error status isn't the same for CuTensor and reference imp
 }
 
 bool test_error_aliasing_within_D()
@@ -3718,6 +3718,6 @@ bool test_error_aliasing_within_D()
     delete[] data_C;
     delete[] data_D;
 
-    return error_status == 8; // && error_status_B == 8; Error status isn't the same for CuTensor and reference imp
+    return error_status.code == TAPP_ERR_D_ALIASING; // && error_status_B == 8; Error status isn't the same for CuTensor and reference imp
 }
 #endif
