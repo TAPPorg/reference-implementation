@@ -8,11 +8,11 @@
 
 TAPP_error TAPP_create_handle(TAPP_handle* handle) {
     *handle = (TAPP_handle)malloc(sizeof(TAPP_handle));
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_handle(TAPP_handle handle) {
     free((void*)handle);
-    return 0;
+    return TAPP_SUCCESS;
 }
 

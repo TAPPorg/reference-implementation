@@ -113,7 +113,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     *plan = (TAPP_tensor_product)plan_ptr;
 
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
@@ -124,7 +124,7 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     free(((struct plan*)plan)->idx_D);
     free((struct plan*)plan);
 
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
@@ -196,14 +196,14 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     int error_status = 0;
 
-    if (error_status == 0) error_status = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, 4);
-    if (error_status == 0) error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, 9, 1, 2);
-    if (error_status == 0) error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, 10, 1, 3);
-    if (error_status == 0) error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, 11, 2, 3);
-    if (error_status == 0) error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, 5, 6, 7);
-    if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, 8);
-    if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, 12);
-    if (error_status == 0) error_status = check_executor_existence(exec, 33);
+    if (error_status == 0) error_status = check_idx_occurrence(nmode_D, idx_D, nmode_A, idx_A, nmode_B, idx_B, TAPP_ERR_D_UNSHARED_IDX);
+    if (error_status == 0) error_status = check_extents(nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, nmode_D, idx_D, extents_D, TAPP_ERR_A_IDX_EXTENTS, TAPP_ERR_EXTENTS_AB, TAPP_ERR_EXTENTS_AD);
+    if (error_status == 0) error_status = check_extents(nmode_B, idx_B, extents_B, nmode_A, idx_A, extents_A, nmode_D, idx_D, extents_D, TAPP_ERR_B_IDX_EXTENTS, TAPP_ERR_EXTENTS_AB, TAPP_ERR_EXTENTS_BD);
+    if (error_status == 0) error_status = check_extents(nmode_D, idx_D, extents_D, nmode_A, idx_A, extents_A, nmode_B, idx_B, extents_B, TAPP_ERR_D_IDX_EXTENTS, TAPP_ERR_EXTENTS_AD, TAPP_ERR_EXTENTS_BD);
+    if (error_status == 0) error_status = check_same_structure(nmode_C, idx_C, extents_C, nmode_D, idx_D, extents_D, TAPP_ERR_CD_NDIM, TAPP_ERR_CD_IDX, TAPP_ERR_EXTENTS_CD);
+    if (error_status == 0) error_status = check_self_aliasing(nmode_D, extents_D, strides_D, TAPP_ERR_D_ALIASING);
+    if (error_status == 0) error_status = check_tensor_existence(beta, type_D, C, TAPP_ERR_C_NULL_BETA);
+    if (error_status == 0) error_status = check_executor_existence(exec, TAPP_ERR_NO_EXECUTOR);
     if (error_status != 0)
     {
         free(idx_A);
@@ -218,7 +218,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         free(idx_D);
         free(extents_D);
         free(strides_D);
-        return error_status;
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, error_status);
     }
     int64_t size_D;
 
@@ -463,12 +463,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (status != NULL) {
         struct status* stat = malloc(sizeof(struct status));
         stat->completion = TAPP_COMPLETE;
-        stat->error = 0;
+        stat->error = TAPP_SUCCESS;
         *status = (TAPP_status)stat;
     }
 
-    if(!comp_) return 137;
-    return 0;
+    if(!comp_) return tapp_error(TAPP_ERROR_TYPE_TAPP, 137);
+    return TAPP_SUCCESS;
 }
 
 void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data_, TAPP_datatype type) {

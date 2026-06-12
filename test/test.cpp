@@ -447,6 +447,7 @@ TAPP_error run_product(
     auto fn_execute_product = TAPP_execute_product;
     auto fn_destroy_status = TAPP_destroy_status;
     auto fn_status_check_completion = TAPP_status_check_completion;
+    auto fn_check_success = TAPP_check_success;
 #else
     auto fn_create_handle = impl.TAPP_create_handle;
     auto fn_destroy_handle = impl.TAPP_destroy_handle;
@@ -460,13 +461,14 @@ TAPP_error run_product(
     auto fn_execute_product = impl.TAPP_execute_product;
     auto fn_destroy_status = impl.TAPP_destroy_status;
     auto fn_status_check_completion = impl.TAPP_status_check_completion;
+    auto fn_check_success = impl.TAPP_check_success;
 #endif
 
     TAPP_error error_status;
 
     TAPP_handle handle;
     error_status = fn_create_handle(&handle);
-    if (error_status != 0) goto at_return;
+    if (!fn_check_success(error_status)) goto at_return;
 #ifdef TAPP_DYNAMIC_LAUNCH
     if (use_device_memory)
     {
@@ -498,28 +500,28 @@ TAPP_error run_product(
 
     TAPP_tensor_info info_A;
     error_status = fn_create_tensor_info(&info_A, handle, datatype, nmode_A, extents_A, strides_A);
-    if (error_status != 0) goto at_free_handle;
+    if (!fn_check_success(error_status)) goto at_free_handle;
     TAPP_tensor_info info_B;
     error_status = fn_create_tensor_info(&info_B, handle, datatype, nmode_B, extents_B, strides_B);
-    if (error_status != 0) goto at_free_info_A;
+    if (!fn_check_success(error_status)) goto at_free_info_A;
     TAPP_tensor_info info_C;
     error_status = fn_create_tensor_info(&info_C, handle, datatype, nmode_C, extents_C, strides_C);
-    if (error_status != 0) goto at_free_info_B;
+    if (!fn_check_success(error_status)) goto at_free_info_B;
     TAPP_tensor_info info_D;
     error_status = fn_create_tensor_info(&info_D, handle, datatype, nmode_D, extents_D, strides_D);
-    if (error_status != 0) goto at_free_info_C;
+    if (!fn_check_success(error_status)) goto at_free_info_C;
 
     TAPP_tensor_product plan;
     error_status = fn_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
-    if (error_status != 0) goto at_free_info_D;
+    if (!fn_check_success(error_status)) goto at_free_info_D;
     TAPP_status status;
-    
+
     TAPP_executor exec;
     error_status = fn_create_executor(&exec);
-    if (error_status != 0) goto at_free_plan;
+    if (!fn_check_success(error_status)) goto at_free_plan;
 
     error_status = fn_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-    if (error_status == 0) {
+    if (fn_check_success(error_status)) {
         fn_executor_wait(exec);
         TAPP_completion completion;
         TAPP_error op_error;

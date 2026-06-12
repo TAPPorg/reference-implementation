@@ -15,11 +15,11 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    const int64_t* extents,
                                    const int64_t* strides) {
     if (nmode < 0) {
-        return 14;
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NMODE_NEGATIVE);
     }
     for (size_t i = 0; i < nmode; i++) {
         if (extents[i] < 0) {
-            return 15;
+            return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_EXTENTS_NEGATIVE);
         }
     }
     
@@ -36,7 +36,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
 
     *info = (TAPP_tensor_info)info_ptr;
 
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info) {
@@ -45,7 +45,7 @@ TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info) {
     free(info_ptr->strides);
     free(info_ptr);
 
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 int TAPP_get_nmodes(TAPP_tensor_info info) {
@@ -56,14 +56,14 @@ int TAPP_get_nmodes(TAPP_tensor_info info) {
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes) {
     if (nmodes < 0) {
-        return 14;
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NMODE_NEGATIVE);
     }
     struct tensor_info* info_ptr = (struct tensor_info*)info;
     info_ptr->nmode = nmodes;
     info_ptr->extents = realloc(info_ptr->extents, info_ptr->nmode * sizeof(int64_t));
     info_ptr->strides = realloc(info_ptr->strides, info_ptr->nmode * sizeof(int64_t));
     
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
@@ -79,13 +79,13 @@ TAPP_error TAPP_set_extents(TAPP_tensor_info info,
     for (size_t i = 0; i < info_ptr->nmode; i++)
     {
         if (extents[i] < 0) {
-            return 15;
+            return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_EXTENTS_NEGATIVE);
         }
     }
     
     memcpy(info_ptr->extents, extents, info_ptr->nmode * sizeof(int64_t));
     
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
@@ -99,5 +99,5 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
     struct tensor_info* info_ptr = (struct tensor_info*)info;
     memcpy(info_ptr->strides, strides, info_ptr->nmode * sizeof(int64_t));
     
-    return 0;
+    return TAPP_SUCCESS;
 }

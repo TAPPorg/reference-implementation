@@ -8,8 +8,7 @@
 #include <cstring>
 #include <string>
 
-int pack_error(int current_value, int tapp_err);
-int pack_error(int current_value, cutensorStatus_t e); 
-int pack_error(int current_value, cudaError_t e);
+inline TAPP_error tapp_error(cudaError_t e)      { return e == cudaSuccess ? TAPP_SUCCESS : tapp_error(TAPP_ERROR_TYPE_CUDA, (int)e); }
+inline TAPP_error tapp_error(cutensorStatus_t e) { return e == CUTENSOR_STATUS_SUCCESS ? TAPP_SUCCESS : tapp_error(TAPP_ERROR_TYPE_CUTENSOR, (int)e); }
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDS_ERROR_H_ */

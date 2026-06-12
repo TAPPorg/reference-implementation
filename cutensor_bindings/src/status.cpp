@@ -2,30 +2,30 @@
 
 TAPP_error create_status(cudaStream_t stream, TAPP_status* status)
 {
-    if (status == nullptr) return 0;
+    if (status == nullptr) return TAPP_SUCCESS;
     struct status* s = new struct status;
     cudaError_t cerr = cudaEventCreate(&s->event);
     if (cerr != cudaSuccess)
     {
         delete s;
-        return pack_error(0, cerr);
+        return tapp_error(cerr);
     }
     cerr = cudaEventRecord(s->event, stream);
     if (cerr != cudaSuccess)
     {
         cudaEventDestroy(s->event);
         delete s;
-        return pack_error(0, cerr);
+        return tapp_error(cerr);
     }
     *status = (TAPP_status)s;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_status_check_completion(TAPP_status status, TAPP_completion* completion, TAPP_error* error)
 {
     cudaError_t cerr = cudaEventQuery(((struct status*)status)->event);
     TAPP_completion comp;
-    TAPP_error op_error = 0;
+    TAPP_error op_error = TAPP_SUCCESS;
     if (cerr == cudaSuccess)
     {
         comp = TAPP_COMPLETE;
@@ -37,24 +37,24 @@ TAPP_error TAPP_status_check_completion(TAPP_status status, TAPP_completion* com
     else
     {
         comp = TAPP_FAILED;
-        op_error = pack_error(0, cerr);
+        op_error = tapp_error(cerr);
     }
     if (completion != nullptr) *completion = comp;
     if (error != nullptr) *error = op_error;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_status_get_error(TAPP_status status)
 {
     cudaError_t cerr = cudaEventQuery(((struct status*)status)->event);
-    if (cerr == cudaSuccess) return 0;
-    return pack_error(0, cerr);
+    if (cerr == cudaSuccess) return TAPP_SUCCESS;
+    return tapp_error(cerr);
 }
 
 TAPP_error TAPP_destroy_status(TAPP_status status)
 {
     cudaError_t cerr = cudaEventDestroy(((struct status*)status)->event);
     delete (struct status*)status;
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
-    return 0;
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    return TAPP_SUCCESS;
 }
