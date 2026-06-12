@@ -21,7 +21,7 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
     switch (key)
     {
     case 0:
-        memcpy(value, (void*)handle_struct->attributes[0], sizeof(bool));
+        *value = (void*)handle_struct->attributes[0];
         break;
     
     default:

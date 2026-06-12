@@ -79,11 +79,12 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     uint64_t workspace_size_estimate = 0;
     const cutensorWorksizePreference_t workspacePref = CUTENSOR_WORKSPACE_DEFAULT;
-    cutensorEstimateWorkspaceSize(*handle_struct->libhandle,
+    err = cutensorEstimateWorkspaceSize(*handle_struct->libhandle,
                 contraction_desc,
                 plan_pref,
                 workspacePref,
                 &workspace_size_estimate);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     plan_struct->contraction_plan = new cutensorPlan_t;
     err = cutensorCreatePlan(*handle_struct->libhandle,
@@ -148,8 +149,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
     err = cutensorDestroyOperationDescriptor(permutation_desc);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
-    cutensorDestroyPlanPreference(plan_pref);
-    return tapp_error(err); 
+    err = cutensorDestroyPlanPreference(plan_pref);
+    return tapp_error(err);
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
