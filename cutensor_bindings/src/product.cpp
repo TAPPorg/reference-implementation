@@ -29,62 +29,66 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + TAPP_get_nmodes(C));
     std::vector<int32_t> cuidx_D = std::vector<int32_t>(idx_D, idx_D + TAPP_get_nmodes(D));
 
+    // Resources are null-initialized so the fail: path only releases what was created.
+    cutensorOperationDescriptor_t contraction_desc = nullptr;
+    cutensorOperationDescriptor_t permutation_desc = nullptr;
+    cutensorPlanPreference_t plan_pref = nullptr;
+    plan_struct->contraction_plan = nullptr;
+    plan_struct->permutation_plan = nullptr;
+    plan_struct->section_strides_D = nullptr;
+    plan_struct->section_extents_D = nullptr;
+
     cutensorStatus_t err;
-    cutensorOperationDescriptor_t contraction_desc;
-    err = cutensorCreateContraction(*handle_struct->libhandle, 
+    cutensorDataType_t scalarType;
+    uint64_t workspace_size_estimate = 0;
+
+    err = cutensorCreateContraction(*handle_struct->libhandle,
                 &contraction_desc,
                 *((struct tensor_info*)A)->desc, cuidx_A.data(), translate_operator(op_A),
                 *((struct tensor_info*)B)->desc, cuidx_B.data(), translate_operator(op_B),
                 *((struct tensor_info*)C)->desc, cuidx_C.data(), translate_operator(op_C),
                 *((struct tensor_info*)D)->desc, cuidx_D.data(),
                 translate_prectype(prec, ((struct tensor_info*)D)->type));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { contraction_desc = nullptr; goto fail; }
 
-    cutensorDataType_t scalarType;
     err = cutensorOperationDescriptorGetAttribute(*handle_struct->libhandle,
                 contraction_desc,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalarType,
                 sizeof(scalarType));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) goto fail;
 
     assert(scalarType == translate_datatype(((struct tensor_info*)D)->type));
 
-    cutensorOperationDescriptor_t permutation_desc;
     err = cutensorCreatePermutation(*handle_struct->libhandle,
         &permutation_desc,
         *((struct tensor_info*)D)->desc, cuidx_D.data(), translate_operator(op_D),
         *((struct tensor_info*)D)->desc, cuidx_D.data(),
         translate_prectype(prec, ((tensor_info*)D)->type));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { permutation_desc = nullptr; goto fail; }
 
     err = cutensorOperationDescriptorGetAttribute(*handle_struct->libhandle,
                 permutation_desc,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalarType,
                 sizeof(scalarType));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) goto fail;
 
     assert(scalarType == translate_datatype(((struct tensor_info*)D)->type));
 
-    const cutensorAlgo_t algo = CUTENSOR_ALGO_DEFAULT;
-
-    cutensorPlanPreference_t plan_pref;
     err = cutensorCreatePlanPreference(
                 *handle_struct->libhandle,
                 &plan_pref,
-                algo,
+                CUTENSOR_ALGO_DEFAULT,
                 CUTENSOR_JIT_MODE_NONE);
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { plan_pref = nullptr; goto fail; }
 
-    uint64_t workspace_size_estimate = 0;
-    const cutensorWorksizePreference_t workspacePref = CUTENSOR_WORKSPACE_DEFAULT;
     err = cutensorEstimateWorkspaceSize(*handle_struct->libhandle,
                 contraction_desc,
                 plan_pref,
-                workspacePref,
+                CUTENSOR_WORKSPACE_DEFAULT,
                 &workspace_size_estimate);
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) goto fail;
 
     plan_struct->contraction_plan = new cutensorPlan_t;
     err = cutensorCreatePlan(*handle_struct->libhandle,
@@ -92,7 +96,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 contraction_desc,
                 plan_pref,
                 workspace_size_estimate);
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { delete plan_struct->contraction_plan; plan_struct->contraction_plan = nullptr; goto fail; }
 
     plan_struct->permutation_plan = new cutensorPlan_t;
     err = cutensorCreatePlan(*handle_struct->libhandle,
@@ -101,7 +105,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         plan_pref,
         workspace_size_estimate
     );
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { delete plan_struct->permutation_plan; plan_struct->permutation_plan = nullptr; goto fail; }
 
     plan_struct->data_offset_A = ((struct tensor_info*)A)->data_offset;
     plan_struct->copy_size_A = ((struct tensor_info*)A)->copy_size;
@@ -118,28 +122,29 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     plan_struct->section_extents_D = new int64_t[TAPP_get_nmodes(D)];
     plan_struct->type_D = ((struct tensor_info*)D)->type;
     plan_struct->op_D = op_D;
-    int64_t sorted_strides_D[TAPP_get_nmodes(D)];
-    memcpy(sorted_strides_D, ((struct tensor_info*)D)->strides, TAPP_get_nmodes(D) * sizeof(int64_t));
-    auto compare = [](int64_t a, int64_t b) { return std::abs(a) < std::abs(b); };
-    std::sort(sorted_strides_D, sorted_strides_D + TAPP_get_nmodes(D), compare);
-    for (int i = 0; i < TAPP_get_nmodes(D); i++)
     {
-        for (int j = 0; j < TAPP_get_nmodes(D); j++)
+        std::vector<int64_t> sorted_strides_D(((struct tensor_info*)D)->strides, ((struct tensor_info*)D)->strides + TAPP_get_nmodes(D));
+        auto compare = [](int64_t a, int64_t b) { return std::abs(a) < std::abs(b); };
+        std::sort(sorted_strides_D.begin(), sorted_strides_D.end(), compare);
+        for (int i = 0; i < TAPP_get_nmodes(D); i++)
         {
-            if (((struct tensor_info*)D)->strides[j] == sorted_strides_D[i])
+            for (int j = 0; j < TAPP_get_nmodes(D); j++)
             {
-                if (std::abs(sorted_strides_D[i]) == plan_struct->section_size_D)
+                if (((struct tensor_info*)D)->strides[j] == sorted_strides_D[i])
                 {
-                    plan_struct->section_size_D *= std::abs(((struct tensor_info*)D)->extents[i]);
+                    if (std::abs(sorted_strides_D[i]) == plan_struct->section_size_D)
+                    {
+                        plan_struct->section_size_D *= std::abs(((struct tensor_info*)D)->extents[i]);
+                    }
+                    else if (((struct tensor_info*)D)->extents[j] != 1) // if extent = 0 then stride will never be used i.e. no need for section, even if stride would create section
+                    {
+                        plan_struct->sections_D *= ((struct tensor_info*)D)->extents[j];
+                        plan_struct->section_extents_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->extents[j];
+                        plan_struct->section_strides_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->strides[j];
+                        plan_struct->sections_nmode_D++;
+                    }
+                    break;
                 }
-                else if (((struct tensor_info*)D)->extents[j] != 1) // if extent = 0 then stride will never be used i.e. no need for section, even if stride would create section
-                {
-                    plan_struct->sections_D *= ((struct tensor_info*)D)->extents[j];
-                    plan_struct->section_extents_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->extents[j];
-                    plan_struct->section_strides_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->strides[j];
-                    plan_struct->sections_nmode_D++;
-                }
-                break;
             }
         }
     }
@@ -150,6 +155,17 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     err = cutensorDestroyOperationDescriptor(permutation_desc);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
     err = cutensorDestroyPlanPreference(plan_pref);
+    return tapp_error(err);
+
+fail:
+    if (plan_struct->contraction_plan) { cutensorDestroyPlan(*plan_struct->contraction_plan); delete plan_struct->contraction_plan; }
+    if (plan_struct->permutation_plan) { cutensorDestroyPlan(*plan_struct->permutation_plan); delete plan_struct->permutation_plan; }
+    if (contraction_desc) cutensorDestroyOperationDescriptor(contraction_desc);
+    if (permutation_desc) cutensorDestroyOperationDescriptor(permutation_desc);
+    if (plan_pref) cutensorDestroyPlanPreference(plan_pref);
+    delete[] plan_struct->section_strides_D;
+    delete[] plan_struct->section_extents_D;
+    delete plan_struct;
     return tapp_error(err);
 }
 
@@ -166,9 +182,9 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     delete[] plan_struct->section_strides_D;
     delete[] plan_struct->section_extents_D;
     delete plan_struct;
-    return tapp_error(err); 
+    return tapp_error(err);
 }
- 
+
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 TAPP_executor exec,
                                 TAPP_status* status,
@@ -179,18 +195,32 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* C,
                                       void* D)
 {
-    void *A_d, *B_d, *C_d, *D_d;
     struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
     bool use_device_memory = *(bool*)((handle_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
+    const cudaStream_t stream = *(cudaStream_t*)exec;
     cudaError_t cerr;
+    cutensorStatus_t err = CUTENSOR_STATUS_SUCCESS;
+    TAPP_error result = TAPP_SUCCESS;
 
-    void *E_d = nullptr;
+    // Working pointers (possibly offset-adjusted) and the allocations to free.
+    // The *_alloc pointers are only set when this call owns the buffer, so the
+    // cleanup path never frees the caller's device memory.
+    void *A_d = nullptr, *B_d = nullptr, *C_d = nullptr, *D_d = nullptr;
+    void *A_d_alloc = nullptr, *B_d_alloc = nullptr, *C_d_alloc = nullptr, *D_d_alloc = nullptr;
+    void *E_d = nullptr, *E_d_alloc = nullptr;
+    void *contraction_work = nullptr;
+    void *perm_scalar_ptr = nullptr;
+    cutensorPlan_t* contraction_plan = ((struct product_plan*) plan)->contraction_plan;
+    uint64_t contraction_actual_workspace_size = 0;
+    void* contraction_output = nullptr;
+
     if (do_permutation) {
-        cerr = cudaMallocAsync((void**)&E_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
+        cerr = cudaMallocAsync(&E_d_alloc, ((struct product_plan*)plan)->copy_size_D, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        E_d = E_d_alloc;
     }
-    
+
     if (use_device_memory)
     {
         A_d = (void*)A;
@@ -200,60 +230,56 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     else
     {
-        cerr = cudaMallocAsync((void**)&A_d, ((struct product_plan*)plan)->copy_size_A, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMallocAsync((void**)&B_d, ((struct product_plan*)plan)->copy_size_B, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMallocAsync((void**)&C_d, ((struct product_plan*)plan)->copy_size_C, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMallocAsync((void**)&D_d, ((struct product_plan*)plan)->copy_size_D, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMemcpyAsync(A_d, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMemcpyAsync(B_d, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        cerr = cudaMemcpyAsync(C_d, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        A_d = (void*)((intptr_t)A_d + ((struct product_plan*)plan)->data_offset_A);
-        B_d = (void*)((intptr_t)B_d + ((struct product_plan*)plan)->data_offset_B);
-        C_d = (void*)((intptr_t)C_d + ((struct product_plan*)plan)->data_offset_C);
-        D_d = (void*)((intptr_t)D_d + ((struct product_plan*)plan)->data_offset_D);
+        cerr = cudaMallocAsync(&A_d_alloc, ((struct product_plan*)plan)->copy_size_A, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMallocAsync(&B_d_alloc, ((struct product_plan*)plan)->copy_size_B, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMallocAsync(&C_d_alloc, ((struct product_plan*)plan)->copy_size_C, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMallocAsync(&D_d_alloc, ((struct product_plan*)plan)->copy_size_D, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMemcpyAsync(A_d_alloc, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMemcpyAsync(B_d_alloc, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        cerr = cudaMemcpyAsync(C_d_alloc, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice, stream);
+        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+        A_d = (void*)((intptr_t)A_d_alloc + ((struct product_plan*)plan)->data_offset_A);
+        B_d = (void*)((intptr_t)B_d_alloc + ((struct product_plan*)plan)->data_offset_B);
+        C_d = (void*)((intptr_t)C_d_alloc + ((struct product_plan*)plan)->data_offset_C);
+        D_d = (void*)((intptr_t)D_d_alloc + ((struct product_plan*)plan)->data_offset_D);
         if (do_permutation) {
-            E_d = (void*)((intptr_t)E_d + ((struct product_plan*)plan)->data_offset_D);
+            E_d = (void*)((intptr_t)E_d_alloc + ((struct product_plan*)plan)->data_offset_D);
         }
         assert(uintptr_t(A_d) % 128 == 0);
         assert(uintptr_t(B_d) % 128 == 0);
         assert(uintptr_t(C_d) % 128 == 0);
         assert(uintptr_t(D_d) % 128 == 0);
     }
-    cutensorPlan_t* contraction_plan = ((struct product_plan*) plan)->contraction_plan;
-    uint64_t contraction_actual_workspace_size = 0;
-    cutensorStatus_t err;
+
     err = cutensorPlanGetAttribute(*handle_struct->libhandle,
                 *contraction_plan,
                 CUTENSOR_PLAN_REQUIRED_WORKSPACE,
                 &contraction_actual_workspace_size,
                 sizeof(contraction_actual_workspace_size));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    if (err != CUTENSOR_STATUS_SUCCESS) { result = tapp_error(err); goto cleanup; }
 
-    contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB recomended minimum size https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
-    void *contraction_work = nullptr;
-    cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB recomended minimum size https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontrac
+    cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, stream);
+    if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
     assert(uintptr_t(contraction_work) % 128 == 0);
 
-    void* contraction_output = do_permutation ? E_d : D_d;
+    contraction_output = do_permutation ? E_d : D_d;
     err = cutensorContract(*handle_struct->libhandle,
                 *contraction_plan,
                 alpha, A_d, B_d,
-                beta,  C_d, contraction_output, 
-                contraction_work, contraction_actual_workspace_size, *(cudaStream_t*)exec);
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+                beta,  C_d, contraction_output,
+                contraction_work, contraction_actual_workspace_size, stream);
+    if (err != CUTENSOR_STATUS_SUCCESS) { result = tapp_error(err); goto cleanup; }
 
     if (do_permutation)
     {
         cutensorPlan_t* permutation_plan = ((struct product_plan*) plan)->permutation_plan;
-        void* perm_scalar_ptr = NULL;
 
         if (((struct product_plan*)plan)->type_D == TAPP_F32)
         {
@@ -281,74 +307,42 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                     perm_scalar_ptr,
                     E_d,
                     D_d,
-                    *(cudaStream_t*)exec);
-        if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+                    stream);
+        if (err != CUTENSOR_STATUS_SUCCESS) { result = tapp_error(err); goto cleanup; }
         free(perm_scalar_ptr);
+        perm_scalar_ptr = nullptr;
     }
 
     if (!use_device_memory)
     {
-        int64_t section_coordinates_D[((struct product_plan*)plan)->sections_nmode_D];
-        for (size_t i = 0; i < ((struct product_plan*)plan)->sections_nmode_D; i++)
-        {
-            section_coordinates_D[i] = 0;
-        }
-
+        std::vector<int64_t> section_coordinates_D(((struct product_plan*)plan)->sections_nmode_D, 0);
         for (size_t i = 0; i < ((struct product_plan*)plan)->sections_D; i++)
         {
-            int64_t index = compute_index(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_strides_D);
-            cerr = cudaMemcpyAsync((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
-                (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)), 
-                ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost, *(cudaStream_t*)exec);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
-            increment_coordinates(section_coordinates_D, ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_extents_D);
-        }
-
-        A_d = (void*)((intptr_t)A_d - ((struct product_plan*)plan)->data_offset_A);
-        B_d = (void*)((intptr_t)B_d - ((struct product_plan*)plan)->data_offset_B);
-        C_d = (void*)((intptr_t)C_d - ((struct product_plan*)plan)->data_offset_C);
-        D_d = (void*)((intptr_t)D_d - ((struct product_plan*)plan)->data_offset_D);
-
-        if (A_d) { 
-            cerr = cudaFreeAsync(A_d, *(cudaStream_t*)exec);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
-        }
-        if (B_d) {
-            cerr = cudaFreeAsync(B_d, *(cudaStream_t*)exec);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
-        }
-        if (C_d) { 
-            cerr = cudaFreeAsync(C_d, *(cudaStream_t*)exec);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
-        }
-        if (D_d) {
-            cerr = cudaFreeAsync(D_d, *(cudaStream_t*)exec);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
+            int64_t index = compute_index(section_coordinates_D.data(), ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_strides_D);
+            cerr = cudaMemcpyAsync((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)),
+                (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)),
+                ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost, stream);
+            if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
+            increment_coordinates(section_coordinates_D.data(), ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_extents_D);
         }
     }
 
-    if (E_d)
-    {
-        if (!use_device_memory)
-        {
-            E_d = (void*)((intptr_t)E_d - ((struct product_plan*)plan)->data_offset_D);
-        }
-        cerr = cudaFreeAsync(E_d, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-    }
-    if (contraction_work) {
-        cerr = cudaFreeAsync(contraction_work, *(cudaStream_t*)exec);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-    }
-
-    TAPP_error status_err = create_status(*(cudaStream_t*)exec, status);
-    if (!TAPP_check_success(status_err)) return status_err;
+    result = create_status(stream, status);
+    if (!TAPP_check_success(result)) goto cleanup;
 
     // For the moment execution is synchronous: block until all stream work completes.
-    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    cerr = cudaStreamSynchronize(stream);
+    if (cerr != cudaSuccess) result = tapp_error(cerr);
 
-    return tapp_error(err);
+cleanup:
+    if (perm_scalar_ptr) free(perm_scalar_ptr);
+    if (A_d_alloc) { cerr = cudaFreeAsync(A_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    if (B_d_alloc) { cerr = cudaFreeAsync(B_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    if (C_d_alloc) { cerr = cudaFreeAsync(C_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    if (D_d_alloc) { cerr = cudaFreeAsync(D_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    if (E_d_alloc) { cerr = cudaFreeAsync(E_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    if (contraction_work) { cerr = cudaFreeAsync(contraction_work, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
+    return result;
 }
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides)
