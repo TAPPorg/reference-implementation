@@ -14,27 +14,27 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec) {
 #endif
     *((int*)(*exec)) = ex;
     // exec = (intptr_t)&ex;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_executor(TAPP_executor exec) {
     free((void*)exec);
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status) {
     if (status == NULL) {
-        return 0;
+        return TAPP_SUCCESS;
     }
     struct status* stat = malloc(sizeof(struct status));
     // All work submitted to a synchronous executor has finished by the time we get here.
     stat->completion = TAPP_COMPLETE;
-    stat->error = 0;
+    stat->error = TAPP_SUCCESS;
     *status = (TAPP_status)stat;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_executor_wait(TAPP_executor exec) {
     // The reference implementation is synchronous; nothing is ever in flight.
-    return 0;
+    return TAPP_SUCCESS;
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.17) # 3.17 for CUDAToolkit (used by the cuTENSOR bindings/tests)
 
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
@@ -84,7 +84,6 @@ if (TAPP_CUTENSOR)
     message(FATAL_ERROR "Cannot build cuTENSOR bindings due to missing CXX language support")
   endif()
   # since CUDAToolkit will be needed in tests/ also, load it here
-  cmake_minimum_required(VERSION 3.17) # CUDAToolkit
   find_package(CUDAToolkit REQUIRED)
 
   add_subdirectory(cutensor_bindings)

@@ -29,11 +29,6 @@ endif()
 add_library(tapp-cutensor SHARED)
 set_property(TARGET tapp-cutensor PROPERTY EXPORT_NAME cutensor)
 add_library(tapp::cutensor ALIAS tapp-cutensor)
-target_link_libraries(
-        cutensor::cutensor
-        INTERFACE
-        CUDA::cudart
-)
 
 target_sources(tapp-cutensor
   PRIVATE

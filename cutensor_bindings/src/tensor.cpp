@@ -22,7 +22,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     {
         delete tensor_info->desc;
         delete tensor_info;
-        return pack_error(0, err);
+        return tapp_error(err);
     }
     size_t elements = 1;
     for (int i = 0; i < nmode; ++i)
@@ -50,7 +50,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
         tensor_info->strides[i] = strides[i];
     }
     *info = (TAPP_tensor_info) tensor_info;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
@@ -59,13 +59,13 @@ TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
     cutensorStatus_t err = cutensorDestroyTensorDescriptor(*tensor_info->desc);
     if (err != CUTENSOR_STATUS_SUCCESS)
     {
-        return pack_error(0, err);
+        return tapp_error(err);
     }
     delete tensor_info->desc;
     delete[] tensor_info->extents;
     delete[] tensor_info->strides;
     delete tensor_info;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 int TAPP_get_nmodes(TAPP_tensor_info info)
@@ -76,7 +76,7 @@ int TAPP_get_nmodes(TAPP_tensor_info info)
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes)
 {
-    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Cutensor does not support changing modes/extents/strides after descriptor creation.
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
@@ -89,7 +89,7 @@ void TAPP_get_extents(TAPP_tensor_info info,
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
                             const int64_t* extents)
 {
-    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Cutensor does not support changing modes/extents/strides after descriptor creation.
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
@@ -102,5 +102,5 @@ void TAPP_get_strides(TAPP_tensor_info info,
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
                             const int64_t* strides)
 {
-    return -1; // Can for now not be implemented. Cutensor does not support changing the number of modes after creation, so this would require recreating the descriptor, would need handle.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Cutensor does not support changing modes/extents/strides after descriptor creation.
 }
