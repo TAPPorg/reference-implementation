@@ -246,36 +246,33 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->compute_type = translate_prectype(prec, D_info->type);
 
     // The TTGT/cuBLAS-GEMM back-end handles plain (Case 1/2) contractions over
-    // dense, positive-stride tensors with identity element-wise ops only.
+    // dense, positive-stride tensors with identity element-wise ops only. The
+    // variable-precision (digit-count) compute types are FP64 emulation, so
+    // they require an F64/C64 output.
     if (op_A != TAPP_IDENTITY || op_B != TAPP_IDENTITY ||
         op_C != TAPP_IDENTITY || op_D != TAPP_IDENTITY ||
         !is_supported_datatype(A_info->type) ||
         !is_supported_datatype(B_info->type) ||
         !is_supported_datatype(D_info->type) ||
         !tensor_strides_supported(A_info) || !tensor_strides_supported(B_info) ||
-        !tensor_strides_supported(C_info) || !tensor_strides_supported(D_info))
+        !tensor_strides_supported(C_info) || !tensor_strides_supported(D_info) ||
+        (tapp_prec_digits(prec) > 0 &&
+         D_info->type != TAPP_F64 && D_info->type != TAPP_C64))
     {
         p->failed = true;
         *plan = (TAPP_tensor_product)p;
         return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE);
     }
 
-    // Optional cuBLAS fixed-point FP64 emulation: the user requests a number of
-    // decimal digits of precision via the ATTR_KEY_PRECISION_DIGITS attribute.
-    // Only applies to F64/C64 outputs and only when built with EMULATION
-    // (CUDA >= 13); otherwise the hint is ignored and the normal compute type
-    // is used. The digits->mantissa-bits conversion happens at execute.
+    // Variable-precision cuBLAS fixed-point FP64 emulation. The requested decimal
+    // digits come from the compute type (TAPP_F_*/TAPP_C_*); compute_type was
+    // already set to the emulated type by translate_prectype above. The digit
+    // count is only consumed when built with EMULATION (CUDA >= 13) - otherwise
+    // it stays 0 and the GEMM runs in plain FP64. The digits->mantissa-bits
+    // conversion happens at execute.
     p->prec_digits = 0;
 #if EMULATION
-    {
-        struct handle* hs = (struct handle*)handle;
-        int digits = *(int*)hs->attributes[ATTR_KEY_PRECISION_DIGITS];
-        if (digits > 0 && (D_info->type == TAPP_F64 || D_info->type == TAPP_C64))
-        {
-            p->prec_digits = digits;
-            p->compute_type = CUBLAS_COMPUTE_64F_EMULATED_FIXEDPOINT;
-        }
-    }
+    p->prec_digits = tapp_prec_digits(prec);
 #endif
 
     int rankA = A_info->nmode;

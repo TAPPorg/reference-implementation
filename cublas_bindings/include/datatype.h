@@ -12,6 +12,10 @@
 // to cublasGemmEx. `datatype` resolves TAPP_DEFAULT_PREC.
 cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
 
+// If `prec` is one of the variable-precision compute types (TAPP_F_*/TAPP_C_*
+// digit counts), return its decimal digit count (> 0); otherwise return 0.
+int tapp_prec_digits(TAPP_prectype prec);
+
 // CUDA data type (CUDA_R_32F, ...) for a TAPP storage datatype, for cublasGemmEx.
 cudaDataType get_cuda_datatype(TAPP_datatype type);
 

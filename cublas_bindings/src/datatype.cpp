@@ -1,7 +1,27 @@
 #include "../include/datatype.h"
 
+int tapp_prec_digits(TAPP_prectype prec)
+{
+    if ((prec >= TAPP_F_3_DIGITS && prec <= TAPP_F_34_DIGITS) ||
+        (prec >= TAPP_C_3_DIGITS && prec <= TAPP_C_34_DIGITS))
+        return prec % 1000;
+    return 0;
+}
+
 cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype)
 {
+    // Variable-precision (digit-count) types map to cuBLAS fixed-point FP64
+    // emulation. Without an emulation-capable build (CUDA >= 13) fall back to
+    // plain FP64, i.e. full precision ignoring the requested digit reduction.
+    if (tapp_prec_digits(prec) > 0)
+    {
+#if EMULATION
+        return CUBLAS_COMPUTE_64F_EMULATED_FIXEDPOINT;
+#else
+        return CUBLAS_COMPUTE_64F;
+#endif
+    }
+
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:

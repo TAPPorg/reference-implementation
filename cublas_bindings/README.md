@@ -58,16 +58,22 @@ cuBLAS/TTGT back-end") rather than producing a wrong result.
 
 When built with `-DTAPP_CUBLAS_EMULATION=1` (requires CUDA >= 13), the back-end
 can use cuBLAS fixed-point FP64 emulation with a variable mantissa size. The
-caller requests a number of **decimal digits** of precision via the
-`ATTR_KEY_PRECISION_DIGITS` (= 1) attribute on the handle before creating a plan:
+requested **decimal digits** of precision are selected through the standard
+`TAPP_prectype` (the `prec` argument of `TAPP_create_tensor_product`) using the
+variable-precision compute types `TAPP_F_<n>_DIGITS` (real) and
+`TAPP_C_<n>_DIGITS` (complex), defined in `tapp/datatype.h`. They cover
+`n = 3..16` plus a `34`-digit (quad-like) point:
 
 ```c
-int digits = 7;
-TAPP_attr_set(handle, ATTR_KEY_PRECISION_DIGITS, &digits);
-TAPP_create_tensor_product(&plan, handle, /* ... */);  // captures the setting
+// real, 7 correct decimal digits of accumulation
+TAPP_create_tensor_product(&plan, handle, /* ... */, info_D, idx_D, TAPP_F_7_DIGITS);
 ```
 
 The digit count is converted to a max mantissa bit count
-(`ceil(log2(10) * digits)`) and applied to the GEMM. It only affects `F64`/`C64`
-outputs; for other datatypes (or when `digits == 0`, the default) the normal
-compute type is used. Without `EMULATION` the attribute is accepted but ignored.
+(`ceil(log2(10) * digits)`) and applied to the GEMM. These compute types require
+an `F64`/`C64` output (rejected otherwise). Without `EMULATION` (CUDA < 13) they
+fall back to plain `FP64` — i.e. full precision, ignoring the digit reduction.
+
+The values are encoded so the digit count is `value % 1000` (real = `1000 + n`,
+complex = `2000 + n`); the same standard enum is intended for a future dedicated
+Ozaki back-end as well.
