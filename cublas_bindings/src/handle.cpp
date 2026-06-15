@@ -8,13 +8,13 @@ TAPP_error TAPP_create_handle(TAPP_handle* handle)
     if (stat != CUBLAS_STATUS_SUCCESS)
     {
         delete handle_struct;
-        return pack_error(0, stat);
+        return tapp_error(stat);
     }
     handle_struct->attributes = new intptr_t[ATTR_COUNT];
     handle_struct->attributes[ATTR_KEY_USE_DEVICE_MEMORY] = (intptr_t) new bool(true);
     handle_struct->attributes[ATTR_KEY_PRECISION_DIGITS] = (intptr_t) new int(0);
     *handle = (TAPP_handle) handle_struct;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_handle(TAPP_handle handle)
@@ -25,6 +25,6 @@ TAPP_error TAPP_destroy_handle(TAPP_handle handle)
     delete (int*)handle_struct->attributes[ATTR_KEY_PRECISION_DIGITS];
     delete[] handle_struct->attributes;
     delete handle_struct;
-    if (stat != CUBLAS_STATUS_SUCCESS) return pack_error(0, stat);
-    return 0;
+    if (stat != CUBLAS_STATUS_SUCCESS) return tapp_error(stat);
+    return TAPP_SUCCESS;
 }

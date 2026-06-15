@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17) # 3.17 for CUDAToolkit (used by the cuTENSOR bindings/tests)
+cmake_minimum_required(VERSION 3.18) # 3.18 for CUDA_ARCHITECTURES (cuBLAS) / CUDAToolkit (cuTENSOR)
 
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
@@ -108,7 +108,6 @@ if (TAPP_CUBLAS)
     message(FATAL_ERROR "Cannot build cuBLAS bindings due to missing CUDA language support")
   endif()
   # CUDAToolkit provides CUDA::cudart and CUDA::cublas
-  cmake_minimum_required(VERSION 3.18) # CUDA_ARCHITECTURES native
   find_package(CUDAToolkit REQUIRED)
 
   add_subdirectory(cublas_bindings)

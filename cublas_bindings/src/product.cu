@@ -257,7 +257,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     {
         p->failed = true;
         *plan = (TAPP_tensor_product)p;
-        return pack_error(0, 16);
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE);
     }
 
     // Optional cuBLAS fixed-point FP64 emulation: the user requests a number of
@@ -314,7 +314,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         delete[] bounded;
         p->failed = true;
         *plan = (TAPP_tensor_product)p;
-        return pack_error(0, 16);
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE);
     }
 
     std::vector<int> freeA(n_freeA > 0 ? n_freeA : 1);
@@ -426,7 +426,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     delete[] cA; delete[] cpA; delete[] cB; delete[] cpB; delete[] cC; delete[] cpC;
 
     *plan = (TAPP_tensor_product)p;
-    return p->failed ? pack_error(0, 16) : 0;
+    return p->failed ? tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE) : TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
@@ -436,7 +436,7 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     if (p->transposeB) cuttDestroy(p->planB);
     if (p->transposeC) cuttDestroy(p->planC);
     delete p;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 // ===========================================================================
@@ -454,7 +454,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                       void* D)
 {
     struct product_plan* p = (struct product_plan*)plan;
-    if (p->failed) return pack_error(0, 16);
+    if (p->failed) return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE);
     struct handle* handle_struct = (struct handle*)p->handle;
     cublasHandle_t cublas = handle_struct->cublas;
     bool use_device_memory = *(bool*)(handle_struct->attributes[ATTR_KEY_USE_DEVICE_MEMORY]);
@@ -464,7 +464,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     cudaError_t cerr;
 
     bool beta_nonzero = scalar_is_nonzero(beta, tD);
-    if (beta_nonzero && C == nullptr) return pack_error(0, 12);
+    if (beta_nonzero && C == nullptr) return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_C_NULL_BETA);
 
     void *A_d, *B_d, *D_d;
     void *A_base = nullptr, *B_base = nullptr, *D_base = nullptr;
@@ -477,11 +477,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     else
     {
-        cerr = cudaMalloc(&A_base, p->copy_size_A); if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMalloc(&B_base, p->copy_size_B); if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMalloc(&D_base, p->copy_size_D); if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(A_base, (void*)((intptr_t)A + p->data_offset_A), p->copy_size_A, cudaMemcpyHostToDevice); if (cerr != cudaSuccess) return pack_error(0, cerr);
-        cerr = cudaMemcpy(B_base, (void*)((intptr_t)B + p->data_offset_B), p->copy_size_B, cudaMemcpyHostToDevice); if (cerr != cudaSuccess) return pack_error(0, cerr);
+        cerr = cudaMalloc(&A_base, p->copy_size_A); if (cerr != cudaSuccess) return tapp_error(cerr);
+        cerr = cudaMalloc(&B_base, p->copy_size_B); if (cerr != cudaSuccess) return tapp_error(cerr);
+        cerr = cudaMalloc(&D_base, p->copy_size_D); if (cerr != cudaSuccess) return tapp_error(cerr);
+        cerr = cudaMemcpy(A_base, (void*)((intptr_t)A + p->data_offset_A), p->copy_size_A, cudaMemcpyHostToDevice); if (cerr != cudaSuccess) return tapp_error(cerr);
+        cerr = cudaMemcpy(B_base, (void*)((intptr_t)B + p->data_offset_B), p->copy_size_B, cudaMemcpyHostToDevice); if (cerr != cudaSuccess) return tapp_error(cerr);
         A_d = (void*)((intptr_t)A_base + p->data_offset_A);
         B_d = (void*)((intptr_t)B_base + p->data_offset_B);
         D_d = (void*)((intptr_t)D_base + p->data_offset_D);
@@ -495,13 +495,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
             if (C != D)
             {
                 cerr = cudaMemcpy(D_d, (void*)C, bytes_D, cudaMemcpyDeviceToDevice);
-                if (cerr != cudaSuccess) return pack_error(0, cerr);
+                if (cerr != cudaSuccess) return tapp_error(cerr);
             }
         }
         else
         {
             cerr = cudaMemcpy(D_base, (void*)((intptr_t)C + p->data_offset_C), p->copy_size_D, cudaMemcpyHostToDevice);
-            if (cerr != cudaSuccess) return pack_error(0, cerr);
+            if (cerr != cudaSuccess) return tapp_error(cerr);
         }
     }
 
@@ -602,16 +602,16 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
             if (B_base) cudaFree(B_base);
             if (D_base) cudaFree(D_base);
         }
-        return pack_error(0, 16);
+        return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_UNSUPPORTED_DATATYPE);
     }
 
     cerr = cudaDeviceSynchronize();
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
 
     if (!use_device_memory)
     {
         cerr = cudaMemcpy((void*)((intptr_t)D + p->data_offset_D), D_base, p->copy_size_D, cudaMemcpyDeviceToHost);
-        if (cerr != cudaSuccess) return pack_error(0, cerr);
+        if (cerr != cudaSuccess) return tapp_error(cerr);
         if (A_base) cudaFree(A_base);
         if (B_base) cudaFree(B_base);
         if (D_base) cudaFree(D_base);
@@ -621,7 +621,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (!TAPP_check_success(status_err)) return status_err;
 
     cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
-    if (cerr != cudaSuccess) return pack_error(0, cerr);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
 
-    return 0;
+    return TAPP_SUCCESS;
 }

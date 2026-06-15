@@ -40,7 +40,7 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
         tensor_info->strides[i] = strides[i];
     }
     *info = (TAPP_tensor_info) tensor_info;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
@@ -49,7 +49,7 @@ TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
     delete[] tensor_info->extents;
     delete[] tensor_info->strides;
     delete tensor_info;
-    return 0;
+    return TAPP_SUCCESS;
 }
 
 int TAPP_get_nmodes(TAPP_tensor_info info)
@@ -62,7 +62,7 @@ TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
 {
     (void)info;
     (void)nmodes;
-    return -1; // Not supported: would require reallocating extents/strides.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Not supported: would require reallocating extents/strides.
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
@@ -76,7 +76,7 @@ TAPP_error TAPP_set_extents(TAPP_tensor_info info,
 {
     (void)info;
     (void)extents;
-    return -1; // Not supported.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Not supported.
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
@@ -90,5 +90,5 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
 {
     (void)info;
     (void)strides;
-    return -1; // Not supported.
+    return tapp_error(TAPP_ERROR_TYPE_TAPP, TAPP_ERR_NOT_IMPLEMENTED); // Not supported.
 }

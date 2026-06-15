@@ -38,6 +38,7 @@ enum
     TAPP_ERR_INVALID_KEY      = 15,
     TAPP_ERR_NO_EXECUTOR      = 16,
     TAPP_ERR_NOT_IMPLEMENTED  = 17,
+    TAPP_ERR_UNSUPPORTED_DATATYPE = 18,
 };
 
 /* An error carries the source (type) and that source's own error code. Only the
@@ -82,6 +83,7 @@ static inline const char* tapp_error_string(int code)
     case TAPP_ERR_INVALID_KEY:      return "Invalid attribute key.";
     case TAPP_ERR_NO_EXECUTOR:      return "Executor does not exist.";
     case TAPP_ERR_NOT_IMPLEMENTED:  return "Operation not implemented.";
+    case TAPP_ERR_UNSUPPORTED_DATATYPE: return "Unsupported datatype for the back-end.";
     default:                        return "Unknown TAPP error code.";
     }
 }
