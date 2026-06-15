@@ -10,7 +10,7 @@ This repository contains
 2. A reference implementation focusing on correctness rather than performance. 
 3. Bindings to high-performance implementations (cuTENSOR, TBLIS).
 
-> 📄 **TAPP is described in this paper: [Towards a Standard for Tensor Operations](https://arxiv.org/abs/2601.07827).** 
+> 📄 **TAPP is described in this paper: [Tensor Algebra Processing Primitives (TAPP): Towards a Standard for Tensor Operations](https://arxiv.org/abs/2601.07827).** 
 > If TAPP is useful for your research or software, please [cite TAPP](#citation).
 
 ## The operation
@@ -53,7 +53,7 @@ The full operation semantics, edge cases, and terminology are described in the [
 |------|-------------|
 | `api/` | The interface specification: header-only `tapp::api` library (`api/include/tapp/*.h`, umbrella `tapp.h`). This is the standard itself. |
 | `reference_implementation/` | `tapp::reference`, the shared-library implementation of the API. Core logic is in `src/product.c`. |
-| `test/` | Correctness tests against TBLIS (`test.cpp`) and NumPy `einsum` (`test.py`), plus demo/driver targets and a `find_package` consume test. |
+| `test/` | Correctness tests against TBLIS (`test.cpp`) and NumPy `einsum` (`test.py`), plus demo targets and a `find_package` consume test. |
 
 ## Building
 
@@ -96,6 +96,8 @@ TAPP_create_tensor_info(&info_A, TAPP_F32, 3, extents_A, strides_A);
 
 /* 2. Build a reusable contraction plan from the descriptors and index labels. */
 TAPP_handle handle;            /* back-end state (stub in the reference impl) */
+TAPP_create_handle(&handle);
+
 int64_t idx_A[3] = {'a', 'b', 'c'};
 int64_t idx_B[4] = {'c', 'd', 'e', 'b'};
 int64_t idx_C[3] = {'a', 'd', 'e'};
@@ -115,6 +117,10 @@ TAPP_create_executor(&exec);
 TAPP_status status;
 float alpha = 1.0f, beta = 0.0f;
 TAPP_execute_product(plan, exec, &status, &alpha, A, B, &beta, C, D);
+
+TAPP_destroy_tensor_produc(plan);
+TAPP_destroy_executor(exec);
+TAPP_destroy_handle(handle);
 ```
 
 API functions return a `TAPP_error` code; use `TAPP_check_success()` to test it and `TAPP_explain_error()` to obtain a human-readable description.
