@@ -114,6 +114,13 @@ if (TAPP_CUBLAS)
 endif()
 
 # ----------------------------------------------------------------------------
+# benchmarks (need a GPU back-end, which enables CXX/CUDA)
+option(TAPP_BENCHMARKS "Build TAPP benchmarks" OFF)
+if(TAPP_BENCHMARKS)
+  add_subdirectory(benchmarks)
+endif()
+
+# ----------------------------------------------------------------------------
 # testing
 
 include(CTest)
