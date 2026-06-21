@@ -1,10 +1,4 @@
-/*
- * Niklas Hörnblad
- * Paolo Bientinesi
- * Umeå University - October 2024
- */
-#include "ref_impl.h"
-#include <string.h>
+#include "../include/error.h"
 
 
 bool TAPP_check_success(TAPP_error error) {
@@ -15,16 +9,26 @@ bool TAPP_check_success(TAPP_error error) {
 size_t TAPP_explain_error(TAPP_error error,
                           size_t maxlen,
                           char* message) {
-    const char* error_message;
+
+    std::string str;
+
     switch (error.type)
     {
     case TAPP_ERROR_TYPE_TAPP:
-        error_message = tapp_error_string(error.code);
+        str = tapp_error_string(error.code);
+        break;
+    case TAPP_ERROR_TYPE_CUDA:
+        str = std::string("[CUDA Error]: ") + cudaGetErrorString(static_cast<cudaError_t>(error.code));
+        break;
+    case TAPP_ERROR_TYPE_CUTENSOR:
+        str = std::string("[cuTENSOR Status]: ") + cutensorGetErrorString(static_cast<cutensorStatus_t>(error.code));
         break;
     default:
-        error_message = "Unknown error type.";
+        str = "Unknown error type.";
         break;
     }
+
+    const char* error_message = str.c_str();
     size_t message_len = strlen(error_message);
     if (maxlen == 0) {
         return message_len;
