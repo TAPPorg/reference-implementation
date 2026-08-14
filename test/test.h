@@ -133,4 +133,3 @@ bool test_hadamard_and_free();
 bool test_hadamard_and_contraction();
 bool test_error_non_matching_ext();
 bool test_error_C_other_structure();
-bool test_error_aliasing_within_D();

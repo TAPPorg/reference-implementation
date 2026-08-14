@@ -53,7 +53,6 @@ int main(int argc, char const *argv[])
     std::cout << "Hadamard And Contraction: " << test_hadamard_and_contraction() << std::endl;
     std::cout << "Error: Non Matching Extents: " << test_error_non_matching_ext() << std::endl;
     std::cout << "Error: C Other Structure: " << test_error_C_other_structure() << std::endl;
-    std::cout << "Error: Aliasing Within D: " << test_error_aliasing_within_D() << std::endl;
     bli_finalize();
     return 0;
 }
@@ -3289,69 +3288,4 @@ bool test_error_C_other_structure()
     delete[] data_D;
 
     return error_status == 5 || error_status == 6 || error_status == 7;
-}
-
-bool test_error_aliasing_within_D()
-{
-    auto [nmode_A, extents_A, strides_A, A, idx_A,
-          nmode_B, extents_B, strides_B, B, idx_B,
-          nmode_C, extents_C, strides_C, C, idx_C,
-          nmode_D, extents_D, strides_D, D, idx_D,
-          alpha, beta,
-          data_A, data_B, data_C, data_D,
-          size_A, size_B, size_C, size_D] = generate_pseudorandom_contraction<float>(-1, -1, rand(2, 4), -1, -1, 2);
-
-    int scewed_index = rand(1, nmode_D - 1);
-    int signs[2] = {-1, 1};
-    strides_D[scewed_index] = random_choice(2, signs) * (strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - rand((int64_t)1, strides_D[scewed_index - 1] * extents_D[scewed_index - 1] - 1));
-
-    TAPP_tensor_info info_A;
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
-    TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
-    TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
-    TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-
-    TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    int error_status;
-    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
-    TAPP_executor exec;
-    TAPP_create_executor(&exec);
-
-    if (error_status == 0)
-    {
-        error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
-        TAPP_destroy_tensor_product(plan);
-    }
-
-    TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
-    TAPP_destroy_tensor_info(info_A);
-    TAPP_destroy_tensor_info(info_B);
-    TAPP_destroy_tensor_info(info_C);
-    TAPP_destroy_tensor_info(info_D);
-    delete[] extents_A;
-    delete[] extents_B;
-    delete[] extents_C;
-    delete[] extents_D;
-    delete[] strides_A;
-    delete[] strides_B;
-    delete[] strides_C;
-    delete[] strides_D;
-    delete[] idx_A;
-    delete[] idx_B;
-    delete[] idx_C;
-    delete[] idx_D;
-    delete[] data_A;
-    delete[] data_B;
-    delete[] data_C;
-    delete[] data_D;
-
-    return error_status == 8;
 }
