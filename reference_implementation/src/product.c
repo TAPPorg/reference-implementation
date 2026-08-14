@@ -1106,7 +1106,7 @@ void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int ri
 
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 {
-    bool cplx = is_complex(type);
+    bool is_complex_type = is_complex(type);
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -1119,9 +1119,9 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
 #endif
-        return malloc(cplx ? sizeof(complex float) : sizeof(float));
+        return malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
     case TAPP_F64F64_ACCUM_F64:
-        return malloc(cplx ? sizeof(complex double) : sizeof(double));
+        return malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
         return malloc(sizeof(_Float16));
@@ -1133,24 +1133,24 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 
 void* alloc_typed_value(TAPP_prectype prec, TAPP_datatype type)
 {
-    bool cplx = is_complex(type);
+    bool is_complex_type = is_complex(type);
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
         switch (type) { TAPP_DATATYPE_LIST(TAPP_ALLOC_CASE) default: return NULL; }
         break;
     case TAPP_F32F32_ACCUM_F32:
-        return malloc(cplx ? sizeof(complex float) : sizeof(float));
+        return malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
     case TAPP_F64F64_ACCUM_F64:
-        return malloc(cplx ? sizeof(complex double) : sizeof(double));
+        return malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
     case TAPP_F16F16_ACCUM_F32:
-        return malloc(cplx ? sizeof(complex _Float16) : sizeof(_Float16));
+        return malloc(is_complex_type ? sizeof(complex _Float16) : sizeof(_Float16));
 #endif
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
-        return malloc(cplx ? sizeof(complex __bf16) : sizeof(__bf16));
+        return malloc(is_complex_type ? sizeof(complex __bf16) : sizeof(__bf16));
 #endif
     default:
         return NULL;
@@ -1265,27 +1265,27 @@ bool is_complex(TAPP_datatype type)
 void set_typed_scalar_to_zero(void* sum, TAPP_prectype prec, TAPP_datatype type)
 {
     void* ptr = sum;
-    bool cplx = is_complex(type);
+    bool is_complex_type = is_complex(type);
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
         switch (type) { TAPP_DATATYPE_LIST(TAPP_ZERO_CASE) default: break; }
         break;
     case TAPP_F32F32_ACCUM_F32:
-        if (cplx) *(complex float*)ptr = 0; else *(float*)ptr = 0;
+        if (is_complex_type) *(complex float*)ptr = 0; else *(float*)ptr = 0;
         break;
     case TAPP_F64F64_ACCUM_F64:
-        if (cplx) *(complex double*)ptr = 0; else *(double*)ptr = 0;
+        if (is_complex_type) *(complex double*)ptr = 0; else *(double*)ptr = 0;
         break;
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
     case TAPP_F16F16_ACCUM_F32:
-        if (cplx) *(complex _Float16*)ptr = 0; else *(_Float16*)ptr = 0;
+        if (is_complex_type) *(complex _Float16*)ptr = 0; else *(_Float16*)ptr = 0;
         break;
 #endif
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
-        if (cplx) *(complex __bf16*)ptr = 0; else *(__bf16*)ptr = 0;
+        if (is_complex_type) *(complex __bf16*)ptr = 0; else *(__bf16*)ptr = 0;
         break;
 #endif
     default:
@@ -1296,7 +1296,7 @@ void set_typed_scalar_to_zero(void* sum, TAPP_prectype prec, TAPP_datatype type)
 void set_typed_accum_to_zero(void* accum, TAPP_prectype prec, TAPP_datatype type)
 {
     void* ptr = accum;
-    bool cplx = is_complex(type);
+    bool is_complex_type = is_complex(type);
     switch (prec)
     {
     case TAPP_DEFAULT_PREC:
@@ -1309,14 +1309,14 @@ void set_typed_accum_to_zero(void* accum, TAPP_prectype prec, TAPP_datatype type
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
 #endif
-        if (cplx) *(complex float*)ptr = 0; else *(float*)ptr = 0;
+        if (is_complex_type) *(complex float*)ptr = 0; else *(float*)ptr = 0;
         break;
     case TAPP_F64F64_ACCUM_F64:
-        if (cplx) *(complex double*)ptr = 0; else *(double*)ptr = 0;
+        if (is_complex_type) *(complex double*)ptr = 0; else *(double*)ptr = 0;
         break;
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
-        if (cplx) *(complex _Float16*)ptr = 0; else *(_Float16*)ptr = 0;
+        if (is_complex_type) *(complex _Float16*)ptr = 0; else *(_Float16*)ptr = 0;
         break;
 #endif
     default:
