@@ -31,7 +31,7 @@ void sum_reduction(void* sum, const void* tensor, int index, TAPP_element_op op,
 void calculate_beta_C(const void* beta, const void* val_C, TAPP_datatype type_C, TAPP_element_op op_C, TAPP_prectype prec, void* accum, TAPP_datatype type_D);
 void calculate_alpha_A_B(const void* alpha, const void* sum_A, TAPP_datatype type_A, const void* sum_B, TAPP_datatype type_B, TAPP_prectype prec, void* accum, TAPP_datatype type_D);
 void calculate_op_D(void* accum, TAPP_datatype type_D, TAPP_element_op op_D, TAPP_prectype prec);
-int calcualte_offset(int64_t* coords, int nmode, int64_t* strides);
+int64_t calcualte_offset(int64_t* coords, int nmode, int64_t* strides);
 void get_typed_value(void* val, const void* tensor, int64_t index, TAPP_datatype type, TAPP_prectype prec);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec);
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
@@ -57,6 +57,18 @@ void* TAPP_realloc(void *ptr, size_t size) {
     }
     else
         return realloc(ptr, size);
+}
+
+// malloc(0) is legitimately allowed to return NULL, so only treat a NULL
+// result as fatal when a non-zero allocation was actually requested.
+void* checked_malloc(size_t size) {
+    if (size == 0) return NULL;
+    void* ptr = malloc(size);
+    if (ptr == NULL) {
+        fprintf(stderr, "TAPP reference implementation: out of memory (requested %zu bytes)\n", size);
+        exit(1);
+    }
+    return ptr;
 }
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -92,29 +104,29 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     {
         return error_status;
     }
-    struct plan* plan_ptr = malloc(sizeof(struct plan));
+    struct plan* plan_ptr = checked_malloc(sizeof(struct plan));
     
     plan_ptr->A = A;
 
-    plan_ptr->idx_A = malloc(((struct tensor_info*)A)->nmode * sizeof(int64_t));
+    plan_ptr->idx_A = checked_malloc(((struct tensor_info*)A)->nmode * sizeof(int64_t));
     memcpy(plan_ptr->idx_A, idx_A, ((struct tensor_info*)A)->nmode * sizeof(int64_t));
 
 
     plan_ptr->B = B;
 
-    plan_ptr->idx_B = malloc(((struct tensor_info*)B)->nmode * sizeof(int64_t));
+    plan_ptr->idx_B = checked_malloc(((struct tensor_info*)B)->nmode * sizeof(int64_t));
     memcpy(plan_ptr->idx_B, idx_B, ((struct tensor_info*)B)->nmode * sizeof(int64_t));
 
 
     plan_ptr->C = C;
 
-    plan_ptr->idx_C = malloc(((struct tensor_info*)C)->nmode * sizeof(int64_t));
+    plan_ptr->idx_C = checked_malloc(((struct tensor_info*)C)->nmode * sizeof(int64_t));
     memcpy(plan_ptr->idx_C, idx_C, ((struct tensor_info*)C)->nmode * sizeof(int64_t));
 
 
     plan_ptr->D = D;
 
-    plan_ptr->idx_D = malloc(((struct tensor_info*)D)->nmode * sizeof(int64_t));
+    plan_ptr->idx_D = checked_malloc(((struct tensor_info*)D)->nmode * sizeof(int64_t));
     memcpy(plan_ptr->idx_D, idx_D, ((struct tensor_info*)D)->nmode * sizeof(int64_t));
 
     plan_ptr->type_A = info_A_ptr->type;
@@ -192,12 +204,12 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
     int max_H_nmode = nmode_A;
     if (nmode_B < max_H_nmode) max_H_nmode = nmode_B;
     if (nmode_D < max_H_nmode) max_H_nmode = nmode_D;
-    *H_idx_ptr = malloc(max_H_nmode * sizeof(int64_t));
+    *H_idx_ptr = checked_malloc(max_H_nmode * sizeof(int64_t));
     int H_nmode = 0;
-    for (size_t i = 0; i < nmode_A; i++)
+    for (int i = 0; i < nmode_A; i++)
     {
         bool already_handled = false;
-        for (size_t j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
             if (idx_A[i] == idx_A[j]) {
                 already_handled = true;
@@ -207,7 +219,7 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
         if (already_handled) continue;
 
         bool in_B = false;
-        for (size_t j = 0; j < nmode_B; j++)
+        for (int j = 0; j < nmode_B; j++)
         {
             if (idx_A[i] == idx_B[j]) {
                 in_B = true;
@@ -217,7 +229,7 @@ int extract_H_indices(const int nmode_A, const int64_t* idx_A,
         if (!in_B) continue;
 
         bool in_D = false;
-        for (size_t j = 0; j < nmode_D; j++)
+        for (int j = 0; j < nmode_D; j++)
         {
             if (idx_A[i] == idx_D[j]) {
                 in_D = true;
@@ -240,12 +252,12 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
 {
     int max_P_nmode = nmode_A;
     if (nmode_B < max_P_nmode) max_P_nmode = nmode_B;
-    *P_idx_ptr = malloc(max_P_nmode * sizeof(int64_t));
+    *P_idx_ptr = checked_malloc(max_P_nmode * sizeof(int64_t));
     int P_nmode = 0;
-    for (size_t i = 0; i < nmode_A; i++)
+    for (int i = 0; i < nmode_A; i++)
     {
         bool already_handled = false;
-        for (size_t j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
             if (idx_A[i] == idx_A[j]) {
                 already_handled = true;
@@ -255,7 +267,7 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
         if (already_handled) continue;
 
         bool in_B = false;
-        for (size_t j = 0; j < nmode_B; j++)
+        for (int j = 0; j < nmode_B; j++)
         {
             if (idx_A[i] == idx_B[j]) {
                 in_B = true;
@@ -265,7 +277,7 @@ int extract_P_indices(const int nmode_A, const int64_t* idx_A,
         if (!in_B) continue;
 
         bool in_D = false;
-        for (size_t j = 0; j < nmode_D; j++)
+        for (int j = 0; j < nmode_D; j++)
         {
             if (idx_A[i] == idx_D[j]) {
                 in_D = true;
@@ -287,12 +299,12 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
                        int64_t** FX_idx_ptr)
 {
     int max_FX_nmode = nmode_X;
-    *FX_idx_ptr = malloc(max_FX_nmode * sizeof(int64_t));
+    *FX_idx_ptr = checked_malloc(max_FX_nmode * sizeof(int64_t));
     int FX_nmode = 0;
-    for (size_t i = 0; i < nmode_X; i++)
+    for (int i = 0; i < nmode_X; i++)
     {
         bool already_handled = false;
-        for (size_t j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
             if (idx_X[i] == idx_X[j]) {
                 already_handled = true;
@@ -302,7 +314,7 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
         if (already_handled) continue;
 
         bool in_Y = false;
-        for (size_t j = 0; j < nmode_Y; j++)
+        for (int j = 0; j < nmode_Y; j++)
         {
             if (idx_X[i] == idx_y[j]) {
                 in_Y = true;
@@ -312,7 +324,7 @@ int extract_FX_indices(const int nmode_X, const int64_t* idx_X,
         if (in_Y) continue;
 
         bool in_D = false;
-        for (size_t j = 0; j < nmode_D; j++)
+        for (int j = 0; j < nmode_D; j++)
         {
             if (idx_X[i] == idx_D[j]) {
                 in_D = true;
@@ -334,12 +346,12 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
                        int64_t** IX_idx_ptr)
 {
     int max_IX_nmode = nmode_X;
-    *IX_idx_ptr = malloc(max_IX_nmode * sizeof(int64_t));
+    *IX_idx_ptr = checked_malloc(max_IX_nmode * sizeof(int64_t));
     int IX_nmode = 0;
-    for (size_t i = 0; i < nmode_X; i++)
+    for (int i = 0; i < nmode_X; i++)
     {
         bool already_handled = false;
-        for (size_t j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
             if (idx_X[i] == idx_X[j]) {
                 already_handled = true;
@@ -349,7 +361,7 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
         if (already_handled) continue;
 
         bool in_Y = false;
-        for (size_t j = 0; j < nmode_Y; j++)
+        for (int j = 0; j < nmode_Y; j++)
         {
             if (idx_X[i] == idx_y[j]) {
                 in_Y = true;
@@ -359,7 +371,7 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
         if (in_Y) continue;
 
         bool in_D = false;
-        for (size_t j = 0; j < nmode_Z; j++)
+        for (int j = 0; j < nmode_Z; j++)
         {
             if (idx_X[i] == idx_Z[j]) {
                 in_D = true;
@@ -378,11 +390,11 @@ int extract_IX_indices(const int nmode_X, const int64_t* idx_X,
 void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int64_t* extents_X,
                            const int G_nmode, const int64_t* G_idx, int64_t** G_extents_X_ptr)
 {
-    *G_extents_X_ptr = malloc(G_nmode * sizeof(int64_t));
-    for (size_t i = 0; i < G_nmode; i++)
+    *G_extents_X_ptr = checked_malloc(G_nmode * sizeof(int64_t));
+    for (int i = 0; i < G_nmode; i++)
     {
         (*G_extents_X_ptr)[i] = 0;
-        for (size_t j = 0; j < nmode_X; j++)
+        for (int j = 0; j < nmode_X; j++)
         {
             if (G_idx[i] == idx_X[j]) {
                 (*G_extents_X_ptr)[i] = extents_X[j];
@@ -395,11 +407,11 @@ void extract_grouped_extents(const int nmode_X, const int64_t* idx_X, const int6
 void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int64_t* strides_X,
                              const int G_nmode, const int64_t* G_idx, int64_t** G_strides_X_ptr)
 {
-    *G_strides_X_ptr = malloc(G_nmode * sizeof(int64_t));
-    for (size_t i = 0; i < G_nmode; i++)
+    *G_strides_X_ptr = checked_malloc(G_nmode * sizeof(int64_t));
+    for (int i = 0; i < G_nmode; i++)
     {
         (*G_strides_X_ptr)[i] = 0;
-        for (size_t j = 0; j < nmode_X; j++)
+        for (int j = 0; j < nmode_X; j++)
         {
             if (G_idx[i] == idx_X[j]) {
                 (*G_strides_X_ptr)[i] += strides_X[j];
@@ -411,7 +423,7 @@ void extract_grouped_strides(const int nmode_X, const int64_t* idx_X, const int6
 int64_t calculate_size(const int64_t* extents, const int nmode)
 {
     int64_t size = 1;
-    for (size_t i = 0; i < nmode; i++)
+    for (int i = 0; i < nmode; i++)
     {
         size *= extents[i];
     }
@@ -535,24 +547,24 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         void* prec_beta = create_prec_scalar(beta, plan_ptr->type_D, plan_ptr->prec);
 
         float value_zero = 0;
-        bool beta_is_zero = !is_equal(beta, plan_ptr->type_D, &value_zero, TAPP_F32);
+        bool beta_is_nonzero = !is_equal(beta, plan_ptr->type_D, &value_zero, TAPP_F32);
         
-        int64_t* H_coords = malloc(plan_ptr->H_nmode * sizeof(int64_t));
+        int64_t* H_coords = checked_malloc(plan_ptr->H_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->H_nmode; i++) H_coords[i] = 0;
 
-        int64_t* P_coords = malloc(plan_ptr->P_nmode * sizeof(int64_t));
+        int64_t* P_coords = checked_malloc(plan_ptr->P_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->P_nmode; i++) P_coords[i] = 0;
 
-        int64_t* FA_coords = malloc(plan_ptr->FA_nmode * sizeof(int64_t));
+        int64_t* FA_coords = checked_malloc(plan_ptr->FA_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->FA_nmode; i++) FA_coords[i] = 0;
 
-        int64_t* FB_coords = malloc(plan_ptr->FB_nmode * sizeof(int64_t));
+        int64_t* FB_coords = checked_malloc(plan_ptr->FB_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->FB_nmode; i++) FB_coords[i] = 0;
 
-        int64_t* IA_coords = malloc(plan_ptr->IA_nmode * sizeof(int64_t));
+        int64_t* IA_coords = checked_malloc(plan_ptr->IA_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->IA_nmode; i++) IA_coords[i] = 0;
 
-        int64_t* IB_coords = malloc(plan_ptr->IB_nmode * sizeof(int64_t));
+        int64_t* IB_coords = checked_malloc(plan_ptr->IB_nmode * sizeof(int64_t));
         for (int i = 0; i < plan_ptr->IB_nmode; i++) IB_coords[i] = 0;
 
         for (int64_t h = 0; h < plan_ptr->H_size; h++)
@@ -573,7 +585,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
                     int64_t offset_D = H_offset_D + FA_offset_D + FB_offset_D;
 
-                    if (beta_is_zero)
+                    if (beta_is_nonzero)
                     {
                         get_typed_value(value_C, C, offset_D, plan_ptr->type_C, plan_ptr->prec);
                         calculate_beta_C(prec_beta, value_C, plan_ptr->type_C, plan_ptr->op_C, plan_ptr->prec, accum, plan_ptr->type_D);
@@ -668,10 +680,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     return 0;
 }
 
-int calcualte_offset(int64_t* coords, int nmode, int64_t* strides)
+int64_t calcualte_offset(int64_t* coords, int nmode, int64_t* strides)
 {
-    int index = 0;
-    for (size_t i = 0; i < nmode; i++)
+    int64_t index = 0;
+    for (int i = 0; i < nmode; i++)
     {
         index += coords[i] * strides[i];
     }
@@ -681,12 +693,12 @@ int calcualte_offset(int64_t* coords, int nmode, int64_t* strides)
 void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, const void* data_, TAPP_datatype type) {
 
     int64_t* coords;
-    if(nmode > 0) coords = malloc(nmode * sizeof(int64_t));
+    if(nmode > 0) coords = checked_malloc(nmode * sizeof(int64_t));
     else {
       printf("scalar");
     }
     int64_t size = 1;
-    for (size_t i = 0; i < nmode; i++)
+    for (int i = 0; i < nmode; i++)
     {
         coords[i] = 0;
         size *= extents[i];
@@ -695,9 +707,9 @@ void print_tensor_(int nmode, const int64_t* extents, const int64_t* strides, co
     for (size_t i = 0; i < size; i++)
     {
         int64_t index = 0;
-        for (size_t i = 0; i < nmode; i++)
+        for (int j = 0; j < nmode; j++)
         {
-            index += coords[i] * strides[i];
+            index += coords[j] * strides[j];
         }
         switch (type) { // tapp_datatype
           case TAPP_F32:
@@ -766,10 +778,10 @@ void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents)
 
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code)
 {
-    for (size_t i = 0; i < nmode_origin; i++)
+    for (int i = 0; i < nmode_origin; i++)
     {
         int idx_found = 0;
-        for (size_t j = 0; j < nmode_test_A; j++)
+        for (int j = 0; j < nmode_test_A; j++)
         {
             if (idx_origin[i] == idx_test_A[j])
             {
@@ -777,7 +789,7 @@ int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_
                 break;
             }
         }
-        for (size_t j = 0; j < nmode_test_B; j++)
+        for (int j = 0; j < nmode_test_B; j++)
         {
             if (idx_origin[i] == idx_test_B[j])
             {
@@ -795,9 +807,9 @@ int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_
 
 int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int missmatch_code)
 {
-    for (size_t i = 0; i < nmode_X; i++)
+    for (int i = 0; i < nmode_X; i++)
     {
-        for (size_t j = 0; j < nmode_Y; j++)
+        for (int j = 0; j < nmode_Y; j++)
         {
             if (idx_X[i] == idx_Y[j] && extents_X[i] != extents_Y[j])
             {
@@ -815,7 +827,7 @@ int check_same_structure(int nmode_X, const int64_t* idx_X, const int64_t* exten
         return nmode_code;
     }
 
-    for (size_t i = 0; i < nmode_Y; i++)
+    for (int i = 0; i < nmode_Y; i++)
     {
         if (idx_Y[i] != idx_X[i])
         {
@@ -979,7 +991,7 @@ int check_executor_existence(TAPP_executor exec, int error_code)
     X(TAPP_C32, complex float, conjf)  \
     X(TAPP_C64, complex double, conj)
 
-#define TAPP_ALLOC_CASE(ENUM, T, CONJFN) case ENUM: return malloc(sizeof(T));
+#define TAPP_ALLOC_CASE(ENUM, T, CONJFN) case ENUM: return checked_malloc(sizeof(T));
 
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 {
@@ -996,12 +1008,12 @@ void* alloc_accum(TAPP_prectype prec, TAPP_datatype type)
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
 #endif
-        return malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
+        return checked_malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
     case TAPP_F64F64_ACCUM_F64:
-        return malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
+        return checked_malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
-        return malloc(sizeof(_Float16));
+        return checked_malloc(sizeof(_Float16));
 #endif
     default:
         return NULL;
@@ -1017,17 +1029,17 @@ void* alloc_typed_value(TAPP_prectype prec, TAPP_datatype type)
         switch (type) { TAPP_DATATYPE_LIST(TAPP_ALLOC_CASE) default: return NULL; }
         break;
     case TAPP_F32F32_ACCUM_F32:
-        return malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
+        return checked_malloc(is_complex_type ? sizeof(complex float) : sizeof(float));
     case TAPP_F64F64_ACCUM_F64:
-        return malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
+        return checked_malloc(is_complex_type ? sizeof(complex double) : sizeof(double));
 #ifdef TAPP_REFERENCE_ENABLE_F16
     case TAPP_F16F16_ACCUM_F16:
     case TAPP_F16F16_ACCUM_F32:
-        return malloc(is_complex_type ? sizeof(complex _Float16) : sizeof(_Float16));
+        return checked_malloc(is_complex_type ? sizeof(complex _Float16) : sizeof(_Float16));
 #endif
 #ifdef TAPP_REFERENCE_ENABLE_BF16
     case TAPP_BF16BF16_ACCUM_F32:
-        return malloc(is_complex_type ? sizeof(complex __bf16) : sizeof(__bf16));
+        return checked_malloc(is_complex_type ? sizeof(complex __bf16) : sizeof(__bf16));
 #endif
     default:
         return NULL;
@@ -1062,7 +1074,7 @@ static TAPP_prectype default_prec_for_type(TAPP_datatype type)
 
 /* The do while is to give each case its own scope and unlike {} it won't break if/else pairing */
 #define TAPP_MAKE_PREC_SCALAR(T_SRC, T_TARGET) \
-    do { T_TARGET* p = malloc(sizeof(T_TARGET)); *p = *(T_SRC*)scalar; return p; } while (0)
+    do { T_TARGET* p = checked_malloc(sizeof(T_TARGET)); *p = *(T_SRC*)scalar; return p; } while (0)
 
 #ifdef TAPP_REFERENCE_ENABLE_F16
 #define TAPP_PREC_SCALAR_F16_REAL(T_SRC) \
