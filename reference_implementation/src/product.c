@@ -37,11 +37,8 @@ void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
 int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int missmatch_code);
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
-int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
 int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code);
 int check_executor_existence(TAPP_executor exec, int error_code);
-void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right);
-void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right);
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type);
 void* alloc_typed_value(TAPP_prectype prec, TAPP_datatype type);
 void* create_prec_scalar(const void* scalar, TAPP_datatype type, TAPP_prectype prec);
@@ -833,42 +830,6 @@ int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* exten
     return 0;
 }
 
-int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code)
-{
-    if (nmode <= 1)
-    {
-        return 0;
-    }
-    for (size_t i = 0; i < nmode; i++)
-    {
-        if (strides[i] == 0)
-        {
-            return error_code;
-        }
-    }
-
-    int64_t* sorted_strides = malloc(nmode * sizeof(int64_t));
-    int64_t* sorted_extents = malloc(nmode * sizeof(int64_t));
-    for (size_t i = 0; i < nmode; i++)
-    {
-        sorted_strides[i] = labs(strides[i]);
-        sorted_extents[i] = extents[i];
-    }
-    merge_sort_strides(sorted_strides, sorted_extents, 0, nmode - 1);
-    int status = 0;
-    for (size_t i = 0; i < nmode - 1; i++)
-    {
-        if (sorted_strides[i + 1] < sorted_strides[i] * sorted_extents[i])
-        {
-            status = error_code;
-            break;
-        }
-    }
-    free(sorted_strides);
-    free(sorted_extents);
-    return status;
-}
-
 int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code)
 {
     float value_zero = 0;
@@ -883,89 +844,6 @@ int check_executor_existence(TAPP_executor exec, int error_code)
     if((*eip) == 1 || (*eip) == 2 ||  (*eip) == 12) return 0;
     return error_code; // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
 }
-
-void merge_sort_strides(int64_t* strides, int64_t*extents, int left, int right)
-{
-    if (left < right)
-    {
-        int mid = left + (right - left) / 2;
-
-        merge_sort_strides(strides, extents, left, mid);
-        merge_sort_strides(strides, extents, mid + 1, right);
-
-        merge_strides(strides, extents, left, mid, right);
-    }
-}
-
-void merge_strides(int64_t* strides, int64_t* extents, int left, int mid, int right)
-{
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
-
-    int Ls[n1], Rs[n2];
-    int Le[n1], Re[n2];
-
-    for (int i = 0; i < n1; i++)
-    {
-        Ls[i] = strides[left + i];
-        Le[i] = extents[left + i];
-    }
-    for (int j = 0; j < n2; j++)
-    {
-        Rs[j] = strides[mid + 1 + j];
-        Re[j] = extents[mid + 1 + j];
-    }
-
-    int i = 0, j = 0, k = left;
-    while (i < n1 && j < n2)
-    {
-        if (Ls[i] < Rs[j])
-        {
-            strides[k] = Ls[i];
-            extents[k] = Le[i];
-            i++;
-        }
-        else if (Ls[i] > Rs[j])
-        {
-            strides[k] = Rs[j];
-            extents[k] = Re[j];
-            j++;
-        }
-        else
-        {
-            if (Le[i] <= Re[j])
-            {
-                strides[k] = Ls[i];
-                extents[k] = Le[i];
-                i++;
-            }
-            else
-            {
-                strides[k] = Rs[j];
-                extents[k] = Re[j];
-                j++;
-            }
-        }
-        k++;
-    }
-
-    while (i < n1)
-    {
-        strides[k] = Ls[i];
-        extents[k] = Le[i];
-        i++;
-        k++;
-    }
-
-    while (j < n2)
-    {
-        strides[k] = Rs[j];
-        extents[k] = Re[j];
-        j++;
-        k++;
-    }
-}
-
 
 /* TAPP_ID is a identity macro for datatypes that can not be conjugated*/
 #define TAPP_ID(x) (x)
