@@ -36,7 +36,7 @@ void get_typed_value(void* val, const void* tensor, int64_t index, TAPP_datatype
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec);
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
 int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int missmatch_code);
-int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
+int check_same_structure(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int nmode_code, int idx_code, int extent_code);
 int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code);
 int check_executor_existence(TAPP_executor exec, int error_code);
 void* alloc_accum(TAPP_prectype prec, TAPP_datatype type);
@@ -88,7 +88,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     if (error_status == 0) error_status = check_extents_pair(info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 2);
     if (error_status == 0) error_status = check_extents_pair(info_B_ptr->nmode, idx_B, info_B_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 3);
     if (error_status == 0) error_status = check_same_structure(info_C_ptr->nmode, idx_C, info_C_ptr->extents, info_D_ptr->nmode ,idx_D ,info_D_ptr->extents ,5 ,6 ,7);
-    if (error_status == 0) error_status = check_self_aliasing(info_D_ptr->nmode ,info_D_ptr->extents ,info_D_ptr->strides ,8);
     if (error_status != 0)
     {
         return error_status;
@@ -809,20 +808,20 @@ int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents
     return 0;
 }
 
-int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code)
+int check_same_structure(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int nmode_code, int idx_code, int extent_code)
 {
-    if(nmode_A != nmode_B)
+    if(nmode_X != nmode_Y)
     {
         return nmode_code;
     }
 
-    for (size_t i = 0; i < nmode_B; i++)
+    for (size_t i = 0; i < nmode_Y; i++)
     {
-        if (idx_B[i] != idx_A[i])
+        if (idx_Y[i] != idx_X[i])
         {
             return idx_code;
         }
-        if (extents_B[i] != extents_A[i])
+        if (extents_Y[i] != extents_X[i])
         {
             return extent_code;
         }
