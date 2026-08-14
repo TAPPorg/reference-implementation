@@ -35,7 +35,7 @@ int calcualte_offset(int64_t* coords, int nmode, int64_t* strides);
 void get_typed_value(void* val, const void* tensor, int64_t index, TAPP_datatype type, TAPP_prectype prec);
 void assign_D(void* D, TAPP_datatype type_D, int64_t index_D, void* accum, TAPP_prectype prec);
 int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_test_A, const int64_t* idx_test_A, int nmode_test_B, const int64_t* idx_test_B, int unique_idx_code);
-int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code);
+int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int missmatch_code);
 int check_same_structure(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_code, int idx_code, int extent_code);
 int check_self_aliasing(int nmode, const int64_t* extents, const int64_t* strides, int error_code);
 int check_tensor_existence(const void* scalar, TAPP_datatype type, const void* tensor, int error_code);
@@ -84,9 +84,12 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     struct tensor_info* info_D_ptr = (struct tensor_info*)D;
     TAPP_error error_status = 0;
     if (error_status == 0) error_status = check_idx_occurrence(info_D_ptr->nmode, idx_D, info_A_ptr->nmode, idx_A, info_B_ptr->nmode, idx_B, 4);
-    if (error_status == 0) error_status = check_extents(info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_B_ptr->nmode, idx_B, info_B_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 9, 1, 2);
-    if (error_status == 0) error_status = check_extents(info_B_ptr->nmode, idx_B, info_B_ptr->extents, info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 10, 1, 3);
-    if (error_status == 0) error_status = check_extents(info_D_ptr->nmode, idx_D, info_D_ptr->extents, info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_B_ptr->nmode, idx_B, info_B_ptr->extents, 11, 2, 3);
+    if (error_status == 0) error_status = check_extents_pair(info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_A_ptr->nmode, idx_A, info_A_ptr->extents, 9);
+    if (error_status == 0) error_status = check_extents_pair(info_B_ptr->nmode, idx_B, info_B_ptr->extents, info_B_ptr->nmode, idx_B, info_B_ptr->extents, 10);
+    if (error_status == 0) error_status = check_extents_pair(info_D_ptr->nmode, idx_D, info_D_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 11);
+    if (error_status == 0) error_status = check_extents_pair(info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_B_ptr->nmode, idx_B, info_B_ptr->extents, 1);
+    if (error_status == 0) error_status = check_extents_pair(info_A_ptr->nmode, idx_A, info_A_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 2);
+    if (error_status == 0) error_status = check_extents_pair(info_B_ptr->nmode, idx_B, info_B_ptr->extents, info_D_ptr->nmode, idx_D, info_D_ptr->extents, 3);
     if (error_status == 0) error_status = check_same_structure(info_C_ptr->nmode, idx_C, info_C_ptr->extents, info_D_ptr->nmode ,idx_D ,info_D_ptr->extents ,5 ,6 ,7);
     if (error_status == 0) error_status = check_self_aliasing(info_D_ptr->nmode ,info_D_ptr->extents ,info_D_ptr->strides ,8);
     if (error_status != 0)
@@ -794,29 +797,15 @@ int check_idx_occurrence(int nmode_origin, const int64_t* idx_origin, int nmode_
     return 0;
 }
 
-int check_extents(int nmode_A, const int64_t* idx_A, const int64_t* extents_A, int nmode_B, const int64_t* idx_B, const int64_t* extents_B, int nmode_D, const int64_t* idx_D, const int64_t* extents_D, int missmatch_AA_code, int missmatch_AB_code, int missmatch_AD_code)
+int check_extents_pair(int nmode_X, const int64_t* idx_X, const int64_t* extents_X, int nmode_Y, const int64_t* idx_Y, const int64_t* extents_Y, int missmatch_code)
 {
-    for (size_t i = 0; i < nmode_A; i++)
+    for (size_t i = 0; i < nmode_X; i++)
     {
-        for (size_t j = 0; j < nmode_A; j++)
+        for (size_t j = 0; j < nmode_Y; j++)
         {
-            if (idx_A[i] == idx_A[j] && extents_A[i] != extents_A[j])
+            if (idx_X[i] == idx_Y[j] && extents_X[i] != extents_Y[j])
             {
-                return missmatch_AA_code;
-            }
-        }
-        for (size_t j = 0; j < nmode_B; j++)
-        {
-            if (idx_A[i] == idx_B[j] && extents_A[i] != extents_B[j])
-            {
-                return missmatch_AB_code;
-            }
-        }
-        for (size_t j = 0; j < nmode_D; j++)
-        {
-            if (idx_A[i] == idx_D[j] && extents_A[i] != extents_D[j])
-            {
-                return missmatch_AD_code;
+                return missmatch_code;
             }
         }
     }
