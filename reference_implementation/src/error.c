@@ -62,6 +62,9 @@ size_t TAPP_explain_error(TAPP_error error,
     case 14:
         error_message = "Extents can not be negative.";
         break;
+    case 34:
+        error_message = "No implementation available for the requested combination of datatypes.";
+        break;
     default:
         break;
     }

@@ -66,11 +66,22 @@ target_sources(
     reference_implementation/src/handle.c
     reference_implementation/src/tensor.c
     reference_implementation/src/product.c
+    reference_implementation/src/product_template.c
+    reference_implementation/src/product_instantiations.gen.c
+    reference_implementation/src/generate_product_instantiations.py
     reference_implementation/include/error.h
     reference_implementation/include/executor.h
     reference_implementation/include/handle.h
     reference_implementation/include/tensor.h
     reference_implementation/include/product.h
+    reference_implementation/include/product_template.h
+  )
+
+set_source_files_properties(
+  reference_implementation/src/product_template.c
+  reference_implementation/src/product_instantiations.gen.c
+  reference_implementation/src/generate_product_instantiations.py
+  PROPERTIES HEADER_FILE_ONLY ON
   )
 
 set_property(
