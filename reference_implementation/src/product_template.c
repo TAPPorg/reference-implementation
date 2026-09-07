@@ -6,8 +6,8 @@
 #include "../include/product.h"
 #include "../include/product_template.h"
 
-#define CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D) check_tensor_existence_ ## T_A ## _ ## T_B ## _ ## T_C ## _ ## T_D
-#define CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D) CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D)
+#define CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D, T_ACC) check_tensor_existence_ ## T_A ## _ ## T_B ## _ ## T_C ## _ ## T_D ## _ ## T_ACC
+#define CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D, T_ACC) CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D, T_ACC)
 
 // Conjugation only makes sense for complex values; for every real (incl. extended,
 // e.g. _Float16/__bf16) storage type it is a no-op, which the default case gives us.
@@ -16,9 +16,9 @@
     double complex: conj(x), \
     default: (x))
 
-static int CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D)(const T_D scalar, const void* tensor, int error_code);
+static int CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D, T_ACC)(const T_D scalar, const void* tensor, int error_code);
 
-TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product plan,
+TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D, T_ACC)(TAPP_tensor_product plan,
                                          TAPP_executor exec,
                                          TAPP_status* status,
                                          const void* alpha_,
@@ -57,7 +57,7 @@ TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product
 
     int error_status = 0;
 
-    if (error_status == 0) error_status = CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D)(beta, C, 12);
+    if (error_status == 0) error_status = CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D, T_ACC)(beta, C, 12);
     if (error_status == 0) error_status = check_executor_existence(exec, 33);
     if (error_status != 0)
     {
@@ -77,7 +77,7 @@ TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product
 
             for (int64_t fb = 0; fb < plan_ptr->FB_size; fb++)
             {
-                T_D accum = 0;
+                T_ACC accum = 0;
 
                 int64_t FB_offset_B = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_B);
                 int64_t FB_offset_D = calcualte_offset(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_strides_D);
@@ -86,7 +86,7 @@ TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product
 
                 if (beta != 0)
                 {
-                    accum = beta * (T_D)(plan_ptr->op_C == TAPP_CONJUGATE ? TAPP_CONJ(C[offset_D]) : C[offset_D]);
+                    accum = (T_ACC)beta * (T_ACC)(plan_ptr->op_C == TAPP_CONJUGATE ? TAPP_CONJ(C[offset_D]) : C[offset_D]);
                 }
 
                 for (int64_t p = 0; p < plan_ptr->P_size; p++)
@@ -94,32 +94,32 @@ TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product
                     int64_t P_offset_A = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_A);
                     int64_t P_offset_B = calcualte_offset(P_coords, plan_ptr->P_nmode, plan_ptr->P_strides_B);
 
-                    T_A sum_A = 0;
+                    T_ACC sum_A = 0;
                     for (int64_t ia = 0; ia < plan_ptr->IA_size; ia++)
                     {
                         int64_t IA_offset_A = calcualte_offset(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_strides_A);
                         int64_t offset_A = H_offset_A + FA_offset_A + P_offset_A + IA_offset_A;
-                        sum_A += A[offset_A];
+                        sum_A += (T_ACC)A[offset_A];
                         increment_coordinates(IA_coords, plan_ptr->IA_nmode, plan_ptr->IA_extents);
                     }
 
-                    T_B sum_B = 0;
+                    T_ACC sum_B = 0;
                     for (int64_t ib = 0; ib < plan_ptr->IB_size; ib++)
                     {
                         int64_t IB_offset_B = calcualte_offset(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_strides_B);
                         int64_t offset_B = H_offset_B + FB_offset_B + P_offset_B + IB_offset_B;
-                        sum_B += B[offset_B];
+                        sum_B += (T_ACC)B[offset_B];
                         increment_coordinates(IB_coords, plan_ptr->IB_nmode, plan_ptr->IB_extents);
                     }
 
-                    accum += alpha
-                           * (T_D)(plan_ptr->op_A == TAPP_CONJUGATE ? TAPP_CONJ(sum_A) : sum_A)
-                           * (T_D)(plan_ptr->op_B == TAPP_CONJUGATE ? TAPP_CONJ(sum_B) : sum_B);
+                    accum += (T_ACC)alpha
+                           * (plan_ptr->op_A == TAPP_CONJUGATE ? TAPP_CONJ(sum_A) : sum_A)
+                           * (plan_ptr->op_B == TAPP_CONJUGATE ? TAPP_CONJ(sum_B) : sum_B);
 
                     increment_coordinates(P_coords, plan_ptr->P_nmode, plan_ptr->P_extents);
                 }
 
-                D[offset_D] = plan_ptr->op_D == TAPP_CONJUGATE ? TAPP_CONJ(accum) : accum;
+                D[offset_D] = (T_D)(plan_ptr->op_D == TAPP_CONJUGATE ? TAPP_CONJ(accum) : accum);
 
                 increment_coordinates(FB_coords, plan_ptr->FB_nmode, plan_ptr->FB_extents);
             }
@@ -140,7 +140,7 @@ TAPP_error TAPP_EXECUTE_PRODUCT_TEMPLATE(T_A, T_B, T_C, T_D)(TAPP_tensor_product
     return 0;
 }
 
-static int CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D)(const T_D scalar, const void* tensor, int error_code)
+static int CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D, T_ACC)(const T_D scalar, const void* tensor, int error_code)
 {
     return tensor == NULL && scalar != (T_D)0 ? error_code : 0;
 }
