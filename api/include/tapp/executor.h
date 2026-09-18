@@ -15,6 +15,6 @@ TAPP_EXPORT TAPP_error TAPP_create_executor(TAPP_executor* exec);
  *       devices probably can't be enumerated until you have a handle....
  */
 
-TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor exec);
+TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor* exec);
 
 #endif /* TAPP_HANDLE_H_ */
