@@ -46,10 +46,10 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                                   const int64_t* idx_D,
                                                   TAPP_prectype prec);
 
-TAPP_EXPORT TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan);
- 
+TAPP_EXPORT TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product* plan);
+
 //TODO: in-place operation: set C = NULL or TAPP_IN_PLACE?
- 
+
 TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                             TAPP_executor exec,
                                             TAPP_status* status,
@@ -59,7 +59,7 @@ TAPP_EXPORT TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                             const void* beta,
                                             const void* C,
                                                   void* D);
- 
+
 //TODO: is it always OK to pass NULL for exec?
 //TODO: can C be NULL/TAPP_IN_PLACE (in addition to array entries being NULL)?
 
