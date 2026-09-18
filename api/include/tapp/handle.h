@@ -21,6 +21,6 @@ TAPP_EXPORT TAPP_error TAPP_create_handle(TAPP_handle* handle);
 
  //TODO: optional APIs with feature test macros
 
-TAPP_EXPORT TAPP_error TAPP_destroy_handle(TAPP_handle handle);
+TAPP_EXPORT TAPP_error TAPP_destroy_handle(TAPP_handle* handle);
 
 #endif /* TAPP_HANDLE_H_ */

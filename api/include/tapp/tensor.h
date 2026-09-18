@@ -17,7 +17,7 @@ typedef intptr_t TAPP_tensor_info;
  * Niklas: Is there a reason to allow negative extents?
  *         Should it be error checked or just disallowed by
  *         using unsigned values? Same with nmode.
- */ 
+ */
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                                TAPP_datatype type,
@@ -25,7 +25,7 @@ TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                                const int64_t* extents,
                                                const int64_t* strides);
 
-TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info);
+TAPP_EXPORT TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info* info);
 
 TAPP_EXPORT int TAPP_get_nmodes(TAPP_tensor_info info);
 
