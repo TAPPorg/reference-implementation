@@ -1,0 +1,204 @@
+# TAPP contraction benchmark input
+# =================================
+#
+# This file format targets the TAPP standard API. bench.py can run these
+# contractions against any TAPP-conformant shared library. Not every
+# implementation supports every feature allowed by TAPP, and benchmarks
+# using unsupported features will report SKIPPED.
+#
+# This file describes a list of tensor contractions to run as benchmarks.
+# Each contraction is one [name] section followed by `key = value` lines.
+# Blank lines and lines starting with `#` are ignored anywhere in the file.
+#
+# --------------------------------------------------------------------------
+# Running the benchmark
+# --------------------------------------------------------------------------
+#
+#   python3 bench.py [contractions_file]
+#
+# `contractions_file` defaults to this file (contractions.txt) when omitted.
+#
+# Two environment variables control the run:
+#
+#   TAPP_LIBRARY_PATH=/path/to/libtapp-reference.so
+#
+# Picks the shared library to benchmark -- any TAPP-conformant library, not
+# just the reference implementation, despite the default filename. When
+# unset, tapp_bindings.py searches build/, cmake-build-debug/, and
+# cmake-build-release/ under the repo root for libtapp-reference.{so,dylib}
+# and uses the first one found; if none exist it raises an error telling
+# you to build one or set this variable.
+#
+#   TAPP_BENCH_SEED=<integer>
+#
+# Seeds the random generator used for A/B/C's data, so repeated runs
+# produce identical input data. Unset means a different random seed every
+# run.
+#
+# --------------------------------------------------------------------------
+# Section header
+# --------------------------------------------------------------------------
+#
+#   [name]
+#
+# `name` identifies the benchmark in output. Must be unique in the file.
+#
+# --------------------------------------------------------------------------
+# indices  (required)
+# --------------------------------------------------------------------------
+#
+#   indices = <A>-<B>-<D>
+#
+# Three groups of index letters separated by dashes, one group per tensor:
+# A, B, and D (the output). Each letter is one mode/dimension of that
+# tensor; the position of a letter is that mode's position in the tensor.
+#
+# C is NOT listed separately: C always has the same indices (and therefore
+# the same shape) as D.
+#
+# How a letter is classified is derived from where else it appears:
+#   - in A and B, but NOT in D  -> contracted (summed away)      e.g. matmul's "b" in ab-bc-ac
+#   - in A, B, AND D            -> Hadamard (elementwise, kept)  e.g. "batch" indices
+#   - in A only, or B only,     -> free index, just carried through to D
+#     and also in D
+#   - in A only, or B only,     -> unary contraction: summed away without
+#     and NOT in D                 ever touching the other operand
+#
+# Examples:
+#   ab-bc-ac      standard matrix multiply: C[a,c] = sum_b A[a,b] * B[b,c]
+#   abc-bcd-ad    contract two shared indices (b,c) at once
+#   ab-cb-abc     Hadamard on b, outer product on a,c
+#
+# --------------------------------------------------------------------------
+# extents  (required)
+# --------------------------------------------------------------------------
+#
+#   extents = <letter>:<value> <letter>:<value> ...
+#
+# Whitespace-separated `letter:extent` pairs, one for every letter used in
+# `indices`. Order doesn't matter. Missing a letter that `indices` uses is
+# an error.
+#
+# --------------------------------------------------------------------------
+# datatype  (optional, default: f32)
+# --------------------------------------------------------------------------
+#
+#   datatype = f32 | f64 | c32 | c64
+#
+# Sets the storage datatype for every tensor (A, B, C, D), unless overridden
+# individually below. c32/c64 are complex float32/float64.
+#
+# Per-tensor overrides (optional) -- each falls back to `datatype` above when
+# omitted, so mixed precision only needs to name the operand(s) that differ:
+#
+#   datatype_a     = f32 | f64 | c32 | c64
+#   datatype_b     = f32 | f64 | c32 | c64
+#   datatype_c     = f32 | f64 | c32 | c64
+#   datatype_d     = f32 | f64 | c32 | c64
+#
+# alpha and beta have no datatype option of their own but instead uses
+# datatype_d, following the TAPP interface.
+#
+# Which datatypes an implementation actually supports varies. Requesting an
+# unimplemented combination will report SKIPPED.
+#
+# --------------------------------------------------------------------------
+# op_a, op_b, op_c, op_d  (optional, default: identity)
+# --------------------------------------------------------------------------
+#
+#   op_a = identity | conjugate
+#   op_b = identity | conjugate
+#   op_c = identity | conjugate
+#   op_d = identity | conjugate
+#
+# Elementwise operation applied to the operand before it's used, per
+# D <- alpha*op(A)*op(B) + beta*op(C) (TAPP_element_op: TAPP_IDENTITY /
+# TAPP_CONJUGATE). `conjugate` only has an effect for complex datatypes
+# (c32/c64) -- it's a no-op on f32/f64 operands.
+#
+# --------------------------------------------------------------------------
+# precision  (optional, default: default)
+# --------------------------------------------------------------------------
+#
+#   precision = default | f32f32_accum_f32 | f64f64_accum_f64
+#             | f16f16_accum_f16 | f16f16_accum_f32 | bf16bf16_accum_f32
+#
+# Computational precision (TAPP_prectype). `default` maps to
+# TAPP_DEFAULT_PREC (at least the lowest precision of the input/output
+# operands). The others request a specific compute/accumulate precision:
+# the XXXYYY_ACCUM_ZZZ naming gives the precision of the input scalars
+# before multiplication (XXX, YYY) and of the product after accumulation
+# (ZZZ) -- see api/include/tapp/datatype.h for full semantics.
+#
+# Which computational precisions an implementation actually supports varies.
+# Requesting an unimplemented combination will report SKIPPED.
+#
+# --------------------------------------------------------------------------
+# alpha, beta  (optional, default: alpha = 1.0, beta = 0.0)
+# --------------------------------------------------------------------------
+#
+#   alpha = <number>
+#   beta  = <number>
+#
+# Scalar coefficients in D <- alpha*op(A)*op(B) + beta*op(C). C's
+# *data* buffer is always allocated and passed, even though
+# beta = 0.0 makes its contribution zero.
+#
+# Parsed as a Python complex literal, e.g. `alpha = 1.0+2.0j` (no spaces
+# around the +/-). A non-zero imaginary part is only valid when datatype_d
+# is complex (c32/c64) -- since alpha/beta always take on D's datatype, an
+# imaginary alpha/beta against a real datatype_d is an error.
+#
+# --------------------------------------------------------------------------
+# repeats  (optional, default: 1)
+# --------------------------------------------------------------------------
+#
+#   repeats = <positive integer>
+#
+# Number of times to execute the contraction; the reported time/GFLOP-s is
+# the average over these runs (plan creation and data generation happen
+# once, outside the timed loop).
+#
+# ==========================================================================
+# Examples
+# ==========================================================================
+
+[matmul_512]
+# C[a,c] = sum_b A[a,b] * B[b,c] -- classic square matrix multiply
+indices = ab-bc-ac
+extents = a:512 b:512 c:512
+datatype = f32
+repeats = 10
+
+[matmul_wide_accum]
+# All operands stay f32 storage; precision = f64f64_accum_f64 requests
+# 64-bit accumulation internally.
+indices = ab-bc-ac
+extents = a:256 b:256 c:256
+datatype = f32
+precision = f64f64_accum_f64
+repeats = 10
+
+[reduction]
+# "b" appears only in A and not in D -> summed away without touching B
+indices = ab-c-ac
+extents = a:128 b:128 c:64
+datatype = f64
+alpha = 2.0
+beta = 1.0
+repeats = 5
+
+[complex_conjugate_matmul]
+# op_a = conjugate -> C[a,c] = sum_b conj(A[a,b]) * B[b,c], e.g. a Hermitian inner product step
+indices = ab-bc-ac
+extents = a:64 b:64 c:64
+datatype = c64
+op_a = conjugate
+repeats = 10
+
+[hadamard]
+# "a" and "b" appear in A, B, AND D -> pure elementwise product, D[a,b] = A[a,b] * B[a,b]
+indices = ab-ab-ab
+extents = a:256 b:256
+datatype = f32
+repeats = 10

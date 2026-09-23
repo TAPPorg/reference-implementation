@@ -1,0 +1,313 @@
+# TCCG benchmark (Springer & Bientinesi, 2016)
+# ===============================================
+#
+# A bench.py input file (see contractions.txt for the full notation
+# reference) containing the 48-contraction "full benchmark" from:
+#   Paul Springer and Paolo Bientinesi. 2016. Design of a High-Performance
+#   GEMM-like Tensor-Tensor Multiplication. ACM Trans. Math. Softw. V, N,
+#   Article A (2016), 28 pages. https://arxiv.org/pdf/1607.00145
+#   (benchmark source: https://github.com/springer13/tccg)
+#
+# Run with:
+#   python3 benchmark/bench.py benchmark/tccg_contractions.txt
+#
+# Sizes are transcribed from Table III (single precision) in that paper.
+# The paper encodes a contraction as D-A-B (output first); this file uses
+# A-B-D (see contractions.txt's `indices` section), so every entry below
+# is reordered from the paper's own notation -- each [tccg_NN] section's
+# comment gives the original D-A-B string for cross-checking against the
+# paper.
+#
+# WARNING: this file is not recommended to be run with the reference
+# implementation. The reason is that the reference implementation is
+# naive and unoptimized by design. These tests are made for high
+# performance implementations. Therefore reference implementation will
+# take a long time to complete this set of benchmarks.
+
+[tccg_01]
+# paper (D-A-B): abc-bda-dc
+indices = bda-dc-abc
+extents = a:384 c:24 b:384 d:384
+repeats = 1
+
+[tccg_02]
+# paper (D-A-B): abc-dca-bd
+indices = dca-bd-abc
+extents = a:384 c:376 b:24 d:384
+repeats = 1
+
+[tccg_03]
+# paper (D-A-B): abcd-dbea-ec
+indices = dbea-ec-abcd
+extents = a:96 c:24 b:84 e:96 d:96
+repeats = 1
+
+[tccg_04]
+# paper (D-A-B): abcd-deca-be
+indices = deca-be-abcd
+extents = a:96 c:84 b:24 e:84 d:96
+repeats = 1
+
+[tccg_05]
+# paper (D-A-B): abcd-ebad-ce
+indices = ebad-ce-abcd
+extents = a:96 c:24 b:84 e:96 d:84
+repeats = 1
+
+[tccg_06]
+# paper (D-A-B): abcde-efbad-cf
+indices = efbad-cf-abcde
+extents = a:48 c:24 b:36 e:48 d:36 f:36
+repeats = 1
+
+[tccg_07]
+# paper (D-A-B): abcde-ecbfa-fd
+indices = ecbfa-fd-abcde
+extents = a:48 c:36 b:36 e:48 d:24 f:48
+repeats = 1
+
+[tccg_08]
+# paper (D-A-B): abcde-efcad-bf
+indices = efcad-bf-abcde
+extents = a:48 c:36 b:24 e:48 d:36 f:36
+repeats = 1
+
+[tccg_09]
+# paper (D-A-B): abcd-ea-ebcd
+indices = ea-ebcd-abcd
+extents = a:96 c:84 b:84 e:96 d:84
+repeats = 1
+
+[tccg_10]
+# paper (D-A-B): abcd-eb-aecd
+indices = eb-aecd-abcd
+extents = a:96 c:84 b:84 e:96 d:84
+repeats = 1
+
+[tccg_11]
+# paper (D-A-B): abcd-ec-abed
+indices = ec-abed-abcd
+extents = a:96 c:84 b:84 e:96 d:84
+repeats = 1
+
+[tccg_12]
+# paper (D-A-B): ab-ac-cb
+indices = ac-cb-ab
+extents = a:7248 c:7248 b:7240
+repeats = 1
+
+[tccg_13]
+# paper (D-A-B): ab-acd-dbc
+indices = acd-dbc-ab
+extents = a:384 c:376 b:376 d:384
+repeats = 1
+
+[tccg_14]
+# paper (D-A-B): ab-cad-dcb
+indices = cad-dcb-ab
+extents = a:384 c:384 b:376 d:384
+repeats = 1
+
+[tccg_15]
+# paper (D-A-B): abc-acd-db
+indices = acd-db-abc
+extents = a:384 c:376 b:376 d:384
+repeats = 1
+
+[tccg_16]
+# paper (D-A-B): abc-ad-bdc
+indices = ad-bdc-abc
+extents = a:384 c:376 b:384 d:376
+repeats = 1
+
+[tccg_17]
+# paper (D-A-B): abc-adc-bd
+indices = adc-bd-abc
+extents = a:384 c:376 b:384 d:376
+repeats = 1
+
+[tccg_18]
+# paper (D-A-B): abc-adc-db
+indices = adc-db-abc
+extents = a:384 c:376 b:376 d:384
+repeats = 1
+
+[tccg_19]
+# paper (D-A-B): abc-adec-ebd
+indices = adec-ebd-abc
+extents = a:96 c:84 b:84 e:96 d:84
+repeats = 1
+
+[tccg_20]
+# paper (D-A-B): abcd-aebf-dfce
+indices = aebf-dfce-abcd
+extents = a:96 c:84 b:84 e:84 d:96 f:84
+repeats = 1
+
+[tccg_21]
+# paper (D-A-B): abcd-aebf-fdec
+indices = aebf-fdec-abcd
+extents = a:96 c:84 b:84 e:84 d:84 f:96
+repeats = 1
+
+[tccg_22]
+# paper (D-A-B): abcd-aecf-bfde
+indices = aecf-bfde-abcd
+extents = a:96 c:84 b:96 e:84 d:84 f:84
+repeats = 1
+
+[tccg_23]
+# paper (D-A-B): abcd-aecf-fbed
+indices = aecf-fbed-abcd
+extents = a:96 c:84 b:84 e:84 d:84 f:96
+repeats = 1
+
+[tccg_24]
+# paper (D-A-B): abcd-aedf-bfce
+indices = aedf-bfce-abcd
+extents = a:96 c:84 b:96 e:84 d:84 f:84
+repeats = 1
+
+[tccg_25]
+# paper (D-A-B): abcd-aedf-fbec
+indices = aedf-fbec-abcd
+extents = a:96 c:84 b:84 e:84 d:84 f:96
+repeats = 1
+
+[tccg_26]
+# paper (D-A-B): abcd-aefb-fdce
+indices = aefb-fdce-abcd
+extents = a:96 c:84 b:84 e:84 d:84 f:96
+repeats = 1
+
+[tccg_27]
+# paper (D-A-B): abcd-aefc-fbed
+indices = aefc-fbed-abcd
+extents = a:96 c:84 b:84 e:84 d:84 f:96
+repeats = 1
+
+[tccg_28]
+# paper (D-A-B): abcd-eafb-fdec
+indices = eafb-fdec-abcd
+extents = a:96 c:84 b:84 e:96 d:84 f:96
+repeats = 1
+
+[tccg_29]
+# paper (D-A-B): abcd-eafc-bfde
+indices = eafc-bfde-abcd
+extents = a:96 c:84 b:96 e:96 d:84 f:84
+repeats = 1
+
+[tccg_30]
+# paper (D-A-B): abcd-eafd-fbec
+indices = eafd-fbec-abcd
+extents = a:96 c:84 b:84 e:96 d:84 f:96
+repeats = 1
+
+[tccg_31]
+# paper (D-A-B): abcdef-dega-gfbc
+indices = dega-gfbc-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_32]
+# paper (D-A-B): abcdef-degb-gfac
+indices = degb-gfac-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_33]
+# paper (D-A-B): abcdef-degc-gfab
+indices = degc-gfab-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_34]
+# paper (D-A-B): abcdef-dfga-gebc
+indices = dfga-gebc-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_35]
+# paper (D-A-B): abcdef-dfgb-geac
+indices = dfgb-geac-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_36]
+# paper (D-A-B): abcdef-dfgc-geab
+indices = dfgc-geab-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_37]
+# paper (D-A-B): abcdef-efga-gdbc
+indices = efga-gdbc-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_38]
+# paper (D-A-B): abcdef-efgb-gdac
+indices = efgb-gdac-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_39]
+# paper (D-A-B): abcdef-efgc-gdab
+indices = efgc-gdab-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_40]
+# paper (D-A-B): abcdef-gdab-efgc
+indices = gdab-efgc-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_41]
+# paper (D-A-B): abcdef-gdac-efgb
+indices = gdac-efgb-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_42]
+# paper (D-A-B): abcdef-gdbc-efga
+indices = gdbc-efga-abcdef
+extents = a:24 c:20 b:20 e:24 d:20 g:24 f:20
+repeats = 1
+
+[tccg_43]
+# paper (D-A-B): abcdef-geab-dfgc
+indices = geab-dfgc-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_44]
+# paper (D-A-B): abcdef-geac-dfgb
+indices = geac-dfgb-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_45]
+# paper (D-A-B): abcdef-gebc-dfga
+indices = gebc-dfga-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_46]
+# paper (D-A-B): abcdef-gfab-degc
+indices = gfab-degc-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_47]
+# paper (D-A-B): abcdef-gfac-degb
+indices = gfac-degb-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
+
+[tccg_48]
+# paper (D-A-B): abcdef-gfbc-dega
+indices = gfbc-dega-abcdef
+extents = a:24 c:20 b:20 e:20 d:24 g:24 f:20
+repeats = 1
