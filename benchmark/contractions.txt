@@ -1,7 +1,7 @@
 # TAPP contraction benchmark input
 # =================================
 #
-# This file format targets the TAPP standard API. bench.py can run these
+# This file format targets the TAPP standard API. bench_file.py can run these
 # contractions against any TAPP-conformant shared library. Not every
 # implementation supports every feature allowed by TAPP, and benchmarks
 # using unsupported features will report SKIPPED.
@@ -14,7 +14,7 @@
 # Running the benchmark
 # --------------------------------------------------------------------------
 #
-#   python3 bench.py [contractions_file]
+#   python3 bench_file.py [contractions_file]
 #
 # `contractions_file` defaults to this file (contractions.txt) when omitted.
 #
@@ -26,8 +26,14 @@
 # just the reference implementation, despite the default filename. When
 # unset, tapp_bindings.py searches build/, cmake-build-debug/, and
 # cmake-build-release/ under the repo root for libtapp-reference.{so,dylib}
-# and uses the first one found; if none exist it raises an error telling
-# you to build one or set this variable.
+# and uses the first one found.
+#
+# The library is loaded when the first benchmark starts, not when the
+# scripts are imported. If it can't be found (none built, or this variable
+# points to a file that doesn't exist), the run stops at that point with an
+# error telling you to build one or fix the variable. The unit tests in
+# test_bench.py that need the library are skipped in that case; the rest
+# still run.
 #
 #   TAPP_BENCH_SEED=<integer>
 #

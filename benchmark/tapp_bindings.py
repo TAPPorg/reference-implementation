@@ -4,7 +4,9 @@ single (non-batched) product.
 
 TAPP_LIBRARY_PATH environment variable is used to set the shared library path.
 If unset, the default is to look for libtapp-reference.{so,dylib} under a
-build directory in the repo root.
+build directory in the repo root. The library is loaded on the first call
+into it, so the tables and enums below can be used without a built library;
+library_available() checks whether it can be found without loading it.
 
 Known limitations of this binding layer (some caused by the working state of
 the TAPP standard):
@@ -31,7 +33,9 @@ the TAPP standard):
 """
 
 import ctypes
+import functools
 import os
+import types
 from pathlib import Path
 
 TAPP_handle = ctypes.c_ssize_t
@@ -109,6 +113,8 @@ OP_BY_NAME = {
 def _find_library():
     override = os.environ.get("TAPP_LIBRARY_PATH")
     if override:
+        if not Path(override).exists():
+            raise FileNotFoundError(f"TAPP_LIBRARY_PATH is set to {override!r}, which does not exist.")
         return Path(override)
 
     repo_root = Path(__file__).resolve().parent.parent
@@ -125,96 +131,106 @@ def _find_library():
     )
 
 
-_lib = ctypes.CDLL(str(_find_library()))
+def library_available():
+    try:
+        _find_library()
+        return True
+    except FileNotFoundError:
+        return False
 
 
-def _proto(name, argtypes, restype):
-    fn = getattr(_lib, name)
-    fn.argtypes = argtypes
-    fn.restype = restype
-    return fn
+@functools.cache
+def _api():
+    lib = ctypes.CDLL(str(_find_library()))
 
+    def proto(name, argtypes, restype):
+        fn = getattr(lib, name)
+        fn.argtypes = argtypes
+        fn.restype = restype
+        return fn
 
-_TAPP_create_handle = _proto("TAPP_create_handle", [ctypes.POINTER(TAPP_handle)], ctypes.c_int)
-_TAPP_destroy_handle = _proto("TAPP_destroy_handle", [TAPP_handle], ctypes.c_int)
+    return types.SimpleNamespace(
+        create_handle=proto("TAPP_create_handle", [ctypes.POINTER(TAPP_handle)], ctypes.c_int),
+        destroy_handle=proto("TAPP_destroy_handle", [TAPP_handle], ctypes.c_int),
 
-_TAPP_create_executor = _proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor)], ctypes.c_int)
-_TAPP_destroy_executor = _proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int)
+        create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor)], ctypes.c_int),
+        destroy_executor=proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int),
 
-_TAPP_create_tensor_info = _proto(
-    "TAPP_create_tensor_info",
-    [
-        ctypes.POINTER(TAPP_tensor_info),
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.POINTER(ctypes.c_int64),
-        ctypes.POINTER(ctypes.c_int64),
-    ],
-    ctypes.c_int,
-)
-_TAPP_destroy_tensor_info = _proto("TAPP_destroy_tensor_info", [TAPP_tensor_info], ctypes.c_int)
+        create_tensor_info=proto(
+            "TAPP_create_tensor_info",
+            [
+                ctypes.POINTER(TAPP_tensor_info),
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_int64),
+                ctypes.POINTER(ctypes.c_int64),
+            ],
+            ctypes.c_int,
+        ),
+        destroy_tensor_info=proto("TAPP_destroy_tensor_info", [TAPP_tensor_info], ctypes.c_int),
 
-_TAPP_create_tensor_product = _proto(
-    "TAPP_create_tensor_product",
-    [
-        ctypes.POINTER(TAPP_tensor_product),
-        TAPP_handle,
-        ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-        ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-        ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-        ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-        ctypes.c_int,
-    ],
-    ctypes.c_int,
-)
-_TAPP_destroy_tensor_product = _proto("TAPP_destroy_tensor_product", [TAPP_tensor_product], ctypes.c_int)
+        create_tensor_product=proto(
+            "TAPP_create_tensor_product",
+            [
+                ctypes.POINTER(TAPP_tensor_product),
+                TAPP_handle,
+                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int,
+            ],
+            ctypes.c_int,
+        ),
+        destroy_tensor_product=proto("TAPP_destroy_tensor_product", [TAPP_tensor_product], ctypes.c_int),
 
-_TAPP_execute_product = _proto(
-    "TAPP_execute_product",
-    [
-        TAPP_tensor_product,
-        TAPP_executor,
-        ctypes.POINTER(TAPP_status),
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-    ],
-    ctypes.c_int,
-)
-_TAPP_check_success = _proto("TAPP_check_success", [ctypes.c_int], ctypes.c_bool)
-_TAPP_explain_error = _proto("TAPP_explain_error", [ctypes.c_int, ctypes.c_size_t, ctypes.c_char_p], ctypes.c_size_t)
+        execute_product=proto(
+            "TAPP_execute_product",
+            [
+                TAPP_tensor_product,
+                TAPP_executor,
+                ctypes.POINTER(TAPP_status),
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+            ],
+            ctypes.c_int,
+        ),
+        check_success=proto("TAPP_check_success", [ctypes.c_int], ctypes.c_bool),
+        explain_error=proto("TAPP_explain_error", [ctypes.c_int, ctypes.c_size_t, ctypes.c_char_p], ctypes.c_size_t),
+    )
 
 
 def _check(error):
-    if _TAPP_check_success(error):
+    if _api().check_success(error):
         return error
-    length = _TAPP_explain_error(error, 0, None)
+    length = _api().explain_error(error, 0, None)
     buf = ctypes.create_string_buffer(length + 1)
-    _TAPP_explain_error(error, length + 1, buf)
+    _api().explain_error(error, length + 1, buf)
     raise TAPPError(buf.value.decode())
 
 
 def create_handle():
     handle = TAPP_handle()
-    _check(_TAPP_create_handle(ctypes.byref(handle)))
+    _check(_api().create_handle(ctypes.byref(handle)))
     return handle.value
 
 
 def destroy_handle(handle):
-    _check(_TAPP_destroy_handle(handle))
+    _check(_api().destroy_handle(handle))
 
 
 def create_executor():
     executor = TAPP_executor()
-    _check(_TAPP_create_executor(ctypes.byref(executor)))
+    _check(_api().create_executor(ctypes.byref(executor)))
     return executor.value
 
 
 def destroy_executor(executor):
-    _check(_TAPP_destroy_executor(executor))
+    _check(_api().destroy_executor(executor))
 
 
 def create_tensor_info(datatype, extents, strides):
@@ -222,12 +238,12 @@ def create_tensor_info(datatype, extents, strides):
     extents_arr = (ctypes.c_int64 * nmode)(*extents)
     strides_arr = (ctypes.c_int64 * nmode)(*strides)
     info = TAPP_tensor_info()
-    _check(_TAPP_create_tensor_info(ctypes.byref(info), datatype, nmode, extents_arr, strides_arr))
+    _check(_api().create_tensor_info(ctypes.byref(info), datatype, nmode, extents_arr, strides_arr))
     return info.value
 
 
 def destroy_tensor_info(info):
-    _check(_TAPP_destroy_tensor_info(info))
+    _check(_api().destroy_tensor_info(info))
 
 
 def indices_to_array(indices):
@@ -240,7 +256,7 @@ def indices_to_array(indices):
 def create_tensor_product(handle, op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C, op_D, D, idx_D, prec):
     plan = TAPP_tensor_product()
     _check(
-        _TAPP_create_tensor_product(
+        _api().create_tensor_product(
             ctypes.byref(plan),
             handle,
             op_A, A, indices_to_array(idx_A),
@@ -254,7 +270,7 @@ def create_tensor_product(handle, op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C
 
 
 def destroy_tensor_product(plan):
-    _check(_TAPP_destroy_tensor_product(plan))
+    _check(_api().destroy_tensor_product(plan))
 
 
 def execute_product(plan, executor, alpha, A, B, beta, C, D):
@@ -265,4 +281,4 @@ def execute_product(plan, executor, alpha, A, B, beta, C, D):
     # Meaning no formally defined behavior, so the status handle here is
     # intentionally left unfreed, matching the current usage.
     status = TAPP_status()
-    _check(_TAPP_execute_product(plan, executor, ctypes.byref(status), alpha, A, B, beta, C, D))
+    _check(_api().execute_product(plan, executor, ctypes.byref(status), alpha, A, B, beta, C, D))
