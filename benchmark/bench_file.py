@@ -5,19 +5,19 @@ library, via tapp_bindings.py, and reports timing/GFLOP-s per contraction.
 Operands are allocated in host memory only; see bench.py.
 """
 
+import argparse
 import configparser
-import os
-import random
-import sys
 from pathlib import Path
 
 import bench
 
 DEFAULT_CONTRACTIONS_FILE = Path(__file__).parent / "contractions.txt"
 
+
 def parse_contractions(path):
     cp = configparser.ConfigParser()
-    cp.read(path)
+    with open(path) as f:
+        cp.read_file(f)
     specs = []
     for name in cp.sections():
         sec = cp[name]
@@ -44,15 +44,28 @@ def parse_contractions(path):
         specs.append(spec)
     return specs
 
+
 def main():
-    seed = os.environ.get("TAPP_BENCH_SEED")
-    if seed is not None:
-        random.seed(int(seed))
-    
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CONTRACTIONS_FILE
-    specs = parse_contractions(path)
-    
+    bench.seed_from_env()
+
+    parser = argparse.ArgumentParser(description="Run the contractions in a contractions.txt-format file")
+    parser.add_argument(
+        "file",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CONTRACTIONS_FILE,
+        help="contractions file (default: contractions.txt next to this script)",
+    )
+    args = parser.parse_args()
+
+    try:
+        specs = parse_contractions(args.file)
+    except FileNotFoundError:
+        parser.error(f"contractions file not found: {args.file}")
+    if not specs:
+        parser.error(f"no contractions found in {args.file}")
     bench.bench_by_specs(specs)
+
 
 if __name__ == "__main__":
     main()

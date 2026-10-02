@@ -1,43 +1,59 @@
 import argparse
-from itertools import islice
 import random
-import os
+from itertools import islice
 
 import bench
 
+
+def _int_at_least(value, minimum):
+    n = int(value)
+    if n < minimum:
+        raise argparse.ArgumentTypeError(f"must be at least {minimum}, got {n}")
+    return n
+
+
+# Named functions rather than lambdas, since argparse shows the name in its
+# "invalid <name> value" message for non-integer input.
+def positive_int(value):
+    return _int_at_least(value, 1)
+
+
+def count(value):
+    return _int_at_least(value, 0)
+
+
 def main():
-    seed = os.environ.get("TAPP_BENCH_SEED")
-    if seed is not None:
-        random.seed(int(seed))
+    bench.seed_from_env()
 
     parser = argparse.ArgumentParser(description="Generate benchmark contraction specifications")
-    parser.add_argument("-pi", "--product", type=int, default=0, help="number of contracted indicies ((A xor B) and D)")
-    parser.add_argument("-fai", "--free_a", type=int, default=0, help="number of free indicies in tensor A (A and D)")
-    parser.add_argument("-fbi", "--free_b", type=int, default=0, help="number of free indicies in tensor B (B and D)")
-    parser.add_argument("-hi", "--hadamard", type=int, default=0, help="number of hadamard indicies (A, B and D)")
-    parser.add_argument("-rai", "--reduced_a", type=int, default=0, help="number of reduced indicies in tensor A (A)")
-    parser.add_argument("-rbi", "--reduced_b", type=int, default=0, help="number of reduced indicies in tensor B (B)")
-    parser.add_argument("-bi", "--broadcast", type=int, default=0, help="number of broadcast indicies (D)")
-    parser.add_argument("-r", "--repeats", type=int, default=10, help="number repeated runs of the benchmark")
+    parser.add_argument("--product", type=count, default=0, help="number of contracted indices (A and B)")
+    parser.add_argument("--free-a", type=count, default=0, help="number of free indices in tensor A (A and D)")
+    parser.add_argument("--free-b", type=count, default=0, help="number of free indices in tensor B (B and D)")
+    parser.add_argument("--hadamard", type=count, default=0, help="number of hadamard indices (A, B and D)")
+    parser.add_argument("--reduced-a", type=count, default=0, help="number of reduced indices in tensor A (A)")
+    parser.add_argument("--reduced-b", type=count, default=0, help="number of reduced indices in tensor B (B)")
+    parser.add_argument("--broadcast", type=count, default=0, help="number of broadcast indices (D)")
+    parser.add_argument("--repeats", type=positive_int, default=10, help="number of timed runs of the benchmark")
 
     args = parser.parse_args()
-    nr_products, nr_free_a, nr_free_b, nr_hadamard, nr_reduced_a, nr_reduced_b, nr_broadcast, repeats = (
-        args.product, args.free_a, args.free_b, args.hadamard, args.reduced_a, args.reduced_b, args.broadcast, args.repeats
+
+    print(
+        f"Generating benchmark spec with {args.product} contracted, {args.free_a} free in A, {args.free_b} free in B, "
+        f"{args.hadamard} hadamard, {args.reduced_a} reduced in A, {args.reduced_b} reduced in B, "
+        f"{args.broadcast} broadcast indices"
     )
 
-    print(f"Generating benchmark spec with {nr_products} contracted, {nr_free_a} free in A, {nr_free_b} free in B, "
-            f"{nr_hadamard} hadamard, {nr_reduced_a} reduced in A, {nr_reduced_b} reduced in B, {nr_broadcast} broadcast indicies")
-
-    # Generate indicies
-    idx = [chr(ord('a') + i) for i in range(nr_products + nr_free_a + nr_free_b + nr_hadamard + nr_reduced_a + nr_reduced_b + nr_broadcast)]
+    # Generate indices
+    counts = [args.product, args.free_a, args.free_b, args.hadamard, args.reduced_a, args.reduced_b, args.broadcast]
+    idx = [chr(ord("a") + i) for i in range(sum(counts))]
     it = iter(idx)
-    idx_product   = list(islice(it, nr_products))
-    idx_free_a    = list(islice(it, nr_free_a))
-    idx_free_b    = list(islice(it, nr_free_b))
-    idx_hadamard  = list(islice(it, nr_hadamard))
-    idx_reduced_a = list(islice(it, nr_reduced_a))
-    idx_reduced_b = list(islice(it, nr_reduced_b))
-    idx_broadcast = list(islice(it, nr_broadcast))
+    idx_product = list(islice(it, args.product))
+    idx_free_a = list(islice(it, args.free_a))
+    idx_free_b = list(islice(it, args.free_b))
+    idx_hadamard = list(islice(it, args.hadamard))
+    idx_reduced_a = list(islice(it, args.reduced_a))
+    idx_reduced_b = list(islice(it, args.reduced_b))
+    idx_broadcast = list(islice(it, args.broadcast))
 
     # Same notation as the indices and extents fields in contractions.txt
     idx_a = "".join(idx_product + idx_free_a + idx_hadamard + idx_reduced_a)
@@ -56,9 +72,10 @@ def main():
         "precision": "default",
         "alpha": random.uniform(-10, 10),
         "beta": random.uniform(-10, 10),
-        "repeats": repeats,
+        "repeats": args.repeats,
     }
     bench.bench_by_specs([spec])
+
 
 if __name__ == "__main__":
     main()

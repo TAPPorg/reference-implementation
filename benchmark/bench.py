@@ -10,15 +10,17 @@ implementation that expects device (e.g. GPU) memory for its operands will
 not work with this benchmark.
 """
 
+import os
 import random
 import time
 from dataclasses import dataclass
 
 import numpy as np
 
-import tapp_bindings
 import bench_data
 import bench_helpers
+import tapp_bindings
+
 
 @dataclass
 class Benchmark:
@@ -34,6 +36,15 @@ class Benchmark:
     beta: object
     prec: int
     repeats: int = 1
+
+
+def seed_from_env():
+    # Seeds Python's random (and through it build_data's numpy generator) from
+    # TAPP_BENCH_SEED, so repeated runs get identical extents and data.
+    seed = os.environ.get("TAPP_BENCH_SEED")
+    if seed is not None:
+        random.seed(int(seed))
+
 
 def bench_by_specs(specs):
     # Builds, runs and prints one spec at a time, so only one benchmark's
@@ -56,6 +67,7 @@ def bench_by_specs(specs):
         tapp_bindings.destroy_handle(handle)
     return results
 
+
 def print_result(name, result):
     min_time, avg_time, gflops, error = result
     if error is None:
@@ -63,8 +75,10 @@ def print_result(name, result):
     else:
         print(f"{name}: SKIPPED ({error})")
 
+
 def tensor_size(extents, strides):
     return 1 + sum(abs(s * (e - 1)) for s, e in zip(strides, extents))
+
 
 def calc_strides(ext):
     strides, stride = [], 1
@@ -72,6 +86,7 @@ def calc_strides(ext):
         strides.append(stride)
         stride *= e
     return strides
+
 
 def build_data(size, datatype):
     # Allocates in host RAM -- see the "CPU only" note in the module docstring.
@@ -81,6 +96,7 @@ def build_data(size, datatype):
     rng = np.random.default_rng(random.getrandbits(64))
     values = rng.uniform(-10, 10, n).astype(np.dtype(ctype))
     return (ctype * n).from_buffer(values)  # shares memory with values and keeps it alive
+
 
 def build_scalar(value, datatype):
     # Allocates in host RAM -- see the "CPU only" note in the module docstring.
@@ -97,8 +113,11 @@ def build_scalar(value, datatype):
         values = (value.real,)
     return (ctype * components)(*values)
 
+
 def build_benchmark(spec):
     # spec is a dict in the format returned by bench_file.parse_contractions.
+    if spec["repeats"] < 1:
+        raise ValueError(f"repeats must be at least 1, got {spec['repeats']}")
     idx_a, idx_b, idx_d = spec["indices"].split("-")
     indices = {"a": idx_a, "b": idx_b, "c": idx_d, "d": idx_d}
     extents, strides, datatypes, ops, data = {}, {}, {}, {}, {}
@@ -113,6 +132,7 @@ def build_benchmark(spec):
     prec = bench_helpers.lookup(tapp_bindings.PRECTYPE_BY_NAME, spec["precision"].lower(), "precision")
     return Benchmark(spec["name"], indices, extents, strides, datatypes, ops, data, alpha, beta, prec, spec["repeats"])
 
+
 def time_execution(plan, executor, alpha, A, B, beta, C, D, repeats):
     tapp_bindings.execute_product(plan, executor, alpha, A, B, beta, C, D)  # warm-up, untimed
 
@@ -123,26 +143,44 @@ def time_execution(plan, executor, alpha, A, B, beta, C, D, repeats):
         times.append(time.perf_counter() - start)
     return min(times), sum(times) / len(times)
 
+
 def run_contraction(benchmark, executor, handle):
     b = benchmark
     plan = None
     infos = {}
     try:
-        infos = {t:tapp_bindings.create_tensor_info(b.datatypes[t], b.extents[t], b.strides[t]) for t in ("a", "b", "c", "d")}
+        infos = {
+            t: tapp_bindings.create_tensor_info(b.datatypes[t], b.extents[t], b.strides[t])
+            for t in ("a", "b", "c", "d")
+        }
 
         plan = tapp_bindings.create_tensor_product(
             handle,
-            b.ops["a"], infos["a"], b.indices["a"],
-            b.ops["b"], infos["b"], b.indices["b"],
-            b.ops["c"], infos["c"], b.indices["c"],
-            b.ops["d"], infos["d"], b.indices["d"],
+            b.ops["a"],
+            infos["a"],
+            b.indices["a"],
+            b.ops["b"],
+            infos["b"],
+            b.indices["b"],
+            b.ops["c"],
+            infos["c"],
+            b.indices["c"],
+            b.ops["d"],
+            infos["d"],
+            b.indices["d"],
             b.prec,
         )
 
-        time_min, time_avg = time_execution(plan, executor, b.alpha, b.data["a"], b.data["b"], b.beta, b.data["c"], b.data["d"], b.repeats)
+        time_min, time_avg = time_execution(
+            plan, executor, b.alpha, b.data["a"], b.data["b"], b.beta, b.data["c"], b.data["d"], b.repeats
+        )
 
-        is_complex = any(dt in (tapp_bindings.TAPPDataType.C32, tapp_bindings.TAPPDataType.C64) for dt in b.datatypes.values())
-        flops = bench_data.FLOPs(b.indices["a"], b.indices["b"], b.indices["d"], b.extents["a"], b.extents["b"], b.extents["d"], is_complex)
+        is_complex = any(
+            dt in (tapp_bindings.TAPPDataType.C32, tapp_bindings.TAPPDataType.C64) for dt in b.datatypes.values()
+        )
+        flops = bench_data.FLOPs(
+            b.indices["a"], b.indices["b"], b.indices["d"], b.extents["a"], b.extents["b"], b.extents["d"], is_complex
+        )
         gflops = flops / time_min / 1e9
 
         result = (time_min, time_avg, gflops, None)

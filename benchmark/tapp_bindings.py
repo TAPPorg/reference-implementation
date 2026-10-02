@@ -70,7 +70,7 @@ DATATYPE_BY_NAME = {
 # (type(ctypes), components per tensor element(1 for real, 2 for complex)) for
 # each storage datatype. c32/c64 are complex: per datatype.h, "stored with
 # consecutive real and imaginary parts packed into 8/16 bytes" -- i.e. laid
-# out as 2 consecutive real components, matching how a C99 
+# out as 2 consecutive real components, matching how a C99
 # `float complex`/`double complex` sits in memory.
 CTYPES_BY_NAME = {
     "f32": (ctypes.c_float, 1),
@@ -152,10 +152,8 @@ def _api():
     return types.SimpleNamespace(
         create_handle=proto("TAPP_create_handle", [ctypes.POINTER(TAPP_handle)], ctypes.c_int),
         destroy_handle=proto("TAPP_destroy_handle", [TAPP_handle], ctypes.c_int),
-
         create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor)], ctypes.c_int),
         destroy_executor=proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int),
-
         create_tensor_info=proto(
             "TAPP_create_tensor_info",
             [
@@ -168,22 +166,28 @@ def _api():
             ctypes.c_int,
         ),
         destroy_tensor_info=proto("TAPP_destroy_tensor_info", [TAPP_tensor_info], ctypes.c_int),
-
         create_tensor_product=proto(
             "TAPP_create_tensor_product",
             [
                 ctypes.POINTER(TAPP_tensor_product),
                 TAPP_handle,
-                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
-                ctypes.c_int, TAPP_tensor_info, ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int,
+                TAPP_tensor_info,
+                ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int,
+                TAPP_tensor_info,
+                ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int,
+                TAPP_tensor_info,
+                ctypes.POINTER(ctypes.c_int64),
+                ctypes.c_int,
+                TAPP_tensor_info,
+                ctypes.POINTER(ctypes.c_int64),
                 ctypes.c_int,
             ],
             ctypes.c_int,
         ),
         destroy_tensor_product=proto("TAPP_destroy_tensor_product", [TAPP_tensor_product], ctypes.c_int),
-
         execute_product=proto(
             "TAPP_execute_product",
             [
@@ -259,10 +263,18 @@ def create_tensor_product(handle, op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C
         _api().create_tensor_product(
             ctypes.byref(plan),
             handle,
-            op_A, A, indices_to_array(idx_A),
-            op_B, B, indices_to_array(idx_B),
-            op_C, C, indices_to_array(idx_C),
-            op_D, D, indices_to_array(idx_D),
+            op_A,
+            A,
+            indices_to_array(idx_A),
+            op_B,
+            B,
+            indices_to_array(idx_B),
+            op_C,
+            C,
+            indices_to_array(idx_C),
+            op_D,
+            D,
+            indices_to_array(idx_D),
             prec,
         )
     )

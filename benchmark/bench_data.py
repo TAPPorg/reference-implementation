@@ -67,8 +67,21 @@
 # Divide by the element size to get FLOPs per byte.
 
 import math
+from typing import NamedTuple
 
 import bench_helpers
+
+
+class ExtentProducts(NamedTuple):
+    # Product of the extents of each index class; see the header comment.
+    f_a: int
+    f_b: int
+    i_a: int
+    i_b: int
+    h: int
+    p: int
+    x: int
+
 
 def classify_indices(idx_a, idx_b, idx_d):
     d_set = set(idx_d)
@@ -76,46 +89,52 @@ def classify_indices(idx_a, idx_b, idx_d):
     f_b = [c for c in idx_b if c not in idx_a and c in d_set]
     i_a = [c for c in idx_a if c not in idx_b and c not in d_set]
     i_b = [c for c in idx_b if c not in idx_a and c not in d_set]
-    h   = [c for c in idx_a if c in idx_b and c in d_set]
-    p   = [c for c in idx_a if c in idx_b and c not in d_set]
-    x   = [c for c in idx_d if c not in idx_a and c not in idx_b]
+    h = [c for c in idx_a if c in idx_b and c in d_set]
+    p = [c for c in idx_a if c in idx_b and c not in d_set]
+    x = [c for c in idx_d if c not in idx_a and c not in idx_b]
     return f_a, f_b, i_a, i_b, h, p, x
 
-def classify_and_lookup(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d):
+
+def extent_products(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d):
     idx_fa, idx_fb, idx_ia, idx_ib, idx_h, idx_p, idx_x = classify_indices(idx_a, idx_b, idx_d)
     lookup_a = dict(zip(idx_a, ext_a))
     lookup_b = dict(zip(idx_b, ext_b))
     lookup_d = dict(zip(idx_d, ext_d))
-    return (
-        math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_fa),
-        math.prod(bench_helpers.lookup(lookup_b, c, "extent") for c in idx_fb),
-        math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_ia),
-        math.prod(bench_helpers.lookup(lookup_b, c, "extent") for c in idx_ib),
-        math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_h),
-        math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_p),
-        math.prod(bench_helpers.lookup(lookup_d, c, "extent") for c in idx_x),
+    return ExtentProducts(
+        f_a=math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_fa),
+        f_b=math.prod(bench_helpers.lookup(lookup_b, c, "extent") for c in idx_fb),
+        i_a=math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_ia),
+        i_b=math.prod(bench_helpers.lookup(lookup_b, c, "extent") for c in idx_ib),
+        h=math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_h),
+        p=math.prod(bench_helpers.lookup(lookup_a, c, "extent") for c in idx_p),
+        x=math.prod(bench_helpers.lookup(lookup_d, c, "extent") for c in idx_x),
     )
 
-def FLOPs_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x, is_complex=False):
+
+def FLOPs_raw(e, is_complex=False):
     add, mul_add = (2, 4) if is_complex else (1, 1)
-    return (add * ext_prod_h*ext_prod_p*((ext_prod_ia - 1)*ext_prod_fa + (ext_prod_ib - 1)*ext_prod_fb)
-            + mul_add * 2*ext_prod_p*ext_prod_fa*ext_prod_fb*ext_prod_h
-            + mul_add * 2*ext_prod_x*ext_prod_fa*ext_prod_fb*ext_prod_h)
+    return (
+        add * e.h * e.p * ((e.i_a - 1) * e.f_a + (e.i_b - 1) * e.f_b)
+        + mul_add * 2 * e.p * e.f_a * e.f_b * e.h
+        + mul_add * 2 * e.x * e.f_a * e.f_b * e.h
+    )
+
+
+def data_moved_raw(e):
+    return e.f_a * e.i_a * e.h * e.p + e.f_b * e.i_b * e.h * e.p + 2 * e.f_a * e.f_b * e.h * e.x
+
+
+def intensity_raw(e, is_complex=False):
+    return FLOPs_raw(e, is_complex) / data_moved_raw(e)
+
 
 def FLOPs(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d, is_complex=False):
-    ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x = classify_and_lookup(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d)
-    return FLOPs_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x, is_complex)
+    return FLOPs_raw(extent_products(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d), is_complex)
 
-def data_moved_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x):
-    return ext_prod_fa*ext_prod_ia*ext_prod_h*ext_prod_p + ext_prod_fb*ext_prod_ib*ext_prod_h*ext_prod_p + 2*ext_prod_fa*ext_prod_fb*ext_prod_h*ext_prod_x
 
 def data_moved(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d):
-    ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x = classify_and_lookup(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d)
-    return data_moved_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x)
+    return data_moved_raw(extent_products(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d))
 
-def intensity_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x, is_complex=False):
-    return FLOPs_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x, is_complex) / data_moved_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x)
 
 def intensity(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d, is_complex=False):
-    ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x = classify_and_lookup(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d)
-    return intensity_raw(ext_prod_fa, ext_prod_fb, ext_prod_ia, ext_prod_ib, ext_prod_h, ext_prod_p, ext_prod_x, is_complex)
+    return intensity_raw(extent_products(idx_a, idx_b, idx_d, ext_a, ext_b, ext_d), is_complex)

@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle: whitespace, blank lines, line length
+    "F",        # pyflakes: unused imports/variables, undefined names
+    "I",        # isort: import grouping and order
+]

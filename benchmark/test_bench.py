@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 
 import bench
-import bench_file
 import bench_data
+import bench_file
 import tapp_bindings
 
 
@@ -128,6 +128,10 @@ extents = a:2 b:2 c:2
         self.assertEqual(len(specs), 1)
         self.assertEqual(specs[0]["name"], "commented")
 
+    def test_missing_file_raises(self):
+        with self.assertRaises(FileNotFoundError):
+            bench_file.parse_contractions(Path("does_not_exist.txt"))
+
 
 class TestFLOPs(unittest.TestCase):
     def test_complex_matmul_is_four_times_real(self):
@@ -146,7 +150,10 @@ class TestFLOPs(unittest.TestCase):
         self.assertEqual(bench_data.intensity(*args, is_complex=True), 4 * bench_data.intensity(*args))
 
 
-@unittest.skipUnless(tapp_bindings.library_available(), "TAPP library not found (not built, or TAPP_LIBRARY_PATH points to a missing file)")
+@unittest.skipUnless(
+    tapp_bindings.library_available(),
+    "TAPP library not found (not built, or TAPP_LIBRARY_PATH points to a missing file)",
+)
 class TestBenchBySpecs(unittest.TestCase):
     def make_matmul(self, dtype):
         return {
@@ -178,6 +185,14 @@ class TestBenchBySpecs(unittest.TestCase):
         self.assertIsInstance(results[0][3], ValueError)
         self.assertIsNone(results[1][3])
         self.assertIn("bad: SKIPPED", output)
+
+    def test_zero_repeats_is_skipped_and_others_still_run(self):
+        bad = {**self.make_matmul("f32"), "name": "no_repeats", "repeats": 0}
+        results, output = self.run_quietly([bad, self.make_matmul("f32")])
+        self.assertIsInstance(results[0][3], ValueError)
+        self.assertIn("repeats", str(results[0][3]))
+        self.assertIsNone(results[1][3])
+        self.assertIn("no_repeats: SKIPPED", output)
 
 
 if __name__ == "__main__":
