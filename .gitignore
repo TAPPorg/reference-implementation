@@ -14,3 +14,6 @@ examples/exercise_tucker/tapp_tucker/lib/*
 examples/exercise_tucker/tapp_tucker/answers/obj/*
 examples/exercise_tucker/tapp_tucker/answers/lib/*
 build/*
+.cache/*
+benchmark/__pycache__/*
+compile_commands.json
