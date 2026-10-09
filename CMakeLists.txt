@@ -141,6 +141,9 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 
   FetchContent_MakeAvailable(tblis)
 
+  # this provides tapp-tblis target
+  add_subdirectory(tblis)
+
   target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
 
   target_sources(
@@ -210,6 +213,34 @@ if(BUILD_TESTING)
     add_test(
       NAME tapp-reference-test++
       COMMAND $<TARGET_FILE:tapp-reference-test++>
+      )
+
+    # Links only tapp-tblis: it exports the same TAPP_* symbols as tapp-reference
+    add_executable(tapp-tblis-test)
+
+    target_sources(
+      tapp-tblis-test
+      PRIVATE
+        test/tblis_test.cpp
+      )
+
+    target_link_libraries(
+      tapp-tblis-test
+      PRIVATE
+        tapp-tblis
+      )
+
+    set_property(
+      TARGET tapp-tblis-test
+      PROPERTY
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+    )
+
+    add_test(
+      NAME tapp-tblis-test
+      COMMAND $<TARGET_FILE:tapp-tblis-test>
       )
   endif()
 

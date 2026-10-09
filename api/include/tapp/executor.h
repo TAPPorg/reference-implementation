@@ -5,6 +5,7 @@
 
 #include "util.h"
 #include "error.h"
+#include "status.h"
 
 typedef intptr_t TAPP_executor;
 
@@ -16,5 +17,9 @@ TAPP_EXPORT TAPP_error TAPP_create_executor(TAPP_executor* exec);
  */
 
 TAPP_EXPORT TAPP_error TAPP_destroy_executor(TAPP_executor exec);
+
+TAPP_EXPORT TAPP_error TAPP_wait_executor(TAPP_executor exec);
+
+TAPP_EXPORT TAPP_error TAPP_wait_status(TAPP_executor exec, TAPP_status status);
 
 #endif /* TAPP_HANDLE_H_ */
