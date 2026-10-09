@@ -142,36 +142,6 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
   # this provides tapp-tblis target
   add_subdirectory(tblis)
 
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
-
-  target_sources(
-  tapp-reference
-  PRIVATE
-    tblis_bindings/tblis_bind.h
-    tblis_bindings/tblis_bind.cpp
-  )
-  set_property(
-          TARGET tapp-reference
-          PROPERTY
-          CXX_STANDARD 20
-          CXX_STANDARD_REQUIRED YES
-          CXX_EXTENSIONS NO
-  )
-  target_include_directories(
-  tapp-reference
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
-  )
-
-  # ----------------------------------------------------------------------------
-  # interface
-
-  target_link_libraries(
-    tapp-reference
-    PUBLIC
-      tblis-static
-  )
-
 endif()
 
 # ----------------------------------------------------------------------------
@@ -198,6 +168,7 @@ if(BUILD_TESTING)
       tapp-reference-test++
       PRIVATE
         tapp-reference
+        tblis-static
       )
 
     set_property(
