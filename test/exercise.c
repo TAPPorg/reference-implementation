@@ -91,7 +91,7 @@ int main(int argc, char const *argv[])
     /* Remove */ TAPP_executor exec;
 
     // Create executor
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     // Declare status object
     /* Remove */ TAPP_status status;

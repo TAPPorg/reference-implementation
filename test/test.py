@@ -101,7 +101,8 @@ TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' el
 
 TAPP_create_executor = CDLL(tapp_so).TAPP_create_executor
 TAPP_create_executor.restype = c_int
-TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # exec
+TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # exec
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64 # attr
 							]
 
 TAPP_destroy_executor = CDLL(tapp_so).TAPP_destroy_executor
@@ -165,7 +166,7 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 							-1)
 	
 	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_executor(byref(exec))
+	TAPP_create_executor(byref(exec), 0) # attr = 0: default executor behavior
 	status = c_int64(0)
 	A_ptr = A.ctypes.data_as(POINTER(c_double))
 	B_ptr = B.ctypes.data_as(POINTER(c_double))

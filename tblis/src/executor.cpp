@@ -45,7 +45,7 @@ uint64_t submit_task(executor* exec, std::function<TAPP_error()> task) {
     return id;
 }
 
-TAPP_error TAPP_create_executor(TAPP_executor* exec) {
+TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
     executor* backend_exec = new executor();
     backend_exec->worker = std::thread(worker_loop, backend_exec);
     *exec = (TAPP_executor) backend_exec;
@@ -66,16 +66,16 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec) {
     return 0;
 }
 
-TAPP_error TAPP_wait_executor(TAPP_executor exec) {
+TAPP_error TAPP_wait_all(TAPP_executor exec) {
     executor* backend_exec = (executor*)exec;
     std::unique_lock<std::mutex> lk(backend_exec->m);
     backend_exec->done_cv.wait(lk, [backend_exec]{ return backend_exec->completed == backend_exec->submitted;});
     return 0;
 }
 
-TAPP_error TAPP_wait_status(TAPP_executor exec, TAPP_status status) {
+TAPP_error TAPP_wait_one(TAPP_executor exec, TAPP_status status) {
     executor* backend_exec = (executor*)exec;
     std::unique_lock<std::mutex> lk(backend_exec->m);
-    backend_exec->done_cv.wait(lk, [backend_exec, status]{return backend_exec->completed >= status;});
+    backend_exec->done_cv.wait(lk, [backend_exec, status]{return backend_exec->completed >= (uint64_t)status;});
     return 0;
 }

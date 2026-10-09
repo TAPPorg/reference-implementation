@@ -20,11 +20,11 @@ the TAPP standard):
   - No tensor_info accessors: TAPP_get/set_nmodes, TAPP_get/set_extents,
     and TAPP_get/set_strides (tensor.h) aren't bound. Tensor shape is only
     ever set once, at TAPP_create_tensor_info time.
-  - No status/attribute API: TAPP_destroy_status (status.h) and the whole
-    attribute API, TAPP_attr_set/get/clear (attributes.h), aren't bound.
-    execute_product() below deliberately leaves its per-call status handle
-    unfreed rather than binding TAPP_destroy_status (see its comment for
-    why); TAPP_attr_* has no caller anywhere in this repo yet.
+  - No wait/attribute API: TAPP_wait_one/TAPP_wait_all (executor.h) and the
+    whole attribute API, TAPP_create_attr/destroy_attr/attr_set/get/clear
+    (attributes.h), aren't bound. create_executor() passes attr = 0, which
+    for now is assumed to mean default executor behavior (not yet decided
+    in the standard).
   - CPU only: A/B/C/D and alpha/beta are always plain host-memory ctypes
     buffers passed straight through as void* -- there's no device
     allocation or host<->device transfer step anywhere in this file. A
@@ -42,7 +42,8 @@ TAPP_handle = ctypes.c_ssize_t
 TAPP_executor = ctypes.c_ssize_t
 TAPP_tensor_info = ctypes.c_ssize_t
 TAPP_tensor_product = ctypes.c_ssize_t
-TAPP_status = ctypes.c_ssize_t
+TAPP_attr = ctypes.c_ssize_t
+TAPP_status = ctypes.c_int64
 
 
 class TAPPError(RuntimeError):
@@ -152,7 +153,7 @@ def _api():
     return types.SimpleNamespace(
         create_handle=proto("TAPP_create_handle", [ctypes.POINTER(TAPP_handle)], ctypes.c_int),
         destroy_handle=proto("TAPP_destroy_handle", [TAPP_handle], ctypes.c_int),
-        create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor)], ctypes.c_int),
+        create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor), TAPP_attr], ctypes.c_int),
         destroy_executor=proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int),
         create_tensor_info=proto(
             "TAPP_create_tensor_info",
@@ -227,9 +228,10 @@ def destroy_handle(handle):
     _check(_api().destroy_handle(handle))
 
 
-def create_executor():
+def create_executor(attr=0):
+    # attr = 0 is assumed to mean default executor behavior (not yet decided in the standard)
     executor = TAPP_executor()
-    _check(_api().create_executor(ctypes.byref(executor)))
+    _check(_api().create_executor(ctypes.byref(executor), attr))
     return executor.value
 
 
@@ -288,9 +290,5 @@ def destroy_tensor_product(plan):
 def execute_product(plan, executor, alpha, A, B, beta, C, D):
     """alpha/beta/A/B/C/D must be ctypes-compatible buffers/pointers (e.g. a
     (c_float * n)() array, or an ndarray's .ctypes.data_as(c_void_p))."""
-    # TAPP_destroy_status is declared in the standard (status.h) but has no symbol
-    # in libtapp-reference -- no caller in this codebase (C or C++) calls it either.
-    # Meaning no formally defined behavior, so the status handle here is
-    # intentionally left unfreed, matching the current usage.
     status = TAPP_status()
     _check(_api().execute_product(plan, executor, ctypes.byref(status), alpha, A, B, beta, C, D))

@@ -1303,7 +1303,7 @@ bool test_hadamard_product()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1371,7 +1371,7 @@ bool test_contraction()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1445,7 +1445,7 @@ bool test_commutativity()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(planAB, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1519,7 +1519,7 @@ bool test_permutations()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
     
     bool result = true;
 
@@ -1599,7 +1599,7 @@ bool test_equal_extents()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1667,7 +1667,7 @@ bool test_outer_product()
     TAPP_status status;
     
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1735,7 +1735,7 @@ bool test_full_contraction()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1803,7 +1803,7 @@ bool test_zero_dim_tensor_contraction()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1871,7 +1871,7 @@ bool test_one_dim_tensor_contraction()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1939,7 +1939,7 @@ bool test_subtensor_unchanged_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2007,7 +2007,7 @@ bool test_subtensor_lower_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2075,7 +2075,7 @@ bool test_negative_strides()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);    
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
@@ -2142,7 +2142,7 @@ bool test_negative_strides_subtensor_unchanged_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2210,7 +2210,7 @@ bool test_negative_strides_subtensor_lower_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2278,7 +2278,7 @@ bool test_mixed_strides()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
@@ -2345,7 +2345,7 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2413,7 +2413,7 @@ bool test_mixed_strides_subtensor_lower_nmode()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2481,7 +2481,7 @@ bool test_contraction_double_precision()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2554,7 +2554,7 @@ bool test_contraction_complex()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2627,7 +2627,7 @@ bool test_contraction_complex_double_precision()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     int terr = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2704,7 +2704,7 @@ bool test_zero_stride()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2772,7 +2772,7 @@ bool test_isolated_idx()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2840,7 +2840,7 @@ bool test_repeated_idx()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2908,7 +2908,7 @@ bool test_hadamard_and_free()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
@@ -2977,7 +2977,7 @@ bool test_hadamard_and_contraction()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
@@ -3068,7 +3068,7 @@ bool test_error_too_many_idx_D()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -3160,7 +3160,7 @@ bool test_error_non_matching_ext()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     if (error_status == 0)
     {
@@ -3256,7 +3256,7 @@ bool test_error_C_other_structure()
     TAPP_status status;
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     if (error_status == 0)
     {

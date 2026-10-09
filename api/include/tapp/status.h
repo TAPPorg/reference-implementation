@@ -3,17 +3,6 @@
 
 #include <stdint.h>
 
-#include "util.h"
-#include "error.h"
-
-typedef intptr_t TAPP_status;
-
-/*
- * Status objects are created by execution functions (e.g. TAPP_execute_product).
- *
- * TODO: how to get data out? using attributes or separate standardized interface? implementation-defined?
- */
-
-TAPP_EXPORT TAPP_error TAPP_destroy_status(TAPP_status status);
+typedef int64_t TAPP_status;
 
 #endif /* TAPP_STATUS_H_ */
