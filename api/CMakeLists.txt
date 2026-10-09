@@ -66,7 +66,6 @@ target_sources(
     include/tapp/datatype.h
     include/tapp/error.h
     include/tapp/executor.h
-    include/tapp/handle.h
     include/tapp/status.h
   )
 

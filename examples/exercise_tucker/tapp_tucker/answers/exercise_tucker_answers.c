@@ -47,8 +47,6 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
      */
 
-    TAPP_handle handle; // Declare handle (not yet in use)
-
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A
     TAPP_element_op op_B = TAPP_IDENTITY; // Decide elemental operation for tensor B
@@ -64,7 +62,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Uncomment function call
      * Add: idx_A, idx_B, and ixd_D
      */
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_D, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
+    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_D, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
 
     /*
      * Decide which implementation to use with a executor (not yet implemented)

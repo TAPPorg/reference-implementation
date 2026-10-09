@@ -77,9 +77,6 @@ int main(int argc, char const *argv[])
      *  The second index for A and the first index for B are free indices, in that order. 
      */
 
-    // Declare handle (no assignment)
-    TAPP_handle handle;
-
     // Initialize the precision
     TAPP_prectype prec = TAPP_DEFAULT_PREC; 
 
@@ -102,9 +99,9 @@ int main(int argc, char const *argv[])
     /*
      * TODO 2: Complete the function call to create the execution plan.
      * Uncomment code.
-     * Fill in: the plan, handle, computation information for tensor A and precision.
+     * Fill in: the plan, computation information for tensor A and precision.
      */
-    //TAPP_create_tensor_product(, , , , , op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, );
+    //TAPP_create_tensor_product(, , , , op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, );
 
     // Declare executor
     TAPP_executor exec;

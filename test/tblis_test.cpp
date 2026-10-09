@@ -127,11 +127,10 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     reference(a, A, opA, b, B, opB, d, (c_null ? nullptr : &C), opC, d, R, opD, alpha, beta);
     if (in_place) { std::vector<V> Cc = D; R = D; reference(a, A, opA, b, B, opB, d, &Cc, opC, d, R, opD, alpha, beta); }
 
-    TAPP_handle h; TAPP_create_handle(&h);
     TAPP_executor ex; TAPP_create_executor(&ex, 0);
     TAPP_tensor_info ia = info(a, dtype<V>()), ib = info(b, dtype<V>()), ic = info(d, dtype<V>()), id = info(d, dtype<V>());
     TAPP_tensor_product plan;
-    TAPP_error e = TAPP_create_tensor_product(&plan, h, opA, ia, a.idx.data(), opB, ib, b.idx.data(),
+    TAPP_error e = TAPP_create_tensor_product(&plan, opA, ia, a.idx.data(), opB, ib, b.idx.data(),
                                               opC, ic, d.idx.data(), opD, id, d.idx.data(), TAPP_DEFAULT_PREC);
     if (e != 0) { std::printf("FAIL %-45s create_tensor_product returned %d\n", name, e); failures++; return; }
 
@@ -163,7 +162,6 @@ static void run(const char* name, const T& a, const T& b, const T& d,
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_executor(ex);
-    TAPP_destroy_handle(h);
 }
 
 int main()

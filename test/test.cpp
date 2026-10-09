@@ -1297,9 +1297,7 @@ bool test_hadamard_product()
     int op_D = 0;
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1316,7 +1314,6 @@ bool test_hadamard_product()
     bool result = compare_tensors(D, E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1365,9 +1362,7 @@ bool test_contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1384,7 +1379,6 @@ bool test_contraction()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1436,12 +1430,10 @@ bool test_commutativity()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_tensor_product planAB;
-    TAPP_create_tensor_product(&planAB, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&planAB,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_tensor_product planBA;
-    TAPP_create_tensor_product(&planBA, handle, 0, info_B, idx_B, 0, info_A, idx_A, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&planBA,0, info_B, idx_B, 0, info_A, idx_A, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1466,7 +1458,6 @@ bool test_commutativity()
     bool result = compare_tensors(data_D, data_E, size_D) && compare_tensors(data_F, data_G, size_D) && compare_tensors(data_D, data_F, size_D);
     
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(planAB);
     TAPP_destroy_tensor_product(planBA);
     TAPP_destroy_tensor_info(info_A);
@@ -1514,8 +1505,6 @@ bool test_permutations()
     TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1529,7 +1518,7 @@ bool test_permutations()
         TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
         TAPP_tensor_info info_D;
         TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-        TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+        TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
         TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
         run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                     nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1547,7 +1536,6 @@ bool test_permutations()
     }
     
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     delete[] extents_A;
@@ -1593,9 +1581,7 @@ bool test_equal_extents()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1612,7 +1598,6 @@ bool test_equal_extents()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1661,9 +1646,7 @@ bool test_outer_product()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
     
     TAPP_executor exec;
@@ -1680,7 +1663,6 @@ bool test_outer_product()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1729,9 +1711,7 @@ bool test_full_contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1748,7 +1728,6 @@ bool test_full_contraction()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1797,9 +1776,7 @@ bool test_zero_dim_tensor_contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1816,7 +1793,6 @@ bool test_zero_dim_tensor_contraction()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1865,9 +1841,7 @@ bool test_one_dim_tensor_contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1884,7 +1858,6 @@ bool test_one_dim_tensor_contraction()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1933,9 +1906,7 @@ bool test_subtensor_unchanged_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -1952,7 +1923,6 @@ bool test_subtensor_unchanged_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2001,9 +1971,7 @@ bool test_subtensor_lower_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2020,7 +1988,6 @@ bool test_subtensor_lower_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2069,9 +2036,7 @@ bool test_negative_strides()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2087,7 +2052,6 @@ bool test_negative_strides()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2136,9 +2100,7 @@ bool test_negative_strides_subtensor_unchanged_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2155,7 +2117,6 @@ bool test_negative_strides_subtensor_unchanged_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2204,9 +2165,7 @@ bool test_negative_strides_subtensor_lower_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2223,7 +2182,6 @@ bool test_negative_strides_subtensor_lower_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2272,9 +2230,7 @@ bool test_mixed_strides()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2290,7 +2246,6 @@ bool test_mixed_strides()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2339,9 +2294,7 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2358,7 +2311,6 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2407,9 +2359,7 @@ bool test_mixed_strides_subtensor_lower_nmode()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2426,7 +2376,6 @@ bool test_mixed_strides_subtensor_lower_nmode()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2475,9 +2424,7 @@ bool test_contraction_double_precision()
     TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2494,7 +2441,6 @@ bool test_contraction_double_precision()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2548,9 +2494,7 @@ bool test_contraction_complex()
     int op_D = rand(0, 1);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2567,7 +2511,6 @@ bool test_contraction_complex()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2621,9 +2564,7 @@ bool test_contraction_complex_double_precision()
     int op_D = rand(0, 1);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2641,7 +2582,6 @@ bool test_contraction_complex_double_precision()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2698,9 +2638,7 @@ bool test_zero_stride()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2717,7 +2655,6 @@ bool test_zero_stride()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2766,9 +2703,7 @@ bool test_isolated_idx()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2785,7 +2720,6 @@ bool test_isolated_idx()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2834,9 +2768,7 @@ bool test_repeated_idx()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2853,7 +2785,6 @@ bool test_repeated_idx()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2902,9 +2833,7 @@ bool test_hadamard_and_free()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2921,7 +2850,6 @@ bool test_hadamard_and_free()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -2971,9 +2899,7 @@ bool test_hadamard_and_contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -2990,7 +2916,6 @@ bool test_hadamard_and_contraction()
     bool result = compare_tensors(data_D, data_E, size_D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -3062,9 +2987,7 @@ bool test_error_too_many_idx_D()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
-    TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -3073,7 +2996,6 @@ bool test_error_too_many_idx_D()
     int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -3153,10 +3075,8 @@ bool test_error_non_matching_ext()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     int error_status;
-    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    error_status = TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -3169,7 +3089,6 @@ bool test_error_non_matching_ext()
     }
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
@@ -3249,10 +3168,8 @@ bool test_error_C_other_structure()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_tensor_product plan;
-    TAPP_handle handle;
-    TAPP_create_handle(&handle);
     int error_status;
-    error_status = TAPP_create_tensor_product(&plan, handle, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    error_status = TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
     TAPP_status status;
 
     TAPP_executor exec;
@@ -3265,7 +3182,6 @@ bool test_error_C_other_structure()
     }
 
     TAPP_destroy_executor(exec);
-    TAPP_destroy_handle(handle);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);

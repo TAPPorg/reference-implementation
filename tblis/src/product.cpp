@@ -21,7 +21,6 @@
 #include <cstring>
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
-                                      TAPP_handle handle,
                                       TAPP_element_op op_A,
                                       TAPP_tensor_info A,
                                       const int64_t* idx_A,

@@ -38,7 +38,6 @@ import os
 import types
 from pathlib import Path
 
-TAPP_handle = ctypes.c_ssize_t
 TAPP_executor = ctypes.c_ssize_t
 TAPP_tensor_info = ctypes.c_ssize_t
 TAPP_tensor_product = ctypes.c_ssize_t
@@ -151,8 +150,6 @@ def _api():
         return fn
 
     return types.SimpleNamespace(
-        create_handle=proto("TAPP_create_handle", [ctypes.POINTER(TAPP_handle)], ctypes.c_int),
-        destroy_handle=proto("TAPP_destroy_handle", [TAPP_handle], ctypes.c_int),
         create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor), TAPP_attr], ctypes.c_int),
         destroy_executor=proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int),
         create_tensor_info=proto(
@@ -171,7 +168,6 @@ def _api():
             "TAPP_create_tensor_product",
             [
                 ctypes.POINTER(TAPP_tensor_product),
-                TAPP_handle,
                 ctypes.c_int,
                 TAPP_tensor_info,
                 ctypes.POINTER(ctypes.c_int64),
@@ -218,16 +214,6 @@ def _check(error):
     raise TAPPError(buf.value.decode())
 
 
-def create_handle():
-    handle = TAPP_handle()
-    _check(_api().create_handle(ctypes.byref(handle)))
-    return handle.value
-
-
-def destroy_handle(handle):
-    _check(_api().destroy_handle(handle))
-
-
 def create_executor(attr=0):
     # attr = 0 is assumed to mean default executor behavior (not yet decided in the standard)
     executor = TAPP_executor()
@@ -259,12 +245,11 @@ def indices_to_array(indices):
     return (ctypes.c_int64 * len(codes))(*codes)
 
 
-def create_tensor_product(handle, op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C, op_D, D, idx_D, prec):
+def create_tensor_product(op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C, op_D, D, idx_D, prec):
     plan = TAPP_tensor_product()
     _check(
         _api().create_tensor_product(
             ctypes.byref(plan),
-            handle,
             op_A,
             A,
             indices_to_array(idx_A),
