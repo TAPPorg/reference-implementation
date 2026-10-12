@@ -57,6 +57,9 @@ set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
 add_subdirectory(api)
 
 add_library(tapp-reference SHARED)
+set_target_properties(tapp-reference PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/reference_implementation"
+)
 
 target_sources(
   tapp-reference
@@ -176,6 +179,23 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
 
 endif()
 
+if(TAPP_REFERENCE_ENABLE_CUTENSOR)
+
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build TAPP with cuTENSOR due to missing CXX language support; ensure that the CXX compiler can be discovered")
+  endif()
+
+  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_CUTENSOR=1)
+  find_package(CUDAToolkit REQUIRED)
+
+  add_subdirectory(cutensor)
+
+endif()
+
 # ----------------------------------------------------------------------------
 # testing
 
@@ -267,6 +287,37 @@ if(BUILD_TESTING)
     NAME tapp-reference-demo
     COMMAND $<TARGET_FILE:tapp-reference-demo>
     )
+
+  # cuTENSOR demo
+  if(TAPP_REFERENCE_ENABLE_CUTENSOR)
+    add_executable(tapp-cutensor-demo)
+
+    target_sources(
+      tapp-cutensor-demo
+      PRIVATE
+        test/cutensor_demo.cpp
+        test/helpers.c
+        test/helpers.h
+      )
+
+    target_include_directories(
+      tapp-cutensor-demo
+      PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    target_link_libraries(
+      tapp-cutensor-demo
+      PRIVATE
+         tapp::cutensor
+         CUDA::cudart
+      )
+
+    add_test(
+      NAME tapp-cutensor-demo
+      COMMAND $<TARGET_FILE:tapp-cutensor-demo>
+      )
+  endif()
 
   # ----------------------------------------------------------------------------
   # driver

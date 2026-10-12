@@ -1,0 +1,34 @@
+#include "../include/executor.h"
+#include "../include/status.h"
+
+TAPP_error TAPP_create_executor(TAPP_executor* exec)
+{
+    cudaStream_t* stream = (cudaStream_t*)malloc(sizeof(cudaStream_t));
+    cudaError_t cerr;
+    cerr = cudaStreamCreate(stream);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    *exec = (TAPP_executor)stream;
+    return tapp_error(cerr);
+}
+
+TAPP_error TAPP_destroy_executor(TAPP_executor exec)
+{
+    cudaStream_t* stream = (cudaStream_t*)exec;
+    cudaError_t cerr;
+    cerr = cudaStreamDestroy(*stream);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    free(stream);
+    return tapp_error(cerr);
+}
+
+TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status)
+{
+    return create_status(*(cudaStream_t*)exec, status);
+}
+
+TAPP_error TAPP_executor_wait(TAPP_executor exec)
+{
+    cudaError_t cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    return TAPP_SUCCESS;
+}

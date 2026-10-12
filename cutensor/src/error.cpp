@@ -1,0 +1,45 @@
+#include "../include/error.h"
+
+
+bool TAPP_check_success(TAPP_error error) {
+    return error == TAPP_SUCCESS;
+}
+
+
+size_t TAPP_explain_error(TAPP_error error,
+                          size_t maxlen,
+                          char* message) {
+
+    std::string str;
+
+    int base = (int) error/100;
+    base *= 100;
+
+    int code = error%100;
+
+    switch (base)
+    {
+    case TAPP_ERROR_TYPE_TAPP_BASE:
+        str = tapp_error_string(code);
+        break;
+    case TAPP_ERROR_TYPE_CUDA_BASE:
+        str = std::string("[CUDA Error]: ") + cudaGetErrorString(static_cast<cudaError_t>(code));
+        break;
+    case TAPP_ERROR_TYPE_CUTENSOR_BASE:
+        str = std::string("[cuTENSOR Status]: ") + cutensorGetErrorString(static_cast<cutensorStatus_t>(code));
+        break;
+    default:
+        str = "Unknown error type.";
+        break;
+    }
+
+    const char* error_message = str.c_str();
+    size_t message_len = strlen(error_message);
+    if (maxlen == 0) {
+        return message_len;
+    }
+    size_t writelen = maxlen - 1 < message_len ? maxlen - 1 : message_len;
+    strncpy(message, error_message, writelen);
+    message[writelen] = '\0';
+    return writelen;
+}
