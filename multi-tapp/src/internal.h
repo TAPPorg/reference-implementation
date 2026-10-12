@@ -1,6 +1,13 @@
-#ifndef TAPP_MULTI_TAPP_BACKEND_H_
-#define TAPP_MULTI_TAPP_BACKEND_H_
+#ifndef TAPP_MULTI_TAPP_INTERNAL_H_
+#define TAPP_MULTI_TAPP_INTERNAL_H_
 
+/*
+ * Internal definitions shared by the multi-tapp source files: the objects behind the handles of multi-tapp and
+ * helpers for the error codes. Not part of the public interface of multi-tapp.
+ */
+
+#include "../include/multi_tapp/backend.h"
+#include "../include/multi_tapp/error.h"
 #include "tapp/attributes.h"
 #include "tapp/error.h"
 #include "tapp/executor.h"
@@ -9,14 +16,10 @@
 #include "tapp/tensor.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h> 
+#include <string.h>
+#include <dlfcn.h>
 
-typedef intptr_t TAPP_backend;
-
-TAPP_EXPORT TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath);
-
-TAPP_EXPORT TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend);
-
+/* A loaded TAPP implementation and its functions. A function is NULL if the implementation does not provide it */
 struct Multi_TAPP_backend
 {
     void* lib_handle;
@@ -79,4 +82,41 @@ struct Multi_TAPP_backend
     TAPP_error (*TAPP_set_strides)(TAPP_tensor_info info, const int64_t* strides);
 };
 
-#endif /* TAPP_MULTI_TAPP_BACKEND_H_ */
+/* The objects multi-tapp hands out: the object of the backend together with the backend that created it */
+struct Multi_TAPP_attr
+{
+    TAPP_backend backend;
+    TAPP_attr attr;
+};
+
+struct Multi_TAPP_executor
+{
+    TAPP_backend backend;
+    TAPP_executor exec;
+};
+
+struct Multi_TAPP_tensor_info
+{
+    TAPP_backend backend;
+    TAPP_tensor_info info;
+};
+
+struct Multi_TAPP_tensor_product
+{
+    TAPP_backend backend;
+    TAPP_tensor_product plan;
+};
+
+/* Convert an error code returned by a backend into the error code multi-tapp returns */
+static inline TAPP_error multi_tapp_error_from_backend(TAPP_error error)
+{
+    return error > 0 ? error + MULTI_TAPP_ERROR_LAST : error;
+}
+
+/* Check an error code returned directly by a backend, before it is converted */
+static inline bool multi_tapp_check_success(TAPP_error error)
+{
+    return error == MULTI_TAPP_SUCCESS;
+}
+
+#endif /* TAPP_MULTI_TAPP_INTERNAL_H_ */

@@ -62,14 +62,16 @@ target_sources(
     src/backend.c
     src/error.c
     src/executor.c
+    src/internal.h
     src/product.c
     src/tensor.c
-    include/attributes.h
-    include/backend.h
-    include/error.h
-    include/executor.h
-    include/product.h
-    include/tensor.h
+    include/multi_tapp.h
+    include/multi_tapp/attributes.h
+    include/multi_tapp/backend.h
+    include/multi_tapp/error.h
+    include/multi_tapp/executor.h
+    include/multi_tapp/product.h
+    include/multi_tapp/tensor.h
   )
 
 set_property(

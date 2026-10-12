@@ -4,12 +4,6 @@
 #include "backend.h"
 #include "tapp/tensor.h"
 
-struct Multi_TAPP_tensor_info
-{
-    TAPP_backend backend;
-    TAPP_tensor_info info;
-};
-
 TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_info(TAPP_backend backend,
                                                      TAPP_tensor_info* info,
                                                      TAPP_datatype type,

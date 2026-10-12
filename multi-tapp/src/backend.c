@@ -1,19 +1,29 @@
-#include "../include/backend.h"
+#include "../include/multi_tapp/backend.h"
+#include "internal.h"
 
 static TAPP_error load_function(void* lib_handle, void** func, const char* func_name, bool crucial, TAPP_error error_code);
 
 TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
 {
+    if (backend == NULL)
+    {
+        fprintf(stderr, "ERROR: Called function with NULL backend pointer");
+        return MULTI_TAPP_ERROR_INVALID_ARGUMENT;
+    }
+
     struct Multi_TAPP_backend* backend_ptr = malloc(sizeof(struct Multi_TAPP_backend));
-    backend_ptr->lib_handle = dlopen(libpath, RTLD_LAZY);
+    if (backend_ptr == NULL) {
+        fprintf(stderr, "ERROR: Failed to allocate space for a backend object\n");
+        return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
+    }
+    backend_ptr->lib_handle = dlopen(libpath, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
     if (!backend_ptr->lib_handle)
     {
         fprintf(stderr, "dlopen failed: %s\n", dlerror());
         free(backend_ptr);
-        return 1; // TODO: return error
+        return MULTI_TAPP_ERROR_DLOPEN_FAILED;
     }
     dlerror();
-    // TODO: Check if each function loaded correctly, if not they will be deemed unimplemented and set to NULL for later error checking.
     TAPP_error error = 0;
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_attr), "TAPP_create_attr", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_attr), "TAPP_destroy_attr", false, 0);
@@ -22,19 +32,37 @@ TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_attr_clear), "TAPP_attr_clear", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_check_success), "TAPP_check_success", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_explain_error), "TAPP_explain_error", false, 0);
-    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_executor), "TAPP_create_executor", false, 0);
-    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_executor), "TAPP_destroy_executor", false, 0);
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_executor), "TAPP_create_executor", true, MULTI_TAPP_ERROR_MISSING_CREATE_EXECUTOR);
+    if (error != 0) // Check success of loading TAPP_create_executor
+    {
+        dlclose(backend_ptr->lib_handle);
+        free(backend_ptr);
+        return error;
+    }
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_executor), "TAPP_destroy_executor", true, MULTI_TAPP_ERROR_MISSING_DESTROY_EXECUTOR);
+    if (error != 0) // Check success of loading TAPP_destroy_executor
+    {
+        dlclose(backend_ptr->lib_handle);
+        free(backend_ptr);
+        return error;
+    }
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_wait_one), "TAPP_wait_one", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_wait_all), "TAPP_wait_all", false, 0);
-    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_product), "TAPP_create_tensor_product", true, 3);
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_product), "TAPP_create_tensor_product", true, MULTI_TAPP_ERROR_MISSING_CREATE_TENSOR_PRODUCT);
     if (error != 0) // Check success of loading TAPP_create_tensor_product
     {
         dlclose(backend_ptr->lib_handle);
         free(backend_ptr);
         return error;
     }
-    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_tensor_product), "TAPP_destroy_tensor_product", false, 0);
-    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_execute_product), "TAPP_execute_product", true, 4);
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_tensor_product), "TAPP_destroy_tensor_product", true, MULTI_TAPP_ERROR_MISSING_DESTROY_TENSOR_PRODUCT);
+    if (error != 0) // Check success of loading TAPP_destroy_tensor_product
+    {
+        dlclose(backend_ptr->lib_handle);
+        free(backend_ptr);
+        return error;
+    }
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_execute_product), "TAPP_execute_product", true, MULTI_TAPP_ERROR_MISSING_EXECUTE_PRODUCT);
     if (error != 0) // Check success of loading TAPP_execute_product
     {
         dlclose(backend_ptr->lib_handle);
@@ -42,14 +70,20 @@ TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
         return error;
     }
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_execute_batched_product), "TAPP_execute_batched_product", false, 0);
-    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_info), "TAPP_create_tensor_info", true, 5);
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_info), "TAPP_create_tensor_info", true, MULTI_TAPP_ERROR_MISSING_CREATE_TENSOR_INFO);
     if (error != 0) // Check success of loading TAPP_create_tensor_info
     {
         dlclose(backend_ptr->lib_handle);
         free(backend_ptr);
         return error;
     }
-    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_tensor_info), "TAPP_destroy_tensor_info", false, 0);
+    error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_tensor_info), "TAPP_destroy_tensor_info", true, MULTI_TAPP_ERROR_MISSING_DESTROY_TENSOR_INFO);
+    if (error != 0) // Check success of loading TAPP_destroy_tensor_info
+    {
+        dlclose(backend_ptr->lib_handle);
+        free(backend_ptr);
+        return error;
+    }
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_get_nmodes), "TAPP_get_nmodes", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_set_nmodes), "TAPP_set_nmodes", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_get_extents), "TAPP_get_extents", false, 0);
@@ -64,6 +98,12 @@ TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
 
 TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend)
 {
+    if (backend == 0)
+    {
+        fprintf(stderr, "WARNING: Tried to destroy backend 0\n");
+        return MULTI_TAPP_SUCCESS;
+    }
+
     struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
     if (backend_ptr->lib_handle)
     {

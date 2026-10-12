@@ -2,14 +2,7 @@
 #define TAPP_MULTI_TAPP_EXECUTOR_H_
 
 #include "backend.h"
-#include "attributes.h"
 #include "tapp/executor.h"
-
-struct Multi_TAPP_executor
-{
-    TAPP_backend backend;
-    TAPP_executor exec;
-};
 
 TAPP_EXPORT TAPP_error Multi_TAPP_create_executor(TAPP_backend backend, TAPP_executor *exec, TAPP_attr attr);
 

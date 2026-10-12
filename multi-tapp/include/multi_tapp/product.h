@@ -2,15 +2,7 @@
 #define TAPP_MULTI_TAPP_PRODUCT_H_
 
 #include "backend.h"
-#include "tensor.h"
-#include "executor.h"
 #include "tapp/product.h"
-
-struct Multi_TAPP_tensor_product
-{
-    TAPP_backend backend;
-    TAPP_tensor_product plan;
-};
 
 TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
                                                         TAPP_tensor_product* plan,

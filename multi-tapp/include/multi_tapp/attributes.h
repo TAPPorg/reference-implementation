@@ -4,12 +4,6 @@
 #include "backend.h"
 #include "tapp/attributes.h"
 
-struct Multi_TAPP_attr
-{
-    TAPP_backend backend;
-    TAPP_attr attr;
-};
-
 // create/destroy an attribute set (backend-defined implementation)
 TAPP_EXPORT TAPP_error Multi_TAPP_create_attr(TAPP_backend backend, TAPP_attr *attr);
 

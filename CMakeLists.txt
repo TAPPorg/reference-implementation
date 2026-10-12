@@ -217,6 +217,37 @@ if(BUILD_TESTING)
   endif()
 
   # ----------------------------------------------------------------------------
+  # multi-tapp test
+
+  add_executable(multi-tapp-test)
+
+  target_sources(
+    multi-tapp-test
+    PRIVATE
+      test/multi_tapp_test.c
+    )
+
+  target_link_libraries(
+    multi-tapp-test
+    PRIVATE
+      multi-tapp
+      m
+    )
+
+  # The implementations are loaded at runtime, so they are only passed as paths
+  add_dependencies(multi-tapp-test tapp-reference)
+  set(MULTI_TAPP_TEST_BACKENDS $<TARGET_FILE:tapp-reference>)
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_dependencies(multi-tapp-test tapp-tblis)
+    list(APPEND MULTI_TAPP_TEST_BACKENDS $<TARGET_FILE:tapp-tblis>)
+  endif()
+
+  add_test(
+    NAME multi-tapp-test
+    COMMAND $<TARGET_FILE:multi-tapp-test> ${MULTI_TAPP_TEST_BACKENDS}
+    )
+
+  # ----------------------------------------------------------------------------
   # demo
 
   add_executable(tapp-reference-demo)
