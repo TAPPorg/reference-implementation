@@ -204,7 +204,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     bool use_device_memory = *(bool*)((exec_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
-    const cudaStream_t stream = *(cudaStream_t*)exec;
+    const cudaStream_t stream = *(exec_struct->stream);
     cudaError_t cerr;
     cutensorStatus_t err = CUTENSOR_STATUS_SUCCESS;
     TAPP_error result = TAPP_SUCCESS;

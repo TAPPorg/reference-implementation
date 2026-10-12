@@ -20,7 +20,7 @@ size_t TAPP_explain_error(TAPP_error error,
     switch (base)
     {
     case TAPP_ERROR_TYPE_TAPP_BASE:
-        str = tapp_error_string(code);
+        if(code>0) str = tapp_error_string(code);
         break;
     case TAPP_ERROR_TYPE_CUDA_BASE:
         str = std::string("[CUDA Error]: ") + cudaGetErrorString(static_cast<cudaError_t>(code));
