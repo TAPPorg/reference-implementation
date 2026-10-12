@@ -5,7 +5,6 @@
 
 #include "util.h"
 #include "error.h"
-#include "handle.h"
 #include "executor.h"
 #include "datatype.h"
 #include "status.h"
@@ -31,7 +30,7 @@ enum
 typedef intptr_t TAPP_tensor_product;
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
-                                                  TAPP_handle handle,
+                                                  TAPP_executor exec,
                                                   TAPP_element_op op_A,
                                                   TAPP_tensor_info A,
                                                   const int64_t* idx_A,

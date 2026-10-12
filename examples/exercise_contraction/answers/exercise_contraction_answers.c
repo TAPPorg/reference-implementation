@@ -17,6 +17,12 @@
 
 int main(int argc, char const *argv[])
 {
+    // Declare executor
+    TAPP_executor exec;
+
+    // Create executor
+    TAPP_create_executor(&exec);
+
     /*
      * Create the tensor structures for tensor A, B, C and D.
      * Tensor A with 3 indices, with the extents 4, 3, 2, and the strides 1, 4, 12.
@@ -44,28 +50,28 @@ int main(int argc, char const *argv[])
      * Uncomment code.
      * Fill in: the tensor info object, datatype(float32), structure for tensor A: number of indices, extents, strides.
      */
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+    TAPP_create_tensor_info(&info_A, exec, TAPP_F32, nmode_A, extents_A, strides_A);
 
     // Tensor B
     int nmode_B = 3;
     int64_t extents_B[3] = {3, 2, 4};
     int64_t strides_B[3] = {1, 3, 6};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, exec, TAPP_F32, nmode_B, extents_B, strides_B);
 
     // Tensor C
     int nmode_C = 2;
     int64_t extents_C[2] = {3, 3};
     int64_t strides_C[2] = {1, 3};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, exec, TAPP_F32, nmode_C, extents_C, strides_C);
 
     // Tensor D
     int nmode_D = 2;
     int64_t extents_D[2] = {3, 3};
     int64_t strides_D[2] = {1, 3};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, exec, TAPP_F32, nmode_D, extents_D, strides_D);
 
 
     /*
@@ -77,9 +83,6 @@ int main(int argc, char const *argv[])
      *  Contraction between the third index for tensor A and second index for tensor B.
      *  The second index for A and the first index for B are free indices, in that order. 
      */
-
-    // Declare handle (no assignment)
-    TAPP_handle handle;
 
     // Initialize the precision
     TAPP_prectype prec = TAPP_DEFAULT_PREC; 
@@ -105,13 +108,7 @@ int main(int argc, char const *argv[])
      * Uncomment code.
      * Fill in: the plan, handle, computation information for tensor A and precision.
      */
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
-
-    // Declare executor
-    TAPP_executor exec;
-
-    // Create executor
-    TAPP_create_executor(&exec);
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare status object
     TAPP_status status;

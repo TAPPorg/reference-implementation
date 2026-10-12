@@ -1,12 +1,13 @@
 #include "../include/product.h"
 #include "../include/status.h"
+#include "../include/executor.h"
 
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
 cutensorOperator_t translate_operator(TAPP_element_op op);
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
-                                      TAPP_handle handle,
+                                      TAPP_executor exec,
                                       TAPP_element_op op_A,
                                       TAPP_tensor_info A,
                                       const int64_t* idx_A,
@@ -22,8 +23,10 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_prectype prec)
 {
     struct product_plan* plan_struct = new struct product_plan;
-    plan_struct->handle = handle;
-    struct handle* handle_struct = (struct handle*) plan_struct->handle;
+    struct executor* exec_struct = (struct executor*) exec;
+    cutensorHandle_t* libhandle = nullptr;
+    libhandle = exec_struct->libhandle;
+
     std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + TAPP_get_nmodes(A));
     std::vector<int32_t> cuidx_B = std::vector<int32_t>(idx_B, idx_B + TAPP_get_nmodes(B));
     std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + TAPP_get_nmodes(C));
@@ -42,7 +45,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     cutensorDataType_t scalarType;
     uint64_t workspace_size_estimate = 0;
 
-    err = cutensorCreateContraction(*handle_struct->libhandle,
+    err = cutensorCreateContraction(*libhandle,
                 &contraction_desc,
                 *((struct tensor_info*)A)->desc, cuidx_A.data(), translate_operator(op_A),
                 *((struct tensor_info*)B)->desc, cuidx_B.data(), translate_operator(op_B),
@@ -51,7 +54,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 translate_prectype(prec, ((struct tensor_info*)D)->type));
     if (err != CUTENSOR_STATUS_SUCCESS) { contraction_desc = nullptr; goto fail; }
 
-    err = cutensorOperationDescriptorGetAttribute(*handle_struct->libhandle,
+    err = cutensorOperationDescriptorGetAttribute(*libhandle,
                 contraction_desc,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalarType,
@@ -60,14 +63,14 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     assert(scalarType == translate_datatype(((struct tensor_info*)D)->type));
 
-    err = cutensorCreatePermutation(*handle_struct->libhandle,
+    err = cutensorCreatePermutation(*libhandle,
         &permutation_desc,
         *((struct tensor_info*)D)->desc, cuidx_D.data(), translate_operator(op_D),
         *((struct tensor_info*)D)->desc, cuidx_D.data(),
         translate_prectype(prec, ((tensor_info*)D)->type));
     if (err != CUTENSOR_STATUS_SUCCESS) { permutation_desc = nullptr; goto fail; }
 
-    err = cutensorOperationDescriptorGetAttribute(*handle_struct->libhandle,
+    err = cutensorOperationDescriptorGetAttribute(*libhandle,
                 permutation_desc,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalarType,
@@ -77,13 +80,13 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     assert(scalarType == translate_datatype(((struct tensor_info*)D)->type));
 
     err = cutensorCreatePlanPreference(
-                *handle_struct->libhandle,
+                *libhandle,
                 &plan_pref,
                 CUTENSOR_ALGO_DEFAULT,
                 CUTENSOR_JIT_MODE_NONE);
     if (err != CUTENSOR_STATUS_SUCCESS) { plan_pref = nullptr; goto fail; }
 
-    err = cutensorEstimateWorkspaceSize(*handle_struct->libhandle,
+    err = cutensorEstimateWorkspaceSize(*libhandle,
                 contraction_desc,
                 plan_pref,
                 CUTENSOR_WORKSPACE_DEFAULT,
@@ -91,7 +94,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     if (err != CUTENSOR_STATUS_SUCCESS) goto fail;
 
     plan_struct->contraction_plan = new cutensorPlan_t;
-    err = cutensorCreatePlan(*handle_struct->libhandle,
+    err = cutensorCreatePlan(*libhandle,
                 plan_struct->contraction_plan,
                 contraction_desc,
                 plan_pref,
@@ -99,7 +102,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     if (err != CUTENSOR_STATUS_SUCCESS) { delete plan_struct->contraction_plan; plan_struct->contraction_plan = nullptr; goto fail; }
 
     plan_struct->permutation_plan = new cutensorPlan_t;
-    err = cutensorCreatePlan(*handle_struct->libhandle,
+    err = cutensorCreatePlan(*libhandle,
         plan_struct->permutation_plan,
         permutation_desc,
         plan_pref,
@@ -195,9 +198,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* C,
                                       void* D)
 {
-    struct handle* handle_struct = (struct handle*) ((struct product_plan*) plan)->handle;
-    bool use_device_memory = *(bool*)((handle_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
-    printf("USE_DEVICE_MEMORY = %d\n", use_device_memory);
+    struct executor* exec_struct = (struct executor*) exec;
+    cutensorHandle_t* libhandle = nullptr;
+    libhandle = exec_struct->libhandle;
+
+    bool use_device_memory = *(bool*)((exec_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
     const cudaStream_t stream = *(cudaStream_t*)exec;
     cudaError_t cerr;
@@ -258,7 +263,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         assert(uintptr_t(D_d) % 128 == 0);
     }
 
-    err = cutensorPlanGetAttribute(*handle_struct->libhandle,
+    err = cutensorPlanGetAttribute(*libhandle,
                 *contraction_plan,
                 CUTENSOR_PLAN_REQUIRED_WORKSPACE,
                 &contraction_actual_workspace_size,
@@ -271,7 +276,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     assert(uintptr_t(contraction_work) % 128 == 0);
 
     contraction_output = do_permutation ? E_d : D_d;
-    err = cutensorContract(*handle_struct->libhandle,
+    err = cutensorContract(*libhandle,
                 *contraction_plan,
                 alpha, A_d, B_d,
                 beta,  C_d, contraction_output,
@@ -303,7 +308,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
             *(std::complex<double>*)perm_scalar_ptr = 1.0;
         }
 
-        err = cutensorPermute(*handle_struct->libhandle,
+        err = cutensorPermute(*libhandle,
                     *permutation_plan,
                     perm_scalar_ptr,
                     E_d,

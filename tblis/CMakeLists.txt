@@ -13,14 +13,12 @@ target_sources(
   PRIVATE
     src/error.cpp
     src/executor.cpp
-    src/handle.cpp
     src/tensor.cpp
     src/product.cpp
     src/tblis_utils.cpp
     include/datatype.h
     include/error.h
     include/executor.h
-    include/handle.h
     include/tensor.h
     include/product.h
     include/tblis_utils.h

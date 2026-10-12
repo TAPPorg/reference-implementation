@@ -11,7 +11,6 @@
 #include <cstring>
 
 #include "error.h"
-#include "handle.h"
 #include "tensor.h"
 #include "attributes.h"
 
@@ -34,7 +33,6 @@ struct product_plan
     TAPP_element_op op_D;
     cutensorPlan_t* contraction_plan;
     cutensorPlan_t* permutation_plan;
-    TAPP_handle handle;
 };
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_PRODUCT_H_ */

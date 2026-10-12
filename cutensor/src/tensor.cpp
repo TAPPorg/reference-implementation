@@ -1,7 +1,8 @@
 #include "../include/tensor.h"
+#include "../include/executor.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
-                                   TAPP_handle handle,
+                                   TAPP_executor exec,
                                    TAPP_datatype type,
                                    int nmode,
                                    const int64_t* extents,
@@ -9,10 +10,13 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
 {
     struct tensor_info* tensor_info = new struct tensor_info;
     tensor_info->desc = new cutensorTensorDescriptor_t;
-    struct handle* handle_struct = (struct handle*) handle;
+    struct executor* exec_struct = (struct executor*) exec;
+
+    cutensorHandle_t* libhandle = nullptr;
+    libhandle = exec_struct->libhandle;
     
     const uint32_t kAlignment = 128;
-    cutensorStatus_t err = cutensorCreateTensorDescriptor(*handle_struct->libhandle,
+    cutensorStatus_t err = cutensorCreateTensorDescriptor(*libhandle,
                 tensor_info->desc,
                 nmode,
                 extents,

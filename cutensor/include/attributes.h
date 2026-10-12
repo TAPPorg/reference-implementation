@@ -5,8 +5,6 @@
 
 #include <cstring>
 
-#include "handle.h"
-
 #define ATTR_KEY_USE_DEVICE_MEMORY 0
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_ATTRIBUTES_H_ */

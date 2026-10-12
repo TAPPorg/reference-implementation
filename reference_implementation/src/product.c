@@ -4,6 +4,7 @@
  * Umeå University - July 2024
  */
 #include "../include/product.h"
+#include "../include/executor.h"
 #include "../include/product_template.h"
 
 int64_t calculate_size(const int64_t* extents, const int nmode);
@@ -55,7 +56,7 @@ void* checked_malloc(size_t size) {
 }
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
-                                      TAPP_handle handle,
+                                      TAPP_executor exec,
                                       TAPP_element_op op_A,
                                       TAPP_tensor_info A,
                                       const int64_t* idx_A,

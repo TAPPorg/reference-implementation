@@ -36,7 +36,6 @@ target_sources(tapp-cutensor
     src/datatype.cpp
     src/error.cpp
     src/executor.cpp
-    src/handle.cpp
     src/product.cpp
     src/status.cpp
     src/tensor.cpp

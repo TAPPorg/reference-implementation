@@ -8,7 +8,6 @@
 #include <cstring>
 
 #include "error.h"
-#include "handle.h"
 #include "datatype.h"
 
 struct tensor_info

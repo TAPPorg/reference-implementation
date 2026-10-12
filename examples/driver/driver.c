@@ -13,6 +13,16 @@
 int main(int argc, char const *argv[])
 {
     /*
+     * Decide which implementation to use with a executor (not yet implemented)
+     */
+
+    TAPP_executor exec; // Declaration of executor
+    TAPP_create_executor(&exec); // Creation of executor
+
+    // int exec_id = 1; // Choose executor
+    // exec = (intptr_t)&exec_id; // Assign executor
+
+    /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
      * The operation requires four tensors that all needs to be initialized.
@@ -30,34 +40,32 @@ int main(int argc, char const *argv[])
 
     TAPP_tensor_info info_A; // Declare the variable that holds the tensor structure
 
-    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    TAPP_create_tensor_info(&info_A, exec, TAPP_F32, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
 
     // Tensor B
     int nmode_B = 4;
     int64_t extents_B[4] = {3, 2, 2, 3};
     int64_t strides_B[4] = {1, 3, 6, 12};
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, exec, TAPP_F32, nmode_B, extents_B, strides_B);
 
     // Tensor C
     int nmode_C = 3;
     int64_t extents_C[3] = {4, 2, 2};
     int64_t strides_C[3] = {1, 4, 8};
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+    TAPP_create_tensor_info(&info_C, exec, TAPP_F32, nmode_C, extents_C, strides_C);
 
     // Output tensor D
     int nmode_D = 3;
     int64_t extents_D[3] = {4, 2, 2};
     int64_t strides_D[3] = {1, 4, 8};
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, exec, TAPP_F32, nmode_D, extents_D, strides_D);
 
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
      */
-
-    TAPP_handle handle; // Declare handle (not yet in use)
 
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A
@@ -80,16 +88,7 @@ int main(int argc, char const *argv[])
 
     TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation 
 
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
-
-    /*
-     * Decide which implementation to use with a executor (not yet implemented)
-     */
-
-    TAPP_executor exec; // Declaration of executor
-    TAPP_create_executor(&exec); // Creation of executor
-    // int exec_id = 1; // Choose executor
-    // exec = (intptr_t)&exec_id; // Assign executor
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
 
     /*
      * Status objects are used to know the status of the execution process (not yet implemented)
