@@ -49,6 +49,7 @@ def seed_from_env():
 def bench_by_specs(specs):
     # Builds, runs and prints one spec at a time, so only one benchmark's
     # buffers are allocated at once and a bad spec is reported as SKIPPED.
+    tapp_bindings.start()
     executor = tapp_bindings.create_executor()
     results = []
     try:
@@ -63,6 +64,7 @@ def bench_by_specs(specs):
             results.append(result)
     finally:
         tapp_bindings.destroy_executor(executor)
+        tapp_bindings.shutdown()
     return results
 
 

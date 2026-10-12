@@ -14,4 +14,10 @@ TAPP_EXPORT TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const ch
 
 TAPP_EXPORT TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend);
 
+/* Start the backend. Should be called before any other use of the backend */
+TAPP_EXPORT TAPP_error Multi_TAPP_start(TAPP_backend backend);
+
+/* Shut down the backend. Should be called after the last use of the backend, before it is destroyed */
+TAPP_EXPORT TAPP_error Multi_TAPP_shutdown(TAPP_backend backend);
+
 #endif /* TAPP_MULTI_TAPP_BACKEND_H_ */

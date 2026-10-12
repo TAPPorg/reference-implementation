@@ -36,6 +36,8 @@ static bool create_objects(const char* lib, struct objects* o)
         check(false, lib, "create backend");
         return false;
     }
+    check(Multi_TAPP_start(o->backend) == 0, lib, "start backend");
+    check(Multi_TAPP_start(o->backend) == 0, lib, "start backend again");
 
     int64_t extents[2] = {2, 2};
     int64_t strides[2] = {1, 2};
@@ -187,6 +189,7 @@ static void destroy_objects(const char* lib, struct objects* o)
     error |= Multi_TAPP_destroy_tensor_info(o->backend, o->info_B);
     error |= Multi_TAPP_destroy_tensor_info(o->backend, o->info_C);
     error |= Multi_TAPP_destroy_tensor_info(o->backend, o->info_D);
+    error |= Multi_TAPP_shutdown(o->backend);
     error |= Multi_TAPP_destroy_backend(o->backend);
     check(error == 0, lib, "destroy objects and backend");
 }

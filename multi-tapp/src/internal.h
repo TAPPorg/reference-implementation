@@ -23,6 +23,8 @@
 struct Multi_TAPP_backend
 {
     void* lib_handle;
+    TAPP_error (*TAPP_start)(void);
+    TAPP_error (*TAPP_shutdown)(void);
     TAPP_error (*TAPP_create_attr)(TAPP_attr* attr);
     TAPP_error (*TAPP_destroy_attr)(TAPP_attr attr);
     TAPP_error (*TAPP_attr_set)(TAPP_attr attr, TAPP_key key, size_t size, void* value);

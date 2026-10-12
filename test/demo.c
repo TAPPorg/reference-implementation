@@ -25,6 +25,8 @@ void subtensors();
 
 int main(int argc, char const *argv[])
 {
+    TAPP_start();
+
     printf("Contraction: \n");
     contraction();
     printf("Hadamard: \n");
@@ -47,6 +49,8 @@ int main(int argc, char const *argv[])
     negative_str();
     printf("Subtensors: \n");
     subtensors();
+
+    TAPP_shutdown();
     return 0;
 }
 

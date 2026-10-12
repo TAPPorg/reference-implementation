@@ -166,6 +166,8 @@ static void run(const char* name, const T& a, const T& b, const T& d,
 
 int main()
 {
+    TAPP_start();
+
     enum { I = TAPP_IDENTITY, CJ = TAPP_CONJUGATE };
     const int64_t i = 1, j = 2, k = 3, l = 4;
 
@@ -201,6 +203,8 @@ int main()
     // Outer product, no contracted index
     auto ao = colmajor({3}, {i}), bo = colmajor({4}, {j}), dout = colmajor({3, 4}, {i, j});
     run<double>("f64 outer product", ao, bo, dout, I, I, I, I, 1.0, 0.5);
+
+    TAPP_shutdown();
 
     std::printf("\n%d failure(s)\n", failures);
     return failures != 0;

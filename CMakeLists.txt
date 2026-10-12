@@ -66,6 +66,7 @@ target_sources(
   PRIVATE
     reference_implementation/src/error.c
     reference_implementation/src/executor.c
+    reference_implementation/src/runtime.c
     reference_implementation/src/tensor.c
     reference_implementation/src/product.c
     reference_implementation/src/product_template.c

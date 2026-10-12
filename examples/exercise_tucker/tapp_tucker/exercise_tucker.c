@@ -12,6 +12,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
+    // Start TAPP before any other TAPP function is called
+    TAPP_start();
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -120,6 +123,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    // Shut down TAPP after the last use of it
+    TAPP_shutdown();
 
     return D;
 }

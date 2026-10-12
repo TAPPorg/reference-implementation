@@ -65,6 +65,7 @@ target_sources(
   PRIVATE
     src/error.cpp
     src/executor.cpp
+    src/runtime.cpp
     src/tensor.cpp
     src/product.cpp
     src/tblis_utils.cpp

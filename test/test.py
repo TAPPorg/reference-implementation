@@ -98,6 +98,14 @@ TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' el
 							 POINTER(c_int64), # strides
 							 ]
 
+TAPP_start = CDLL(tapp_so).TAPP_start
+TAPP_start.restype = c_int
+TAPP_start.argtypes = []
+
+TAPP_shutdown = CDLL(tapp_so).TAPP_shutdown
+TAPP_shutdown.restype = c_int
+TAPP_shutdown.argtypes = []
+
 TAPP_create_executor = CDLL(tapp_so).TAPP_create_executor
 TAPP_create_executor.restype = c_int
 TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # exec
@@ -190,6 +198,7 @@ def RunEinsum(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, o
 	return D
 
 def main():
+	TAPP_start()
 	print("Hadamard Product:", TestHadamardProduct())
 	print("Contraction:", TestContraction())
 	print("Commutativity:", TestCommutativity())
@@ -203,6 +212,7 @@ def main():
 	print("Subtensor Lower Idx:", TestSubtensorLowerIdx())
 	print("Unique Idx:", TestUniqueIdx())
 	print("Repeated Idx:", TestRepeatedIdx())
+	TAPP_shutdown()
 
 def TestHadamardProduct():
 	nmode = random.randint(1, 4)

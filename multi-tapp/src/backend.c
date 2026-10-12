@@ -25,6 +25,8 @@ TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
     }
     dlerror();
     TAPP_error error = 0;
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_start), "TAPP_start", false, 0);
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_shutdown), "TAPP_shutdown", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_attr), "TAPP_create_attr", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_attr), "TAPP_destroy_attr", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_attr_set), "TAPP_attr_set", false, 0);
@@ -113,6 +115,44 @@ TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend)
     free(backend_ptr);
 
     return 0;
+}
+
+TAPP_error Multi_TAPP_start(TAPP_backend backend)
+{
+    if (backend == 0)
+    {
+        fprintf(stderr, "ERROR: Called function with NULL backend\n");
+        return MULTI_TAPP_ERROR_INVALID_BACKEND;
+    }
+    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    if (backend_ptr->TAPP_start == NULL)
+    {
+        fprintf(stderr, "ERROR: Called unimplemented function TAPP_start\n");
+        return MULTI_TAPP_ERROR_UNIMPLEMENTED;
+    }
+
+    TAPP_error error = backend_ptr->TAPP_start();
+
+    return multi_tapp_error_from_backend(error);
+}
+
+TAPP_error Multi_TAPP_shutdown(TAPP_backend backend)
+{
+    if (backend == 0)
+    {
+        fprintf(stderr, "ERROR: Called function with NULL backend\n");
+        return MULTI_TAPP_ERROR_INVALID_BACKEND;
+    }
+    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    if (backend_ptr->TAPP_shutdown == NULL)
+    {
+        fprintf(stderr, "ERROR: Called unimplemented function TAPP_shutdown\n");
+        return MULTI_TAPP_ERROR_UNIMPLEMENTED;
+    }
+
+    TAPP_error error = backend_ptr->TAPP_shutdown();
+
+    return multi_tapp_error_from_backend(error);
 }
 
 static TAPP_error load_function(void* lib_handle, void** func, const char* func_name, bool crucial, TAPP_error error_code)

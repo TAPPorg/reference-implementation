@@ -150,6 +150,8 @@ def _api():
         return fn
 
     return types.SimpleNamespace(
+        start=proto("TAPP_start", [], ctypes.c_int),
+        shutdown=proto("TAPP_shutdown", [], ctypes.c_int),
         create_executor=proto("TAPP_create_executor", [ctypes.POINTER(TAPP_executor), TAPP_attr], ctypes.c_int),
         destroy_executor=proto("TAPP_destroy_executor", [TAPP_executor], ctypes.c_int),
         create_tensor_info=proto(
@@ -212,6 +214,14 @@ def _check(error):
     buf = ctypes.create_string_buffer(length + 1)
     _api().explain_error(error, length + 1, buf)
     raise TAPPError(buf.value.decode())
+
+
+def start():
+    _check(_api().start())
+
+
+def shutdown():
+    _check(_api().shutdown())
 
 
 def create_executor(attr=0):

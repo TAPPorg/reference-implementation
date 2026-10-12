@@ -12,6 +12,9 @@
 
 int main(int argc, char const *argv[])
 {
+    // Start TAPP before any other TAPP function is called
+    TAPP_start();
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -179,6 +182,9 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    // Shut down TAPP after the last use of it
+    TAPP_shutdown();
 
     return 0;
 }

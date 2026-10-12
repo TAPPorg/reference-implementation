@@ -22,6 +22,7 @@ int main(int argc, char const *argv[])
 {
     if (argc >= 2) current_rand_seed = std::atoi(argv[1]); // now ready to generate random numbers
     bli_init();
+    TAPP_start();
     std::cout << std::boolalpha;
     std::cout << "Starting seed for random numbers = " << current_rand_seed << std::endl;
     std::cout << "Hadamard Product: " << test_hadamard_product() << std::endl;
@@ -53,6 +54,7 @@ int main(int argc, char const *argv[])
     std::cout << "Hadamard And Contraction: " << test_hadamard_and_contraction() << std::endl;
     std::cout << "Error: Non Matching Extents: " << test_error_non_matching_ext() << std::endl;
     std::cout << "Error: C Other Structure: " << test_error_C_other_structure() << std::endl;
+    TAPP_shutdown();
     bli_finalize();
     return 0;
 }

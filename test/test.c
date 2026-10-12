@@ -11,6 +11,8 @@
 
 int main(int argc, char const *argv[])
 {
+    TAPP_start();
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
@@ -121,5 +123,7 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    TAPP_shutdown();
     return 0;
 }
