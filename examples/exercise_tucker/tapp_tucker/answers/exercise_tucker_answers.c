@@ -18,16 +18,6 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * The operation requires four tensors that all needs to be initialized.
      */
 
-    /*
-     * Decide which implementation to use with a executor (not yet implemented)
-     */
-
-    TAPP_executor exec; // Declaration of executor
-    TAPP_create_executor(&exec); // Creation of executor
-    // int exec_id = 1; // Choose executor
-    // exec = (intptr_t)&exec_id; // Assign executor
-
-
     // Initialize the structures of the tensors
 
     // Tensor A
@@ -39,19 +29,27 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Uncomment function call
      * Add: nmode_A, extents_A, and strides_A
      */
-    TAPP_create_tensor_info(&info_A, exec, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
+    TAPP_create_tensor_info(&info_A, TAPP_F64, nmode_A, extents_A, strides_A); // Assign the structure to the variable, including datatype
 
     // Tensor B
     TAPP_tensor_info info_B;
-    TAPP_create_tensor_info(&info_B, exec, TAPP_F64, nmode_B, extents_B, strides_B);
+    TAPP_create_tensor_info(&info_B, TAPP_F64, nmode_B, extents_B, strides_B);
 
     // Tensor C
     TAPP_tensor_info info_C;
-    TAPP_create_tensor_info(&info_C, exec, TAPP_F64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_C, TAPP_F64, nmode_D, extents_D, strides_D);
 
     // Output tensor D
     TAPP_tensor_info info_D;
-    TAPP_create_tensor_info(&info_D, exec, TAPP_F64, nmode_D, extents_D, strides_D);
+    TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
+
+    /*
+     * Decide which implementation to use with a executor (not yet implemented)
+     */
+
+    TAPP_executor exec; // Declaration of executor
+    TAPP_create_executor(&exec); // Creation of executor
+
 
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.

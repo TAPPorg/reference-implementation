@@ -21,7 +21,6 @@ typedef intptr_t TAPP_tensor_info;
  */ 
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
-                                               TAPP_executor exec,
                                                TAPP_datatype type,
                                                int nmode,
                                                const int64_t* extents,

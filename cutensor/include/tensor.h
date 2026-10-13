@@ -19,7 +19,6 @@ struct tensor_info
     size_t copy_size;
     int64_t data_offset;
     TAPP_datatype type;
-    cutensorTensorDescriptor_t* desc;
 };
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_TENSOR_H_ */

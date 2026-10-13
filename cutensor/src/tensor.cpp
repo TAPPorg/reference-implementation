@@ -2,32 +2,13 @@
 #include "../include/executor.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
-                                   TAPP_executor exec,
                                    TAPP_datatype type,
                                    int nmode,
                                    const int64_t* extents,
                                    const int64_t* strides)
 {
     struct tensor_info* tensor_info = new struct tensor_info;
-    tensor_info->desc = new cutensorTensorDescriptor_t;
-    struct executor* exec_struct = (struct executor*) exec;
 
-    cutensorHandle_t* libhandle = nullptr;
-    libhandle = exec_struct->libhandle;
-    
-    const uint32_t kAlignment = 128;
-    cutensorStatus_t err = cutensorCreateTensorDescriptor(*libhandle,
-                tensor_info->desc,
-                nmode,
-                extents,
-                strides,
-                translate_datatype(type), kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS)
-    {
-        delete tensor_info->desc;
-        delete tensor_info;
-        return tapp_error(err);
-    }
     size_t elements = 1;
     for (int i = 0; i < nmode; ++i)
         elements *= extents[i];
@@ -60,12 +41,6 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
 {
     struct tensor_info* tensor_info = (struct tensor_info*) info;
-    cutensorStatus_t err = cutensorDestroyTensorDescriptor(*tensor_info->desc);
-    if (err != CUTENSOR_STATUS_SUCCESS)
-    {
-        return tapp_error(err);
-    }
-    delete tensor_info->desc;
     delete[] tensor_info->extents;
     delete[] tensor_info->strides;
     delete tensor_info;
