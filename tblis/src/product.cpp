@@ -3,22 +3,13 @@
  * Paolo Bientinesi
  * Umeå University - October 2026
  */
-#include "../include/product.h"
-#include "../include/executor.h"
-#include "datatype.h"
-#include "tapp/error.h"
-#include "tapp/executor.h"
-#include "tapp/product.h"
-#include "tapp/tensor.h"
-#include "tblis/frame/3t/mult.h"
-#include "tblis/frame/base/basic_types.h"
-#include "tblis_utils.h"
-#include "tensor.h"
+#include "internal.h"
+
+#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
-#include <error.h>
-#include <unordered_map>
 #include <cstring>
+#include <unordered_map>
+#include <omp.h>
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_element_op op_A,
@@ -34,57 +25,97 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_tensor_info D,
                                       const int64_t* idx_D,
                                       TAPP_prectype prec) {
-    product_plan* p = new product_plan();
-    if (!same_structure(reinterpret_cast<tensor_info*>(C), idx_C, reinterpret_cast<tensor_info*>(D), idx_D))
+    const tensor_info* info_A = reinterpret_cast<tensor_info*>(A);
+    const tensor_info* info_B = reinterpret_cast<tensor_info*>(B);
+    const tensor_info* info_C = reinterpret_cast<tensor_info*>(C);
+    const tensor_info* info_D = reinterpret_cast<tensor_info*>(D);
+    if (!plan || !info_A || !info_B || !info_C || !info_D) return TAPP_TBLIS_ERROR_NULL_POINTER;
+    if ((!info_A->extents.empty() && !idx_A) || (!info_B->extents.empty() && !idx_B) ||
+        (!info_C->extents.empty() && !idx_C) || (!info_D->extents.empty() && !idx_D))
+    {
+        return TAPP_TBLIS_ERROR_NULL_POINTER;
+    }
+
+    // TBLIS multiplies tensors of one type, and alpha and beta are read as that type
+    if (info_A->type != info_D->type || info_B->type != info_D->type || info_C->type != info_D->type)
+    {
+        return TAPP_TBLIS_ERROR_DATATYPE_MISMATCH;
+    }
+
+    if (!same_structure(info_C, idx_C, info_D, idx_D))
     {
         // Tensor C and D does not have the same structure
-        return ERROR_C_D_MISMATCH;
+        return TAPP_TBLIS_ERROR_C_D_MISMATCH;
     }
-    p->A = clone_tensor_info(reinterpret_cast<tensor_info*>(A));
-    p->B = clone_tensor_info(reinterpret_cast<tensor_info*>(B));
-    p->C = clone_tensor_info(reinterpret_cast<tensor_info*>(C));
-    bool flip = (op_D == TAPP_CONJUGATE);
-    p->A->conj = (op_A == TAPP_CONJUGATE) != flip;
-    p->B->conj = (op_B == TAPP_CONJUGATE) != flip;
-    p->C->conj = (op_C == TAPP_CONJUGATE) != flip;
-    p->conj_scalars = flip;
 
-    // Number of elements in D: the product of its extents (1 for a scalar, 0 if any extent is 0)
-    auto* info_D = reinterpret_cast<tensor_info*>(D);
-    p->size_D = 1;
-    for (int i = 0; i < info_D->nmode; i++)
+    try
     {
-        p->size_D *= info_D->extents[i];
-    }
-    p->scalar_type = info_D->type;
+        // An index is one loop: it has the same extent wherever it is used, and D only has indices of A and B.
+        // C needs no pass of its own, it has the structure of D
+        std::unordered_map<int64_t, int64_t> extent_of;
+        auto add = [&extent_of](const tensor_info* info, const int64_t* idx) {
+            for (size_t i = 0; i < info->extents.size(); i++)
+            {
+                auto [it, is_new] = extent_of.emplace(idx[i], info->extents[i]);
+                if (!is_new && it->second != info->extents[i]) return false;
+            }
+            return true;
+        };
+        if (!add(info_A, idx_A) || !add(info_B, idx_B)) return TAPP_TBLIS_ERROR_EXTENT_MISMATCH;
+        for (size_t i = 0; i < info_D->extents.size(); i++)
+        {
+            auto it = extent_of.find(idx_D[i]);
+            if (it == extent_of.end()) return TAPP_TBLIS_ERROR_INDEX_NOT_IN_INPUTS;
+            if (it->second != info_D->extents[i]) return TAPP_TBLIS_ERROR_EXTENT_MISMATCH;
+        }
 
-    std::unordered_map<int64_t, tblis::label_type> label_map;
-    if (!translate_idx_to_tblis(p->A->nmode, idx_A, label_map, p->idx_A) ||
-        !translate_idx_to_tblis(p->B->nmode, idx_B, label_map, p->idx_B) ||
-        !translate_idx_to_tblis(p->C->nmode, idx_C, label_map, p->idx_C))
-    {
-        // too many indices
-        return ERROR_TOO_MANY_INDICES;
+        std::shared_ptr<product_plan> p = std::make_shared<product_plan>();
+
+        p->A = *info_A;
+        p->B = *info_B;
+        p->C = *info_C;
+        bool flip = (op_D == TAPP_CONJUGATE);
+        p->A.conj = (op_A == TAPP_CONJUGATE) != flip;
+        p->B.conj = (op_B == TAPP_CONJUGATE) != flip;
+        p->C.conj = (op_C == TAPP_CONJUGATE) != flip;
+        p->conj_scalars = flip;
+
+        // Number of elements in D: the product of its extents (1 for a scalar, 0 if any extent is 0)
+        p->size_D = 1;
+        for (size_t i = 0; i < info_D->extents.size(); i++)
+        {
+            p->size_D *= info_D->extents[i];
+        }
+        p->scalar_type = info_D->type;
+
+        std::unordered_map<int64_t, tblis::label_type> label_map;
+        if (!translate_idx_to_tblis(p->A.extents.size(), idx_A, label_map, p->idx_A) ||
+            !translate_idx_to_tblis(p->B.extents.size(), idx_B, label_map, p->idx_B) ||
+            !translate_idx_to_tblis(p->C.extents.size(), idx_C, label_map, p->idx_C))
+        {
+            return TAPP_TBLIS_ERROR_TOO_MANY_INDICES;
+        }
+        *plan = reinterpret_cast<TAPP_tensor_product>(new std::shared_ptr<const product_plan>(std::move(p)));
     }
-    *plan = reinterpret_cast<TAPP_tensor_product>(p);
-    return 0;
+    catch (const std::bad_alloc&)
+    {
+        return TAPP_TBLIS_ERROR_OUT_OF_MEMORY;
+    }
+    return TAPP_TBLIS_SUCCESS;
 }
 
 bool same_structure(const tensor_info* A, const int64_t* idx_A, const tensor_info* B, const int64_t* idx_B) {
-    if (A->nmode != B->nmode) return false;
-    for (int i = 0; i < A->nmode; i++) {
-        if (A->extents[i] != B->extents[i] || A->strides[i] != B->strides[i] || idx_A[i] != idx_B[i]) return false;
+    if (A->extents != B->extents || A->strides != B->strides) return false;
+    for (size_t i = 0; i < A->extents.size(); i++) {
+        if (idx_A[i] != idx_B[i]) return false;
     }
     return true;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan) {
-    product_plan* p = reinterpret_cast<product_plan*>(plan);
-    destroy_tensor_info(p->A);
-    destroy_tensor_info(p->B);
-    destroy_tensor_info(p->C);
-    delete p;
-    return 0;
+    // Only the handle's share of the plan: products that are queued or running keep it alive until they are done
+    delete reinterpret_cast<std::shared_ptr<const product_plan>*>(plan);
+    return TAPP_TBLIS_SUCCESS;
 }
 
 TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
@@ -96,27 +127,31 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                 const void* beta,
                                 const void* C,
                                       void* D) {
+    if (!plan || !exec || !alpha || !beta || !D) return TAPP_TBLIS_ERROR_NULL_POINTER;
+    
     executor* e = reinterpret_cast<executor*>(exec);
-    const product_plan* p = reinterpret_cast<const product_plan*>(plan);
+    // A copy of the handle's shared pointer: the product keeps the plan alive until it has run
+    std::shared_ptr<const product_plan> p = *reinterpret_cast<std::shared_ptr<const product_plan>*>(plan);
 
     // Read alpha and beta NOW: they point into the caller's memory, which may be gone when the task runs
-    tblis::tblis_scalar alpha_s = to_tblis_scalar(p->scalar_type, alpha);
-    tblis::tblis_scalar beta_s = to_tblis_scalar(p->scalar_type, beta);
+    tblis::tblis_scalar tblis_alpha = to_tblis_scalar(p->scalar_type, alpha);
+    tblis::tblis_scalar tblis_beta = to_tblis_scalar(p->scalar_type, beta);
     if (p->conj_scalars)
     {
-        alpha_s.conj();
-        beta_s.conj();
+        tblis_alpha.conj();
+        tblis_beta.conj();
     }
 
     uint64_t id = submit_task(e, [=]() {
-        return execute_product(p, alpha_s, A, B, beta_s, C, D);
+        return execute_product(p.get(), e, tblis_alpha, A, B, tblis_beta, C, D);
     });
-
+    
     if (status) *status = static_cast<TAPP_status>(id);
-    return SUCCESS;
+    return TAPP_TBLIS_SUCCESS;
 }
 
 TAPP_error execute_product(const product_plan* plan,
+                           const executor* exec,
                            const tblis::tblis_scalar alpha,
                            const void* A,
                            const void* B,
@@ -126,41 +161,59 @@ TAPP_error execute_product(const product_plan* plan,
 {
     if (C != D && !beta.is_zero())
     {
-        std::memcpy(D, C, plan->size_D * tblis_type_size(plan->C->type));
+        std::memcpy(D, C, plan->size_D * tblis_type_size(plan->C.type));
     }
-
-    tblis::tblis_tensor* tA = create_tblis_tensor(plan->A);
-    tA->data = const_cast<void*>(A);
-    tblis::tblis_tensor* tB = create_tblis_tensor(plan->B);
-    tB->data = const_cast<void*>(B);
-    tblis::tblis_tensor* tC = create_tblis_tensor(plan->C);
-    tC->data = D;
-
+    
     // Workaround: tblis_tensor_mult ignores conj on the output when it takes its GEMM path (TBLIS 9b95712,
     // gemm_blis in frame/3t/dense/mult.cxx), so conjugate D in place first and pass the output unconjugated
-    if (tC->conj && !beta.is_zero())
-    {
-        tC->scalar.reset(tblis::tblis_scalar(1.0, tC->type));
-        tblis::tblis_tensor_scale(nullptr, nullptr, tC, plan->idx_C.data());
-    }
-    tC->conj = false;
+    const bool conj_D = plan->C.conj && !beta.is_zero();
+    bool conj_C = false;
 
-    // reset, not operator=: tblis_scalar assignment keeps the destination's type and only converts the value
-    tA->scalar.reset(alpha);
-    tC->scalar.reset(beta);
+    tblis::tblis_tensor tblis_A = create_tblis_tensor(plan->A, A, &alpha, nullptr);
+    tblis::tblis_tensor tblis_B = create_tblis_tensor(plan->B, B, nullptr, nullptr);
+    tblis::tblis_tensor tblis_C = create_tblis_tensor(plan->C, D, &beta, &conj_C);
     
+    // OpenMP may give fewer threads than asked for (OMP_THREAD_LIMIT). TCI then lets every thread run the whole
+    // product on the same D, so ask first and only use what is there
+    unsigned thread_count = exec->thread_count;
+    unsigned omp_thread_count = thread_count;
+    #pragma omp parallel num_threads(thread_count)
+    {
+        #pragma omp single
+        omp_thread_count = omp_get_num_threads();
+    }
+    if (omp_thread_count < thread_count)
+    {
+        thread_count = omp_thread_count;
+    }
+    tblis::parallelize([&](const tblis::communicator& comm)
+    {
+        // With binding on (OMP_PROC_BIND, OMP_PLACES), OpenMP pins its threads itself, so they do not inherit the mask
+        // from the worker: every thread puts itself back on it
+        if (exec->has_cpu_mask && omp_get_proc_bind() != omp_proc_bind_false)
+        {
+            sched_setaffinity(0, sizeof(cpu_set_t), &exec->cpu_mask);
+        }
+        // TBLIS resets scalar and conj of an output tensor when it is done with it, so every thread needs its own
+        tblis::tblis_tensor tC_thread = tblis_C;
 
-    tblis::tblis_tensor_mult(nullptr, nullptr, tA, plan->idx_A.data(), tB, plan->idx_B.data(), tC, plan->idx_C.data());
+        if (conj_D)
+        {
+            tC_thread.conj = true;
+            tC_thread.scalar.reset(tblis::tblis_scalar(1.0, tblis_C.type));
+            tblis::tblis_tensor_scale(comm, nullptr, &tC_thread, plan->idx_C.data());
+            // The other threads must be done conjugating their part of D before anyone reads it
+            comm.barrier();
+            tC_thread.scalar.reset(beta);
+        }
 
-    free_tblis_tensor(tA);
-    free_tblis_tensor(tB);
-    free_tblis_tensor(tC);
-    // TODO:
-    //  1. copy C into D (unless in-place), scaled by beta
-    //  2. reduce isolated indices of A and B
-    //  3. tblis_tensor_mult(alpha * op_A(A), op_B(B), D)
-    //  4. apply op_D
-    return SUCCESS;
+        tblis::tblis_tensor_mult(comm, nullptr,
+                                &tblis_A, plan->idx_A.data(),
+                                &tblis_B, plan->idx_B.data(),
+                                &tC_thread, plan->idx_C.data());
+    }, thread_count);
+
+    return TAPP_TBLIS_SUCCESS;
 }
 
 TAPP_error TAPP_execute_batched_product(TAPP_tensor_product plan,

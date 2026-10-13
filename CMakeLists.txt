@@ -215,6 +215,19 @@ if(BUILD_TESTING)
       NAME tapp-tblis-test
       COMMAND $<TARGET_FILE:tapp-tblis-test>
       )
+
+    # The same test under OpenMP settings that change how many threads an executor gets and where they run
+    foreach(omp_setting OMP_THREAD_LIMIT=2 OMP_DYNAMIC=true OMP_PROC_BIND=true)
+      add_test(
+        NAME tapp-tblis-test-${omp_setting}
+        COMMAND $<TARGET_FILE:tapp-tblis-test>
+        )
+      set_tests_properties(
+        tapp-tblis-test-${omp_setting}
+        PROPERTIES
+          ENVIRONMENT ${omp_setting}
+        )
+    endforeach()
   endif()
 
   # ----------------------------------------------------------------------------

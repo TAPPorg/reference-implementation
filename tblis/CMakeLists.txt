@@ -57,24 +57,22 @@ set(TAPP_TBLIS_INSTALL_CMAKEDIR "lib/cmake/mpqc"
 # top-level CMakeLists.txt) to be available.
 
 find_package(Threads REQUIRED)
+find_package(OpenMP REQUIRED)
 
 add_library(tapp-tblis SHARED)
 
 target_sources(
   tapp-tblis
   PRIVATE
+    src/attributes.cpp
     src/error.cpp
     src/executor.cpp
     src/runtime.cpp
     src/tensor.cpp
     src/product.cpp
     src/tblis_utils.cpp
-    include/datatype.h
-    include/error.h
-    include/executor.h
-    include/tensor.h
-    include/product.h
-    include/tblis_utils.h
+    src/internal.h
+    include/tapp_tblis.h
   )
 
 set_property(
@@ -98,4 +96,5 @@ target_link_libraries(
   PRIVATE
     tblis-static
     Threads::Threads
+    OpenMP::OpenMP_CXX
 )

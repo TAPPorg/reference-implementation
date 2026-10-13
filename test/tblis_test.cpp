@@ -7,14 +7,21 @@
 // Checks the TBLIS-backed implementation (tapp-tblis) against a naive loop implementation of
 // D = op_D(alpha * op_A(A) * op_B(B) + beta * op_C(C))
 #include <tapp.h>
+#include <tapp_tblis.h>
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <limits>
 #include <map>
 #include <random>
+#include <sched.h>
+#include <thread>
 #include <vector>
 
 using cd = std::complex<double>;
@@ -109,6 +116,292 @@ static TAPP_tensor_info info(const T& t, TAPP_datatype type)
 
 static int failures = 0;
 
+static void check(const char* name, bool ok)
+{
+    std::printf("%s %s\n", ok ? "ok  " : "FAIL", name);
+    if (!ok) failures++;
+}
+
+// Attributes of the executors that run() creates, 0 for the defaults
+static TAPP_attr exec_attr = 0;
+// Number of threads an executor of run() must have, -1 to not check. With exec_mask they must also run on that mask
+static int exec_threads = -1;
+static const cpu_set_t* exec_mask = nullptr;
+
+// Number of threads of this process, or only those whose CPU mask is exactly mask
+static int count_threads(const cpu_set_t* mask)
+{
+    int count = 0;
+    for (const auto& task : std::filesystem::directory_iterator("/proc/self/task"))
+    {
+        cpu_set_t affinity;
+        pid_t tid = std::atoi(task.path().filename().c_str());
+        if (mask && (sched_getaffinity(tid, sizeof(affinity), &affinity) != 0 || !CPU_EQUAL(mask, &affinity))) continue;
+        count++;
+    }
+    return count;
+}
+
+// The threads OpenMP started for an executor exit shortly after the executor is destroyed, not before. Wait until only
+// the main thread is left, so that they are not counted as threads of the next executor
+static void wait_for_exited_threads()
+{
+    for (int tries = 0; tries < 200 && count_threads(nullptr) > 1; tries++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
+
+// Number of threads an executor that asks for count threads gets: OMP_THREAD_LIMIT caps it
+static int limited(int count)
+{
+    const char* limit = std::getenv("OMP_THREAD_LIMIT");
+    return (limit && std::atoi(limit) > 0) ? std::min(count, std::atoi(limit)) : count;
+}
+
+static void test_attributes()
+{
+    TAPP_attr attr;
+    check("attr: create", TAPP_create_attr(&attr) == 0);
+
+    size_t size = 1; void* value = &size;
+    check("attr: get of unset key gives NULL",
+          TAPP_attr_get(attr, TAPP_THREAD_COUNT, &size, &value) == 0 && size == 0 && value == nullptr);
+
+    int count = 3;
+    check("attr: set thread count", TAPP_attr_set(attr, TAPP_THREAD_COUNT, sizeof(count), &count) == 0);
+    count = 99;   // the value was copied
+    check("attr: get thread count",
+          TAPP_attr_get(attr, TAPP_THREAD_COUNT, &size, &value) == 0 && size == sizeof(int) && *(int*)value == 3);
+
+    cpu_set_t mask, empty;
+    CPU_ZERO(&mask); CPU_ZERO(&empty);
+    CPU_SET(0, &mask);
+    check("attr: set CPU mask", TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(mask), &mask) == 0);
+    check("attr: get CPU mask",
+          TAPP_attr_get(attr, TAPP_CPU_MASK, &size, &value) == 0 && size == sizeof(cpu_set_t) && CPU_EQUAL(&mask, (cpu_set_t*)value));
+
+    int zero = 0;
+    check("attr: unknown key is refused", TAPP_attr_set(attr, 12345, sizeof(count), &count) != 0);
+    check("attr: 0 threads is refused", TAPP_attr_set(attr, TAPP_THREAD_COUNT, sizeof(zero), &zero) != 0);
+    check("attr: wrong size of thread count is refused", TAPP_attr_set(attr, TAPP_THREAD_COUNT, 1, &count) != 0);
+    check("attr: empty CPU mask is refused", TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(empty), &empty) != 0);
+    check("attr: wrong size of CPU mask is refused", TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(int), &mask) != 0);
+    check("attr: refused values leave the old one",
+          TAPP_attr_get(attr, TAPP_THREAD_COUNT, &size, &value) == 0 && value != nullptr && *(int*)value == 3);
+
+    check("attr: clear", TAPP_attr_clear(attr, TAPP_THREAD_COUNT) == 0 &&
+                         TAPP_attr_get(attr, TAPP_THREAD_COUNT, &size, &value) == 0 && value == nullptr);
+
+    // A CPU that does not exist: the executor must not be created
+    cpu_set_t missing;
+    CPU_ZERO(&missing);
+    CPU_SET(CPU_SETSIZE - 1, &missing);
+    TAPP_executor ex;
+    TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(missing), &missing);
+    check("attr: executor on a missing CPU is refused", TAPP_create_executor(&ex, attr) != 0);
+
+    // One CPU that exists (the one this thread runs on) and one that does not: no executor on only a part of its mask
+    CPU_SET(sched_getcpu(), &missing);
+    TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(missing), &missing);
+    check("attr: executor on a partly missing mask is refused", TAPP_create_executor(&ex, attr) != 0);
+
+    check("attr: destroy", TAPP_destroy_attr(attr) == 0);
+}
+
+// The CPUs this process may use. Not the mask of the main thread: OpenMP narrows that one to a single CPU when it binds
+// threads (OMP_PROC_BIND), so a helper thread tries every CPU
+static std::vector<int> usable_cpus()
+{
+    std::vector<int> cpus;
+    std::thread([&cpus] {
+        for (int cpu = 0; cpu < CPU_SETSIZE; cpu++)
+        {
+            cpu_set_t one;
+            CPU_ZERO(&one);
+            CPU_SET(cpu, &one);
+            if (sched_setaffinity(0, sizeof(one), &one) == 0) cpus.push_back(cpu);
+        }
+    }).join();
+    return cpus;
+}
+
+// Several executors at once, each on two CPUs of its own, with many products queued on each
+static void test_executors(const std::vector<int>& cpus)
+{
+    const int n = 64, tasks = 20, rounds = 5;
+    const int executors = std::min<int>(3, cpus.size() / 2);
+    if (executors == 0) { std::printf("skip executors: needs two CPUs\n"); return; }
+
+    // A = 1 and B = 2 everywhere, D starts as 1: every element of D becomes alpha * 2 * n + beta
+    const int64_t i = 1, j = 2, k = 3;
+    auto a = colmajor({n, n}, {i, k}), b = colmajor({n, n}, {k, j}), d = colmajor({n, n}, {i, j});
+    std::vector<double> A(n * n, 1.0), B(n * n, 2.0);
+    std::vector<std::vector<double>> D(executors * tasks, std::vector<double>(n * n));
+    auto is = [](const std::vector<double>& D, double value) {
+        return std::all_of(D.begin(), D.end(), [value](double x) { return std::abs(x - value) < 1e-9; });
+    };
+
+    TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                               TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
+
+    std::vector<TAPP_executor> ex(executors);
+    std::vector<cpu_set_t> masks(executors);
+    std::vector<int> on_mask_before(executors);
+    bool created = true;
+    wait_for_exited_threads();
+    for (int e = 0; e < executors; e++)
+    {
+        CPU_ZERO(&masks[e]);
+        CPU_SET(cpus[2 * e], &masks[e]);
+        CPU_SET(cpus[2 * e + 1], &masks[e]);
+        on_mask_before[e] = count_threads(&masks[e]);
+
+        TAPP_attr attr;
+        TAPP_create_attr(&attr);
+        TAPP_attr_set(attr, TAPP_CPU_MASK, sizeof(cpu_set_t), &masks[e]);
+        if (TAPP_create_executor(&ex[e], attr) != 0) created = false;
+        TAPP_destroy_attr(attr);
+    }
+    check("executors: create", created);
+    if (!created) return;
+
+    bool waited_one = true, waited_all = true;
+    std::vector<TAPP_status> st(executors * tasks);
+    for (int round = 0; round < rounds; round++)
+    {
+        for (auto& x : D) std::fill(x.begin(), x.end(), 1.0);
+        for (int t = 0; t < tasks; t++)
+        {
+            for (int e = 0; e < executors; e++)
+            {
+                double alpha = t + 1, beta = 0.5;   // locals: read when the product is submitted
+                double* Dp = D[e * tasks + t].data();
+                TAPP_execute_product(plan, ex[e], &st[e * tasks + t], &alpha, A.data(), B.data(), &beta, Dp, Dp);
+            }
+        }
+
+        // A product in the middle of each queue: it must be done when the wait returns
+        for (int e = 0; e < executors; e++)
+        {
+            int t = tasks / 2;
+            TAPP_wait_one(ex[e], st[e * tasks + t]);
+            if (!is(D[e * tasks + t], (t + 1) * 2.0 * n + 0.5)) waited_one = false;
+        }
+
+        for (int e = 0; e < executors; e++) TAPP_wait_all(ex[e]);
+        for (int e = 0; e < executors; e++)
+        {
+            for (int t = 0; t < tasks; t++)
+            {
+                if (!is(D[e * tasks + t], (t + 1) * 2.0 * n + 0.5)) waited_all = false;
+            }
+        }
+    }
+    check("executors: wait for one product", waited_one);
+    check("executors: wait for all products", waited_all);
+
+    // The executors are still alive, so their threads are too: two per executor, on the mask of that executor
+    bool on_masks = true;
+    for (int e = 0; e < executors; e++)
+    {
+        if (count_threads(&masks[e]) - on_mask_before[e] != limited(2)) on_masks = false;
+    }
+    check("executors: every executor runs on its own CPU mask", on_masks);
+
+    // Destroying an executor finishes the products that are still queued
+    for (auto& x : D) std::fill(x.begin(), x.end(), 1.0);
+    for (int t = 0; t < tasks; t++)
+    {
+        double alpha = 1.0, beta = 0.0;
+        TAPP_execute_product(plan, ex[0], nullptr, &alpha, A.data(), B.data(), &beta, D[t].data(), D[t].data());
+    }
+    for (int e = 0; e < executors; e++) TAPP_destroy_executor(ex[e]);
+    bool drained = true;
+    for (int t = 0; t < tasks; t++)
+    {
+        if (!is(D[t], 2.0 * n)) drained = false;
+    }
+    check("executors: destroy finishes the queued products", drained);
+
+    TAPP_destroy_tensor_product(plan);
+}
+
+// Whether a plan for A * B -> D can be created. A plan that is created is destroyed again
+static bool plan_created(const T& a, const T& b, const T& d)
+{
+    TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+    TAPP_tensor_product plan;
+    TAPP_error e = TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                                              TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(),
+                                              TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
+    if (e == 0) TAPP_destroy_tensor_product(plan);
+    return e == 0;
+}
+
+// Plans whose indices do not describe a product are refused
+static void test_plan_indices()
+{
+    const int64_t i = 1, j = 2, k = 3, m = 4;
+    auto a = colmajor({5, 4}, {i, k}), b = colmajor({4, 3}, {k, j}), d = colmajor({5, 3}, {i, j});
+
+    check("plan: a contraction is accepted", plan_created(a, b, d));
+    check("plan: an index repeated in A with one extent is accepted",
+          plan_created(colmajor({4, 4}, {k, k}), b, colmajor({3}, {j})));
+
+    check("plan: different extents of an index in A and B are refused", !plan_created(a, colmajor({3, 3}, {k, j}), d));
+    check("plan: different extents of an index in A and D are refused", !plan_created(a, b, colmajor({6, 3}, {i, j})));
+    check("plan: different extents of an index within A are refused",
+          !plan_created(colmajor({5, 4}, {k, k}), b, colmajor({3}, {j})));
+    check("plan: an index of D that is not in A or B is refused", !plan_created(a, b, colmajor({5, 3, 2}, {i, j, m})));
+}
+
+// A product does not need its plan after it is submitted: every plan is destroyed while its product is still queued
+static void test_plan_lifetime()
+{
+    const int n = 64, tasks = 20;
+    const int64_t i = 1, j = 2, k = 3;
+    auto a = colmajor({n, n}, {i, k}), b = colmajor({n, n}, {k, j}), d = colmajor({n, n}, {i, j});
+    std::vector<double> A(n * n, 1.0), B(n * n, 2.0);
+    std::vector<std::vector<double>> D(tasks, std::vector<double>(n * n, 1.0));
+
+    TAPP_executor ex;
+    TAPP_create_executor(&ex, 0);
+    for (int t = 0; t < tasks; t++)
+    {
+        TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+        TAPP_tensor_product plan;
+        TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                                   TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
+        TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
+
+        double alpha = t + 1, beta = 0.5;
+        TAPP_execute_product(plan, ex, nullptr, &alpha, A.data(), B.data(), &beta, D[t].data(), D[t].data());
+        TAPP_destroy_tensor_product(plan);
+    }
+    TAPP_wait_all(ex);
+
+    // A = 1 and B = 2 everywhere, D started as 1: every element of D is alpha * 2 * n + beta
+    bool ok = true;
+    for (int t = 0; t < tasks; t++)
+    {
+        for (double x : D[t]) if (std::abs(x - ((t + 1) * 2.0 * n + 0.5)) > 1e-9) ok = false;
+    }
+    check("plan: destroyed before its product has run", ok);
+
+    // The executor has run the products 1 to tasks: any other status is not one of its products
+    check("status: the last product can be waited for", TAPP_wait_one(ex, tasks) == 0);
+    check("status: 0 is refused", TAPP_wait_one(ex, 0) != 0);
+    check("status: a negative one is refused", TAPP_wait_one(ex, -1) != 0);
+    check("status: one that was never given out is refused", TAPP_wait_one(ex, tasks + 1) != 0);
+
+    TAPP_destroy_executor(ex);
+}
+
 // in_place: pass D as C. c_null: pass NULL for C (beta must be 0). nan_D: prefill D with NaN.
 template <typename V>
 static void run(const char* name, const T& a, const T& b, const T& d,
@@ -127,7 +420,11 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     reference(a, A, opA, b, B, opB, d, (c_null ? nullptr : &C), opC, d, R, opD, alpha, beta);
     if (in_place) { std::vector<V> Cc = D; R = D; reference(a, A, opA, b, B, opB, d, &Cc, opC, d, R, opD, alpha, beta); }
 
-    TAPP_executor ex; TAPP_create_executor(&ex, 0);
+    if (exec_threads >= 0) wait_for_exited_threads();
+    int threads_before = count_threads(nullptr), on_mask_before = exec_mask ? count_threads(exec_mask) : 0;
+    TAPP_executor ex;
+    TAPP_error ee = TAPP_create_executor(&ex, exec_attr);
+    if (ee != 0) { std::printf("FAIL %-45s create_executor returned %d\n", name, ee); failures++; return; }
     TAPP_tensor_info ia = info(a, dtype<V>()), ib = info(b, dtype<V>()), ic = info(d, dtype<V>()), id = info(d, dtype<V>());
     TAPP_tensor_product plan;
     TAPP_error e = TAPP_create_tensor_product(&plan, opA, ia, a.idx.data(), opB, ib, b.idx.data(),
@@ -159,6 +456,20 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     bool ok = !nan && err <= tol;
     std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in D)" : "");
     if (!ok) failures++;
+
+    // The executor is still alive, so its threads are too: the worker and the ones it started for the product
+    if (exec_threads >= 0)
+    {
+        int started = count_threads(nullptr) - threads_before;
+        std::printf("%s   %d thread(s), expected %d\n", started == exec_threads ? "ok  " : "FAIL", started, exec_threads);
+        if (started != exec_threads) failures++;
+    }
+    if (exec_threads >= 0 && exec_mask)
+    {
+        int on_mask = count_threads(exec_mask) - on_mask_before;
+        std::printf("%s   %d thread(s) on the CPU mask, expected %d\n", on_mask == exec_threads ? "ok  " : "FAIL", on_mask, exec_threads);
+        if (on_mask != exec_threads) failures++;
+    }
 
     TAPP_destroy_tensor_product(plan);
     TAPP_destroy_executor(ex);
@@ -203,6 +514,42 @@ int main()
     // Outer product, no contracted index
     auto ao = colmajor({3}, {i}), bo = colmajor({4}, {j}), dout = colmajor({3, 4}, {i, j});
     run<double>("f64 outer product", ao, bo, dout, I, I, I, I, 1.0, 0.5);
+
+    test_attributes();
+
+    // Executors with their own resources, on tensors large enough for TBLIS to split the work between threads
+    auto al = colmajor({30, 20, 16}, {i, k, l}), bl = colmajor({20, 16, 30}, {k, l, j}), dl = colmajor({30, 30}, {i, j});
+
+    // The mask holds the first two CPUs this process may use, or the only one
+    std::vector<int> cpus = usable_cpus();
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    for (size_t c = 0; c < cpus.size() && c < 2; c++) CPU_SET(cpus[c], &mask);
+    int count = 3;
+
+    TAPP_create_attr(&exec_attr);
+
+    TAPP_attr_set(exec_attr, TAPP_THREAD_COUNT, sizeof(count), &count);
+    exec_threads = limited(count);
+    run<double>("f64 contraction, thread count", al, bl, dl, I, I, I, I, 1.5, 0.5);
+    run<cd>("c64 contraction, conj C, thread count", al, bl, dl, I, I, CJ, I, alpha, beta);
+
+    TAPP_attr_set(exec_attr, TAPP_CPU_MASK, sizeof(mask), &mask);
+    exec_mask = &mask;
+    run<double>("f64 contraction, thread count and CPU mask", al, bl, dl, I, I, I, I, 1.5, 0.5);
+    run<cd>("c64 contraction, conj all, count and mask", al, bl, dl, CJ, CJ, CJ, CJ, alpha, beta);
+
+    TAPP_attr_clear(exec_attr, TAPP_THREAD_COUNT);
+    exec_threads = limited(CPU_COUNT(&mask));
+    run<double>("f64 contraction, CPU mask", al, bl, dl, I, I, I, I, 1.5, 0.5);
+    run<cd>("c64 contraction, conj C, CPU mask", al, bl, dl, I, I, CJ, I, alpha, beta);
+
+    TAPP_destroy_attr(exec_attr);
+    exec_attr = 0; exec_threads = -1; exec_mask = nullptr;
+
+    test_executors(cpus);
+    test_plan_lifetime();
+    test_plan_indices();
 
     TAPP_shutdown();
 
