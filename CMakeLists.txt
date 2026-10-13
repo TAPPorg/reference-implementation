@@ -316,6 +316,40 @@ if(BUILD_TESTING)
     )
 
   # ----------------------------------------------------------------------------
+  # CCD
+
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-ccd)
+
+    target_sources(
+      tapp-reference-ccd
+      PRIVATE
+        examples/CCD/ccd.c
+      )
+
+    # Only the header of tapp-tblis is used: the library is loaded at runtime
+    target_include_directories(
+      tapp-reference-ccd
+      PRIVATE
+        $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+      )
+
+    target_compile_definitions(
+      tapp-reference-ccd
+      PRIVATE
+        TAPP_TBLIS_LIBPATH="$<TARGET_FILE:tapp-tblis>"
+      )
+
+    target_link_libraries(
+      tapp-reference-ccd
+      PRIVATE
+        multi-tapp
+      )
+
+    add_dependencies(tapp-reference-ccd tapp-tblis)
+  endif()
+
+  # ----------------------------------------------------------------------------
   # exercise: contraction
 
   if(TAPP_REFERENCE_BUILD_EXERCISE)
