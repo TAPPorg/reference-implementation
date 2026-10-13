@@ -3,6 +3,7 @@
 
 TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
                                             TAPP_tensor_product* plan,
+                                            TAPP_executor exec,
                                             TAPP_element_op op_A,
                                             TAPP_tensor_info A,
                                             const int64_t* idx_A,
@@ -21,6 +22,11 @@ TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
     {
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
+    }
+    if (exec == 0)
+    {
+        fprintf(stderr, "ERROR: Called function with NULL executor\n");
+        return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
     if (A == 0)
     {
@@ -55,6 +61,12 @@ TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
+    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    if (backend != multi_tapp_exec->backend)
+    {
+        return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
+    }
+
     struct Multi_TAPP_tensor_info* multi_tapp_info_A = (struct Multi_TAPP_tensor_info*)A;
     if (backend != multi_tapp_info_A->backend)
     {
@@ -87,6 +99,7 @@ TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
     multi_tapp_plan->backend = backend;
 
     TAPP_error error = backend_ptr->TAPP_create_tensor_product(&multi_tapp_plan->plan,
+                                                               multi_tapp_exec->exec,
                                                                op_A, multi_tapp_info_A->info, idx_A,
                                                                op_B, multi_tapp_info_B->info, idx_B,
                                                                op_C, multi_tapp_info_C->info, idx_C,

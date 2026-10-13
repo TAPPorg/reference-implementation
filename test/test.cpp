@@ -1298,12 +1298,12 @@ bool test_hadamard_product()
     int op_C = 0;
     int op_D = 0;
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1363,12 +1363,12 @@ bool test_contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1432,14 +1432,14 @@ bool test_commutativity()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product planAB;
-    TAPP_create_tensor_product(&planAB,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_tensor_product planBA;
-    TAPP_create_tensor_product(&planBA,0, info_B, idx_B, 0, info_A, idx_A, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product planAB;
+    TAPP_create_tensor_product(&planAB, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_tensor_product planBA;
+    TAPP_create_tensor_product(&planBA, exec, 0, info_B, idx_B, 0, info_A, idx_A, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(planAB, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1520,7 +1520,7 @@ bool test_permutations()
         TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
         TAPP_tensor_info info_D;
         TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
-        TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+        TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
         TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
         run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
                     nmode_B, extents_B, strides_B, B, 0, idx_B,
@@ -1582,12 +1582,12 @@ bool test_equal_extents()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1647,12 +1647,12 @@ bool test_outer_product()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-    
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1712,12 +1712,12 @@ bool test_full_contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1777,12 +1777,12 @@ bool test_zero_dim_tensor_contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1842,12 +1842,12 @@ bool test_one_dim_tensor_contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1907,12 +1907,12 @@ bool test_subtensor_unchanged_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -1972,12 +1972,12 @@ bool test_subtensor_lower_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2037,12 +2037,12 @@ bool test_negative_strides()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);    
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
@@ -2101,12 +2101,12 @@ bool test_negative_strides_subtensor_unchanged_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2166,12 +2166,12 @@ bool test_negative_strides_subtensor_lower_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2231,12 +2231,12 @@ bool test_mixed_strides()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
     run_tblis_mult(nmode_A, extents_A, strides_A, A, 0, idx_A,
@@ -2295,12 +2295,12 @@ bool test_mixed_strides_subtensor_unchanged_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2360,12 +2360,12 @@ bool test_mixed_strides_subtensor_lower_nmode()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2425,12 +2425,12 @@ bool test_contraction_double_precision()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2495,12 +2495,12 @@ bool test_contraction_complex()
     int op_C = rand(0, 1);
     int op_D = rand(0, 1);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2565,12 +2565,12 @@ bool test_contraction_complex_double_precision()
     int op_C = rand(0, 1);
     int op_D = rand(0, 1);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     int terr = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2639,12 +2639,12 @@ bool test_zero_stride()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2704,12 +2704,12 @@ bool test_isolated_idx()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2769,12 +2769,12 @@ bool test_repeated_idx()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -2834,12 +2834,12 @@ bool test_hadamard_and_free()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
@@ -2900,12 +2900,12 @@ bool test_hadamard_and_contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)data_A, (void*)data_B, (void*)&beta, (void*)data_C, (void*)data_D);
 
@@ -2988,12 +2988,12 @@ bool test_error_too_many_idx_D()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     int error_status = TAPP_execute_product(plan, exec, &status, (void*)&alpha, (void*)A, (void*)B, (void*)&beta, (void*)C, (void*)D);
 
@@ -3076,13 +3076,13 @@ bool test_error_non_matching_ext()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    int error_status;
-    error_status = TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    int error_status;
+    error_status = TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     if (error_status == 0)
     {
@@ -3169,13 +3169,13 @@ bool test_error_C_other_structure()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_tensor_product plan;
-    int error_status;
-    error_status = TAPP_create_tensor_product(&plan,0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
-    TAPP_status status;
-
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_product plan;
+    int error_status;
+    error_status = TAPP_create_tensor_product(&plan, exec, 0, info_A, idx_A, 0, info_B, idx_B, 0, info_C, idx_C, 0, info_D, idx_D, TAPP_DEFAULT_PREC);
+    TAPP_status status;
 
     if (error_status == 0)
     {

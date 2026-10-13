@@ -60,16 +60,16 @@ static bool create_objects(const char* lib, struct objects* o)
     int64_t idx_A[2] = {'i', 'k'};
     int64_t idx_B[2] = {'k', 'j'};
     int64_t idx_D[2] = {'i', 'j'};
-    error = Multi_TAPP_create_tensor_product(o->backend, &o->plan,
+    error = Multi_TAPP_create_executor(o->backend, &o->exec, 0);
+    check(error == 0, lib, "create executor with default attributes");
+
+    error = Multi_TAPP_create_tensor_product(o->backend, &o->plan, o->exec,
                                              TAPP_IDENTITY, o->info_A, idx_A,
                                              TAPP_IDENTITY, o->info_B, idx_B,
                                              TAPP_IDENTITY, o->info_C, idx_D,
                                              TAPP_IDENTITY, o->info_D, idx_D,
                                              TAPP_DEFAULT_PREC);
     check(error == 0, lib, "create tensor product");
-
-    error = Multi_TAPP_create_executor(o->backend, &o->exec, 0);
-    check(error == 0, lib, "create executor with default attributes");
 
     return failures == 0;
 }
@@ -112,7 +112,7 @@ static void check_backend_error(const char* lib, struct objects* o)
     int64_t idx_C[2] = {'i', 'x'};
     int64_t idx_D[2] = {'i', 'j'};
     TAPP_tensor_product plan;
-    TAPP_error error = Multi_TAPP_create_tensor_product(o->backend, &plan,
+    TAPP_error error = Multi_TAPP_create_tensor_product(o->backend, &plan, o->exec,
                                                         TAPP_IDENTITY, o->info_A, idx_A,
                                                         TAPP_IDENTITY, o->info_B, idx_B,
                                                         TAPP_IDENTITY, o->info_C, idx_C,
@@ -138,13 +138,20 @@ static void check_foreign_objects(const char* lib, struct objects* o, struct obj
     int64_t idx_B[2] = {'k', 'j'};
     int64_t idx_D[2] = {'i', 'j'};
     TAPP_tensor_product plan;
-    error = Multi_TAPP_create_tensor_product(o->backend, &plan,
+    error = Multi_TAPP_create_tensor_product(o->backend, &plan, o->exec,
                                              TAPP_IDENTITY, other->info_A, idx_A,
                                              TAPP_IDENTITY, o->info_B, idx_B,
                                              TAPP_IDENTITY, o->info_C, idx_D,
                                              TAPP_IDENTITY, o->info_D, idx_D,
                                              TAPP_DEFAULT_PREC);
     check(error == MULTI_TAPP_ERROR_TENSOR_INFO_A_WRONG_BACKEND, lib, "reject tensor product using tensor info from another backend");
+    error = Multi_TAPP_create_tensor_product(o->backend, &plan, other->exec,
+                                             TAPP_IDENTITY, o->info_A, idx_A,
+                                             TAPP_IDENTITY, o->info_B, idx_B,
+                                             TAPP_IDENTITY, o->info_C, idx_D,
+                                             TAPP_IDENTITY, o->info_D, idx_D,
+                                             TAPP_DEFAULT_PREC);
+    check(error == MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND, lib, "reject tensor product using executor from another backend");
 
     double A[4] = {1, 2, 3, 4};
     double B[4] = {5, 6, 7, 8};

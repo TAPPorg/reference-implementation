@@ -6,6 +6,7 @@
 
 TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
                                                         TAPP_tensor_product* plan,
+                                                        TAPP_executor exec,
                                                         TAPP_element_op op_A,
                                                         TAPP_tensor_info A,
                                                         const int64_t* idx_A,

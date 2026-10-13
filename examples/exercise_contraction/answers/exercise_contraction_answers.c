@@ -7,7 +7,7 @@
 /*
  * TODO:
  *  1. Fill in the arguments for creating the tensor (Line 47).
- *  2. Complete the function call to create the execution plan. (Line 108)
+ *  2. Complete the function call to create the execution plan. (Line 114)
  *  3. Fill in the arguments for the execution of the product. (Line 178)
  *  5. Fill in arguments to fetch the error message. (204)
  * For a complete example usage. Look at examples/driver.c
@@ -96,6 +96,12 @@ int main(int argc, char const *argv[])
     int64_t idx_C[2] = {'b', 'd'};
     int64_t idx_D[2] = {'b', 'd'};
 
+    // Declare executor
+    TAPP_executor exec;
+
+    // Create executor
+    TAPP_create_executor(&exec, 0);
+
     // Declare plan
     TAPP_tensor_product plan;
 
@@ -105,13 +111,7 @@ int main(int argc, char const *argv[])
      * Uncomment code.
      * Fill in: the plan, computation information for tensor A and precision.
      */
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
-
-    // Declare executor
-    TAPP_executor exec;
-
-    // Create executor
-    TAPP_create_executor(&exec, 0);
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare status object
     TAPP_status status;

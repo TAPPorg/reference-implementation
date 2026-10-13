@@ -170,6 +170,7 @@ def _api():
             "TAPP_create_tensor_product",
             [
                 ctypes.POINTER(TAPP_tensor_product),
+                TAPP_executor,
                 ctypes.c_int,
                 TAPP_tensor_info,
                 ctypes.POINTER(ctypes.c_int64),
@@ -255,11 +256,12 @@ def indices_to_array(indices):
     return (ctypes.c_int64 * len(codes))(*codes)
 
 
-def create_tensor_product(op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C, op_D, D, idx_D, prec):
+def create_tensor_product(executor, op_A, A, idx_A, op_B, B, idx_B, op_C, C, idx_C, op_D, D, idx_D, prec):
     plan = TAPP_tensor_product()
     _check(
         _api().create_tensor_product(
             ctypes.byref(plan),
+            executor,
             op_A,
             A,
             indices_to_array(idx_A),

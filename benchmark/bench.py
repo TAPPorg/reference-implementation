@@ -155,6 +155,7 @@ def run_contraction(benchmark, executor):
         }
 
         plan = tapp_bindings.create_tensor_product(
+            executor,
             b.ops["a"],
             infos["a"],
             b.indices["a"],

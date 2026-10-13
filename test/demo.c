@@ -90,12 +90,14 @@ void contraction()
     int64_t idx_C[3] = {'a', 'd', 'e'};
     int64_t idx_D[3] = {'a', 'd', 'e'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
     // int exec_id = 1;
     // exec = (intptr_t)&exec_id;
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -202,10 +204,12 @@ void hadamard()
     int64_t idx_C[2] = {'a', 'b'};
     int64_t idx_D[2] = {'a', 'b'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 3;
@@ -297,10 +301,12 @@ void complex_num()
     int64_t idx_C[2] = {'a', 'c'};
     int64_t idx_D[2] = {'a', 'c'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float complex alpha = 1;
@@ -375,10 +381,12 @@ void conjugate()
     int64_t idx_C[2] = {'a', 'c'};
     int64_t idx_D[2] = {'a', 'c'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float complex alpha = 1;
@@ -453,10 +461,12 @@ void zero_dim()
     int64_t idx_C[2] = {'a', 'b'};
     int64_t idx_D[2] = {'a', 'b'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -529,10 +539,12 @@ void one_ext_contracted()
     int64_t idx_C[3] = {'a', 'e', 'f'};
     int64_t idx_D[3] = {'a', 'e', 'f'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -633,10 +645,12 @@ void one_ext_transfered()
     int64_t idx_C[4] = {'a', 'b', 'e', 'f'};
     int64_t idx_D[4] = {'a', 'b', 'e', 'f'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -737,10 +751,12 @@ void chained_diff_op()
     int64_t idx_C[3] = {'a', 'd', 'e'};
     int64_t idx_D[3] = {'a', 'd', 'e'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 2;
@@ -809,7 +825,7 @@ void chained_diff_op()
     TAPP_tensor_product plan2;
     TAPP_element_op op_E = TAPP_IDENTITY;
     int64_t idx_E[3] = {'a', 'd', 'e'};
-    TAPP_create_tensor_product(&plan2,op_D, info_D, idx_D, op_C, info_C, idx_C, op_C, info_C, idx_C, op_E, info_E, idx_E, prec);
+    TAPP_create_tensor_product(&plan2, exec, op_D, info_D, idx_D, op_C, info_C, idx_C, op_C, info_C, idx_C, op_E, info_E, idx_E, prec);
 
     float E[16] = {
         1, 2, 3, 4,
@@ -868,10 +884,12 @@ void chained_same_op()
     int64_t idx_C[2] = {'a', 'b'};
     int64_t idx_D[2] = {'a', 'b'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 3;
@@ -976,10 +994,12 @@ void negative_str()
     int64_t idx_C[3] = {'a', 'd', 'e'};
     int64_t idx_D[3] = {'a', 'd', 'e'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -1083,10 +1103,12 @@ void subtensors()
     int64_t idx_C[2] = {'a', 'd'};
     int64_t idx_D[2] = {'a', 'd'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;

@@ -242,12 +242,6 @@ static void test_executors(const std::vector<int>& cpus)
         return std::all_of(D.begin(), D.end(), [value](double x) { return std::abs(x - value) < 1e-9; });
     };
 
-    TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
-    TAPP_tensor_product plan;
-    TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
-                               TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
-    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
-
     std::vector<TAPP_executor> ex(executors);
     std::vector<cpu_set_t> masks(executors);
     std::vector<int> on_mask_before(executors);
@@ -268,6 +262,13 @@ static void test_executors(const std::vector<int>& cpus)
     }
     check("executors: create", created);
     if (!created) return;
+
+    // One plan, created with the first executor and executed on all of them
+    TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, ex[0], TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                               TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
 
     bool waited_one = true, waited_all = true;
     std::vector<TAPP_status> st(executors * tasks);
@@ -334,10 +335,13 @@ static void test_executors(const std::vector<int>& cpus)
 static bool plan_created(const T& a, const T& b, const T& d)
 {
     TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+    TAPP_executor ex;
+    TAPP_create_executor(&ex, 0);
     TAPP_tensor_product plan;
-    TAPP_error e = TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+    TAPP_error e = TAPP_create_tensor_product(&plan, ex, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
                                               TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(),
                                               TAPP_DEFAULT_PREC);
+    TAPP_destroy_executor(ex);
     TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
     if (e == 0) TAPP_destroy_tensor_product(plan);
     return e == 0;
@@ -375,7 +379,7 @@ static void test_plan_lifetime()
     {
         TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
         TAPP_tensor_product plan;
-        TAPP_create_tensor_product(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+        TAPP_create_tensor_product(&plan, ex, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
                                    TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
         TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
 
@@ -427,7 +431,7 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     if (ee != 0) { std::printf("FAIL %-45s create_executor returned %d\n", name, ee); failures++; return; }
     TAPP_tensor_info ia = info(a, dtype<V>()), ib = info(b, dtype<V>()), ic = info(d, dtype<V>()), id = info(d, dtype<V>());
     TAPP_tensor_product plan;
-    TAPP_error e = TAPP_create_tensor_product(&plan, opA, ia, a.idx.data(), opB, ib, b.idx.data(),
+    TAPP_error e = TAPP_create_tensor_product(&plan, ex, opA, ia, a.idx.data(), opB, ib, b.idx.data(),
                                               opC, ic, d.idx.data(), opD, id, d.idx.data(), TAPP_DEFAULT_PREC);
     if (e != 0) { std::printf("FAIL %-45s create_tensor_product returned %d\n", name, e); failures++; return; }
 

@@ -81,17 +81,17 @@ int main(int argc, char const *argv[])
     /* Remove */ int64_t idx_C[2] = {'b', 'd'};
     /* Remove */ int64_t idx_D[2] = {'b', 'd'};
 
-    // Declare plan
-    /* Remove */ TAPP_tensor_product plan;
-
-    // Create plan/Assign the options to the plan
-    /* Remove */ TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
-
     // Declare executor
     /* Remove */ TAPP_executor exec;
 
     // Create executor
     TAPP_create_executor(&exec, 0);
+
+    // Declare plan
+    /* Remove */ TAPP_tensor_product plan;
+
+    // Create plan/Assign the options to the plan
+    /* Remove */ TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare status object
     /* Remove */ TAPP_status status;

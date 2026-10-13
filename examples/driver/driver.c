@@ -79,10 +79,6 @@ int main(int argc, char const *argv[])
 
     TAPP_prectype prec = TAPP_DEFAULT_PREC; //Choose the calculation precision
 
-    TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation 
-
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
-
     /*
      * Decide which implementation to use with a executor (not yet implemented)
      */
@@ -91,6 +87,10 @@ int main(int argc, char const *argv[])
     TAPP_create_executor(&exec, 0); // Creation of executor
     // int exec_id = 1; // Choose executor
     // exec = (intptr_t)&exec_id; // Assign executor
+
+    TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec); // Assign the calculation options to the variable
 
     /*
      * Status objects are used to know the status of the execution process (not yet implemented)

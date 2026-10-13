@@ -37,6 +37,7 @@ struct Multi_TAPP_backend
     TAPP_error (*TAPP_wait_one)(TAPP_executor exec, TAPP_status status);
     TAPP_error (*TAPP_wait_all)(TAPP_executor exec);
     TAPP_error (*TAPP_create_tensor_product)(TAPP_tensor_product* plan,
+                                             TAPP_executor exec,
                                              TAPP_element_op op_A,
                                              TAPP_tensor_info A,
                                              const int64_t* idx_A,

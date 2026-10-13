@@ -47,10 +47,12 @@ int main(int argc, char const *argv[])
     int64_t idx_C[2] = {'a', 'd'};
     int64_t idx_D[3] = {'a', 'd'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan,op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
     TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;

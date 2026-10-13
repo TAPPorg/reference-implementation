@@ -16,6 +16,7 @@ tapp_so = "/lustre/orion/chp109/world-shared/Tensor_Product/lib/libtapp.so"
 TAPP_create_tensor_product = CDLL(tapp_so).TAPP_create_tensor_product
 TAPP_create_tensor_product.restype = c_int
 TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # plan
+									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
 									   c_int, # op_A
 									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # A
 									   POINTER(c_int64), # idx_A
@@ -151,16 +152,17 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	idx_C_c = (c_int64 * len(idx_C))(*idx_C)
 	idx_D_c = (c_int64 * len(idx_D))(*idx_D)
 
+	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
+	TAPP_create_executor(byref(exec), 0) # attr = 0: default executor behavior
+
 	plan = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_product(byref(plan),
+	TAPP_create_tensor_product(byref(plan), exec,
 							c_int(op_A), tensor_info_A, idx_A_c,
 							c_int(op_B), tensor_info_B, idx_B_c,
 							c_int(op_C), tensor_info_C, idx_C_c,
 							c_int(op_D), tensor_info_D, idx_D_c,
 							-1)
-	
-	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_executor(byref(exec), 0) # attr = 0: default executor behavior
+
 	status = c_int64(0)
 	A_ptr = A.ctypes.data_as(POINTER(c_double))
 	B_ptr = B.ctypes.data_as(POINTER(c_double))
