@@ -324,6 +324,8 @@ if(BUILD_TESTING)
     target_sources(
       tapp-reference-ccd
       PRIVATE
+        examples/CCD/run_file.c
+        examples/CCD/run_file.h
         examples/CCD/ccd.c
       )
 
