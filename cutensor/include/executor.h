@@ -4,6 +4,7 @@
 #include <tapp/executor.h>
 
 #include "error.h"
+#include <unordered_map>
 
 struct executor
 {

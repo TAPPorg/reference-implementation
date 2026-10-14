@@ -58,3 +58,10 @@ TAPP_error TAPP_wait_all(TAPP_executor exec)
     if (cerr != cudaSuccess) return tapp_error(cerr);
     return TAPP_SUCCESS;
 }
+
+TAPP_error TAPP_wait_one(TAPP_executor exec, TAPP_status status)
+{
+    cudaError_t cerr = cudaEventSynchronize(((struct status*) status)->event);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    return TAPP_SUCCESS;
+}

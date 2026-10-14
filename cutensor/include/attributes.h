@@ -4,7 +4,14 @@
 #include <tapp/attributes.h>
 
 #include <cstring>
+#include <map>
+#include <vector>
 
-#define ATTR_KEY_USE_DEVICE_MEMORY 0
+typedef std::map<TAPP_key, std::vector<char>> attributes;
+
+enum {
+    CUTAPP_STREAM,
+    CUTAPP_DEVICE,
+};
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_ATTRIBUTES_H_ */
