@@ -5,6 +5,7 @@
  */
 
 #include <tapp.h>
+#include <tapp_cutensor.h>
 
 #include <cuda_runtime.h>
 
@@ -29,6 +30,7 @@ void chained_same_op();
 void negative_str();
 void subtensors();
 void wait_one();
+void attributes();
 void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data);
 
 int main(int argc, char const *argv[])
@@ -57,6 +59,8 @@ int main(int argc, char const *argv[])
     subtensors();
     printf("Wait one: \n");
     wait_one();
+    printf("Attributes: \n");
+    attributes();
     return 0;
 }
 
@@ -1630,6 +1634,42 @@ void wait_one()
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_tensor_info(info_E);
     TAPP_destroy_executor(exec);
+}
+
+void attributes(){
+    TAPP_attr attr;
+    TAPP_create_attr(&attr);
+
+    int* device_id;
+    size_t size;
+    cudaStream_t stream;
+
+    printf("Default values of attributes:\n");
+    printf("---------------------------\n");
+    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
+    printf("TAPP_CUTENSOR_DEVICE (should be 0): %i\n", *device_id);
+    printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", sizeof(int), size);
+    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
+    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 1): %i\n", stream==nullptr);
+    printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n", 0, size);
+
+    // update attributes
+    *device_id = 1;
+    TAPP_attr_set(attr, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) device_id);
+
+    cudaStreamCreate(&stream);
+    TAPP_attr_set(attr, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream);
+
+    printf("Values of attributes after update:\n");
+    printf("---------------------------\n");
+    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
+    printf("TAPP_CUTENSOR_DEVICE (should be 1): %i\n", *device_id);
+    printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", sizeof(int), size);
+    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
+    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 0): %i\n", stream==nullptr);
+    printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n", sizeof(cudaStream_t), size);
+
+    TAPP_destroy_attr(attr);
 }
 
 void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data)

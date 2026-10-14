@@ -296,12 +296,14 @@ if(BUILD_TESTING)
         test/cutensor_demo.cpp
         test/helpers.c
         test/helpers.h
+        cutensor/include/tapp_cutensor.h
       )
 
     target_include_directories(
       tapp-cutensor-demo
       PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/cutensor/include
     )
 
     target_link_libraries(
