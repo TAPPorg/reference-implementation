@@ -352,6 +352,41 @@ if(BUILD_TESTING)
   endif()
 
   # ----------------------------------------------------------------------------
+  # asynchronous
+
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-async)
+
+    target_sources(
+      tapp-reference-async
+      PRIVATE
+        examples/asynchronous/async.c
+      )
+
+    # Only the header of tapp-tblis is used: the library is loaded at runtime
+    target_include_directories(
+      tapp-reference-async
+      PRIVATE
+        $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+      )
+
+    target_compile_definitions(
+      tapp-reference-async
+      PRIVATE
+        TAPP_TBLIS_LIBPATH="$<TARGET_FILE:tapp-tblis>"
+        TAPP_REFERENCE_LIBPATH="$<TARGET_FILE:tapp-reference>"
+      )
+
+    target_link_libraries(
+      tapp-reference-async
+      PRIVATE
+        multi-tapp
+      )
+
+    add_dependencies(tapp-reference-async tapp-tblis tapp-reference)
+  endif()
+
+  # ----------------------------------------------------------------------------
   # exercise: contraction
 
   if(TAPP_REFERENCE_BUILD_EXERCISE)
