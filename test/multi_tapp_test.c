@@ -22,7 +22,7 @@ static void check(bool condition, const char* lib, const char* what)
 
 struct objects
 {
-    TAPP_backend backend;
+    Multi_TAPP_backend backend;
     TAPP_tensor_info info_A, info_B, info_C, info_D;
     TAPP_tensor_product plan;
     TAPP_executor exec;
@@ -170,7 +170,7 @@ static void check_foreign_objects(const char* lib, struct objects* o, struct obj
 static void check_missing_library(void)
 {
     const char* lib = "missing library";
-    TAPP_backend backend = 0;
+    Multi_TAPP_backend backend = 0;
     TAPP_error error = Multi_TAPP_create_backend(&backend, "./this-tapp-implementation-does-not-exist.so");
     check(error == MULTI_TAPP_ERROR_DLOPEN_FAILED, lib, "create backend fails");
     check(!Multi_TAPP_check_success(0, error), lib, "check_success without a backend");

@@ -1,7 +1,7 @@
 #include "../include/multi_tapp/product.h"
 #include "internal.h"
 
-TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
+TAPP_error Multi_TAPP_create_tensor_product(Multi_TAPP_backend backend,
                                             TAPP_tensor_product* plan,
                                             TAPP_executor exec,
                                             TAPP_element_op op_A,
@@ -116,7 +116,7 @@ TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
     return MULTI_TAPP_SUCCESS;
 }
 
-TAPP_error Multi_TAPP_destroy_tensor_product(TAPP_backend backend,
+TAPP_error Multi_TAPP_destroy_tensor_product(Multi_TAPP_backend backend,
                                              TAPP_tensor_product plan)
 {
     if (plan == 0)
@@ -148,7 +148,7 @@ TAPP_error Multi_TAPP_destroy_tensor_product(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
  
-TAPP_error Multi_TAPP_execute_product(TAPP_backend backend,
+TAPP_error Multi_TAPP_execute_product(Multi_TAPP_backend backend,
                                       TAPP_tensor_product plan,
                                       TAPP_executor exec,
                                       TAPP_status* status,
@@ -198,7 +198,7 @@ TAPP_error Multi_TAPP_execute_product(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_execute_batched_product(TAPP_backend backend,
+TAPP_error Multi_TAPP_execute_batched_product(Multi_TAPP_backend backend,
                                               TAPP_tensor_product plan,
                                               TAPP_executor exec,
                                               TAPP_status* status,

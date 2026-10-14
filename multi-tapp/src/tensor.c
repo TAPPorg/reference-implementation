@@ -1,7 +1,7 @@
 #include "../include/multi_tapp/tensor.h"
 #include "internal.h"
 
-TAPP_error Multi_TAPP_create_tensor_info(TAPP_backend backend,
+TAPP_error Multi_TAPP_create_tensor_info(Multi_TAPP_backend backend,
                                          TAPP_tensor_info* info,
                                          TAPP_datatype type,
                                          int nmode,
@@ -45,7 +45,7 @@ TAPP_error Multi_TAPP_create_tensor_info(TAPP_backend backend,
     return MULTI_TAPP_SUCCESS;
 }
 
-TAPP_error Multi_TAPP_destroy_tensor_info(TAPP_backend backend,
+TAPP_error Multi_TAPP_destroy_tensor_info(Multi_TAPP_backend backend,
                                           TAPP_tensor_info info)
 {
     if (info == 0)
@@ -79,7 +79,7 @@ TAPP_error Multi_TAPP_destroy_tensor_info(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
 
-int Multi_TAPP_get_nmodes(TAPP_backend backend,
+int Multi_TAPP_get_nmodes(Multi_TAPP_backend backend,
                           TAPP_tensor_info info)
 {
     if (backend == 0)
@@ -113,7 +113,7 @@ int Multi_TAPP_get_nmodes(TAPP_backend backend,
     return backend_ptr->TAPP_get_nmodes(multi_tapp_info->info);
 }
 
-TAPP_error Multi_TAPP_set_nmodes(TAPP_backend backend,
+TAPP_error Multi_TAPP_set_nmodes(Multi_TAPP_backend backend,
                                  TAPP_tensor_info info,
                                  int nmodes)
 {
@@ -146,7 +146,7 @@ TAPP_error Multi_TAPP_set_nmodes(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
 
-void Multi_TAPP_get_extents(TAPP_backend backend,
+void Multi_TAPP_get_extents(Multi_TAPP_backend backend,
                             TAPP_tensor_info info,
                             int64_t* extents)
 {
@@ -181,7 +181,7 @@ void Multi_TAPP_get_extents(TAPP_backend backend,
     backend_ptr->TAPP_get_extents(multi_tapp_info->info, extents);
 }
 
-TAPP_error Multi_TAPP_set_extents(TAPP_backend backend,
+TAPP_error Multi_TAPP_set_extents(Multi_TAPP_backend backend,
                                   TAPP_tensor_info info,
                                   const int64_t* extents)
 {
@@ -214,7 +214,7 @@ TAPP_error Multi_TAPP_set_extents(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
 
-void Multi_TAPP_get_strides(TAPP_backend backend,
+void Multi_TAPP_get_strides(Multi_TAPP_backend backend,
                             TAPP_tensor_info info,
                             int64_t* strides)
 {
@@ -249,7 +249,7 @@ void Multi_TAPP_get_strides(TAPP_backend backend,
     backend_ptr->TAPP_get_strides(multi_tapp_info->info, strides);
 }
 
-TAPP_error Multi_TAPP_set_strides(TAPP_backend backend,
+TAPP_error Multi_TAPP_set_strides(Multi_TAPP_backend backend,
                                   TAPP_tensor_info info,
                                   const int64_t* strides)
 {

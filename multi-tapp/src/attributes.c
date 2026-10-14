@@ -1,7 +1,7 @@
 #include "../include/multi_tapp/attributes.h"
 #include "internal.h"
 
-TAPP_error Multi_TAPP_create_attr(TAPP_backend backend, TAPP_attr *attr)
+TAPP_error Multi_TAPP_create_attr(Multi_TAPP_backend backend, TAPP_attr *attr)
 {
     if (attr == NULL)
     {
@@ -40,7 +40,7 @@ TAPP_error Multi_TAPP_create_attr(TAPP_backend backend, TAPP_attr *attr)
     return MULTI_TAPP_SUCCESS;
 }
 
-TAPP_error Multi_TAPP_destroy_attr(TAPP_backend backend, TAPP_attr attr)
+TAPP_error Multi_TAPP_destroy_attr(Multi_TAPP_backend backend, TAPP_attr attr)
 {
     if (attr == 0)
     {
@@ -71,7 +71,7 @@ TAPP_error Multi_TAPP_destroy_attr(TAPP_backend backend, TAPP_attr attr)
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_attr_set(TAPP_backend backend, TAPP_attr attr, TAPP_key key, size_t size, void* value)
+TAPP_error Multi_TAPP_attr_set(Multi_TAPP_backend backend, TAPP_attr attr, TAPP_key key, size_t size, void* value)
 {
     if (backend == 0)
     {
@@ -101,7 +101,7 @@ TAPP_error Multi_TAPP_attr_set(TAPP_backend backend, TAPP_attr attr, TAPP_key ke
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_attr_get(TAPP_backend backend, TAPP_attr attr, TAPP_key key, size_t *size, void** value)
+TAPP_error Multi_TAPP_attr_get(Multi_TAPP_backend backend, TAPP_attr attr, TAPP_key key, size_t *size, void** value)
 {
     if (backend == 0)
     {
@@ -131,7 +131,7 @@ TAPP_error Multi_TAPP_attr_get(TAPP_backend backend, TAPP_attr attr, TAPP_key ke
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_attr_clear(TAPP_backend backend, TAPP_attr attr, TAPP_key key)
+TAPP_error Multi_TAPP_attr_clear(Multi_TAPP_backend backend, TAPP_attr attr, TAPP_key key)
 {
     if (backend == 0)
     {

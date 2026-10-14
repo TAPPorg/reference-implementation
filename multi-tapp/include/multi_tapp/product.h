@@ -4,7 +4,7 @@
 #include "backend.h"
 #include "tapp/product.h"
 
-TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
+TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_product(Multi_TAPP_backend backend,
                                                         TAPP_tensor_product* plan,
                                                         TAPP_executor exec,
                                                         TAPP_element_op op_A,
@@ -21,9 +21,9 @@ TAPP_EXPORT TAPP_error Multi_TAPP_create_tensor_product(TAPP_backend backend,
                                                         const int64_t* idx_D,
                                                         TAPP_prectype prec);
 
-TAPP_EXPORT TAPP_error Multi_TAPP_destroy_tensor_product(TAPP_backend backend, TAPP_tensor_product plan);
+TAPP_EXPORT TAPP_error Multi_TAPP_destroy_tensor_product(Multi_TAPP_backend backend, TAPP_tensor_product plan);
 
-TAPP_EXPORT TAPP_error Multi_TAPP_execute_product(TAPP_backend backend,
+TAPP_EXPORT TAPP_error Multi_TAPP_execute_product(Multi_TAPP_backend backend,
                                                   TAPP_tensor_product plan,
                                                   TAPP_executor exec,
                                                   TAPP_status* status,
@@ -34,7 +34,7 @@ TAPP_EXPORT TAPP_error Multi_TAPP_execute_product(TAPP_backend backend,
                                                   const void* C,
                                                         void* D);
 
-TAPP_EXPORT TAPP_error Multi_TAPP_execute_batched_product(TAPP_backend backend,
+TAPP_EXPORT TAPP_error Multi_TAPP_execute_batched_product(Multi_TAPP_backend backend,
                                                           TAPP_tensor_product plan,
                                                           TAPP_executor exec,
                                                           TAPP_status* status,

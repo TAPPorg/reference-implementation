@@ -1,7 +1,7 @@
 #include "../include/multi_tapp/executor.h"
 #include "internal.h"
 
-TAPP_error Multi_TAPP_create_executor(TAPP_backend backend,
+TAPP_error Multi_TAPP_create_executor(Multi_TAPP_backend backend,
                                       TAPP_executor* exec,
                                       TAPP_attr attr)
 {
@@ -52,7 +52,7 @@ TAPP_error Multi_TAPP_create_executor(TAPP_backend backend,
     return  MULTI_TAPP_SUCCESS;
 }
 
-TAPP_error Multi_TAPP_destroy_executor(TAPP_backend backend,
+TAPP_error Multi_TAPP_destroy_executor(Multi_TAPP_backend backend,
                                        TAPP_executor exec)
 {
     if (exec == 0)
@@ -84,7 +84,7 @@ TAPP_error Multi_TAPP_destroy_executor(TAPP_backend backend,
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_wait_one(TAPP_backend backend, TAPP_executor exec, TAPP_status status)
+TAPP_error Multi_TAPP_wait_one(Multi_TAPP_backend backend, TAPP_executor exec, TAPP_status status)
 {
     if (backend == 0)
     {
@@ -114,7 +114,7 @@ TAPP_error Multi_TAPP_wait_one(TAPP_backend backend, TAPP_executor exec, TAPP_st
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_wait_all(TAPP_backend backend, TAPP_executor exec)
+TAPP_error Multi_TAPP_wait_all(Multi_TAPP_backend backend, TAPP_executor exec)
 {
     if (backend == 0)
     {

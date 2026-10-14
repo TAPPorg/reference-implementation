@@ -5,7 +5,7 @@ static bool is_multi_tapp_error(TAPP_error error);
 static TAPP_error multi_tapp_error_to_backend(TAPP_error error);
 static size_t write_error_message(char* message, size_t maxlen, const char* error_message);
 
-bool Multi_TAPP_check_success(TAPP_backend backend,
+bool Multi_TAPP_check_success(Multi_TAPP_backend backend,
                               TAPP_error error)
 {
     // Errors of multi-tapp itself, the backend is not needed (and might not exist)
@@ -26,7 +26,7 @@ bool Multi_TAPP_check_success(TAPP_backend backend,
     return backend_ptr->TAPP_check_success(multi_tapp_error_to_backend(error));
 }
 
-size_t Multi_TAPP_explain_error(TAPP_backend backend,
+size_t Multi_TAPP_explain_error(Multi_TAPP_backend backend,
                                 TAPP_error error,
                                 size_t maxlen,
                                 char* message)
@@ -69,7 +69,7 @@ size_t Multi_TAPP_explain_error(TAPP_backend backend,
     case MULTI_TAPP_ERROR_TENSOR_PRODUCT_WRONG_BACKEND:
         return write_error_message(message, maxlen,"Attempted use of TAPP_tensor_product from different implementation");
     case MULTI_TAPP_ERROR_INVALID_BACKEND:
-        return write_error_message(message, maxlen,"Attempted use of an invalid TAPP_backend");
+        return write_error_message(message, maxlen,"Attempted use of an invalid Multi_TAPP_backend");
     case MULTI_TAPP_ERROR_INVALID_ATTR:
         return write_error_message(message, maxlen,"Attempted use of an invalid TAPP_attr");
     case MULTI_TAPP_ERROR_INVALID_EXECUTOR:

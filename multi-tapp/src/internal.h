@@ -88,25 +88,25 @@ struct Multi_TAPP_backend
 /* The objects multi-tapp hands out: the object of the backend together with the backend that created it */
 struct Multi_TAPP_attr
 {
-    TAPP_backend backend;
+    Multi_TAPP_backend backend;
     TAPP_attr attr;
 };
 
 struct Multi_TAPP_executor
 {
-    TAPP_backend backend;
+    Multi_TAPP_backend backend;
     TAPP_executor exec;
 };
 
 struct Multi_TAPP_tensor_info
 {
-    TAPP_backend backend;
+    Multi_TAPP_backend backend;
     TAPP_tensor_info info;
 };
 
 struct Multi_TAPP_tensor_product
 {
-    TAPP_backend backend;
+    Multi_TAPP_backend backend;
     TAPP_tensor_product plan;
 };
 

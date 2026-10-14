@@ -158,7 +158,7 @@ static void create_indices(const char* labels, int64_t* idx)
 }
 
 // Prints the explanation of a failed call of the backend. Returns nonzero if the call failed.
-static int failed(TAPP_backend b, TAPP_error error, const char* what, int term)
+static int failed(Multi_TAPP_backend b, TAPP_error error, const char* what, int term)
 {
     if (Multi_TAPP_check_success(b, error)) return 0;
     char message[256];
@@ -194,7 +194,7 @@ static int shape_extents(int e_occ, int e_vir, const char* shape, int64_t* exten
     return nmode;
 }
 
-static void create_tensor_info(int e_occ, int e_vir, const char* shape, TAPP_backend backend, TAPP_tensor_info* info)
+static void create_tensor_info(int e_occ, int e_vir, const char* shape, Multi_TAPP_backend backend, TAPP_tensor_info* info)
 {
     int64_t ext[MAX_NMODE], str[MAX_NMODE];
     int nmode = shape_extents(e_occ, e_vir, shape, ext);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    TAPP_backend* backends = malloc(run.backend_count * sizeof(TAPP_backend));
+    Multi_TAPP_backend* backends = malloc(run.backend_count * sizeof(Multi_TAPP_backend));
 
     for (int i = 0; i < run.backend_count; i++)
     {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < run.executor_count; i++)
     {
-        TAPP_backend backend = backends[run.executors[i].backend];
+        Multi_TAPP_backend backend = backends[run.executors[i].backend];
         TAPP_attr attr = 0;
         if (run.executors[i].has_cpus)
         {

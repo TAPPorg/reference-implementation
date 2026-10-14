@@ -3,7 +3,7 @@
 
 static TAPP_error load_function(void* lib_handle, void** func, const char* func_name, bool crucial, TAPP_error error_code);
 
-TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
+TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *libpath)
 {
     if (backend == NULL)
     {
@@ -93,12 +93,12 @@ TAPP_error Multi_TAPP_create_backend(TAPP_backend* backend, const char *libpath)
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_get_strides), "TAPP_get_strides", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_set_strides), "TAPP_set_strides", false, 0);
 
-    *backend = (TAPP_backend)backend_ptr;
+    *backend = (Multi_TAPP_backend)backend_ptr;
 
     return 0;
 }
 
-TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend)
+TAPP_error Multi_TAPP_destroy_backend(Multi_TAPP_backend backend)
 {
     if (backend == 0)
     {
@@ -117,7 +117,7 @@ TAPP_error Multi_TAPP_destroy_backend(TAPP_backend backend)
     return 0;
 }
 
-TAPP_error Multi_TAPP_start(TAPP_backend backend)
+TAPP_error Multi_TAPP_start(Multi_TAPP_backend backend)
 {
     if (backend == 0)
     {
@@ -136,7 +136,7 @@ TAPP_error Multi_TAPP_start(TAPP_backend backend)
     return multi_tapp_error_from_backend(error);
 }
 
-TAPP_error Multi_TAPP_shutdown(TAPP_backend backend)
+TAPP_error Multi_TAPP_shutdown(Multi_TAPP_backend backend)
 {
     if (backend == 0)
     {

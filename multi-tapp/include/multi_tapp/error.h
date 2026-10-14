@@ -63,9 +63,9 @@ enum
     MULTI_TAPP_ERROR_LAST,
 };
 
-TAPP_EXPORT bool Multi_TAPP_check_success(TAPP_backend backend, TAPP_error error);
+TAPP_EXPORT bool Multi_TAPP_check_success(Multi_TAPP_backend backend, TAPP_error error);
 
-TAPP_EXPORT size_t Multi_TAPP_explain_error(TAPP_backend backend,
+TAPP_EXPORT size_t Multi_TAPP_explain_error(Multi_TAPP_backend backend,
                                             TAPP_error error,
                                             size_t maxlen,
                                             char* message);
