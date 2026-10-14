@@ -1,7 +1,7 @@
 #include "../include/executor.h"
 #include "../include/status.h"
 
-TAPP_error TAPP_create_executor(TAPP_executor* exec)
+TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 {
 
     struct executor* exec_struct = new struct executor;  
@@ -20,9 +20,9 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec)
     }
     exec_struct->libhandle = libhandle;
 
-    bool* use_device_memory = new bool(true);
-    exec_struct->attributes = new intptr_t[1];
-    exec_struct->attributes[0] = (intptr_t) use_device_memory;
+    // bool* use_device_memory = new bool(true);
+    // exec_struct->attributes = new intptr_t[1];
+    // exec_struct->attributes[0] = (intptr_t) use_device_memory;
 
     *exec = (TAPP_executor)exec_struct;
     return tapp_error(cerr);
@@ -40,8 +40,8 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
     delete exec_struct->libhandle;
 
-    delete (bool*)exec_struct->attributes[0];
-    delete[] exec_struct->attributes;
+    //delete (bool*)exec_struct->attributes[0];
+    //delete[] exec_struct->attributes;
     delete exec_struct;
 
     return tapp_error(cerr);
@@ -52,7 +52,7 @@ TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status)
     return create_status(*(((struct executor*) exec)->stream), status);
 }
 
-TAPP_error TAPP_wait_executor(TAPP_executor exec)
+TAPP_error TAPP_wait_all(TAPP_executor exec)
 {
     cudaError_t cerr = cudaStreamSynchronize(*(((struct executor*)exec)->stream));
     if (cerr != cudaSuccess) return tapp_error(cerr);

@@ -243,7 +243,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     cutensorHandle_t* libhandle = nullptr;
     libhandle = exec_struct->libhandle;
 
-    bool use_device_memory = *(bool*)((exec_struct->attributes)[ATTR_KEY_USE_DEVICE_MEMORY]);
     const bool do_permutation = ( ((struct product_plan*)plan)->op_D != TAPP_IDENTITY );
     const cudaStream_t stream = *(exec_struct->stream);
     cudaError_t cerr;
@@ -268,41 +267,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         E_d = E_d_alloc;
     }
 
-    if (use_device_memory)
-    {
-        A_d = (void*)A;
-        B_d = (void*)B;
-        C_d = (void*)C;
-        D_d = (void*)D;
-    }
-    else
-    {
-        cerr = cudaMallocAsync(&A_d_alloc, ((struct product_plan*)plan)->copy_size_A, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMallocAsync(&B_d_alloc, ((struct product_plan*)plan)->copy_size_B, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMallocAsync(&C_d_alloc, ((struct product_plan*)plan)->copy_size_C, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMallocAsync(&D_d_alloc, ((struct product_plan*)plan)->copy_size_D, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMemcpyAsync(A_d_alloc, (void*)((intptr_t)A + ((struct product_plan*)plan)->data_offset_A), ((struct product_plan*)plan)->copy_size_A, cudaMemcpyHostToDevice, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMemcpyAsync(B_d_alloc, (void*)((intptr_t)B + ((struct product_plan*)plan)->data_offset_B), ((struct product_plan*)plan)->copy_size_B, cudaMemcpyHostToDevice, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        cerr = cudaMemcpyAsync(C_d_alloc, (void*)((intptr_t)C + ((struct product_plan*)plan)->data_offset_C), ((struct product_plan*)plan)->copy_size_C, cudaMemcpyHostToDevice, stream);
-        if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-        A_d = (void*)((intptr_t)A_d_alloc + ((struct product_plan*)plan)->data_offset_A);
-        B_d = (void*)((intptr_t)B_d_alloc + ((struct product_plan*)plan)->data_offset_B);
-        C_d = (void*)((intptr_t)C_d_alloc + ((struct product_plan*)plan)->data_offset_C);
-        D_d = (void*)((intptr_t)D_d_alloc + ((struct product_plan*)plan)->data_offset_D);
-        if (do_permutation) {
-            E_d = (void*)((intptr_t)E_d_alloc + ((struct product_plan*)plan)->data_offset_D);
-        }
-        assert(uintptr_t(A_d) % 128 == 0);
-        assert(uintptr_t(B_d) % 128 == 0);
-        assert(uintptr_t(C_d) % 128 == 0);
-        assert(uintptr_t(D_d) % 128 == 0);
-    }
+    A_d = (void*)A;
+    B_d = (void*)B;
+    C_d = (void*)C;
+    D_d = (void*)D;
 
     err = cutensorPlanGetAttribute(*libhandle,
                 *contraction_plan,
@@ -358,20 +326,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         if (err != CUTENSOR_STATUS_SUCCESS) { result = tapp_error(err); goto cleanup; }
         free(perm_scalar_ptr);
         perm_scalar_ptr = nullptr;
-    }
-
-    if (!use_device_memory)
-    {
-        std::vector<int64_t> section_coordinates_D(((struct product_plan*)plan)->sections_nmode_D, 0);
-        for (size_t i = 0; i < ((struct product_plan*)plan)->sections_D; i++)
-        {
-            int64_t index = compute_index(section_coordinates_D.data(), ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_strides_D);
-            cerr = cudaMemcpyAsync((void*)((intptr_t)D + index * sizeof_datatype(((struct product_plan*)plan)->type_D)),
-                (void*)((intptr_t)D_d + index * sizeof_datatype(((struct product_plan*)plan)->type_D)),
-                ((struct product_plan*)plan)->section_size_D, cudaMemcpyDeviceToHost, stream);
-            if (cerr != cudaSuccess) { result = tapp_error(cerr); goto cleanup; }
-            increment_coordinates(section_coordinates_D.data(), ((struct product_plan*)plan)->sections_nmode_D, ((struct product_plan*)plan)->section_extents_D);
-        }
     }
 
     result = create_status(stream, status);

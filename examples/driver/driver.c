@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
      * Decide which implementation to use with a executor (not yet implemented)
      */
     TAPP_executor exec; // Declaration of executor
-    TAPP_create_executor(&exec); // Creation of executor
+    TAPP_create_executor(&exec, 0); // Creation of executor
 
     /*
      * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.

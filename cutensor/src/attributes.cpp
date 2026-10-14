@@ -3,6 +3,7 @@
 
 TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
 {
+    /*
     struct executor* executor_struct = (struct executor*) attr;
     switch (key)
     {
@@ -12,12 +13,13 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, void* value)
     
     default:
         return TAPP_ERR_INVALID_KEY;
-    }
+    } */
     return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
 {
+    /*
     struct executor* executor_struct = (struct executor*) attr;
     switch (key)
     {
@@ -27,12 +29,13 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, void** value)
     
     default:
         return TAPP_ERR_INVALID_KEY;
-    }
+    } */
     return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_key key)
 {
+    /*
     struct executor* executor_struct = (struct executor*) attr;
     switch (key)
     {
@@ -45,6 +48,6 @@ TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_key key)
     
     default:
         return TAPP_ERR_INVALID_KEY;
-    }
+    } */
     return TAPP_SUCCESS;
 }

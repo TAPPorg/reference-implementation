@@ -30,19 +30,6 @@ void negative_str();
 void subtensors();
 void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data);
 
-void check_status(TAPP_status status)
-{
-    TAPP_error op_error = TAPP_status_get_error(status);
-    if (!TAPP_check_success(op_error))
-    {
-        int len = TAPP_explain_error(op_error, 0, NULL);
-        char *buff = (char*)malloc((len + 1) * sizeof(char));
-        TAPP_explain_error(op_error, len + 1, buff);
-        printf("Operation failed: %s\n", buff);
-        free(buff);
-    }
-}
-
 int main(int argc, char const *argv[])
 {
     printf("Contraction: \n");
@@ -96,8 +83,9 @@ void contraction()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -186,8 +174,7 @@ void contraction()
     printf("%s", message_buff);
     free(message_buff);
 
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
@@ -201,7 +188,6 @@ void contraction()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -231,8 +217,9 @@ void hadamard()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -305,8 +292,7 @@ void hadamard()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -321,7 +307,6 @@ void hadamard()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -351,8 +336,9 @@ void complex_num()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -408,8 +394,7 @@ void complex_num()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
 
@@ -424,7 +409,6 @@ void complex_num()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -454,8 +438,9 @@ void conjugate()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -511,8 +496,7 @@ void conjugate()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
 
@@ -527,7 +511,6 @@ void conjugate()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -557,8 +540,9 @@ void zero_dim()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -612,8 +596,7 @@ void zero_dim()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -628,7 +611,6 @@ void zero_dim()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -658,8 +640,9 @@ void one_ext_contracted()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -741,8 +724,7 @@ void one_ext_contracted()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -757,7 +739,6 @@ void one_ext_contracted()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -787,8 +768,9 @@ void one_ext_transfered()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -870,8 +852,7 @@ void one_ext_transfered()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -886,7 +867,6 @@ void one_ext_transfered()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -916,8 +896,9 @@ void chained_diff_op()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -999,8 +980,7 @@ void chained_diff_op()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -1034,10 +1014,8 @@ void chained_diff_op()
 
     assert(uintptr_t(E_d) % 128 == 0);
     
-    TAPP_destroy_status(status);
     TAPP_execute_product(plan2, exec, &status, (void *)&alpha, (void *)D_d, (void *)C_d, (void *)&beta, (void *)C_d, (void *)E_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -1056,7 +1034,6 @@ void chained_diff_op()
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_tensor_info(info_E);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -1086,8 +1063,9 @@ void chained_same_op()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -1147,8 +1125,7 @@ void chained_same_op()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)D, (void*)D_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -1183,10 +1160,8 @@ void chained_same_op()
 
     assert(uintptr_t(E_d) % 128 == 0);
 
-    TAPP_destroy_status(status);
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)D_d, (void *)&beta, (void *)C_d, (void *)E_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     cudaMemcpy((void*)E, (void*)E_d, 16 * sizeof(float), cudaMemcpyDeviceToHost);
     
@@ -1202,7 +1177,6 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 
@@ -1245,7 +1219,7 @@ void chained_same_op()
     TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
     TAPP_status status;
 
     float alpha = 1;
@@ -1302,8 +1276,7 @@ void chained_same_op()
     float *B_ptr = &B[35];
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_ptr, (void *)B_ptr, (void *)&beta, (void *)C, (void *)D);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     print_tensor_s(nmode_D, extents_D, strides_D, D);
 
@@ -1312,7 +1285,6 @@ void chained_same_op()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
    
 }*/
@@ -1343,8 +1315,9 @@ void subtensors()
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
+
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -1468,8 +1441,7 @@ void subtensors()
     assert(uintptr_t(D_d) % 128 == 0);
 
     TAPP_execute_product(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d, (void *)D_d);
-    TAPP_wait_executor(exec);
-    check_status(status);
+    TAPP_wait_all(exec);
 
     int64_t super_extents_D[2] = {4, 3};
     int64_t super_strides_D[2] = {1, 4};
@@ -1486,7 +1458,6 @@ void subtensors()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
-    TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
 

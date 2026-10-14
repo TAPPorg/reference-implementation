@@ -71,7 +71,7 @@ int main(int argc, char const *argv[])
     TAPP_executor exec;
 
     // Create executor
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
 
     /*
      * Assign the options for the calculation.

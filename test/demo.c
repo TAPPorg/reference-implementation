@@ -77,7 +77,7 @@ void contraction()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -190,7 +190,7 @@ void hadamard()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -286,7 +286,7 @@ void complex_num()
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -365,7 +365,7 @@ void conjugate()
     TAPP_create_tensor_info(&info_D, TAPP_C32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -444,7 +444,7 @@ void zero_dim()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -521,7 +521,7 @@ void one_ext_contracted()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -626,7 +626,7 @@ void one_ext_transfered()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -731,7 +731,7 @@ void chained_diff_op()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -863,7 +863,7 @@ void chained_same_op()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -972,7 +972,7 @@ void negative_str()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
@@ -1080,7 +1080,7 @@ void subtensors()
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec,0);
 
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
