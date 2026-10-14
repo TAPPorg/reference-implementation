@@ -20,7 +20,7 @@
 #include <dlfcn.h>
 
 /* A loaded TAPP implementation and its functions. A function is NULL if the implementation does not provide it */
-struct Multi_TAPP_backend
+struct mt_backend
 {
     void* lib_handle;
     TAPP_error (*TAPP_start)(void);
@@ -86,25 +86,25 @@ struct Multi_TAPP_backend
 };
 
 /* The objects multi-tapp hands out: the object of the backend together with the backend that created it */
-struct Multi_TAPP_attr
+struct mt_attr
 {
     Multi_TAPP_backend backend;
     TAPP_attr attr;
 };
 
-struct Multi_TAPP_executor
+struct mt_executor
 {
     Multi_TAPP_backend backend;
     TAPP_executor exec;
 };
 
-struct Multi_TAPP_tensor_info
+struct mt_tensor_info
 {
     Multi_TAPP_backend backend;
     TAPP_tensor_info info;
 };
 
-struct Multi_TAPP_tensor_product
+struct mt_tensor_product
 {
     Multi_TAPP_backend backend;
     TAPP_tensor_product plan;

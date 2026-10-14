@@ -17,7 +17,7 @@ bool Multi_TAPP_check_success(Multi_TAPP_backend backend,
         return false;
     }
 
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_check_success == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_check_success\n");
@@ -105,7 +105,7 @@ size_t Multi_TAPP_explain_error(Multi_TAPP_backend backend,
         return write_error_message(message, maxlen,"No backend given to explain an error code of a backend");
     }
 
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_explain_error == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_explain_error\n");

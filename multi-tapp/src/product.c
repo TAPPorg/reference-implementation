@@ -54,44 +54,44 @@ TAPP_error Multi_TAPP_create_tensor_product(Multi_TAPP_backend backend,
         return MULTI_TAPP_ERROR_INVALID_ARGUMENT;
     }
 
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_create_tensor_product == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_create_tensor_product\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec = (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_tensor_info* multi_tapp_info_A = (struct Multi_TAPP_tensor_info*)A;
+    struct mt_tensor_info* multi_tapp_info_A = (struct mt_tensor_info*)A;
     if (backend != multi_tapp_info_A->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_INFO_A_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_tensor_info* multi_tapp_info_B = (struct Multi_TAPP_tensor_info*)B;
+    struct mt_tensor_info* multi_tapp_info_B = (struct mt_tensor_info*)B;
     if (backend != multi_tapp_info_B->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_INFO_B_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_tensor_info* multi_tapp_info_C = (struct Multi_TAPP_tensor_info*)C;
+    struct mt_tensor_info* multi_tapp_info_C = (struct mt_tensor_info*)C;
     if (backend != multi_tapp_info_C->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_INFO_C_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_tensor_info* multi_tapp_info_D = (struct Multi_TAPP_tensor_info*)D;
+    struct mt_tensor_info* multi_tapp_info_D = (struct mt_tensor_info*)D;
     if (backend != multi_tapp_info_D->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_INFO_D_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_tensor_product* multi_tapp_plan = malloc(sizeof(struct Multi_TAPP_tensor_product));
+    struct mt_tensor_product* multi_tapp_plan = malloc(sizeof(struct mt_tensor_product));
     if (multi_tapp_plan == NULL) {
         fprintf(stderr, "ERROR: Failed to allocate space for a tensor product plan\n");
         return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
@@ -129,14 +129,14 @@ TAPP_error Multi_TAPP_destroy_tensor_product(Multi_TAPP_backend backend,
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_destroy_tensor_product == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_destroy_tensor_product\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_tensor_product* multi_tapp_plan = (struct Multi_TAPP_tensor_product*)plan;
+    struct mt_tensor_product* multi_tapp_plan = (struct mt_tensor_product*)plan;
     if (backend != multi_tapp_plan->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_PRODUCT_WRONG_BACKEND;
@@ -174,20 +174,20 @@ TAPP_error Multi_TAPP_execute_product(Multi_TAPP_backend backend,
         fprintf(stderr, "ERROR: Called function with NULL executor\n");
         return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_execute_product == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_execute_product\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_tensor_product* multi_tapp_plan = (struct Multi_TAPP_tensor_product*)plan;
+    struct mt_tensor_product* multi_tapp_plan = (struct mt_tensor_product*)plan;
     if (backend != multi_tapp_plan->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_PRODUCT_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec =  (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec =  (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
@@ -225,20 +225,20 @@ TAPP_error Multi_TAPP_execute_batched_product(Multi_TAPP_backend backend,
         fprintf(stderr, "ERROR: Called function with NULL executor\n");
         return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_execute_batched_product == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_execute_batched_product\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_tensor_product* multi_tapp_plan = (struct Multi_TAPP_tensor_product*)plan;
+    struct mt_tensor_product* multi_tapp_plan = (struct mt_tensor_product*)plan;
     if (backend != multi_tapp_plan->backend)
     {
         return MULTI_TAPP_ERROR_TENSOR_PRODUCT_WRONG_BACKEND;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec = (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;

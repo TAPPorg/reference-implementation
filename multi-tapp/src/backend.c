@@ -11,7 +11,7 @@ TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *li
         return MULTI_TAPP_ERROR_INVALID_ARGUMENT;
     }
 
-    struct Multi_TAPP_backend* backend_ptr = malloc(sizeof(struct Multi_TAPP_backend));
+    struct mt_backend* backend_ptr = malloc(sizeof(struct mt_backend));
     if (backend_ptr == NULL) {
         fprintf(stderr, "ERROR: Failed to allocate space for a backend object\n");
         return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
@@ -106,7 +106,7 @@ TAPP_error Multi_TAPP_destroy_backend(Multi_TAPP_backend backend)
         return MULTI_TAPP_SUCCESS;
     }
 
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->lib_handle)
     {
         dlclose(backend_ptr->lib_handle);
@@ -124,7 +124,7 @@ TAPP_error Multi_TAPP_start(Multi_TAPP_backend backend)
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_start == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_start\n");
@@ -143,7 +143,7 @@ TAPP_error Multi_TAPP_shutdown(Multi_TAPP_backend backend)
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_shutdown == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_shutdown\n");

@@ -14,14 +14,14 @@ TAPP_error Multi_TAPP_create_attr(Multi_TAPP_backend backend, TAPP_attr *attr)
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_create_attr == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_create_attr\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_attr* multi_tapp_attr = malloc(sizeof(struct Multi_TAPP_attr));
+    struct mt_attr* multi_tapp_attr = malloc(sizeof(struct mt_attr));
     if (multi_tapp_attr == NULL) {
         fprintf(stderr, "ERROR: Failed to allocate space for an attribute object\n");
         return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
@@ -52,14 +52,14 @@ TAPP_error Multi_TAPP_destroy_attr(Multi_TAPP_backend backend, TAPP_attr attr)
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_destroy_attr == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_destroy_attr\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_attr* multi_tapp_attr = (struct Multi_TAPP_attr*)attr;
+    struct mt_attr* multi_tapp_attr = (struct mt_attr*)attr;
     if (backend != multi_tapp_attr->backend)
     {
         return MULTI_TAPP_ERROR_ATTR_WRONG_BACKEND;
@@ -83,14 +83,14 @@ TAPP_error Multi_TAPP_attr_set(Multi_TAPP_backend backend, TAPP_attr attr, TAPP_
         fprintf(stderr, "ERROR: Called function with NULL attribute\n");
         return MULTI_TAPP_ERROR_INVALID_ATTR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_attr_set == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_attr_set\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_attr* multi_tapp_attr = (struct Multi_TAPP_attr*)attr;
+    struct mt_attr* multi_tapp_attr = (struct mt_attr*)attr;
     if (backend != multi_tapp_attr->backend)
     {
         return MULTI_TAPP_ERROR_ATTR_WRONG_BACKEND;
@@ -113,14 +113,14 @@ TAPP_error Multi_TAPP_attr_get(Multi_TAPP_backend backend, TAPP_attr attr, TAPP_
         fprintf(stderr, "ERROR: Called function with NULL attribute\n");
         return MULTI_TAPP_ERROR_INVALID_ATTR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_attr_get == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_attr_get\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_attr* multi_tapp_attr = (struct Multi_TAPP_attr*)attr;
+    struct mt_attr* multi_tapp_attr = (struct mt_attr*)attr;
     if (backend != multi_tapp_attr->backend)
     {
         return MULTI_TAPP_ERROR_ATTR_WRONG_BACKEND;
@@ -143,14 +143,14 @@ TAPP_error Multi_TAPP_attr_clear(Multi_TAPP_backend backend, TAPP_attr attr, TAP
         fprintf(stderr, "ERROR: Called function with NULL attribute\n");
         return MULTI_TAPP_ERROR_INVALID_ATTR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_attr_clear == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_attr_clear\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_attr* multi_tapp_attr = (struct Multi_TAPP_attr*)attr;
+    struct mt_attr* multi_tapp_attr = (struct mt_attr*)attr;
     if (backend != multi_tapp_attr->backend)
     {
         return MULTI_TAPP_ERROR_ATTR_WRONG_BACKEND;

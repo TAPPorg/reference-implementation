@@ -17,24 +17,24 @@ TAPP_error Multi_TAPP_create_executor(Multi_TAPP_backend backend,
         return MULTI_TAPP_ERROR_INVALID_ARGUMENT;
     }
 
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_create_executor == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_create_executor\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
     
-    struct Multi_TAPP_attr* multi_tapp_attr = NULL;
+    struct mt_attr* multi_tapp_attr = NULL;
     if (attr != 0)
     {
-        multi_tapp_attr = (struct Multi_TAPP_attr*)attr;
+        multi_tapp_attr = (struct mt_attr*)attr;
         if (backend != multi_tapp_attr->backend)
         {
             return MULTI_TAPP_ERROR_ATTR_WRONG_BACKEND;
         }
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = malloc(sizeof(struct Multi_TAPP_executor));
+    struct mt_executor* multi_tapp_exec = malloc(sizeof(struct mt_executor));
     if (multi_tapp_exec == NULL) {
         fprintf(stderr, "ERROR: Failed to allocate space for an executor object\n");
         return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
@@ -65,14 +65,14 @@ TAPP_error Multi_TAPP_destroy_executor(Multi_TAPP_backend backend,
         fprintf(stderr, "ERROR: Called function with NULL backend\n");
         return MULTI_TAPP_ERROR_INVALID_BACKEND;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_destroy_executor == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_destroy_executor\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec = (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
@@ -96,14 +96,14 @@ TAPP_error Multi_TAPP_wait_one(Multi_TAPP_backend backend, TAPP_executor exec, T
         fprintf(stderr, "ERROR: Called function with NULL executor\n");
         return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_wait_one == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_wait_one\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec = (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
@@ -126,14 +126,14 @@ TAPP_error Multi_TAPP_wait_all(Multi_TAPP_backend backend, TAPP_executor exec)
         fprintf(stderr, "ERROR: Called function with NULL executor\n");
         return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
-    struct Multi_TAPP_backend* backend_ptr = (struct Multi_TAPP_backend*)backend;
+    struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_wait_all == NULL)
     {
         fprintf(stderr, "ERROR: Called unimplemented function TAPP_wait_all\n");
         return MULTI_TAPP_ERROR_UNIMPLEMENTED;
     }
 
-    struct Multi_TAPP_executor* multi_tapp_exec = (struct Multi_TAPP_executor*)exec;
+    struct mt_executor* multi_tapp_exec = (struct mt_executor*)exec;
     if (backend != multi_tapp_exec->backend)
     {
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
