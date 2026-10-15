@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef TAPP_REFERENCE_ENABLE_TBLIS
-#include "tblis_bind.h"
-#endif
 
 #include "tensor.h"
 
@@ -71,16 +68,6 @@ struct plan
     TAPP_element_op op_B;
     TAPP_element_op op_C;
     TAPP_element_op op_D;
-
-    // These values are only used for the tblis part. Could be removed when we have a proper tblis mapping
-    TAPP_tensor_info A;
-    int64_t* idx_A;
-    TAPP_tensor_info B;
-    int64_t* idx_B;
-    TAPP_tensor_info C;
-    int64_t* idx_C;
-    TAPP_tensor_info D;
-    int64_t* idx_D;
 };
 
 #endif  /* TAPP_REF_IMPL_REF_IMPL_PRODUCT_H_ */

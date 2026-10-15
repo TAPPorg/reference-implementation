@@ -11,6 +11,8 @@
 
 int main(int argc, char const *argv[])
 {
+    TAPP_start();
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};
@@ -35,7 +37,6 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    TAPP_handle handle;
     TAPP_tensor_product plan;
     TAPP_element_op op_A = TAPP_IDENTITY;
     TAPP_element_op op_B = TAPP_IDENTITY;
@@ -46,10 +47,12 @@ int main(int argc, char const *argv[])
     int64_t idx_C[2] = {'a', 'd'};
     int64_t idx_D[3] = {'a', 'd'};
     TAPP_prectype prec = TAPP_DEFAULT_PREC;
-    TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     TAPP_executor exec;
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
+
+    TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+
     TAPP_status status;
 
     float alpha = 1;
@@ -122,5 +125,7 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    TAPP_shutdown();
     return 0;
 }

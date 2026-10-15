@@ -16,7 +16,7 @@ tapp_so = "/lustre/orion/chp109/world-shared/Tensor_Product/lib/libtapp.so"
 TAPP_create_tensor_product = CDLL(tapp_so).TAPP_create_tensor_product
 TAPP_create_tensor_product.restype = c_int
 TAPP_create_tensor_product.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # plan
-									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # handle
+									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # exec
 									   c_int, # op_A
 									   c_int32 if platform.architecture()[0] == '32bit' else c_int64, # A
 									   POINTER(c_int64), # idx_A
@@ -99,25 +99,24 @@ TAPP_set_strides.argtypes = [c_int32 if platform.architecture()[0] == '32bit' el
 							 POINTER(c_int64), # strides
 							 ]
 
+TAPP_start = CDLL(tapp_so).TAPP_start
+TAPP_start.restype = c_int
+TAPP_start.argtypes = []
+
+TAPP_shutdown = CDLL(tapp_so).TAPP_shutdown
+TAPP_shutdown.restype = c_int
+TAPP_shutdown.argtypes = []
+
 TAPP_create_executor = CDLL(tapp_so).TAPP_create_executor
 TAPP_create_executor.restype = c_int
-TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # exec
+TAPP_create_executor.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64), # exec
+								 c_int32 if platform.architecture()[0] == '32bit' else c_int64 # attr
 							]
 
 TAPP_destroy_executor = CDLL(tapp_so).TAPP_destroy_executor
 TAPP_destroy_executor.restype = c_int
 TAPP_destroy_executor.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # exec
 								  ]
-
-TAPP_create_handle = CDLL(tapp_so).TAPP_create_handle
-TAPP_create_handle.restype = c_int
-TAPP_create_handle.argtypes = [POINTER(c_int32 if platform.architecture()[0] == '32bit' else c_int64) # handle
-						  ]
-
-TAPP_destroy_handle = CDLL(tapp_so).TAPP_destroy_handle
-TAPP_destroy_handle.restype = c_int
-TAPP_destroy_handle.argtypes = [c_int32 if platform.architecture()[0] == '32bit' else c_int64 # handle
-								]
 
 def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_C, op_D):
 	nmode_A = c_int(A.ndim)
@@ -153,19 +152,17 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	idx_C_c = (c_int64 * len(idx_C))(*idx_C)
 	idx_D_c = (c_int64 * len(idx_D))(*idx_D)
 
-	handle = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_handle(byref(handle))
+	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
+	TAPP_create_executor(byref(exec), 0) # attr = 0: default executor behavior
 
 	plan = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_tensor_product(byref(plan), handle,
+	TAPP_create_tensor_product(byref(plan), exec,
 							c_int(op_A), tensor_info_A, idx_A_c,
 							c_int(op_B), tensor_info_B, idx_B_c,
 							c_int(op_C), tensor_info_C, idx_C_c,
 							c_int(op_D), tensor_info_D, idx_D_c,
 							-1)
-	
-	exec = c_int32(0) if platform.architecture()[0] == '32bit' else c_int64(0)
-	TAPP_create_executor(byref(exec))
+
 	status = c_int64(0)
 	A_ptr = A.ctypes.data_as(POINTER(c_double))
 	B_ptr = B.ctypes.data_as(POINTER(c_double))
@@ -174,7 +171,6 @@ def Product(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, op_
 	
 	TAPP_execute_product(plan, exec, byref(status), byref(c_double(alpha)), A_ptr, B_ptr, byref(c_double(beta)), C_ptr, D_ptr)
 
-	TAPP_destroy_handle(handle)
 	TAPP_destroy_executor(exec)
 	TAPP_destroy_tensor_product(plan)
 	TAPP_destroy_tensor_info(tensor_info_A)
@@ -204,6 +200,7 @@ def RunEinsum(alpha, A, B, beta, C, D, idx_A, idx_B, idx_C, idx_D, op_A, op_B, o
 	return D
 
 def main():
+	TAPP_start()
 	print("Hadamard Product:", TestHadamardProduct())
 	print("Contraction:", TestContraction())
 	print("Commutativity:", TestCommutativity())
@@ -217,6 +214,7 @@ def main():
 	print("Subtensor Lower Idx:", TestSubtensorLowerIdx())
 	print("Unique Idx:", TestUniqueIdx())
 	print("Repeated Idx:", TestRepeatedIdx())
+	TAPP_shutdown()
 
 def TestHadamardProduct():
 	nmode = random.randint(1, 4)

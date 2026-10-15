@@ -56,6 +56,9 @@ set(TAPP_REFERENCE_INSTALL_CMAKEDIR "lib/cmake/mpqc"
 # this provides tapp-api target
 add_subdirectory(api)
 
+# this provides multi-tapp target
+add_subdirectory(multi-tapp)
+
 add_library(tapp-reference SHARED)
 set_target_properties(tapp-reference PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/reference_implementation"
@@ -66,6 +69,7 @@ target_sources(
   PRIVATE
     reference_implementation/src/error.c
     reference_implementation/src/executor.c
+    reference_implementation/src/runtime.c
     reference_implementation/src/tensor.c
     reference_implementation/src/product.c
     reference_implementation/src/product_template.c
@@ -145,36 +149,6 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
   # this provides tapp-tblis target
   add_subdirectory(tblis)
 
-  target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_TBLIS=1)
-
-  target_sources(
-  tapp-reference
-  PRIVATE
-    tblis_bindings/tblis_bind.h
-    tblis_bindings/tblis_bind.cpp
-  )
-  set_property(
-          TARGET tapp-reference
-          PROPERTY
-          CXX_STANDARD 20
-          CXX_STANDARD_REQUIRED YES
-          CXX_EXTENSIONS NO
-  )
-  target_include_directories(
-  tapp-reference
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/tblis_bindings
-  )
-
-  # ----------------------------------------------------------------------------
-  # interface
-
-  target_link_libraries(
-    tapp-reference
-    PUBLIC
-      tblis-static
-  )
-
 endif()
 
 if(TAPP_REFERENCE_ENABLE_CUTENSOR)
@@ -218,6 +192,7 @@ if(BUILD_TESTING)
       tapp-reference-test++
       PRIVATE
         tapp-reference
+        tblis-static
       )
 
     set_property(
@@ -260,7 +235,51 @@ if(BUILD_TESTING)
       NAME tapp-tblis-test
       COMMAND $<TARGET_FILE:tapp-tblis-test>
       )
+
+    # The same test under OpenMP settings that change how many threads an executor gets and where they run
+    foreach(omp_setting OMP_THREAD_LIMIT=2 OMP_DYNAMIC=true OMP_PROC_BIND=true)
+      add_test(
+        NAME tapp-tblis-test-${omp_setting}
+        COMMAND $<TARGET_FILE:tapp-tblis-test>
+        )
+      set_tests_properties(
+        tapp-tblis-test-${omp_setting}
+        PROPERTIES
+          ENVIRONMENT ${omp_setting}
+        )
+    endforeach()
   endif()
+
+  # ----------------------------------------------------------------------------
+  # multi-tapp test
+
+  add_executable(multi-tapp-test)
+
+  target_sources(
+    multi-tapp-test
+    PRIVATE
+      test/multi_tapp_test.c
+    )
+
+  target_link_libraries(
+    multi-tapp-test
+    PRIVATE
+      multi-tapp
+      m
+    )
+
+  # The implementations are loaded at runtime, so they are only passed as paths
+  add_dependencies(multi-tapp-test tapp-reference)
+  set(MULTI_TAPP_TEST_BACKENDS $<TARGET_FILE:tapp-reference>)
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_dependencies(multi-tapp-test tapp-tblis)
+    list(APPEND MULTI_TAPP_TEST_BACKENDS $<TARGET_FILE:tapp-tblis>)
+  endif()
+
+  add_test(
+    NAME multi-tapp-test
+    COMMAND $<TARGET_FILE:multi-tapp-test> ${MULTI_TAPP_TEST_BACKENDS}
+    )
 
   # ----------------------------------------------------------------------------
   # demo
@@ -348,6 +367,77 @@ if(BUILD_TESTING)
     NAME tapp-reference-driver
     COMMAND $<TARGET_FILE:tapp-reference-driver>
     )
+
+  # ----------------------------------------------------------------------------
+  # CCD
+
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-ccd)
+
+    target_sources(
+      tapp-reference-ccd
+      PRIVATE
+        examples/CCD/run_file.c
+        examples/CCD/run_file.h
+        examples/CCD/ccd.c
+      )
+
+    # Only the header of tapp-tblis is used: the library is loaded at runtime
+    target_include_directories(
+      tapp-reference-ccd
+      PRIVATE
+        $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+      )
+
+    target_compile_definitions(
+      tapp-reference-ccd
+      PRIVATE
+        TAPP_TBLIS_LIBPATH="$<TARGET_FILE:tapp-tblis>"
+      )
+
+    target_link_libraries(
+      tapp-reference-ccd
+      PRIVATE
+        multi-tapp
+      )
+
+    add_dependencies(tapp-reference-ccd tapp-tblis)
+  endif()
+
+  # ----------------------------------------------------------------------------
+  # asynchronous
+
+  if(TAPP_REFERENCE_ENABLE_TBLIS)
+    add_executable(tapp-reference-async)
+
+    target_sources(
+      tapp-reference-async
+      PRIVATE
+        examples/asynchronous/async.c
+      )
+
+    # Only the header of tapp-tblis is used: the library is loaded at runtime
+    target_include_directories(
+      tapp-reference-async
+      PRIVATE
+        $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+      )
+
+    target_compile_definitions(
+      tapp-reference-async
+      PRIVATE
+        TAPP_TBLIS_LIBPATH="$<TARGET_FILE:tapp-tblis>"
+        TAPP_REFERENCE_LIBPATH="$<TARGET_FILE:tapp-reference>"
+      )
+
+    target_link_libraries(
+      tapp-reference-async
+      PRIVATE
+        multi-tapp
+      )
+
+    add_dependencies(tapp-reference-async tapp-tblis tapp-reference)
+  endif()
 
   # ----------------------------------------------------------------------------
   # exercise: contraction

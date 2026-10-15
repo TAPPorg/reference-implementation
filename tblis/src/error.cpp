@@ -3,39 +3,47 @@
  * Paolo Bientinesi
  * Umeå University - October 2026
  */
-#include "../include/error.h"
+#include "internal.h"
 
 #include <algorithm>
 #include <cstring>
 
 static const char* error_message(TAPP_error error)
 {
-    switch (static_cast<error_code>(error))
+    switch (static_cast<TAPP_TBLIS_error>(error))
     {
-        case SUCCESS:                    return "Success.";
-        case ERROR_NULL_POINTER:         return "A required pointer argument is null.";
-        case ERROR_NEGATIVE_NMODE:       return "The number of modes cannot be negative.";
-        case ERROR_NEGATIVE_EXTENT:      return "Extents cannot be negative.";
-        case ERROR_UNSUPPORTED_DATATYPE: return "The datatype is not supported by TBLIS.";
-        case ERROR_OUT_OF_MEMORY:        return "Memory allocation failed.";
-        case ERROR_DATATYPE_MISMATCH:    return "All tensors in a product must have the same datatype.";
-        case ERROR_EXTENT_MISMATCH:      return "An index has different extents in different places.";
-        case ERROR_C_D_MISMATCH:         return "Tensors C and D must have the same indices and extents.";
-        case ERROR_INDEX_NOT_IN_INPUTS:  return "Tensor D has an index that appears in neither A nor B.";
-        case ERROR_TOO_MANY_INDICES:     return "The product has more distinct indices than TBLIS supports.";
-        case ERROR_UNSUPPORTED_CONTRACTION:
+        case TAPP_TBLIS_SUCCESS:                    return "Success.";
+        case TAPP_TBLIS_ERROR_NULL_POINTER:         return "A required pointer argument is null.";
+        case TAPP_TBLIS_ERROR_NEGATIVE_NMODE:       return "The number of modes cannot be negative.";
+        case TAPP_TBLIS_ERROR_NEGATIVE_EXTENT:      return "Extents cannot be negative.";
+        case TAPP_TBLIS_ERROR_UNSUPPORTED_DATATYPE: return "The datatype is not supported by TBLIS.";
+        case TAPP_TBLIS_ERROR_OUT_OF_MEMORY:        return "Memory allocation failed.";
+        case TAPP_TBLIS_ERROR_DATATYPE_MISMATCH:    return "All tensors in a product must have the same datatype.";
+        case TAPP_TBLIS_ERROR_EXTENT_MISMATCH:      return "An index has different extents in different places.";
+        case TAPP_TBLIS_ERROR_C_D_MISMATCH:         return "Tensors C and D must have the same indices and extents.";
+        case TAPP_TBLIS_ERROR_INDEX_NOT_IN_INPUTS:  return "Tensor D has an index that appears in neither A nor B.";
+        case TAPP_TBLIS_ERROR_TOO_MANY_INDICES:     return "The product has more distinct indices than TBLIS supports.";
+        case TAPP_TBLIS_ERROR_UNSUPPORTED_CONTRACTION:
             return "An index appearing only in A or only in B is not supported yet.";
-        case ERROR_UNSUPPORTED_ELEMENT_OP:
+        case TAPP_TBLIS_ERROR_UNSUPPORTED_ELEMENT_OP:
             return "The element operation is not supported.";
-        case ERROR_UNSUPPORTED_PRECISION:
+        case TAPP_TBLIS_ERROR_UNSUPPORTED_PRECISION:
             return "The requested precision is not supported.";
+        case TAPP_TBLIS_ERROR_UNKNOWN_ATTR_KEY:
+            return "The attribute key is not known to the TBLIS implementation.";
+        case TAPP_TBLIS_ERROR_INVALID_ATTR_VALUE:
+            return "The value is not valid for this attribute key.";
+        case TAPP_TBLIS_ERROR_CPU_MASK_UNAVAILABLE:
+            return "The executor cannot run on the CPUs of its CPU mask.";
+        case TAPP_TBLIS_ERROR_INVALID_STATUS:
+            return "The status does not belong to a product of this executor.";
     }
 
     return "Unknown error code.";
 }
 
 bool TAPP_check_success(TAPP_error error) {
-    return error == SUCCESS;
+    return error == TAPP_TBLIS_SUCCESS;
 }
 
 size_t TAPP_explain_error(TAPP_error error,

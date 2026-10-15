@@ -49,7 +49,7 @@ def seed_from_env():
 def bench_by_specs(specs):
     # Builds, runs and prints one spec at a time, so only one benchmark's
     # buffers are allocated at once and a bad spec is reported as SKIPPED.
-    handle = tapp_bindings.create_handle()
+    tapp_bindings.start()
     executor = tapp_bindings.create_executor()
     results = []
     try:
@@ -59,12 +59,12 @@ def bench_by_specs(specs):
             except ValueError as error:
                 result = (None, None, None, error)
             else:
-                result = run_contraction(benchmark, executor, handle)
+                result = run_contraction(benchmark, executor)
             print_result(spec["name"], result)
             results.append(result)
     finally:
         tapp_bindings.destroy_executor(executor)
-        tapp_bindings.destroy_handle(handle)
+        tapp_bindings.shutdown()
     return results
 
 
@@ -144,7 +144,7 @@ def time_execution(plan, executor, alpha, A, B, beta, C, D, repeats):
     return min(times), sum(times) / len(times)
 
 
-def run_contraction(benchmark, executor, handle):
+def run_contraction(benchmark, executor):
     b = benchmark
     plan = None
     infos = {}
@@ -155,7 +155,7 @@ def run_contraction(benchmark, executor, handle):
         }
 
         plan = tapp_bindings.create_tensor_product(
-            handle,
+            executor,
             b.ops["a"],
             infos["a"],
             b.indices["a"],

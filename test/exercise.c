@@ -7,6 +7,9 @@
 
 int main(int argc, char const *argv[])
 {
+    // Start TAPP before any other TAPP function is called
+    TAPP_start();
+
     /*
      * Create the tensor structures for tensor A, B, C and D.
      * Tensor A 3 dimensional tensor with the extents 4, 3, 2, and the strides 1, 4, 12.
@@ -63,9 +66,6 @@ int main(int argc, char const *argv[])
      *  The second index for A and the first index for B are free indices, in that order. 
      */
 
-    // Declare handle (no assignment)
-    /* Remove */ TAPP_handle handle;
-
     // Initialize the precision
     /* Remove */ TAPP_prectype prec = TAPP_DEFAULT_PREC; 
 
@@ -81,17 +81,17 @@ int main(int argc, char const *argv[])
     /* Remove */ int64_t idx_C[2] = {'b', 'd'};
     /* Remove */ int64_t idx_D[2] = {'b', 'd'};
 
-    // Declare plan
-    /* Remove */ TAPP_tensor_product plan;
-
-    // Create plan/Assign the options to the plan
-    /* Remove */ TAPP_create_tensor_product(&plan, handle, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
-
     // Declare executor
     /* Remove */ TAPP_executor exec;
 
     // Create executor
-    TAPP_create_executor(&exec);
+    TAPP_create_executor(&exec, 0);
+
+    // Declare plan
+    /* Remove */ TAPP_tensor_product plan;
+
+    // Create plan/Assign the options to the plan
+    /* Remove */ TAPP_create_tensor_product(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
 
     // Declare status object
     /* Remove */ TAPP_status status;
@@ -193,6 +193,9 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    // Shut down TAPP after the last use of it
+    TAPP_shutdown();
 
     /*
      * Expected output:

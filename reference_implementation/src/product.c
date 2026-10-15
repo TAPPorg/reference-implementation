@@ -89,29 +89,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         return error_status;
     }
     struct plan* plan_ptr = checked_malloc(sizeof(struct plan));
-    
-    plan_ptr->A = A;
-
-    plan_ptr->idx_A = checked_malloc(((struct tensor_info*)A)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_A, idx_A, ((struct tensor_info*)A)->nmode * sizeof(int64_t));
-
-
-    plan_ptr->B = B;
-
-    plan_ptr->idx_B = checked_malloc(((struct tensor_info*)B)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_B, idx_B, ((struct tensor_info*)B)->nmode * sizeof(int64_t));
-
-
-    plan_ptr->C = C;
-
-    plan_ptr->idx_C = checked_malloc(((struct tensor_info*)C)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_C, idx_C, ((struct tensor_info*)C)->nmode * sizeof(int64_t));
-
-
-    plan_ptr->D = D;
-
-    plan_ptr->idx_D = checked_malloc(((struct tensor_info*)D)->nmode * sizeof(int64_t));
-    memcpy(plan_ptr->idx_D, idx_D, ((struct tensor_info*)D)->nmode * sizeof(int64_t));
 
     plan_ptr->type_A = info_A_ptr->type;
     plan_ptr->type_B = info_B_ptr->type;
@@ -481,10 +458,6 @@ int64_t calculate_size(const int64_t* extents, const int nmode)
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
-    free(((struct plan*)plan)->idx_A);
-    free(((struct plan*)plan)->idx_B);
-    free(((struct plan*)plan)->idx_C);
-    free(((struct plan*)plan)->idx_D);
     free(((struct plan*)plan)->H_idx);
     free(((struct plan*)plan)->P_idx);
     free(((struct plan*)plan)->FA_idx);
@@ -606,6 +579,6 @@ int check_executor_existence(TAPP_executor exec, int error_code)
     if(!exec) return error_code;
     intptr_t* exec_ptr= &exec; //pointer to intptr_t (TAPP_executor)
     int* eip = (int*) *exec_ptr;//dereference to get the int pointer
-    if((*eip) == 1 || (*eip) == 2 ||  (*eip) == 12) return 0;
-    return error_code; // 1 = bruteforce, 2 = tblis, 12 = tblis + bruteforce check
+    if((*eip) == 1) return 0;
+    return error_code; // 1 = bruteforce
 }

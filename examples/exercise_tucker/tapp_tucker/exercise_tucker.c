@@ -3,7 +3,7 @@
 /*
  * TODO:
  *  1. Complete the function call for TAPP_execute_product (Line 102).
- *  2. Complete the function call for TAPP_create_tensor_product (Line 67)
+ *  2. Complete the function call for TAPP_create_tensor_product (Line 77)
  *  3. Complete the function call for TAPP_create_tensor_info (Line 32)
  */
 
@@ -12,6 +12,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
                                    int nmode_D, int64_t* extents_D, int64_t* strides_D, void* D,
                                    int64_t* idx_A, int64_t* idx_B, int64_t* idx_D)
 {
+    // Start TAPP before any other TAPP function is called
+    TAPP_start();
+
     /*
      * The tensor product looks in a simplified way as follows: D <- a*A*B+b*C.
      * Where the lowercase letters are constants and uppercase are tensors.
@@ -47,13 +50,6 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
      * Decide which implementation to use with a executor (not yet implemented)
      */
 
-    TAPP_executor exec; // Declaration of executor
-    TAPP_create_executor(&exec, 0); // Creation of executor
-
-    /*
-     * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
-     */
-
     // Decide elemental operations (conjugate available for complex datatypes)
     TAPP_element_op op_A = TAPP_IDENTITY; // Decide elemental operation for tensor A
     TAPP_element_op op_B = TAPP_IDENTITY; // Decide elemental operation for tensor B
@@ -62,14 +58,23 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
 
     TAPP_prectype prec = TAPP_DEFAULT_PREC; //Choose the calculation precision
 
-    TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation 
+    /*
+     * Decide which implementation to use with a executor (not yet implemented)
+     */
+
+    TAPP_executor exec; // Declaration of executor
+    TAPP_create_executor(&exec, 0); // Creation of executor
+    // int exec_id = 1; // Choose executor
+    // exec = (intptr_t)&exec_id; // Assign executor
+
+    TAPP_tensor_product plan; // Declare the variable that holds the information about the calculation
 
     /*
      * TODO 2: Complete the function call.
      * Uncomment function call
      * Add: idx_A, idx_B, and ixd_D
      */
-    //TAPP_create_tensor_product(&plan, handle, op_A, info_A, , op_B, info_B, , op_C, info_C, idx_D, op_D, info_D, , prec); // Assign the calculation options to the variable
+    //TAPP_create_tensor_product(&plan, exec, op_A, info_A, , op_B, info_B, , op_C, info_C, idx_D, op_D, info_D, , prec); // Assign the calculation options to the variable
 
     /*
      * Status objects are used to know the status of the execution process (not yet implemented)
@@ -118,6 +123,9 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_D);
     TAPP_destroy_executor(exec);
+
+    // Shut down TAPP after the last use of it
+    TAPP_shutdown();
 
     return D;
 }

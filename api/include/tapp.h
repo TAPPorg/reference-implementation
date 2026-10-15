@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "tapp/error.h"
+#include "tapp/runtime.h"
 #include "tapp/attributes.h"
 #include "tapp/datatype.h"
 #include "tapp/executor.h"

@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - October 2026
  */
-#include "../include/tblis_utils.h"
+#include "internal.h"
 
 #include <limits>
 
