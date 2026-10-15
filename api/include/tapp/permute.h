@@ -14,6 +14,7 @@
 typedef intptr_t TAPP_tensor_permute;
 
 TAPP_EXPORT TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
+                                                  TAPP_executor exec,
                                                   TAPP_element_op op_A,
                                                   TAPP_tensor_info A,
                                                   const int64_t* idx_A,
