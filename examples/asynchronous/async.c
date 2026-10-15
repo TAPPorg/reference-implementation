@@ -20,7 +20,6 @@
 #define WARM_UP_RUNS 5
 #define MEASURED_RUNS 5
 #define N 1000 // extent of every mode: each product is about 2 * N^3 = 2 GFLOP
-#define SIZE N * N
 
 // D_ij = alpha * A_ik * B_kj + beta * C_ij, every tensor N x N in column-major order
 int64_t ext[2] = {N, N};
@@ -98,7 +97,7 @@ void run_reference(const double* da, const double* db, const double* dc, double*
 
 // Times the product on TBLIS with one and two executors, writing into dd1 and dd2, and checks the results against ddr.
 // A, B and C are only read, so both executors share them. Each executor writes its own D.
-void run_example(const double* da, const double* db, const double* dc, const double* ddr, double* dd1, double* dd2)
+void run_example(const double* da, const double* db, const double* dc, const double* ddr, double* dd1, double* dd2, const size_t size)
 {
     Multi_TAPP_backend b;
     Multi_TAPP_create_backend(&b, TAPP_TBLIS_LIBPATH);
@@ -179,8 +178,8 @@ void run_example(const double* da, const double* db, const double* dc, const dou
         ttmin = ttmin == 0.0 || ttmin > tt ? tt : ttmin;
         ttmean += tt;
 
-        if (!same_data(ddr, dd1, SIZE, 1e-10)) printf("dd1 does not match the reference\n");
-        if (!same_data(ddr, dd2, SIZE, 1e-10)) printf("dd2 does not match the reference\n");
+        if (!same_data(ddr, dd1, N * N, 1e-10)) printf("dd1 does not match the reference\n");
+        if (!same_data(ddr, dd2, N * N, 1e-10)) printf("dd2 does not match the reference\n");
     }
 
     tsmean /= MEASURED_RUNS;
@@ -222,8 +221,8 @@ void run_example(const double* da, const double* db, const double* dc, const dou
         ttmin = ttmin == 0.0 || ttmin > tt ? tt : ttmin;
         ttmean += tt;
 
-        if (!same_data(ddr, dd1, SIZE, 1e-10)) printf("dd1 does not match the reference\n");
-        if (!same_data(ddr, dd2, SIZE, 1e-10)) printf("dd2 does not match the reference\n");
+        if (!same_data(ddr, dd1, size, 1e-10)) printf("dd1 does not match the reference\n");
+        if (!same_data(ddr, dd2, size, 1e-10)) printf("dd2 does not match the reference\n");
     }
     
     tsmean /= MEASURED_RUNS;
@@ -246,12 +245,13 @@ void run_example(const double* da, const double* db, const double* dc, const dou
 
 int main(int argc, char *argv[])
 {
-    double* da = malloc(SIZE * sizeof(double));
-    double* db = malloc(SIZE * sizeof(double));
-    double* dc = malloc(SIZE * sizeof(double));
-    double* ddr = calloc(SIZE, sizeof(double));
-    double* dd1 = calloc(SIZE, sizeof(double));
-    double* dd2 = calloc(SIZE, sizeof(double));
+    size_t size = N * N;
+    double* da = malloc(size * sizeof(double));
+    double* db = malloc(size * sizeof(double));
+    double* dc = malloc(size * sizeof(double));
+    double* ddr = calloc(size, sizeof(double));
+    double* dd1 = calloc(size, sizeof(double));
+    double* dd2 = calloc(size, sizeof(double));
     if (da == NULL || db == NULL || dc == NULL || ddr == NULL || dd1 == NULL || dd2 == NULL)
     {
         fprintf(stderr, "Failed to allocate the tensors\n");
@@ -265,12 +265,12 @@ int main(int argc, char *argv[])
     }
 
     srand(1);
-    generate_data(da, SIZE);
-    generate_data(db, SIZE);
-    generate_data(dc, SIZE);
+    generate_data(da, size);
+    generate_data(db, size);
+    generate_data(dc, size);
 
     run_reference(da, db, dc, ddr);
-    run_example(da, db, dc, ddr, dd1, dd2);
+    run_example(da, db, dc, ddr, dd1, dd2, size);
 
     free(da);
     free(db);
