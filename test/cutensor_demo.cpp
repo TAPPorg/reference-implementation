@@ -14,9 +14,7 @@
 #include <complex>
 #include <cassert>
 
-extern "C" {
-    #include "helpers.h"
-}
+#include "helpers.h"
 
 void contraction();
 void hadamard();
@@ -32,7 +30,6 @@ void subtensors();
 void wait_one();
 void attributes();
 void multiple_devices();
-void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data);
 
 int main(int argc, char const *argv[])
 {
@@ -408,7 +405,7 @@ void complex_num()
 
     cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
 
-    print_tensor_c_cpp(nmode_D, extents_D, strides_D, D);
+    print_tensor_c(nmode_D, extents_D, strides_D, D);
 
     if (A_d) cudaFree(A_d);
     if (B_d) cudaFree(B_d);
@@ -510,7 +507,7 @@ void conjugate()
 
     cudaMemcpy((void*)D, (void*)D_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
 
-    print_tensor_c_cpp(nmode_D, extents_D, strides_D, D);
+    print_tensor_c(nmode_D, extents_D, strides_D, D);
 
     if (A_d) cudaFree(A_d);
     if (B_d) cudaFree(B_d);
@@ -1871,48 +1868,4 @@ void multiple_devices(){
     TAPP_destroy_tensor_product(plan2);
     TAPP_destroy_executor(exec2);
     TAPP_destroy_attr(attr2);
-}
-
-void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data)
-{
-    int64_t *coords = (int64_t *)malloc(nmode * sizeof(int64_t));
-    int64_t size = 1;
-    for (size_t i = 0; i < nmode; i++)
-    {
-        coords[i] = 0;
-        size *= extents[i];
-    }
-    printf("\t");
-    for (size_t j = 0; j < size; j++)
-    {
-        int64_t index = 0;
-        for (size_t i = 0; i < nmode; i++)
-        {
-            index += coords[i] * strides[i];
-        }
-        printf("%.3f+%.3fi", data[index].real(), data[index].imag());
-
-        if (nmode <= 0)
-            continue;
-
-        int k = 0;
-        do
-        {
-            if (k != 0)
-            {
-                printf("\n");
-                if (j < size - 1)
-                {
-                    printf("\t");
-                }
-            }
-            else
-            {
-                printf(" ");
-            }
-            coords[k] = (coords[k] + 1) % extents[k];
-            k++;
-        } while (coords[k - 1] == 0 && k < nmode);
-    }
-    free(coords);
 }
