@@ -17,6 +17,10 @@ TAPP_error create_status(cudaStream_t stream, TAPP_status* status)
         delete s;
         return tapp_error(cerr);
     }
+
+    cerr = cudaStreamGetDevice(stream, &(s->device));
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+    
     *status = (TAPP_status)s;
     return TAPP_SUCCESS;
 }
@@ -30,7 +34,10 @@ TAPP_error TAPP_status_get_error(TAPP_status status)
 
 TAPP_error TAPP_destroy_status(TAPP_status status)
 {
-    cudaError_t cerr = cudaEventDestroy(((struct status*)status)->event);
+    cudaError_t cerr = cudaSetDevice(((struct status*)status)->device);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+
+    cerr = cudaEventDestroy(((struct status*)status)->event);
     delete (struct status*)status;
     if (cerr != cudaSuccess) return tapp_error(cerr);
     return TAPP_SUCCESS;

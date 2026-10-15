@@ -249,6 +249,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     cutensorStatus_t err = CUTENSOR_STATUS_SUCCESS;
     TAPP_error result = TAPP_SUCCESS;
 
+    cerr = cudaSetDevice(*(exec_struct->device));
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+
     // Working pointers (possibly offset-adjusted) and the allocations to free.
     // The *_alloc pointers are only set when this call owns the buffer, so the
     // cleanup path never frees the caller's device memory.
@@ -278,6 +281,10 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                 &contraction_actual_workspace_size,
                 sizeof(contraction_actual_workspace_size));
     if (err != CUTENSOR_STATUS_SUCCESS) { result = tapp_error(err); goto cleanup; }
+
+    unsigned int flags;
+    cerr = cudaStreamGetFlags(stream, &flags);
+    if(cerr!=cudaSuccess) tapp_error(cerr);
 
     contraction_actual_workspace_size = std::max(contraction_actual_workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB recomended minimum size https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontrac
     cerr = cudaMallocAsync(&contraction_work, contraction_actual_workspace_size, stream);

@@ -78,7 +78,9 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, size_t *size, void** valu
     }
 
     *size = it->second.size();
-    *value = it->second.data();
+
+    if(key!=TAPP_CUTENSOR_STREAM) *value = it->second.data();
+    else std::memcpy(value, it->second.data(), sizeof(cudaStream_t));
     return TAPP_SUCCESS;
 }
 

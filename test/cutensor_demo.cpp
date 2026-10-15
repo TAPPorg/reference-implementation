@@ -31,6 +31,7 @@ void negative_str();
 void subtensors();
 void wait_one();
 void attributes();
+void multiple_devices();
 void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data);
 
 int main(int argc, char const *argv[])
@@ -61,6 +62,8 @@ int main(int argc, char const *argv[])
     wait_one();
     printf("Attributes: \n");
     attributes();
+    printf("Multiple devices: \n");
+    multiple_devices();
     return 0;
 }
 
@@ -1644,6 +1647,7 @@ void attributes(){
     size_t size;
     cudaStream_t stream;
 
+    printf("---------------------------\n");
     printf("Default values of attributes:\n");
     printf("---------------------------\n");
     TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
@@ -1660,6 +1664,7 @@ void attributes(){
     cudaStreamCreate(&stream);
     TAPP_attr_set(attr, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream);
 
+    printf("---------------------------\n");
     printf("Values of attributes after update:\n");
     printf("---------------------------\n");
     TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
@@ -1667,9 +1672,205 @@ void attributes(){
     printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", sizeof(int), size);
     TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
     printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 0): %i\n", stream==nullptr);
-    printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n", sizeof(cudaStream_t), size);
+    printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n\n", sizeof(cudaStream_t), size);
 
     TAPP_destroy_attr(attr);
+}
+
+// Launch 2 contractions on 2 devices
+void multiple_devices(){
+    int nmode_A = 3;
+    int64_t extents_A[3] = {4, 3, 3};
+    int64_t strides_A[3] = {1, 4, 12};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F32, nmode_A, extents_A, strides_A);
+
+    int nmode_B = 4;
+    int64_t extents_B[4] = {3, 2, 2, 3};
+    int64_t strides_B[4] = {1, 3, 6, 12};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F32, nmode_B, extents_B, strides_B);
+
+    int nmode_C = 3;
+    int64_t extents_C[3] = {4, 2, 2};
+    int64_t strides_C[3] = {1, 4, 8};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F32, nmode_C, extents_C, strides_C);
+
+    int nmode_D = 3;
+    int64_t extents_D[3] = {4, 2, 2};
+    int64_t strides_D[3] = {1, 4, 8};
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
+
+    TAPP_element_op op_A = TAPP_IDENTITY;
+    TAPP_element_op op_B = TAPP_IDENTITY;
+    TAPP_element_op op_C = TAPP_IDENTITY;
+    TAPP_element_op op_D = TAPP_IDENTITY;
+    int64_t idx_A[3] = {'a', 'b', 'c'};
+    int64_t idx_B[4] = {'c', 'd', 'e', 'b'};
+    int64_t idx_C[3] = {'a', 'd', 'e'};
+    int64_t idx_D[3] = {'a', 'd', 'e'};
+    TAPP_prectype prec = TAPP_DEFAULT_PREC;
+
+    float alpha = 1;
+
+    float A[36] = {
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1,
+
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1,
+
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1,
+        1, 2, 1.01, -1};
+
+    float B[36] = {
+        1, 1, 1,
+        2, 2, 2,
+
+        3, 3, 3,
+        6, 6, 6,
+
+        1, 1, 1,
+        2, 2, 2,
+
+        3, 3, 3,
+        6, 6, 6,
+
+        1, 1, 1,
+        2, 2, 2,
+
+        3, 3, 3,
+        6, 6, 6};
+
+    float beta = 0;
+
+    float C[16] = {
+        2, 4, 6, 8,
+        2, 4, 6, 8,
+
+        2, 4, 6, 8,
+        2, 4, 6, 8};
+
+    float D[16] = {
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+
+        1, 2, 3, 4,
+        5, 6, 7, 8};
+
+    // Device 1
+    cudaSetDevice(1);
+    TAPP_attr attr1;
+    TAPP_create_attr(&attr1);
+    cudaStream_t stream1;
+    cudaStreamCreate(&stream1);
+    int device_id;
+    device_id = 1;
+    TAPP_attr_set(attr1, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id);
+    TAPP_attr_set(attr1, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream1);
+
+    TAPP_executor exec1;
+    TAPP_create_executor(&exec1, attr1);
+    TAPP_tensor_product plan1;
+    TAPP_create_tensor_product(&plan1, exec1, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+    void *A_d1, *B_d1, *C_d1, *D_d1; // Device pointers
+    cudaMalloc((void**)&A_d1, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d1, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d1, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d1, 16 * sizeof(float));
+
+    cudaMemcpy(A_d1, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d1, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d1, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d1) % 128 == 0);
+    assert(uintptr_t(B_d1) % 128 == 0);
+    assert(uintptr_t(C_d1) % 128 == 0);
+    assert(uintptr_t(D_d1) % 128 == 0);
+   
+    TAPP_status status1;
+    TAPP_error error = TAPP_execute_product(plan1, exec1, &status1, (void *)&alpha, (void *)A_d1, (void *)B_d1, (void *)&beta, (void *)C_d1, (void *)D_d1);
+    printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
+    int message_len = TAPP_explain_error(error, 0, NULL);
+    char *message_buff = (char*)malloc((message_len + 1) * sizeof(char));
+    TAPP_explain_error(error, message_len + 1, message_buff);
+    printf("%s", message_buff);
+    free(message_buff);
+    TAPP_wait_all(exec1);
+
+    // Device 2
+    cudaSetDevice(2);
+    TAPP_attr attr2;
+    TAPP_create_attr(&attr2);
+    cudaStream_t stream2;
+    cudaStreamCreate(&stream2);
+    device_id = 2;
+    TAPP_attr_set(attr2, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id);
+    TAPP_attr_set(attr2, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream2);
+
+    TAPP_executor exec2;
+    TAPP_create_executor(&exec2, attr2);
+    TAPP_tensor_product plan2;
+    TAPP_create_tensor_product(&plan2, exec2, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, op_D, info_D, idx_D, prec);
+    void *A_d2, *B_d2, *C_d2, *D_d2; // Device pointers
+    cudaMalloc((void**)&A_d2, 36 * sizeof(float));
+    cudaMalloc((void**)&B_d2, 36 * sizeof(float));
+    cudaMalloc((void**)&C_d2, 16 * sizeof(float));
+    cudaMalloc((void**)&D_d2, 16 * sizeof(float));
+
+    cudaMemcpy(A_d2, (void*)A, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d2, (void*)B, 36 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d2, (void*)C, 16 * sizeof(float), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d2) % 128 == 0);
+    assert(uintptr_t(B_d2) % 128 == 0);
+    assert(uintptr_t(C_d2) % 128 == 0);
+    assert(uintptr_t(D_d2) % 128 == 0);
+   
+    TAPP_status status2;
+    error = TAPP_execute_product(plan1, exec2, &status2, (void *)&alpha, (void *)A_d2, (void *)B_d2, (void *)&beta, (void *)C_d2, (void *)D_d2);
+    printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
+    message_len = TAPP_explain_error(error, 0, NULL);
+    message_buff = (char*)malloc((message_len + 1) * sizeof(char));
+    TAPP_explain_error(error, message_len + 1, message_buff);
+    printf("%s", message_buff);
+    free(message_buff);
+    TAPP_wait_all(exec2);
+
+    // Result 1
+    cudaMemcpy((void*)D, (void*)D_d1, 16 * sizeof(float), cudaMemcpyDeviceToHost);
+    print_tensor_s(nmode_D, extents_D, strides_D, D);
+
+    // Result 2
+    cudaMemcpy((void*)D, (void*)D_d2, 16 * sizeof(float), cudaMemcpyDeviceToHost);
+    print_tensor_s(nmode_D, extents_D, strides_D, D);
+    
+    // Cleanup
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
+
+    if (A_d1) cudaFree(A_d1);
+    if (B_d1) cudaFree(B_d1);
+    if (C_d1) cudaFree(C_d1);
+    if (D_d1) cudaFree(D_d1);
+    TAPP_destroy_tensor_product(plan1);
+    TAPP_destroy_executor(exec1);
+    TAPP_destroy_attr(attr1);
+
+    if (A_d2) cudaFree(A_d2);
+    if (B_d2) cudaFree(B_d2);
+    if (C_d2) cudaFree(C_d2);
+    if (D_d2) cudaFree(D_d2);
+    TAPP_destroy_tensor_product(plan2);
+    TAPP_destroy_executor(exec2);
+    TAPP_destroy_attr(attr2);
 }
 
 void print_tensor_c_cpp(int nmode, const int64_t *extents, const int64_t *strides, const std::complex<float> *data)

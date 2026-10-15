@@ -10,6 +10,7 @@
 struct status
 {
     cudaEvent_t event;
+    int device;
 };
 
 // Allocate a status object recording the current point of `stream`.

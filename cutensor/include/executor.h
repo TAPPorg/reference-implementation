@@ -10,7 +10,8 @@ struct executor
 {
     cudaStream_t* stream;
     cutensorHandle_t* libhandle;
-    intptr_t* attributes;
+    int* device;
+    bool need_alloc; // allocate steam and device if no attributes are provided
 };
 
 #endif /* TAPP_REF_IMPL_CUTENSOR_BINDINGS_EXECUTOR_H_ */

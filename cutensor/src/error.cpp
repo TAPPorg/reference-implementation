@@ -12,21 +12,19 @@ size_t TAPP_explain_error(TAPP_error error,
 
     std::string str;
 
-    int base = (int) error/100;
-    base *= 100;
+    int base = ((int) error)/100000;
+    int code = ((int) error)%100000;
 
-    int code = error%100;
-
-    switch (base)
+    switch (base*100000)
     {
     case TAPP_ERROR_TYPE_TAPP_BASE:
         if(code>0) str = tapp_error_string(code);
         break;
     case TAPP_ERROR_TYPE_CUDA_BASE:
-        str = std::string("[CUDA Error]: ") + cudaGetErrorString(static_cast<cudaError_t>(code));
+        str = std::string("[CUDA Error]: ") + cudaGetErrorString(static_cast<cudaError_t>(code)) + "\n";
         break;
     case TAPP_ERROR_TYPE_CUTENSOR_BASE:
-        str = std::string("[cuTENSOR Status]: ") + cutensorGetErrorString(static_cast<cutensorStatus_t>(code));
+        str = std::string("[cuTENSOR Status]: ") + cutensorGetErrorString(static_cast<cutensorStatus_t>(code)) + "\n";
         break;
     default:
         str = "Unknown error type.";

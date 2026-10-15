@@ -39,11 +39,13 @@ enum
 typedef enum
 {
     TAPP_ERROR_TYPE_TAPP_BASE  = 0,
-    TAPP_ERROR_TYPE_CUDA_BASE  = 100,
-    TAPP_ERROR_TYPE_CUTENSOR_BASE = 200,
+    TAPP_ERROR_TYPE_CUDA_BASE  = 100000,
+    TAPP_ERROR_TYPE_CUTENSOR_BASE = 200000,
 } TAPP_error_base;
 
-inline TAPP_error tapp_error(cudaError_t e)      { return e == cudaSuccess ? TAPP_SUCCESS : (int) e+TAPP_ERROR_TYPE_CUDA_BASE; }
+inline TAPP_error tapp_error(cudaError_t e)      {
+    return e == cudaSuccess ? TAPP_SUCCESS : (int) e+TAPP_ERROR_TYPE_CUDA_BASE;
+}
 inline TAPP_error tapp_error(cutensorStatus_t e) { return e == CUTENSOR_STATUS_SUCCESS ? TAPP_SUCCESS : (int) e + TAPP_ERROR_TYPE_CUTENSOR_BASE; }
 
 /* Message for a TAPP_ERROR_TYPE_TAPP code, shared so every implementation
