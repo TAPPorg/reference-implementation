@@ -34,10 +34,11 @@ enum
     // Results
     Z0,
     Z2,
-    // Scalar with the value 1: the second tensor of the terms that only have one
-    ONE,
     TENSOR_COUNT
 } tensors;
+
+// No tensor: the second tensor of the terms that only have one, which are permutes
+#define NONE (-1)
 
 // Names of the tensors, for messages
 static const char* const names[TENSOR_COUNT] = {
@@ -47,7 +48,6 @@ static const char* const names[TENSOR_COUNT] = {
     [A2] = "A2", [D1] = "D1", [E2] = "E2", [G1] = "G1", [G2] = "G2",
     [I1] = "I1", [J1] = "J1", [M1] = "M1", [X1] = "X1", [Y1] = "Y1",
     [Z0] = "Z0", [Z2] = "Z2",
-    [ONE] = "ONE",
 };
 
 #define MAX_NMODE 4
@@ -60,10 +60,9 @@ static const char* const shapes[TENSOR_COUNT] = {
     [A2] = "oo",   [D1] = "vvoo", [E2] = "oooo", [G1] = "vvoo", [G2] = "vvoo",
     [I1] = "vvoo", [J1] = "vv",   [M1] = "vvoo", [X1] = "ovvo", [Y1] = "vvoo",
     [Z0] = "",     [Z2] = "vvoo",
-    [ONE] = "",
 };
 
-// One term of the equations: d += alpha * a * b
+// One term of the equations: d += alpha * a * b, or d += alpha * a with the indices of a reordered when b is NONE
 struct term
 {
     int d;
@@ -74,6 +73,12 @@ struct term
     const char* idx_b;
     const char* idx_d;
 };
+
+// A term without a second tensor is computed as a permute, the others as a product
+static int is_permute(const struct term* t)
+{
+    return t->b == NONE;
+}
 
 // The terms in the order of the equations: an intermediate is complete before it is used. The run file calls them c1
 // to c31 and may run them in another order, as long as that computes the same (see check_order).
@@ -90,26 +95,26 @@ static const struct term terms[] = {
     {Y1,  1.0,  T1, "edml", X1,  "lfdn", "efmn"},   // c9
     {A2,  1.0,  V1, "lMdE", T1,  "dEMn", "ln"  },   // c10
     {E2,  1.0,  V1, "lMdE", T1,  "dEmn", "lMmn"},   // c11
-    {E2,  2.0,  V4, "lMmn", ONE, "",     "lMmn"},   // c12
+    {E2,  2.0,  V4, "lMmn", NONE, "",    "lMmn"},   // c12
     {G2,  1.0,  T1, "efml", A2,  "ln",   "efmn"},   // c13
     {Z2,  0.25, T1, "eflM", E2,  "lMmn", "efmn"},   // c14
-    {Z2,  0.5,  Y1, "efmn", ONE, "",     "efmn"},   // c15
-    {Z2, -0.5,  Y1, "femn", ONE, "",     "efmn"},   // c16
-    {Z2, -0.5,  Y1, "efnm", ONE, "",     "efmn"},   // c17
-    {Z2,  0.5,  Y1, "fenm", ONE, "",     "efmn"},   // c18
-    {Z2,  1.0,  G1, "efmn", ONE, "",     "efmn"},   // c19
-    {Z2, -1.0,  G1, "femn", ONE, "",     "efmn"},   // c20
-    {Z2, -1.0,  G1, "efnm", ONE, "",     "efmn"},   // c21
-    {Z2,  1.0,  G1, "fenm", ONE, "",     "efmn"},   // c22
-    {Z2,  0.5,  M1, "efmn", ONE, "",     "efmn"},   // c23
-    {Z2, -0.5,  M1, "femn", ONE, "",     "efmn"},   // c24
-    {Z2,  1.0,  I1, "efnm", ONE, "",     "efmn"},   // c25
-    {Z2, -1.0,  I1, "fenm", ONE, "",     "efmn"},   // c26
-    {Z2,  0.5,  G2, "efmn", ONE, "",     "efmn"},   // c27
-    {Z2, -0.5,  G2, "efnm", ONE, "",     "efmn"},   // c28
-    {Z2, -1.0,  D1, "femn", ONE, "",     "efmn"},   // c29
-    {Z2,  1.0,  D1, "fenm", ONE, "",     "efmn"},   // c30
-    {Z2,  1.0,  V5, "efmn", ONE, "",     "efmn"},   // c31
+    {Z2,  0.5,  Y1, "efmn", NONE, "",    "efmn"},   // c15
+    {Z2, -0.5,  Y1, "femn", NONE, "",    "efmn"},   // c16
+    {Z2, -0.5,  Y1, "efnm", NONE, "",    "efmn"},   // c17
+    {Z2,  0.5,  Y1, "fenm", NONE, "",    "efmn"},   // c18
+    {Z2,  1.0,  G1, "efmn", NONE, "",    "efmn"},   // c19
+    {Z2, -1.0,  G1, "femn", NONE, "",    "efmn"},   // c20
+    {Z2, -1.0,  G1, "efnm", NONE, "",    "efmn"},   // c21
+    {Z2,  1.0,  G1, "fenm", NONE, "",    "efmn"},   // c22
+    {Z2,  0.5,  M1, "efmn", NONE, "",    "efmn"},   // c23
+    {Z2, -0.5,  M1, "femn", NONE, "",    "efmn"},   // c24
+    {Z2,  1.0,  I1, "efnm", NONE, "",    "efmn"},   // c25
+    {Z2, -1.0,  I1, "fenm", NONE, "",    "efmn"},   // c26
+    {Z2,  0.5,  G2, "efmn", NONE, "",    "efmn"},   // c27
+    {Z2, -0.5,  G2, "efnm", NONE, "",    "efmn"},   // c28
+    {Z2, -1.0,  D1, "femn", NONE, "",    "efmn"},   // c29
+    {Z2,  1.0,  D1, "fenm", NONE, "",    "efmn"},   // c30
+    {Z2,  1.0,  V5, "efmn", NONE, "",    "efmn"},   // c31
 };
 
 #define TERM_COUNT ((int)(sizeof(terms) / sizeof(terms[0])))
@@ -290,6 +295,7 @@ int main(int argc, char *argv[])
         int used[3] = {t->a, t->b, t->d};
         for (int j = 0; j < 3; j++)
         {
+            if (used[j] == NONE) continue;
             TAPP_tensor_info* info = &tensor_infos[backend_index][used[j]];
             if (*info != 0) continue;
             create_tensor_info(e_occ, e_vir, shapes[used[j]], backends[backend_index], info);
@@ -304,10 +310,10 @@ int main(int argc, char *argv[])
         data[i] = generate_data(sizes[i], i < A2);
     }
 
-    data[ONE][0] = 1;
-
-    // One plan per term, created once
+    // One plan per term, created once: a permute plan for the terms without a second tensor, a product plan otherwise.
+    // Only the plan of the kind of the term is created.
     TAPP_tensor_product product_plans[run.step_count];
+    TAPP_tensor_permute permute_plans[run.step_count];
     for (int i = 0; i < run.step_count; i++)
     {
         const struct term* t = &terms[run.steps[i].term];
@@ -317,12 +323,25 @@ int main(int argc, char *argv[])
         create_indices(t->idx_a, idx_a);
         create_indices(t->idx_b, idx_b);
         create_indices(t->idx_d, idx_d);
-        TAPP_error error = Multi_TAPP_create_tensor_product(backends[backend_index], &product_plans[i], executors[executor_index],
-                                                            TAPP_IDENTITY, tensor_infos[backend_index][t->a], idx_a,
-                                                            TAPP_IDENTITY, tensor_infos[backend_index][t->b], idx_b,
-                                                            TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
-                                                            TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
-                                                            TAPP_DEFAULT_PREC);
+        TAPP_error error;
+        if (is_permute(t))
+        {
+            // d is both the tensor that is added to (B of the permute) and the result (C)
+            error = Multi_TAPP_create_tensor_permute(backends[backend_index], &permute_plans[i], executors[executor_index],
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->a], idx_a,
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
+                                                     TAPP_DEFAULT_PREC);
+        }
+        else
+        {
+            error = Multi_TAPP_create_tensor_product(backends[backend_index], &product_plans[i], executors[executor_index],
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->a], idx_a,
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->b], idx_b,
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
+                                                     TAPP_IDENTITY, tensor_infos[backend_index][t->d], idx_d,
+                                                     TAPP_DEFAULT_PREC);
+        }
         if (failed(backends[backend_index], error, "creating the plan", run.steps[i].term)) return 1;
     }
 
@@ -338,7 +357,8 @@ int main(int argc, char *argv[])
     memset(last_read, 0, sizeof(last_read));
     memset(completed, 0, sizeof(completed));
 
-    // d = alpha * a * b + beta * c, with c = d and beta = 1 to add to the output
+    // Products: d = alpha * a * b + beta * c, permutes: d = alpha * a + beta * c. Both with c = d and beta = 1 to add to
+    // the output
     for (int i = 0; i < run.step_count; i++)
     {
         int executor_index = run.steps[i].executor;
@@ -349,8 +369,8 @@ int main(int argc, char *argv[])
         for (int e = 0; e < run.executor_count; e++)
         {
             if (e == executor_index) continue;
-            int step = max_int(max_int(last_write[t->a][e], last_write[t->b][e]),
-                               max_int(last_write[t->d][e], last_read[t->d][e]));
+            int step = max_int(last_write[t->a][e], max_int(last_write[t->d][e], last_read[t->d][e]));
+            if (!is_permute(t)) step = max_int(step, last_write[t->b][e]);
             if (step <= completed[e]) continue;
             Multi_TAPP_wait_one(backends[run.executors[e].backend], executors[e], statuses[step - 1]);
             completed[e] = step;
@@ -358,12 +378,21 @@ int main(int argc, char *argv[])
 
         double complex alpha = t->alpha;
         double complex beta = 1;
-        TAPP_error error = Multi_TAPP_execute_product(backends[backend_index], product_plans[i], executors[executor_index], &statuses[i], &alpha,
-                                                      data[t->a], data[t->b], &beta, data[t->d], data[t->d]);
+        TAPP_error error;
+        if (is_permute(t))
+        {
+            error = Multi_TAPP_execute_permute(backends[backend_index], permute_plans[i], executors[executor_index], &statuses[i],
+                                               &alpha, data[t->a], &beta, data[t->d], data[t->d]);
+        }
+        else
+        {
+            error = Multi_TAPP_execute_product(backends[backend_index], product_plans[i], executors[executor_index], &statuses[i],
+                                               &alpha, data[t->a], data[t->b], &beta, data[t->d], data[t->d]);
+        }
         if (failed(backends[backend_index], error, "executing", term_index)) return 1;
 
         last_read[t->a][executor_index] = i + 1;
-        last_read[t->b][executor_index] = i + 1;
+        if (!is_permute(t)) last_read[t->b][executor_index] = i + 1;
         last_write[t->d][executor_index] = i + 1;
     }
 
@@ -378,7 +407,14 @@ int main(int argc, char *argv[])
     for (int i = 0; i < run.step_count; i++)
     {
         int backend_index = run.executors[run.steps[i].executor].backend;
-        Multi_TAPP_destroy_tensor_product(backends[backend_index], product_plans[i]);
+        if (is_permute(&terms[run.steps[i].term]))
+        {
+            Multi_TAPP_destroy_tensor_permute(backends[backend_index], permute_plans[i]);
+        }
+        else
+        {
+            Multi_TAPP_destroy_tensor_product(backends[backend_index], product_plans[i]);
+        }
     }
 
     for (int i = 0; i < TENSOR_COUNT; i++) free(data[i]);
