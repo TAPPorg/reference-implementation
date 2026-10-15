@@ -6,7 +6,6 @@
 #include "internal.h"
 
 #include <cstring>
-#include <sched.h>
 
 TAPP_error TAPP_create_attr(TAPP_attr *attr)
 {
@@ -41,10 +40,14 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
         break;
         case TAPP_CPU_MASK:
         {
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
             if (size != sizeof(cpu_set_t)) return TAPP_TBLIS_ERROR_INVALID_ATTR_VALUE;
             cpu_set_t cpu_mask;
             std::memcpy(&cpu_mask, value, sizeof(cpu_set_t));
             if (CPU_COUNT(&cpu_mask) < 1) return TAPP_TBLIS_ERROR_INVALID_ATTR_VALUE;
+#else
+            return TAPP_TBLIS_ERROR_CPU_MASK_UNAVAILABLE;
+#endif
         }
         break;
         default:

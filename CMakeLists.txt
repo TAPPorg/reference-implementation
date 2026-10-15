@@ -189,45 +189,48 @@ if(BUILD_TESTING)
       )
 
     # Links only tapp-tblis: it exports the same TAPP_* symbols as tapp-reference
-    add_executable(tapp-tblis-test)
+    # Linux only: it checks threads and CPU masks through /proc and the Linux affinity API
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      add_executable(tapp-tblis-test)
 
-    target_sources(
-      tapp-tblis-test
-      PRIVATE
-        test/tblis_test.cpp
+      target_sources(
+        tapp-tblis-test
+        PRIVATE
+          test/tblis_test.cpp
+        )
+
+      target_link_libraries(
+        tapp-tblis-test
+        PRIVATE
+          tapp-tblis
+        )
+
+      set_property(
+        TARGET tapp-tblis-test
+        PROPERTY
+          CXX_STANDARD 20
+          CXX_STANDARD_REQUIRED YES
+          CXX_EXTENSIONS NO
       )
 
-    target_link_libraries(
-      tapp-tblis-test
-      PRIVATE
-        tapp-tblis
-      )
-
-    set_property(
-      TARGET tapp-tblis-test
-      PROPERTY
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-    )
-
-    add_test(
-      NAME tapp-tblis-test
-      COMMAND $<TARGET_FILE:tapp-tblis-test>
-      )
-
-    # The same test under OpenMP settings that change how many threads an executor gets and where they run
-    foreach(omp_setting OMP_THREAD_LIMIT=2 OMP_DYNAMIC=true OMP_PROC_BIND=true)
       add_test(
-        NAME tapp-tblis-test-${omp_setting}
+        NAME tapp-tblis-test
         COMMAND $<TARGET_FILE:tapp-tblis-test>
         )
-      set_tests_properties(
-        tapp-tblis-test-${omp_setting}
-        PROPERTIES
-          ENVIRONMENT ${omp_setting}
-        )
-    endforeach()
+
+      # The same test under OpenMP settings that change how many threads an executor gets and where they run
+      foreach(omp_setting OMP_THREAD_LIMIT=2 OMP_DYNAMIC=true OMP_PROC_BIND=true)
+        add_test(
+          NAME tapp-tblis-test-${omp_setting}
+          COMMAND $<TARGET_FILE:tapp-tblis-test>
+          )
+        set_tests_properties(
+          tapp-tblis-test-${omp_setting}
+          PROPERTIES
+            ENVIRONMENT ${omp_setting}
+          )
+      endforeach()
+    endif()
   endif()
 
   # ----------------------------------------------------------------------------
@@ -354,7 +357,8 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # asynchronous
 
-  if(TAPP_REFERENCE_ENABLE_TBLIS)
+  # Linux only: the example places its executors with CPU masks (cpu_set_t)
+  if(TAPP_REFERENCE_ENABLE_TBLIS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_executable(tapp-reference-async)
 
     target_sources(

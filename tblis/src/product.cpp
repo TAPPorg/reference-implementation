@@ -191,10 +191,12 @@ TAPP_error execute_product(const product_plan* plan,
     {
         // With binding on (OMP_PROC_BIND, OMP_PLACES), OpenMP pins its threads itself, so they do not inherit the mask
         // from the worker: every thread puts itself back on it
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
         if (exec->has_cpu_mask && omp_get_proc_bind() != omp_proc_bind_false)
         {
             sched_setaffinity(0, sizeof(cpu_set_t), &exec->cpu_mask);
         }
+#endif
         // TBLIS resets scalar and conj of an output tensor when it is done with it, so every thread needs its own
         tblis::tblis_tensor tC_thread = tblis_C;
 

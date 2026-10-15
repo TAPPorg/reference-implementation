@@ -21,10 +21,17 @@
 #include <map>
 #include <mutex>
 #include <queue>
-#include <sched.h>
 #include <thread>
 #include <unordered_map>
 #include <vector>
+
+// CPU masks (TAPP_CPU_MASK) use the Linux affinity API (cpu_set_t, sched_setaffinity, pthread_setaffinity_np). On other
+// platforms the attribute is refused and executors run on any CPU
+#if defined(__linux__)
+#  define TAPP_TBLIS_HAS_CPU_MASK 1
+#  include <pthread.h>
+#  include <sched.h>
+#endif
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Errors
@@ -177,7 +184,9 @@ struct executor
     bool stopping = false;
 
     unsigned thread_count;
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
     cpu_set_t cpu_mask;
+#endif
     bool has_cpu_mask;
 };
 

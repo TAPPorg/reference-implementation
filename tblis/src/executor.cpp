@@ -8,8 +8,6 @@
 #include <cstring>
 #include <functional>
 #include <mutex>
-#include <pthread.h>
-#include <sched.h>
 #include <thread>
 #include <utility>
 #include <omp.h>
@@ -51,16 +49,19 @@ uint64_t submit_task(executor* exec, std::function<TAPP_error()> task) {
 TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
     if (!exec) return TAPP_TBLIS_ERROR_NULL_POINTER;
 
-    cpu_set_t cpu_mask;
     bool has_cpu_mask = false;
     unsigned thread_count = tblis_get_num_threads();
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
+    cpu_set_t cpu_mask;
     CPU_ZERO(&cpu_mask);
+#endif
 
     // Without attributes the executor keeps the defaults above
     if (attr != 0)
     {
         const attributes& a = *reinterpret_cast<attributes*>(attr);
 
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
         std::map<TAPP_key, std::vector<char>>::const_iterator cpu_mask_itr = a.find(TAPP_CPU_MASK);
         if (cpu_mask_itr != a.end())
         {
@@ -70,6 +71,7 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
             has_cpu_mask = true;
             thread_count = CPU_COUNT(&cpu_mask);
         }
+#endif
 
         std::map<TAPP_key, std::vector<char>>::const_iterator thread_count_itr = a.find(TAPP_THREAD_COUNT);
         if (thread_count_itr != a.end())
@@ -81,12 +83,15 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
     }
 
     executor* backend_exec = new executor();
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
     backend_exec->cpu_mask = cpu_mask;
+#endif
     backend_exec->has_cpu_mask = has_cpu_mask;
     backend_exec->thread_count = thread_count;
 
     backend_exec->worker = std::thread(worker_loop, backend_exec);
 
+#ifdef TAPP_TBLIS_HAS_CPU_MASK
     if (has_cpu_mask)
     {
         // The kernel only refuses a mask without any usable CPU, from any other it silently drops the CPUs that are
@@ -100,6 +105,7 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
             return TAPP_TBLIS_ERROR_CPU_MASK_UNAVAILABLE;
         }
     }
+#endif
 
     *exec = (TAPP_executor) backend_exec;
     return 0;
