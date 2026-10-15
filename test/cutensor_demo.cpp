@@ -1643,35 +1643,35 @@ void attributes(){
     TAPP_attr attr;
     TAPP_create_attr(&attr);
 
-    int* device_id;
+    int* device_id_default;
     size_t size;
-    cudaStream_t stream;
+    cudaStream_t* stream_default;
 
     printf("---------------------------\n");
     printf("Default values of attributes:\n");
     printf("---------------------------\n");
-    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
-    printf("TAPP_CUTENSOR_DEVICE (should be 0): %i\n", *device_id);
-    printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", sizeof(int), size);
-    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
-    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 1): %i\n", stream==nullptr);
+    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id_default);
+    printf("TAPP_CUTENSOR_DEVICE==nullptr(should be 1): %i\n", device_id_default==nullptr);
+    printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", 0, size);
+    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream_default);
+    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 1): %i\n", stream_default==nullptr);
     printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n", 0, size);
-
-    // update attributes
-    *device_id = 1;
-    TAPP_attr_set(attr, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) device_id);
-
-    cudaStreamCreate(&stream);
-    TAPP_attr_set(attr, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream);
 
     printf("---------------------------\n");
     printf("Values of attributes after update:\n");
     printf("---------------------------\n");
-    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &device_id);
-    printf("TAPP_CUTENSOR_DEVICE (should be 1): %i\n", *device_id);
+    int device_id = 1;
+    void* value = &device_id;
+    TAPP_attr_set(attr, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id);
+    TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size,  &value);
+    printf("TAPP_CUTENSOR_DEVICE (should be 1): %i\n", *(int*)value);
     printf("TAPP_CUTENSOR_DEVICE size (should be %i): %i\n", sizeof(int), size);
-    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
-    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 0): %i\n", stream==nullptr);
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
+    TAPP_attr_set(attr, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) &stream);
+    value = &stream;
+    TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, &value);
+    printf("Is TAPP_CUTENSOR_STREAM nullptr (should be 0): %i\n", value==nullptr);
     printf("TAPP_CUTENSOR_STREAM size (should be %i): %i\n\n", sizeof(cudaStream_t), size);
 
     TAPP_destroy_attr(attr);
@@ -1772,7 +1772,7 @@ void multiple_devices(){
     int device_id;
     device_id = 1;
     TAPP_attr_set(attr1, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id);
-    TAPP_attr_set(attr1, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream1);
+    TAPP_attr_set(attr1, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) &stream1);
 
     TAPP_executor exec1;
     TAPP_create_executor(&exec1, attr1);
@@ -1811,7 +1811,7 @@ void multiple_devices(){
     cudaStreamCreate(&stream2);
     device_id = 2;
     TAPP_attr_set(attr2, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id);
-    TAPP_attr_set(attr2, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) stream2);
+    TAPP_attr_set(attr2, TAPP_CUTENSOR_STREAM, sizeof(cudaStream_t), (void*) &stream2);
 
     TAPP_executor exec2;
     TAPP_create_executor(&exec2, attr2);

@@ -5,9 +5,6 @@ TAPP_EXPORT TAPP_error TAPP_create_attr(TAPP_attr *attr){
     Attributes* attr_ptr = new Attributes();
     *attr = reinterpret_cast<TAPP_attr>(attr_ptr);
 
-    // Assign default values
-    int device_id = 0;
-    if(TAPP_attr_set(*attr, TAPP_CUTENSOR_DEVICE, sizeof(int), (void*) &device_id)!=TAPP_SUCCESS) return TAPP_ERR_ATTR_CREATION_FAILED;
     return TAPP_SUCCESS;
 }
 
@@ -36,7 +33,7 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
         case TAPP_CUTENSOR_STREAM:
         {
             if (size != sizeof(cudaStream_t)) return TAPP_ERR_ATTR_INVALID_VALUE;
-            cudaStream_t stream = static_cast<cudaStream_t>(value);
+            cudaStream_t stream = *static_cast<cudaStream_t*>(value);
             if((*((cudaStream_t *) value))==nullptr) break;
             unsigned int flags = 0;
             cudaError_t status = cudaStreamGetFlags(stream, &flags);
@@ -48,17 +45,6 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
     }
     Attributes& a = *reinterpret_cast<Attributes*>(attr);
     const char* bytes = static_cast<const char*>(value);
-
-    if(key==TAPP_CUTENSOR_STREAM){
-        cudaStream_t stream;
-        size_t size_tmp;
-        TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size_tmp, (void**) &stream);
-
-        if(stream!=nullptr){
-            cudaError_t status = cudaStreamDestroy(stream);
-            if(status!=cudaSuccess) return TAPP_ERR_ATTR_INVALID_STREAM;
-        }
-    }
 
     a[key].assign(bytes, bytes + size);
     return TAPP_SUCCESS;
@@ -78,9 +64,7 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, size_t *size, void** valu
     }
 
     *size = it->second.size();
-
-    if(key!=TAPP_CUTENSOR_STREAM) *value = it->second.data();
-    else std::memcpy(value, it->second.data(), sizeof(cudaStream_t));
+    *value = it->second.data();
     return TAPP_SUCCESS;
 }
 
