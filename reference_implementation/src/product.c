@@ -4,7 +4,6 @@
  * Umeå University - July 2024
  */
 #include "../include/product.h"
-#include "../include/executor.h"
 #include "../include/product_template.h"
 
 int64_t calculate_size(const int64_t* extents, const int nmode);

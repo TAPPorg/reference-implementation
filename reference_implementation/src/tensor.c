@@ -4,7 +4,6 @@
  * Umeå University - July 2024
  */
 #include "../include/tensor.h"
-#include "../include/executor.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_datatype type,
