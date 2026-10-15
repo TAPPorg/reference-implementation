@@ -47,7 +47,7 @@ void* tucker_to_tensor_contraction(int nmode_A, int64_t* extents_A, int64_t* str
     TAPP_create_tensor_info(&info_D, TAPP_F64, nmode_D, extents_D, strides_D);
 
     /*
-     * Decide who the calculation should be executed, which indices to contract, elemental operations and precision.
+     * Decide where the calculation should be executed, which indices to contract, elemental operations and precision.
      */
 
     // Decide elemental operations (conjugate available for complex datatypes)

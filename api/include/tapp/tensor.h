@@ -6,6 +6,7 @@
 #include "util.h"
 #include "error.h"
 #include "datatype.h"
+#include "executor.h"
 
 typedef intptr_t TAPP_tensor_info;
 
