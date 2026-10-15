@@ -70,12 +70,6 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_D;
     TAPP_create_tensor_info(&info_D, TAPP_F32, nmode_D, extents_D, strides_D);
 
-    // Declare executor
-    TAPP_executor exec;
-
-    // Create executor
-    TAPP_create_executor(&exec, 0);
-
     /*
      * Assign the options for the calculation.
      * The precision used will be the default precision.
