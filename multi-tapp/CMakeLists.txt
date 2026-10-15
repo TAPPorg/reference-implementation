@@ -65,6 +65,7 @@ target_sources(
     src/internal.h
     src/permute.c
     src/product.c
+    src/status.c
     src/tensor.c
     include/multi_tapp.h
     include/multi_tapp/attributes.h
@@ -73,6 +74,7 @@ target_sources(
     include/multi_tapp/executor.h
     include/multi_tapp/permute.h
     include/multi_tapp/product.h
+    include/multi_tapp/status.h
     include/multi_tapp/tensor.h
   )
 

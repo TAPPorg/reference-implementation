@@ -66,6 +66,8 @@ TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *li
     }
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_wait_one), "TAPP_wait_one", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_wait_all), "TAPP_wait_all", false, 0);
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_status_get_error), "TAPP_status_get_error", false, 0);
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_status), "TAPP_destroy_status", false, 0);
     error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_product), "TAPP_create_tensor_product", true, MULTI_TAPP_ERROR_MISSING_CREATE_TENSOR_PRODUCT);
     if (error != 0) // Check success of loading TAPP_create_tensor_product
     {

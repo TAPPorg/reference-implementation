@@ -96,6 +96,11 @@ TAPP_error Multi_TAPP_wait_one(Multi_TAPP_backend backend, TAPP_executor exec, T
         fprintf(stderr, "ERROR: Called function with NULL executor\n");
         return MULTI_TAPP_ERROR_INVALID_EXECUTOR;
     }
+    if (status == 0)
+    {
+        fprintf(stderr, "ERROR: Called function with NULL status\n");
+        return MULTI_TAPP_ERROR_INVALID_STATUS;
+    }
     struct mt_backend* backend_ptr = (struct mt_backend*)backend;
     if (backend_ptr->TAPP_wait_one == NULL)
     {
@@ -109,7 +114,13 @@ TAPP_error Multi_TAPP_wait_one(Multi_TAPP_backend backend, TAPP_executor exec, T
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
     }
 
-    TAPP_error error = backend_ptr->TAPP_wait_one(multi_tapp_exec->exec, status);
+    struct mt_status* multi_tapp_status = (struct mt_status*)status;
+    if (backend != multi_tapp_status->backend)
+    {
+        return MULTI_TAPP_ERROR_STATUS_WRONG_BACKEND;
+    }
+
+    TAPP_error error = backend_ptr->TAPP_wait_one(multi_tapp_exec->exec, multi_tapp_status->status);
 
     return multi_tapp_error_from_backend(error);
 }

@@ -12,6 +12,7 @@ extern "C" {
 #include "multi_tapp/tensor.h"
 #include "multi_tapp/product.h"
 #include "multi_tapp/permute.h"
+#include "multi_tapp/status.h"
 
 #ifdef __cplusplus
 }

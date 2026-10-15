@@ -177,7 +177,12 @@ TAPP_error Multi_TAPP_execute_permute(Multi_TAPP_backend backend,
         return MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND;
     }
 
-    TAPP_error error = backend_ptr->TAPP_execute_permute(multi_tapp_plan->plan, multi_tapp_exec->exec, status, alpha, A, beta, B, C);
+    struct mt_status* multi_tapp_status;
+    TAPP_error error = multi_tapp_status_wrap(backend, status, &multi_tapp_status);
+    if (error != MULTI_TAPP_SUCCESS) return error;
 
-    return multi_tapp_error_from_backend(error);
+    error = backend_ptr->TAPP_execute_permute(multi_tapp_plan->plan, multi_tapp_exec->exec, multi_tapp_status_of(multi_tapp_status),
+                                              alpha, A, beta, B, C);
+
+    return multi_tapp_status_confirm(multi_tapp_status, status, error);
 }

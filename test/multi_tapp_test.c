@@ -95,12 +95,30 @@ static void run_contraction(const char* lib, struct objects* o)
     error = Multi_TAPP_wait_all(o->backend, o->exec);
     check(error == 0 || error == MULTI_TAPP_ERROR_UNIMPLEMENTED, lib, "wait_all");
 
+    // Getting the error of a status is optional too
+    error = Multi_TAPP_status_get_error(o->backend, status);
+    check(error == 0 || error == MULTI_TAPP_ERROR_UNIMPLEMENTED, lib, "status_get_error after the product");
+    check(Multi_TAPP_destroy_status(o->backend, status) == 0, lib, "destroy status");
+
     bool correct = true;
     for (int i = 0; i < 4; i++)
     {
         if (fabs(D[i] - expected[i]) > 1e-12) correct = false;
     }
     check(correct, lib, "contraction result");
+
+    // Without a status: the caller does not want one, and the backend must get NULL to write it to
+    double D_no_status[4] = {0, 0, 0, 0};
+    error = Multi_TAPP_execute_product(o->backend, o->plan, o->exec, NULL, &alpha, A, B, &beta, C, D_no_status);
+    check(error == 0, lib, "execute product without a status");
+    error = Multi_TAPP_wait_all(o->backend, o->exec);
+    check(error == 0 || error == MULTI_TAPP_ERROR_UNIMPLEMENTED, lib, "wait_all after the product without a status");
+    correct = true;
+    for (int i = 0; i < 4; i++)
+    {
+        if (fabs(D_no_status[i] - expected[i]) > 1e-12) correct = false;
+    }
+    check(correct, lib, "contraction result without a status");
 }
 
 // An error from the backend itself must not be mistaken for an error of multi-tapp
@@ -157,6 +175,7 @@ static void check_permute(const char* lib, struct objects* o)
     // Waiting is optional: synchronous implementations may not provide it
     error = Multi_TAPP_wait_all(o->backend, o->exec);
     check(error == 0 || error == MULTI_TAPP_ERROR_UNIMPLEMENTED, lib, "wait_all after the permute");
+    check(Multi_TAPP_destroy_status(o->backend, status) == 0, lib, "destroy status of the permute");
 
     bool correct = true;
     for (int i = 0; i < 2; i++)
@@ -208,6 +227,19 @@ static void check_foreign_objects(const char* lib, struct objects* o, struct obj
     check(error == MULTI_TAPP_ERROR_TENSOR_PRODUCT_WRONG_BACKEND, lib, "reject tensor product from another backend");
     error = Multi_TAPP_execute_product(o->backend, o->plan, other->exec, &status, &alpha, A, B, &beta, C, D);
     check(error == MULTI_TAPP_ERROR_EXECUTOR_WRONG_BACKEND, lib, "reject executor from another backend");
+    check(status == 0, lib, "no status from a rejected execution");
+
+    // A status from the other backend
+    error = Multi_TAPP_execute_product(other->backend, other->plan, other->exec, &status, &alpha, A, B, &beta, C, D);
+    check(error == 0, lib, "execute product on the other backend");
+    // A backend without wait_one reports that before it looks at the status
+    error = Multi_TAPP_wait_one(o->backend, o->exec, status);
+    check(error == MULTI_TAPP_ERROR_STATUS_WRONG_BACKEND || error == MULTI_TAPP_ERROR_UNIMPLEMENTED,
+          lib, "reject status from another backend in wait_one");
+    check(Multi_TAPP_destroy_status(o->backend, status) == MULTI_TAPP_ERROR_STATUS_WRONG_BACKEND,
+          lib, "reject status from another backend in destroy_status");
+    Multi_TAPP_wait_all(other->backend, other->exec);
+    check(Multi_TAPP_destroy_status(other->backend, status) == 0, lib, "destroy status with its own backend");
 }
 
 // A library that can not be loaded gives an error that can be explained without a backend

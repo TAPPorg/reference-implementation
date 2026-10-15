@@ -70,6 +70,8 @@ size_t Multi_TAPP_explain_error(Multi_TAPP_backend backend,
         return write_error_message(message, maxlen,"Attempted use of TAPP_tensor_product from different implementation");
     case MULTI_TAPP_ERROR_TENSOR_PERMUTE_WRONG_BACKEND:
         return write_error_message(message, maxlen,"Attempted use of TAPP_tensor_permute from different implementation");
+    case MULTI_TAPP_ERROR_STATUS_WRONG_BACKEND:
+        return write_error_message(message, maxlen,"Attempted use of TAPP_status from different implementation");
     case MULTI_TAPP_ERROR_INVALID_BACKEND:
         return write_error_message(message, maxlen,"Attempted use of an invalid Multi_TAPP_backend");
     case MULTI_TAPP_ERROR_INVALID_ATTR:
@@ -90,6 +92,8 @@ size_t Multi_TAPP_explain_error(Multi_TAPP_backend backend,
         return write_error_message(message, maxlen,"Attempted use of an invalid TAPP_tensor_product");
     case MULTI_TAPP_ERROR_INVALID_TENSOR_PERMUTE:
         return write_error_message(message, maxlen,"Attempted use of an invalid TAPP_tensor_permute");
+    case MULTI_TAPP_ERROR_INVALID_STATUS:
+        return write_error_message(message, maxlen,"Attempted use of an invalid TAPP_status");
     case MULTI_TAPP_ERROR_INVALID_ARGUMENT:
         return write_error_message(message, maxlen,"An argument for the result of the function is NULL");
     case MULTI_TAPP_ERROR_ALLOCATION_FAILED:
