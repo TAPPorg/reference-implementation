@@ -86,12 +86,16 @@ jobs:
       shell: bash
       run: |
         if [[ '${{ matrix.sanitize }}' = 'true' ]]; then
+          echo "CFLAGS=${{ matrix.sanitize_flags }}" >> "$GITHUB_ENV"
           echo "CXXFLAGS=${{ matrix.sanitize_flags }}" >> "$GITHUB_ENV"
         fi
 
     - name: Install prerequisite MacOS packages
       if: ${{ startsWith(matrix.os, 'macos') }}
-      run: brew install ninja ccache
+      run: |
+        brew install ninja ccache libomp
+        # libomp is keg-only, so point FindOpenMP to it
+        echo "OpenMP_ROOT=$(brew --prefix libomp)" >> "$GITHUB_ENV"
 
     - name: Install prerequisites Ubuntu packages
       if: ${{ startsWith(matrix.os, 'ubuntu') }}

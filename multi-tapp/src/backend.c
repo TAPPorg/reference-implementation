@@ -1,6 +1,22 @@
 #include "../include/multi_tapp/backend.h"
 #include "internal.h"
 
+// RTLD_DEEPBIND is a glibc extension (not available on macOS) and is rejected by the sanitizer runtimes
+#if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define MULTI_TAPP_SANITIZED
+#  endif
+#endif
+#if defined(__SANITIZE_ADDRESS__)
+#  define MULTI_TAPP_SANITIZED
+#endif
+
+#if defined(RTLD_DEEPBIND) && !defined(MULTI_TAPP_SANITIZED)
+#  define MULTI_TAPP_DLOPEN_FLAGS (RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND)
+#else
+#  define MULTI_TAPP_DLOPEN_FLAGS (RTLD_LAZY | RTLD_LOCAL)
+#endif
+
 static TAPP_error load_function(void* lib_handle, void** func, const char* func_name, bool crucial, TAPP_error error_code);
 
 TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *libpath)
@@ -16,7 +32,7 @@ TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *li
         fprintf(stderr, "ERROR: Failed to allocate space for a backend object\n");
         return MULTI_TAPP_ERROR_ALLOCATION_FAILED;
     }
-    backend_ptr->lib_handle = dlopen(libpath, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
+    backend_ptr->lib_handle = dlopen(libpath, MULTI_TAPP_DLOPEN_FLAGS);
     if (!backend_ptr->lib_handle)
     {
         fprintf(stderr, "dlopen failed: %s\n", dlerror());
