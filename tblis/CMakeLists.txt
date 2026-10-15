@@ -70,6 +70,8 @@ target_sources(
     src/runtime.cpp
     src/tensor.cpp
     src/product.cpp
+    src/permute.cpp
+    src/helpers.cpp
     src/tblis_utils.cpp
     src/internal.h
     include/tapp_tblis.h

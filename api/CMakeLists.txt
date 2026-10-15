@@ -62,6 +62,8 @@ target_sources(
   PRIVATE
     include/tapp/tensor.h
     include/tapp/product.h
+    include/tapp/permute.h
+    include/tapp/element_op.h
     include/tapp/attributes.h
     include/tapp/datatype.h
     include/tapp/error.h

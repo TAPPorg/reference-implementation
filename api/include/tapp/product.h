@@ -9,18 +9,7 @@
 #include "datatype.h"
 #include "status.h"
 #include "tensor.h"
-
-//TODO: where should this go?
-typedef int TAPP_element_op;
-
-enum
-{
-    TAPP_IDENTITY = 0,
-    TAPP_CONJUGATE = 1,
-};
-
-//TODO: where should this go?
-#define TAPP_IN_PLACE NULL
+#include "element_op.h"
 
 /*
  * TODO: what are the required error conditions?

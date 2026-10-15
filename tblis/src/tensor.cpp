@@ -130,8 +130,7 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
 
 tblis::tblis_tensor create_tblis_tensor(const tensor_info& info,
                                         const void* data,
-                                        const tblis::tblis_scalar* scalar,
-                                        const bool* conj) {
+                                        const tblis::tblis_scalar* scalar) {
 
     tblis::tblis_tensor t;
 
@@ -140,7 +139,7 @@ tblis::tblis_tensor create_tblis_tensor(const tensor_info& info,
     t.stride = const_cast<tblis::stride_type*>(info.strides.data());
     t.data = const_cast<void*>(data);
     t.type = info.type;
-    t.conj = (conj == nullptr ? info.conj : *conj);
+    t.conj = info.conj;
     // reset, not operator=: assignment converts into the existing (double) type and keeps it
     t.scalar.reset(scalar == nullptr ? tblis::tblis_scalar(1.0, info.type) : *scalar);
     return t;

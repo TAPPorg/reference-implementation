@@ -18,10 +18,11 @@ static const char* error_message(TAPP_error error)
         case TAPP_TBLIS_ERROR_NEGATIVE_EXTENT:      return "Extents cannot be negative.";
         case TAPP_TBLIS_ERROR_UNSUPPORTED_DATATYPE: return "The datatype is not supported by TBLIS.";
         case TAPP_TBLIS_ERROR_OUT_OF_MEMORY:        return "Memory allocation failed.";
-        case TAPP_TBLIS_ERROR_DATATYPE_MISMATCH:    return "All tensors in a product must have the same datatype.";
+        case TAPP_TBLIS_ERROR_DATATYPE_MISMATCH:    return "All tensors of an operation must have the same datatype.";
         case TAPP_TBLIS_ERROR_EXTENT_MISMATCH:      return "An index has different extents in different places.";
         case TAPP_TBLIS_ERROR_C_D_MISMATCH:         return "Tensors C and D must have the same indices and extents.";
-        case TAPP_TBLIS_ERROR_INDEX_NOT_IN_INPUTS:  return "Tensor D has an index that appears in neither A nor B.";
+        case TAPP_TBLIS_ERROR_B_C_MISMATCH:         return "Tensors B and C must have the same indices and extents.";
+        case TAPP_TBLIS_ERROR_INDEX_NOT_IN_INPUTS:  return "The output tensor has an index that appears in none of the inputs.";
         case TAPP_TBLIS_ERROR_TOO_MANY_INDICES:     return "The product has more distinct indices than TBLIS supports.";
         case TAPP_TBLIS_ERROR_UNSUPPORTED_CONTRACTION:
             return "An index appearing only in A or only in B is not supported yet.";
@@ -37,6 +38,10 @@ static const char* error_message(TAPP_error error)
             return "The executor cannot run on the CPUs of its CPU mask.";
         case TAPP_TBLIS_ERROR_INVALID_STATUS:
             return "The status does not belong to a product of this executor.";
+        case TAPP_TBLIS_ERROR_REPEATED_INDEX:
+            return "A tensor of a permute uses an index more than once.";
+        case TAPP_TBLIS_ERROR_INDEX_NOT_IN_OUTPUT:
+            return "Tensor A of a permute has an index that does not appear in C.";
     }
 
     return "Unknown error code.";

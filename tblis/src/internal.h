@@ -7,6 +7,7 @@
  * tapp_tblis.h.
  */
 
+#include "tblis/frame/base/basic_types.h"
 #include <tapp.h>
 #include <tapp_tblis.h>
 
@@ -48,6 +49,7 @@ enum TAPP_TBLIS_error : TAPP_error
     TAPP_TBLIS_ERROR_DATATYPE_MISMATCH,
     TAPP_TBLIS_ERROR_EXTENT_MISMATCH,
     TAPP_TBLIS_ERROR_C_D_MISMATCH,
+    TAPP_TBLIS_ERROR_B_C_MISMATCH,
     TAPP_TBLIS_ERROR_INDEX_NOT_IN_INPUTS,
     TAPP_TBLIS_ERROR_TOO_MANY_INDICES,
     TAPP_TBLIS_ERROR_UNSUPPORTED_CONTRACTION,
@@ -57,6 +59,8 @@ enum TAPP_TBLIS_error : TAPP_error
     TAPP_TBLIS_ERROR_INVALID_ATTR_VALUE,
     TAPP_TBLIS_ERROR_CPU_MASK_UNAVAILABLE,
     TAPP_TBLIS_ERROR_INVALID_STATUS,
+    TAPP_TBLIS_ERROR_REPEATED_INDEX,
+    TAPP_TBLIS_ERROR_INDEX_NOT_IN_OUTPUT,
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -153,11 +157,10 @@ struct tensor_info
 };
 
 // Creates a tblis_tensor that points to data and to the shape of info: nothing is copied, so info must outlive it.
-// scalar and conj replace 1 and the conj of info when they are not null.
+// The tensor is conjugated as info says, and scaled by scalar, or by 1 when scalar is null.
 tblis::tblis_tensor create_tblis_tensor(const tensor_info& info,
                                         const void* data,
-                                        const tblis::tblis_scalar* scalar,
-                                        const bool* conj);
+                                        const tblis::tblis_scalar* scalar);
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Attributes
@@ -201,12 +204,11 @@ struct product_plan
     tensor_info A;
     tensor_info B;
     tensor_info C;
-    int64_t size_D;
+    tensor_info D;
     bool conj_scalars;
     std::vector<tblis::label_type> idx_A;
     std::vector<tblis::label_type> idx_B;
     std::vector<tblis::label_type> idx_C;
-    tblis::type_t scalar_type;
 };
 
 bool same_structure(const tensor_info* A, const int64_t* idx_A, const tensor_info* B, const int64_t* idx_B);
@@ -219,5 +221,27 @@ TAPP_error execute_product(const product_plan* plan,
                            const tblis::tblis_scalar beta,
                            const void* C,
                                  void* D);
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Permutes
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+struct permute_plan
+{
+    tensor_info A;
+    tensor_info B;
+    tensor_info C;
+    bool conj_scalars;
+    std::vector<tblis::label_type> idx_A;
+    std::vector<tblis::label_type> idx_B;
+};
+
+TAPP_error execute_permute(const permute_plan* plan,
+                           const executor* exec,
+                           const tblis::scalar alpha,
+                           const void* A,
+                           const tblis::scalar beta,
+                           const void* B,
+                                 void* C);
 
 #endif  /* TAPP_TBLIS_INTERNAL_H_ */

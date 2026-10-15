@@ -48,6 +48,15 @@ static T rowmajor(std::vector<int64_t> ext, std::vector<int64_t> idx)
     return t;
 }
 
+// Column-major with pad unused elements after every column, like a block of a larger matrix
+static T padded(std::vector<int64_t> ext, std::vector<int64_t> idx, int64_t pad)
+{
+    T t{ext, {}, idx};
+    int64_t s = 1;
+    for (size_t i = 0; i < ext.size(); i++) { t.str.push_back(s); s *= ext[i] + (i == 0 ? pad : 0); }
+    return t;
+}
+
 template <typename V> static V cj(V v) { return v; }
 template <> cd cj<cd>(cd v) { return std::conj(v); }
 
@@ -94,6 +103,29 @@ static void reference(const T& a, const std::vector<V>& A, int opA,
         }
     }
     for (size_t i = 0; i < D.size(); i++) if (touched[i]) D[i] = opD ? cj(acc[i]) : acc[i];
+}
+
+// C = op_C(alpha * op_A(A) + beta * op_B(B)), where B has the structure of C and A has the same indices in any order.
+// Elements of C outside of the tensor (padding) are left alone.
+template <typename V>
+static void reference_permute(const T& a, const std::vector<V>& A, int opA, const std::vector<V>* B, int opB,
+                              const T& c, std::vector<V>& C, int opC, V alpha, V beta)
+{
+    auto off = [](const T& t, std::map<int64_t, int64_t>& pos) {
+        int64_t o = 0; for (size_t i = 0; i < t.idx.size(); i++) o += pos[t.idx[i]] * t.str[i]; return o;
+    };
+
+    std::map<int64_t, int64_t> p;
+    int64_t n = 1; for (auto e : c.ext) n *= e;
+    for (int64_t k = 0; k < n; k++)
+    {
+        int64_t r = k; for (size_t i = 0; i < c.idx.size(); i++) { p[c.idx[i]] = r % c.ext[i]; r /= c.ext[i]; }
+        int64_t oc = off(c, p);
+        V va = A[off(a, p)];
+        V v = alpha * (opA ? cj(va) : va);
+        if (B && beta != V(0)) v += beta * (opB ? cj((*B)[oc]) : (*B)[oc]);
+        C[oc] = opC ? cj(v) : v;
+    }
 }
 
 template <typename V> static TAPP_datatype dtype();
@@ -364,6 +396,73 @@ static void test_plan_indices()
     check("plan: an index of D that is not in A or B is refused", !plan_created(a, b, colmajor({5, 3, 2}, {i, j, m})));
 }
 
+// Whether a permute plan for A, B -> C can be created. A plan that is created is destroyed again
+static bool permute_created(const T& a, const T& b, const T& c, TAPP_datatype type_A = TAPP_F64)
+{
+    TAPP_tensor_info ia = info(a, type_A), ib = info(b, TAPP_F64), ic = info(c, TAPP_F64);
+    TAPP_tensor_permute plan;
+    TAPP_error e = TAPP_create_tensor_permute(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                                              TAPP_IDENTITY, ic, c.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(ic);
+    if (e == 0) TAPP_destroy_tensor_permute(plan);
+    return e == 0;
+}
+
+// A permute only reorders: A and C have the same indices, each once, with the same extents, and B has the structure of C
+static void test_permute_plan()
+{
+    const int64_t i = 1, j = 2, k = 3;
+    auto a = colmajor({5, 4}, {i, j}), c = colmajor({4, 5}, {j, i});
+
+    check("permute plan: a transpose is accepted", permute_created(a, c, c));
+    check("permute plan: the same index order is accepted", permute_created(a, a, a));
+    check("permute plan: scalars are accepted", permute_created(colmajor({}, {}), colmajor({}, {}), colmajor({}, {})));
+
+    check("permute plan: an index of A that is not in C is refused",
+          !permute_created(a, colmajor({5}, {i}), colmajor({5}, {i})));
+    check("permute plan: an index of C that is not in A is refused",
+          !permute_created(a, colmajor({4, 5, 2}, {j, i, k}), colmajor({4, 5, 2}, {j, i, k})));
+    check("permute plan: an index repeated in A is refused",
+          !permute_created(colmajor({4, 4}, {i, i}), colmajor({4}, {i}), colmajor({4}, {i})));
+    check("permute plan: an index repeated in C is refused",
+          !permute_created(a, colmajor({5, 5}, {i, i}), colmajor({5, 5}, {i, i})));
+    check("permute plan: different extents of an index in A and C are refused",
+          !permute_created(a, colmajor({5, 5}, {j, i}), colmajor({5, 5}, {j, i})));
+    check("permute plan: B with other strides than C is refused", !permute_created(a, rowmajor({4, 5}, {j, i}), c));
+    check("permute plan: B with another index order than C is refused", !permute_created(a, colmajor({5, 4}, {i, j}), c));
+    check("permute plan: different datatypes are refused", !permute_created(a, c, c, TAPP_F32));
+}
+
+// Pointers to the data of A and C are required, B only when beta != 0
+static void test_permute_null()
+{
+    const int64_t i = 1, j = 2;
+    auto a = colmajor({5, 4}, {i, j}), c = colmajor({4, 5}, {j, i});
+    std::vector<double> A(20, 1.0), B(20, 1.0), C(20, 0.0);
+    double alpha = 1, beta = 1, zero = 0;
+
+    TAPP_executor ex;
+    TAPP_create_executor(&ex, 0);
+    TAPP_tensor_info ia = info(a, TAPP_F64), ic = info(c, TAPP_F64);
+    TAPP_tensor_permute plan;
+    TAPP_create_tensor_permute(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ic, c.idx.data(),
+                               TAPP_IDENTITY, ic, c.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ic);
+
+    check("permute: B = NULL with beta != 0 is refused",
+          TAPP_execute_permute(plan, ex, nullptr, &alpha, A.data(), &beta, nullptr, C.data()) != 0);
+    check("permute: B = NULL with beta = 0 is accepted",
+          TAPP_execute_permute(plan, ex, nullptr, &alpha, A.data(), &zero, nullptr, C.data()) == 0);
+    check("permute: A = NULL is refused",
+          TAPP_execute_permute(plan, ex, nullptr, &alpha, nullptr, &beta, B.data(), C.data()) != 0);
+    check("permute: C = NULL is refused",
+          TAPP_execute_permute(plan, ex, nullptr, &alpha, A.data(), &beta, B.data(), nullptr) != 0);
+    TAPP_wait_all(ex);
+
+    TAPP_destroy_tensor_permute(plan);
+    TAPP_destroy_executor(ex);
+}
+
 // A product does not need its plan after it is submitted: every plan is destroyed while its product is still queued
 static void test_plan_lifetime()
 {
@@ -404,6 +503,23 @@ static void test_plan_lifetime()
     check("status: one that was never given out is refused", TAPP_wait_one(ex, tasks + 1) != 0);
 
     TAPP_destroy_executor(ex);
+}
+
+// The executor is still alive, so its threads are too: the worker and the ones it started for the operation
+static void check_executor_threads(int threads_before, int on_mask_before)
+{
+    if (exec_threads >= 0)
+    {
+        int started = count_threads(nullptr) - threads_before;
+        std::printf("%s   %d thread(s), expected %d\n", started == exec_threads ? "ok  " : "FAIL", started, exec_threads);
+        if (started != exec_threads) failures++;
+    }
+    if (exec_threads >= 0 && exec_mask)
+    {
+        int on_mask = count_threads(exec_mask) - on_mask_before;
+        std::printf("%s   %d thread(s) on the CPU mask, expected %d\n", on_mask == exec_threads ? "ok  " : "FAIL", on_mask, exec_threads);
+        if (on_mask != exec_threads) failures++;
+    }
 }
 
 // in_place: pass D as C. c_null: pass NULL for C (beta must be 0). nan_D: prefill D with NaN.
@@ -461,21 +577,79 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in D)" : "");
     if (!ok) failures++;
 
-    // The executor is still alive, so its threads are too: the worker and the ones it started for the product
-    if (exec_threads >= 0)
-    {
-        int started = count_threads(nullptr) - threads_before;
-        std::printf("%s   %d thread(s), expected %d\n", started == exec_threads ? "ok  " : "FAIL", started, exec_threads);
-        if (started != exec_threads) failures++;
-    }
-    if (exec_threads >= 0 && exec_mask)
-    {
-        int on_mask = count_threads(exec_mask) - on_mask_before;
-        std::printf("%s   %d thread(s) on the CPU mask, expected %d\n", on_mask == exec_threads ? "ok  " : "FAIL", on_mask, exec_threads);
-        if (on_mask != exec_threads) failures++;
-    }
+    check_executor_threads(threads_before, on_mask_before);
 
     TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_executor(ex);
+}
+
+// in_place: pass C as B. b_null: pass NULL for B (beta must be 0). nan_C: prefill C with NaN (not with padding: the
+// padding would stay NaN).
+// tblis_88: a case that TBLIS 9b95712 computes wrong (TBLIS issue #88: a conjugated A, beta != 0 and a change of index
+// order). A wrong result is reported but not counted as a failure, a right one says that the issue seems to be fixed.
+template <typename V>
+static void run_permute(const char* name, const T& a, const T& c, int opA, int opB, int opC, V alpha, V beta,
+                        bool in_place = false, bool b_null = false, bool nan_C = false, bool tblis_88 = false)
+{
+    std::mt19937 g(42);
+    std::vector<V> A(a.span()), B(c.span()), C(c.span());
+    for (auto& x : A) x = rnd<V>(g);
+    for (auto& x : B) x = rnd<V>(g);
+    for (auto& x : C) x = nan_C ? V(std::numeric_limits<double>::quiet_NaN()) : rnd<V>(g);
+    if (in_place) C = B;
+
+    // Elements in the padding are compared too: they must keep their value
+    std::vector<V> R = C;
+    reference_permute(a, A, opA, (b_null ? nullptr : &B), opB, c, R, opC, alpha, beta);
+
+    if (exec_threads >= 0) wait_for_exited_threads();
+    int threads_before = count_threads(nullptr), on_mask_before = exec_mask ? count_threads(exec_mask) : 0;
+    TAPP_executor ex;
+    TAPP_error ee = TAPP_create_executor(&ex, exec_attr);
+    if (ee != 0) { std::printf("FAIL %-45s create_executor returned %d\n", name, ee); failures++; return; }
+    TAPP_tensor_info ia = info(a, dtype<V>()), ib = info(c, dtype<V>()), ic = info(c, dtype<V>());
+    TAPP_tensor_permute plan;
+    TAPP_error e = TAPP_create_tensor_permute(&plan, opA, ia, a.idx.data(), opB, ib, c.idx.data(),
+                                              opC, ic, c.idx.data(), TAPP_DEFAULT_PREC);
+    if (e != 0) { std::printf("FAIL %-45s create_tensor_permute returned %d\n", name, e); failures++; return; }
+
+    // Destroy the user's tensor infos right away: the plan must not depend on them
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(ic);
+
+    TAPP_status st = 0;
+    {
+        V alpha_local = alpha, beta_local = beta;   // goes out of scope before the wait, like a caller's locals would
+        const void* Bp = b_null ? nullptr : (in_place ? (const void*)C.data() : (const void*)B.data());
+        e = TAPP_execute_permute(plan, ex, &st, &alpha_local, A.data(), &beta_local, Bp, C.data());
+        alpha_local = V(999); beta_local = V(999);
+    }
+    if (e != 0) { std::printf("FAIL %-45s execute_permute returned %d\n", name, e); failures++; return; }
+    TAPP_wait_one(ex, st);
+
+    double err = 0, scale = 0;
+    bool nan = false;
+    for (size_t i = 0; i < C.size(); i++)
+    {
+        if (std::isnan(std::abs(C[i]))) nan = true;
+        err = std::max(err, (double)std::abs(C[i] - R[i]));
+        scale = std::max(scale, (double)std::abs(R[i]));
+    }
+    double tol = (sizeof(V) == sizeof(float) ? 1e-5 : 1e-12) * std::max(1.0, scale);
+    bool ok = !nan && err <= tol;
+    if (tblis_88)
+    {
+        std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "known", name, err,
+                    ok ? " (TBLIS #88 seems fixed: remove the known issue)" : " (TBLIS #88)");
+    }
+    else
+    {
+        std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in C)" : "");
+        if (!ok) failures++;
+    }
+
+    check_executor_threads(threads_before, on_mask_before);
+
+    TAPP_destroy_tensor_permute(plan);
     TAPP_destroy_executor(ex);
 }
 
@@ -506,6 +680,18 @@ int main()
     run<cd>("c64 gemm, conj all", a, b, d, CJ, CJ, CJ, CJ, alpha, beta);
     run<cd>("c64 gemm, conj A and D, in place", a, b, d, CJ, I, I, CJ, alpha, beta, true);
 
+    // D transposed: B and D have different strides for j, where TBLIS conjugates a conjugated output wrong and writes
+    // outside of it (TBLIS #91). D must never reach tblis_tensor_mult conjugated
+    auto dt = colmajor({3, 5}, {j, i});
+    run<cd>("c64 gemm, D transposed, conj C", a, b, dt, I, I, CJ, I, alpha, beta);
+    run<cd>("c64 gemm, D transposed, conj C, in place", a, b, dt, I, I, CJ, I, alpha, beta, true);
+
+    // C and D with unused elements after every column: C must be copied into D along their strides
+    auto dp = padded({5, 3}, {i, j}, 2);
+    run<double>("f64 gemm, padded C and D", a, b, dp, I, I, I, I, 1.5, 0.5);
+    run<double>("f64 gemm, padded C and D, in place", a, b, dp, I, I, I, I, 1.5, 0.5, true);
+    run<cd>("c64 gemm, padded C and D, conj C", a, b, dp, I, I, CJ, I, alpha, beta);
+
     // j: Hadamard (A, B, D), k: contracted, i/l: free; D row-major, A/B col-major
     auto a3 = colmajor({3, 4, 5}, {i, j, k}), b3 = colmajor({4, 5, 2}, {j, k, l}), d3 = rowmajor({3, 4, 2}, {i, j, l});
     run<double>("f64 hadamard + contraction, mixed layouts", a3, b3, d3, I, I, I, I, 1.0, 1.0);
@@ -519,10 +705,41 @@ int main()
     auto ao = colmajor({3}, {i}), bo = colmajor({4}, {j}), dout = colmajor({3, 4}, {i, j});
     run<double>("f64 outer product", ao, bo, dout, I, I, I, I, 1.0, 0.5);
 
+    // Permutes: C = op_C(alpha * op_A(A) + beta * op_B(B)), where B has the structure of C
+    auto pa = colmajor({5, 4}, {i, j}), pt = colmajor({4, 5}, {j, i}), pp = padded({4, 5}, {j, i}, 3);
+    run_permute<double>("f64 permute, transpose", pa, pt, I, I, I, 1.5, 0.5);
+    run_permute<float>("f32 permute, transpose", pa, pt, I, I, I, 1.5f, 0.5f);
+    run_permute<double>("f64 permute, same index order", pa, pa, I, I, I, 1.5, 0.5);
+    run_permute<double>("f64 permute, ijk -> kij", colmajor({3, 4, 5}, {i, j, k}), colmajor({5, 3, 4}, {k, i, j}),
+                        I, I, I, 1.5, 0.5);
+    run_permute<double>("f64 permute, scalar", colmajor({}, {}), colmajor({}, {}), I, I, I, 1.5, 0.5);
+    run_permute<double>("f64 permute, in place (B == C)", pa, pt, I, I, I, 1.5, 0.5, true);
+    run_permute<double>("f64 permute, beta = 0, B = NULL", pa, pt, I, I, I, 2.0, 0.0, false, true);
+    run_permute<double>("f64 permute, beta = 0, C prefilled with NaN", pa, pt, I, I, I, 2.0, 0.0, false, true, true);
+    run_permute<double>("f64 permute, padded B and C", pa, pp, I, I, I, 1.5, 0.5);
+
+    // Every combination of conjugations, with the same index order and transposed. TBLIS conjugates A when op_A and
+    // op_C differ, which it gets wrong in a transpose with beta != 0 (TBLIS #88)
+    for (bool transpose : {false, true})
+    for (int op = 0; op < 8; op++)
+    {
+        int opA = op & 1 ? CJ : I, opB = op & 2 ? CJ : I, opC = op & 4 ? CJ : I;
+        char name[64];
+        std::snprintf(name, sizeof(name), "c64 permute, %s, conj%s%s%s%s", transpose ? "transpose" : "same order",
+                      opA ? " A" : "", opB ? " B" : "", opC ? " C" : "", op ? "" : " none");
+        run_permute<cd>(name, pa, transpose ? pt : pa, opA, opB, opC, alpha, beta, false, false, false,
+                        transpose && opA != opC);
+    }
+    run_permute<cd>("c64 permute, transpose, conj A, beta = 0", pa, pt, CJ, I, I, alpha, cd(0, 0), false, true);
+    run_permute<cd>("c64 permute, same order, conj B, in place", pa, pa, I, CJ, I, alpha, beta, true);
+    run_permute<cd>("c64 permute, transpose, conj B, in place", pa, pt, I, CJ, I, alpha, beta, true);
+    run_permute<cd>("c64 permute, transpose, conj B, padded", pa, pp, I, CJ, I, alpha, beta);
+
     test_attributes();
 
     // Executors with their own resources, on tensors large enough for TBLIS to split the work between threads
     auto al = colmajor({30, 20, 16}, {i, k, l}), bl = colmajor({20, 16, 30}, {k, l, j}), dl = colmajor({30, 30}, {i, j});
+    auto pl = colmajor({30, 20, 16}, {i, k, l}), plt = colmajor({16, 30, 20}, {l, i, k});
 
     // The mask holds the first two CPUs this process may use, or the only one
     std::vector<int> cpus = usable_cpus();
@@ -537,11 +754,13 @@ int main()
     exec_threads = limited(count);
     run<double>("f64 contraction, thread count", al, bl, dl, I, I, I, I, 1.5, 0.5);
     run<cd>("c64 contraction, conj C, thread count", al, bl, dl, I, I, CJ, I, alpha, beta);
+    run_permute<double>("f64 permute, thread count", pl, plt, I, I, I, 1.5, 0.5);
 
     TAPP_attr_set(exec_attr, TAPP_CPU_MASK, sizeof(mask), &mask);
     exec_mask = &mask;
     run<double>("f64 contraction, thread count and CPU mask", al, bl, dl, I, I, I, I, 1.5, 0.5);
     run<cd>("c64 contraction, conj all, count and mask", al, bl, dl, CJ, CJ, CJ, CJ, alpha, beta);
+    run_permute<cd>("c64 permute, conj B, count and mask", pl, plt, I, CJ, I, alpha, beta);
 
     TAPP_attr_clear(exec_attr, TAPP_THREAD_COUNT);
     exec_threads = limited(CPU_COUNT(&mask));
@@ -554,6 +773,8 @@ int main()
     test_executors(cpus);
     test_plan_lifetime();
     test_plan_indices();
+    test_permute_plan();
+    test_permute_null();
 
     TAPP_shutdown();
 
