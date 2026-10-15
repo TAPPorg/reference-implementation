@@ -141,6 +141,12 @@ if(TAPP_REFERENCE_ENABLE_TBLIS)
     UPDATE_DISCONNECTED TRUE
   )
 
+  # TCI (the threading layer of TBLIS) passes OpenMP_C_FLAGS as one quoted argument, which breaks with AppleClang
+  # ("-Xclang -fopenmp") and leaves out the include directory of omp.h. Use pthreads for TCI on Apple instead
+  if(APPLE)
+    set(ENABLE_THREAD_MODEL pthreads CACHE STRING "TCI thread model")
+  endif()
+
   FetchContent_MakeAvailable(tblis)
 
   # this provides tapp-tblis target
