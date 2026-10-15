@@ -3,11 +3,17 @@
  * Paolo Bientinesi
  * Umeå University - October 2026
  */
+#include "tapp/executor.h"
 #include "internal.h"
+#include "tapp/error.h"
+#include "tapp/status.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <mutex>
+#include <new>
 #include <thread>
 #include <utility>
 #include <omp.h>
@@ -15,7 +21,7 @@
 void worker_loop(executor* exec) {
     omp_set_dynamic(0);
     while (true) {
-        std::function<TAPP_error()> task;
+        struct task task;
 
         {
             std::unique_lock<std::mutex> lk(exec->m);
@@ -24,8 +30,21 @@ void worker_loop(executor* exec) {
             task = std::move(exec->tasks.front());
             exec->tasks.pop();
         }
-        // TODO: Handle error, also try catch errors
-        task();
+        // An exception must not end the worker: it becomes the error of the task
+        TAPP_error error;
+        try
+        {
+            error = task.func();
+        }
+        catch (const std::bad_alloc&)
+        {
+            error = TAPP_TBLIS_ERROR_OUT_OF_MEMORY;
+        }
+        catch (...)
+        {
+            error = TAPP_TBLIS_ERROR_INTERNAL;
+        }
+        if (task.error != nullptr) *task.error = error;
 
         {
             std::lock_guard<std::mutex> lk(exec->m);
@@ -35,15 +54,36 @@ void worker_loop(executor* exec) {
     }
 }
 
-uint64_t submit_task(executor* exec, std::function<TAPP_error()> task) {
-    uint64_t id;
+TAPP_error submit_task(executor* exec, TAPP_status* status, task_function func) {
+    struct status* status_ptr = nullptr;
+    // The allocations may throw, which must not leave this C interface. Nothing is queued then and no status is given out
+    try
     {
+        struct task task;
+        task.func = std::move(func);
+        if (status != nullptr)
+        {
+            status_ptr = new struct status;
+            status_ptr->exec = (TAPP_executor)exec;
+            // The worker replaces it with the error of the task once the task has run
+            status_ptr->error = std::make_shared<std::atomic<TAPP_error>>(TAPP_TBLIS_STATUS_RUNNING);
+            task.error = status_ptr->error;
+        }
+
         std::lock_guard<std::mutex> lk(exec->m);
         exec->tasks.push(std::move(task));
-        id = ++exec->submitted;
+        uint64_t id = ++exec->submitted;
+        if (status_ptr != nullptr) status_ptr->task_id = id;
     }
+    catch (const std::bad_alloc&)
+    {
+        delete status_ptr;
+        return TAPP_TBLIS_ERROR_OUT_OF_MEMORY;
+    }
+
+    if (status != nullptr) *status = (TAPP_status)status_ptr;
     exec->cv.notify_one();
-    return id;
+    return TAPP_TBLIS_SUCCESS;
 }
 
 TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
@@ -137,13 +177,15 @@ TAPP_error TAPP_wait_all(TAPP_executor exec) {
 }
 
 TAPP_error TAPP_wait_one(TAPP_executor exec, TAPP_status status) {
-    if (!exec) return TAPP_TBLIS_ERROR_NULL_POINTER;
+    if (!exec || !status) return TAPP_TBLIS_ERROR_NULL_POINTER;
+    if (exec != ((struct status*)status)->exec) return TAPP_TBLIS_ERROR_STATUS_WRONG_EXECUTOR;
 
     executor* backend_exec = (executor*)exec;
     std::unique_lock<std::mutex> lk(backend_exec->m);
-    // A status is the number of its product on this executor, starting at 1. Checked under the lock: submitted is
-    // written by TAPP_execute_product
-    if (status <= 0 || (uint64_t)status > backend_exec->submitted) return TAPP_TBLIS_ERROR_INVALID_STATUS;
-    backend_exec->done_cv.wait(lk, [backend_exec, status]{return backend_exec->completed >= (uint64_t)status;});
+    // A task_id is the number of its task on this executor, starting at 1, set by submit_task under the lock. Only a
+    // status that is corrupted or already destroyed fails the check
+    uint64_t task_id = ((struct status*)status)->task_id;
+    if (task_id <= 0 || (uint64_t)task_id > backend_exec->submitted) return TAPP_TBLIS_ERROR_INVALID_STATUS;
+    backend_exec->done_cv.wait(lk, [backend_exec, task_id]{return backend_exec->completed >= task_id;});
     return 0;
 }

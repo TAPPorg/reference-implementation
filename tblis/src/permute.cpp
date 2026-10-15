@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "tapp/error.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -128,12 +129,11 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
         tblis_beta.conj();
     }
 
-    uint64_t id = submit_task(e, [=]() {
+    TAPP_error error = submit_task(e, status, [=]() {
         return execute_permute(p.get(), e, tblis_alpha, A, tblis_beta, B, C);
     });
     
-    if (status) *status = static_cast<TAPP_status>(id);
-    return TAPP_TBLIS_SUCCESS;
+    return error;
 }
 
 TAPP_error execute_permute(const permute_plan* plan,

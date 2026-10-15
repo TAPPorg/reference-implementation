@@ -4,9 +4,11 @@
  * Umeå University - October 2026
  */
 #include "internal.h"
+#include "tapp/error.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <unordered_map>
 #include <omp.h>
 
@@ -129,12 +131,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         tblis_beta.conj();
     }
 
-    uint64_t id = submit_task(e, [=]() {
+    TAPP_error error = submit_task(e, status, [=]() {
         return execute_product(p.get(), e, tblis_alpha, A, B, tblis_beta, C, D);
     });
     
-    if (status) *status = static_cast<TAPP_status>(id);
-    return TAPP_TBLIS_SUCCESS;
+    return error;
 }
 
 TAPP_error execute_product(const product_plan* plan,

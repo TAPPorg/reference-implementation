@@ -3,11 +3,11 @@
 
 // RTLD_DEEPBIND is a glibc extension (not available on macOS) and is rejected by the sanitizer runtimes
 #if defined(__has_feature)
-#  if __has_feature(address_sanitizer)
+#  if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
 #    define MULTI_TAPP_SANITIZED
 #  endif
 #endif
-#if defined(__SANITIZE_ADDRESS__)
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
 #  define MULTI_TAPP_SANITIZED
 #endif
 

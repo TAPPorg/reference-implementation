@@ -331,6 +331,8 @@ static void test_executors(const std::vector<int>& cpus)
             for (int t = 0; t < tasks; t++)
             {
                 if (!is(D[e * tasks + t], (t + 1) * 2.0 * n + 0.5)) waited_all = false;
+                if (TAPP_status_get_error(st[e * tasks + t]) != 0) waited_all = false;
+                TAPP_destroy_status(st[e * tasks + t]);
             }
         }
     }
@@ -477,6 +479,8 @@ static void test_plan_lifetime()
 
     TAPP_executor ex;
     TAPP_create_executor(&ex, 0);
+    // Every status but the last is destroyed right away too, while its product is still queued
+    TAPP_status last = 0;
     for (int t = 0; t < tasks; t++)
     {
         TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
@@ -486,9 +490,15 @@ static void test_plan_lifetime()
         TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
 
         double alpha = t + 1, beta = 0.5;
-        TAPP_execute_product(plan, ex, nullptr, &alpha, A.data(), B.data(), &beta, D[t].data(), D[t].data());
+        TAPP_status st = 0;
+        TAPP_execute_product(plan, ex, &st, &alpha, A.data(), B.data(), &beta, D[t].data(), D[t].data());
         TAPP_destroy_tensor_product(plan);
+        if (t == tasks - 1) last = st;
+        else TAPP_destroy_status(st);
     }
+
+    check("status: the last product can be waited for", TAPP_wait_one(ex, last) == 0);
+    check("status: the error of a finished product is success", TAPP_status_get_error(last) == 0);
     TAPP_wait_all(ex);
 
     // A = 1 and B = 2 everywhere, D started as 1: every element of D is alpha * 2 * n + beta
@@ -497,14 +507,63 @@ static void test_plan_lifetime()
     {
         for (double x : D[t]) if (std::abs(x - ((t + 1) * 2.0 * n + 0.5)) > 1e-9) ok = false;
     }
-    check("plan: destroyed before its product has run", ok);
+    check("plan and status: destroyed before their product has run", ok);
 
-    // The executor has run the products 1 to tasks: any other status is not one of its products
-    check("status: the last product can be waited for", TAPP_wait_one(ex, tasks) == 0);
-    check("status: 0 is refused", TAPP_wait_one(ex, 0) != 0);
-    check("status: a negative one is refused", TAPP_wait_one(ex, -1) != 0);
-    check("status: one that was never given out is refused", TAPP_wait_one(ex, tasks + 1) != 0);
+    TAPP_executor other;
+    TAPP_create_executor(&other, 0);
+    check("status: NULL is refused", TAPP_wait_one(ex, 0) != 0);
+    check("status: a status of another executor is refused", TAPP_wait_one(other, last) != 0);
+    check("status: destroying NULL is accepted", TAPP_destroy_status(0) == 0);
+    check("status: destroy", TAPP_destroy_status(last) == 0);
+    TAPP_destroy_executor(other);
 
+    TAPP_destroy_executor(ex);
+}
+
+// A status reports an error until its product has run, and success once it has. The products in front of the last one
+// take far longer than the few instructions between submitting it and reading its status, so it is still queued then
+static void test_status_running()
+{
+    const int n = 400, tasks = 4;
+    const int64_t i = 1, j = 2, k = 3;
+    auto a = colmajor({n, n}, {i, k}), b = colmajor({n, n}, {k, j}), d = colmajor({n, n}, {i, j});
+    std::vector<double> A(n * n, 1.0), B(n * n, 2.0);
+    std::vector<std::vector<double>> D(tasks, std::vector<double>(n * n, 0.0));
+
+    TAPP_executor ex;
+    TAPP_create_executor(&ex, 0);
+    TAPP_tensor_info ia = info(a, TAPP_F64), ib = info(b, TAPP_F64), id = info(d, TAPP_F64);
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, ex, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+                               TAPP_IDENTITY, id, d.idx.data(), TAPP_IDENTITY, id, d.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(id);
+
+    double alpha = 1, beta = 0;
+    std::vector<TAPP_status> st(tasks);
+    for (int t = 0; t < tasks; t++)
+    {
+        TAPP_execute_product(plan, ex, &st[t], &alpha, A.data(), B.data(), &beta, nullptr, D[t].data());
+    }
+    TAPP_error before = TAPP_status_get_error(st[tasks - 1]);
+
+    // Polling instead of waiting: the status is read while the worker writes it, with no wait in between. Under
+    // ThreadSanitizer this shows that the error is shared safely
+    TAPP_error polled = TAPP_status_get_error(st[0]);
+    auto give_up = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+    while (polled != 0 && std::chrono::steady_clock::now() < give_up) polled = TAPP_status_get_error(st[0]);
+    check("status: polling a product until it has run", polled == 0);
+
+    TAPP_wait_one(ex, st[tasks - 1]);
+    TAPP_error after = TAPP_status_get_error(st[tasks - 1]);
+
+    char message[128];
+    TAPP_explain_error(before, sizeof(message), message);
+    check("status: a queued product does not report success", before != 0);
+    std::printf("       (its error is %d: %s)\n", before, message);
+    check("status: the product reports success once it has run", after == 0);
+
+    for (auto s : st) TAPP_destroy_status(s);
+    TAPP_destroy_tensor_product(plan);
     TAPP_destroy_executor(ex);
 }
 
@@ -566,6 +625,8 @@ static void run(const char* name, const T& a, const T& b, const T& d,
     }
     if (e != 0) { std::printf("FAIL %-45s execute_product returned %d\n", name, e); failures++; return; }
     TAPP_wait_one(ex, st);
+    TAPP_error status_error = TAPP_status_get_error(st);
+    TAPP_destroy_status(st);
 
     double err = 0, scale = 0;
     bool nan = false;
@@ -576,8 +637,9 @@ static void run(const char* name, const T& a, const T& b, const T& d,
         scale = std::max(scale, (double)std::abs(R[i]));
     }
     double tol = (sizeof(V) == sizeof(float) ? 1e-5 : 1e-12) * std::max(1.0, scale);
-    bool ok = !nan && err <= tol;
-    std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in D)" : "");
+    bool ok = !nan && err <= tol && status_error == 0;
+    std::printf("%s %-45s max error %.2e%s%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in D)" : "",
+                status_error != 0 ? " (status reports an error)" : "");
     if (!ok) failures++;
 
     check_executor_threads(threads_before, on_mask_before);
@@ -628,6 +690,8 @@ static void run_permute(const char* name, const T& a, const T& c, int opA, int o
     }
     if (e != 0) { std::printf("FAIL %-45s execute_permute returned %d\n", name, e); failures++; return; }
     TAPP_wait_one(ex, st);
+    TAPP_error status_error = TAPP_status_get_error(st);
+    TAPP_destroy_status(st);
 
     double err = 0, scale = 0;
     bool nan = false;
@@ -648,6 +712,12 @@ static void run_permute(const char* name, const T& a, const T& c, int opA, int o
     {
         std::printf("%s %-45s max error %.2e%s\n", ok ? "ok  " : "FAIL", name, err, nan ? " (NaN in C)" : "");
         if (!ok) failures++;
+    }
+    // A known wrong result still has to finish without an error
+    if (status_error != 0)
+    {
+        std::printf("FAIL   status reports error %d\n", status_error);
+        failures++;
     }
 
     check_executor_threads(threads_before, on_mask_before);
@@ -775,6 +845,7 @@ int main()
 
     test_executors(cpus);
     test_plan_lifetime();
+    test_status_running();
     test_plan_indices();
     test_permute_plan();
     test_permute_null();

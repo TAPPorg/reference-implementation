@@ -7,6 +7,9 @@
  * tapp_tblis.h.
  */
 
+#include "tapp/error.h"
+#include "tapp/executor.h"
+#include "tapp/status.h"
 #include "tblis/frame/base/basic_types.h"
 #include <tapp.h>
 #include <tapp_tblis.h>
@@ -15,11 +18,13 @@
 #include <tblis.h>
 #pragma GCC diagnostic pop
 
+#include <atomic>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -61,6 +66,11 @@ enum TAPP_TBLIS_error : TAPP_error
     TAPP_TBLIS_ERROR_INVALID_STATUS,
     TAPP_TBLIS_ERROR_REPEATED_INDEX,
     TAPP_TBLIS_ERROR_INDEX_NOT_IN_OUTPUT,
+    TAPP_TBLIS_ERROR_STATUS_WRONG_EXECUTOR,
+    // The error of a status whose operation has not finished yet
+    TAPP_TBLIS_STATUS_RUNNING,
+    // An operation failed with an exception that is not one of the errors above
+    TAPP_TBLIS_ERROR_INTERNAL,
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -172,10 +182,18 @@ typedef std::map<TAPP_key, std::vector<char>> attributes;
  * Executors
  * ------------------------------------------------------------------------------------------------------------------ */
 
+typedef std::function<TAPP_error()> task_function;
+
+struct task
+{
+    std::shared_ptr<std::atomic<TAPP_error>> error;
+    task_function func;
+};
+
 struct executor
 {
     std::thread worker;
-    std::queue<std::function<TAPP_error()>> tasks;
+    std::queue<struct task> tasks;
 
     std::mutex m;
     std::condition_variable cv;
@@ -193,7 +211,30 @@ struct executor
     bool has_cpu_mask;
 };
 
-uint64_t submit_task(executor* exec, std::function<TAPP_error()> task);
+// Queues func on the executor. If status is not NULL, it gets a new status for the task, which the caller destroys.
+TAPP_error submit_task(executor* exec, TAPP_status* status, task_function func);
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Permutes
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+struct permute_plan
+{
+    tensor_info A;
+    tensor_info B;
+    tensor_info C;
+    bool conj_scalars;
+    std::vector<tblis::label_type> idx_A;
+    std::vector<tblis::label_type> idx_B;
+};
+
+TAPP_error execute_permute(const permute_plan* plan,
+                           const executor* exec,
+                           const tblis::scalar alpha,
+                           const void* A,
+                           const tblis::scalar beta,
+                           const void* B,
+                                 void* C);
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Products
@@ -223,25 +264,16 @@ TAPP_error execute_product(const product_plan* plan,
                                  void* D);
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Permutes
+ * Status
  * ------------------------------------------------------------------------------------------------------------------ */
 
-struct permute_plan
+// The status of one task. The task shares error with it, so the worker can still write the error when the status is
+// destroyed before its task has run
+struct status
 {
-    tensor_info A;
-    tensor_info B;
-    tensor_info C;
-    bool conj_scalars;
-    std::vector<tblis::label_type> idx_A;
-    std::vector<tblis::label_type> idx_B;
+    TAPP_executor exec;
+    uint64_t task_id;
+    std::shared_ptr<std::atomic<TAPP_error>> error;
 };
-
-TAPP_error execute_permute(const permute_plan* plan,
-                           const executor* exec,
-                           const tblis::scalar alpha,
-                           const void* A,
-                           const tblis::scalar beta,
-                           const void* B,
-                                 void* C);
 
 #endif  /* TAPP_TBLIS_INTERNAL_H_ */

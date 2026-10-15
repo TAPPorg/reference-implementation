@@ -68,6 +68,7 @@ target_sources(
     src/error.cpp
     src/executor.cpp
     src/runtime.cpp
+    src/status.cpp
     src/tensor.cpp
     src/product.cpp
     src/permute.cpp

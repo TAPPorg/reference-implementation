@@ -42,6 +42,12 @@ static const char* error_message(TAPP_error error)
             return "A tensor of a permute uses an index more than once.";
         case TAPP_TBLIS_ERROR_INDEX_NOT_IN_OUTPUT:
             return "Tensor A of a permute has an index that does not appear in C.";
+        case TAPP_TBLIS_ERROR_STATUS_WRONG_EXECUTOR:
+            return "The status belongs to an operation of another executor.";
+        case TAPP_TBLIS_STATUS_RUNNING:
+            return "The operation of the status has not finished yet.";
+        case TAPP_TBLIS_ERROR_INTERNAL:
+            return "The operation failed with an unexpected internal error.";
     }
 
     return "Unknown error code.";
