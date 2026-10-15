@@ -321,7 +321,8 @@ if(BUILD_TESTING)
   # ----------------------------------------------------------------------------
   # CCD
 
-  if(TAPP_REFERENCE_ENABLE_TBLIS)
+  # Linux only: the example places its executors with CPU masks (cpu_set_t)
+  if(TAPP_REFERENCE_ENABLE_TBLIS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_executable(tapp-reference-ccd)
 
     target_sources(
