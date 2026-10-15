@@ -8,12 +8,8 @@
 
 #include "../include/multi_tapp/backend.h"
 #include "../include/multi_tapp/error.h"
-#include "tapp/attributes.h"
-#include "tapp/error.h"
-#include "tapp/executor.h"
-#include "tapp/product.h"
-#include "tapp/status.h"
-#include "tapp/tensor.h"
+#include "tapp/permute.h"
+#include <tapp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +57,27 @@ struct mt_backend
                                        const void* beta,
                                        const void* C,
                                              void* D);
+    TAPP_error (*TAPP_create_tensor_permute)(TAPP_tensor_permute* plan,
+                                             TAPP_executor exec,
+                                             TAPP_element_op op_A,
+                                             TAPP_tensor_info A,
+                                             const int64_t* idx_A,
+                                             TAPP_element_op op_B,
+                                             TAPP_tensor_info B,
+                                             const int64_t* idx_B,
+                                             TAPP_element_op op_C,
+                                             TAPP_tensor_info C,
+                                             const int64_t* idx_C,
+                                             TAPP_prectype prec);
+    TAPP_error (*TAPP_destroy_tensor_permute)(TAPP_tensor_permute plan);
+    TAPP_error (*TAPP_execute_permute)(TAPP_tensor_permute plan,
+                                       TAPP_executor exec,
+                                       TAPP_status* status,
+                                       const void* alpha,
+                                       const void* A,
+                                       const void* beta,
+                                       const void* B,
+                                             void* C);
     TAPP_error (*TAPP_execute_batched_product)(TAPP_tensor_product plan,
                                                TAPP_executor exec,
                                                TAPP_status* status,
@@ -108,6 +125,12 @@ struct mt_tensor_product
 {
     Multi_TAPP_backend backend;
     TAPP_tensor_product plan;
+};
+
+struct mt_tensor_permute
+{
+    Multi_TAPP_backend backend;
+    TAPP_tensor_permute plan;
 };
 
 /* Convert an error code returned by a backend into the error code multi-tapp returns */

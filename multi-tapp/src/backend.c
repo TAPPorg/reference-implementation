@@ -87,6 +87,9 @@ TAPP_error Multi_TAPP_create_backend(Multi_TAPP_backend* backend, const char *li
         free(backend_ptr);
         return error;
     }
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_permute), "TAPP_create_tensor_permute", false, 0);
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_destroy_tensor_permute), "TAPP_destroy_tensor_permute", false, 0);
+    load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_execute_permute), "TAPP_execute_permute", false, 0);
     load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_execute_batched_product), "TAPP_execute_batched_product", false, 0);
     error = load_function(backend_ptr->lib_handle, (void**)(&backend_ptr->TAPP_create_tensor_info), "TAPP_create_tensor_info", true, MULTI_TAPP_ERROR_MISSING_CREATE_TENSOR_INFO);
     if (error != 0) // Check success of loading TAPP_create_tensor_info

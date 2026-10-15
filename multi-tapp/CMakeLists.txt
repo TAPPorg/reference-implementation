@@ -63,6 +63,7 @@ target_sources(
     src/error.c
     src/executor.c
     src/internal.h
+    src/permute.c
     src/product.c
     src/tensor.c
     include/multi_tapp.h
@@ -70,6 +71,7 @@ target_sources(
     include/multi_tapp/backend.h
     include/multi_tapp/error.h
     include/multi_tapp/executor.h
+    include/multi_tapp/permute.h
     include/multi_tapp/product.h
     include/multi_tapp/tensor.h
   )

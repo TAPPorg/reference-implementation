@@ -127,6 +127,50 @@ static void check_backend_error(const char* lib, struct objects* o)
     printf("     backend error %d (returned as %d): %s\n", error - MULTI_TAPP_ERROR_LAST, error, message);
 }
 
+// C_ji = alpha * A_ij + beta * B_ji, with 2 x 2 column-major tensors. A backend without permutes must report that
+static void check_permute(const char* lib, struct objects* o)
+{
+    int64_t idx_ij[2] = {'i', 'j'};
+    int64_t idx_ji[2] = {'j', 'i'};
+    TAPP_tensor_permute plan;
+    TAPP_error error = Multi_TAPP_create_tensor_permute(o->backend, &plan, o->exec,
+                                                        TAPP_IDENTITY, o->info_A, idx_ij,
+                                                        TAPP_IDENTITY, o->info_C, idx_ji,
+                                                        TAPP_IDENTITY, o->info_D, idx_ji,
+                                                        TAPP_DEFAULT_PREC);
+    if (error == MULTI_TAPP_ERROR_UNIMPLEMENTED)
+    {
+        check(true, lib, "permute not provided, reported as unimplemented");
+        return;
+    }
+    check(error == 0, lib, "create permute");
+    if (error != 0) return;
+
+    double A[4] = {1, 2, 3, 4};
+    double B[4] = {5, 6, 7, 8};
+    double C[4] = {0, 0, 0, 0};
+    double alpha = 2;
+    double beta = 3;
+    TAPP_status status = 0;
+    error = Multi_TAPP_execute_permute(o->backend, plan, o->exec, &status, &alpha, A, &beta, B, C);
+    check(error == 0, lib, "execute permute");
+    // Waiting is optional: synchronous implementations may not provide it
+    error = Multi_TAPP_wait_all(o->backend, o->exec);
+    check(error == 0 || error == MULTI_TAPP_ERROR_UNIMPLEMENTED, lib, "wait_all after the permute");
+
+    bool correct = true;
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            double expected = alpha * A[i + 2 * j] + beta * B[j + 2 * i];
+            if (fabs(C[j + 2 * i] - expected) > 1e-12) correct = false;
+        }
+    }
+    check(correct, lib, "permute result");
+    check(Multi_TAPP_destroy_tensor_permute(o->backend, plan) == 0, lib, "destroy permute");
+}
+
 // Objects from "other" must be rejected when used with "o"'s backend
 static void check_foreign_objects(const char* lib, struct objects* o, struct objects* other)
 {
@@ -226,6 +270,7 @@ int main(int argc, char** argv)
     {
         run_contraction(argv[i + 1], &objects[i]);
         check_backend_error(argv[i + 1], &objects[i]);
+        check_permute(argv[i + 1], &objects[i]);
     }
 
     for (int i = 0; i < num_backends; i++)

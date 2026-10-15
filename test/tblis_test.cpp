@@ -400,9 +400,12 @@ static void test_plan_indices()
 static bool permute_created(const T& a, const T& b, const T& c, TAPP_datatype type_A = TAPP_F64)
 {
     TAPP_tensor_info ia = info(a, type_A), ib = info(b, TAPP_F64), ic = info(c, TAPP_F64);
+    TAPP_executor ex;
+    TAPP_create_executor(&ex, 0);
     TAPP_tensor_permute plan;
-    TAPP_error e = TAPP_create_tensor_permute(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
+    TAPP_error e = TAPP_create_tensor_permute(&plan, ex, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ib, b.idx.data(),
                                               TAPP_IDENTITY, ic, c.idx.data(), TAPP_DEFAULT_PREC);
+    TAPP_destroy_executor(ex);
     TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ib); TAPP_destroy_tensor_info(ic);
     if (e == 0) TAPP_destroy_tensor_permute(plan);
     return e == 0;
@@ -445,7 +448,7 @@ static void test_permute_null()
     TAPP_create_executor(&ex, 0);
     TAPP_tensor_info ia = info(a, TAPP_F64), ic = info(c, TAPP_F64);
     TAPP_tensor_permute plan;
-    TAPP_create_tensor_permute(&plan, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ic, c.idx.data(),
+    TAPP_create_tensor_permute(&plan, ex, TAPP_IDENTITY, ia, a.idx.data(), TAPP_IDENTITY, ic, c.idx.data(),
                                TAPP_IDENTITY, ic, c.idx.data(), TAPP_DEFAULT_PREC);
     TAPP_destroy_tensor_info(ia); TAPP_destroy_tensor_info(ic);
 
@@ -609,7 +612,7 @@ static void run_permute(const char* name, const T& a, const T& c, int opA, int o
     if (ee != 0) { std::printf("FAIL %-45s create_executor returned %d\n", name, ee); failures++; return; }
     TAPP_tensor_info ia = info(a, dtype<V>()), ib = info(c, dtype<V>()), ic = info(c, dtype<V>());
     TAPP_tensor_permute plan;
-    TAPP_error e = TAPP_create_tensor_permute(&plan, opA, ia, a.idx.data(), opB, ib, c.idx.data(),
+    TAPP_error e = TAPP_create_tensor_permute(&plan, ex, opA, ia, a.idx.data(), opB, ib, c.idx.data(),
                                               opC, ic, c.idx.data(), TAPP_DEFAULT_PREC);
     if (e != 0) { std::printf("FAIL %-45s create_tensor_permute returned %d\n", name, e); failures++; return; }
 
