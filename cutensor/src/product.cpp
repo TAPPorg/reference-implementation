@@ -80,8 +80,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     cutensorPlanPreference_t plan_pref = nullptr;
     plan_struct->contraction_plan = nullptr;
     plan_struct->permutation_plan = nullptr;
-    plan_struct->section_strides_D = nullptr;
-    plan_struct->section_extents_D = nullptr;
 
     cutensorDataType_t scalarType;
     uint64_t workspace_size_estimate = 0;
@@ -151,48 +149,10 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     );
     if (err != CUTENSOR_STATUS_SUCCESS) { delete plan_struct->permutation_plan; plan_struct->permutation_plan = nullptr; goto fail; }
 
-    plan_struct->data_offset_A = ((struct tensor_info*)A)->data_offset;
-    plan_struct->copy_size_A = ((struct tensor_info*)A)->copy_size;
-    plan_struct->data_offset_B = ((struct tensor_info*)B)->data_offset;
-    plan_struct->copy_size_B = ((struct tensor_info*)B)->copy_size;
-    plan_struct->data_offset_C = ((struct tensor_info*)C)->data_offset;
-    plan_struct->copy_size_C = ((struct tensor_info*)C)->copy_size;
-    plan_struct->data_offset_D = ((struct tensor_info*)D)->data_offset;
     plan_struct->copy_size_D = ((struct tensor_info*)D)->copy_size;
-    plan_struct->sections_D = 1;
-    plan_struct->section_size_D = 1;
-    plan_struct->sections_nmode_D = 0;
-    plan_struct->section_strides_D = new int64_t[TAPP_get_nmodes(D)];
-    plan_struct->section_extents_D = new int64_t[TAPP_get_nmodes(D)];
     plan_struct->type_D = ((struct tensor_info*)D)->type;
     plan_struct->op_D = op_D;
-    {
-        std::vector<int64_t> sorted_strides_D(((struct tensor_info*)D)->strides, ((struct tensor_info*)D)->strides + TAPP_get_nmodes(D));
-        auto compare = [](int64_t a, int64_t b) { return std::abs(a) < std::abs(b); };
-        std::sort(sorted_strides_D.begin(), sorted_strides_D.end(), compare);
-        for (int i = 0; i < TAPP_get_nmodes(D); i++)
-        {
-            for (int j = 0; j < TAPP_get_nmodes(D); j++)
-            {
-                if (((struct tensor_info*)D)->strides[j] == sorted_strides_D[i])
-                {
-                    if (std::abs(sorted_strides_D[i]) == plan_struct->section_size_D)
-                    {
-                        plan_struct->section_size_D *= std::abs(((struct tensor_info*)D)->extents[i]);
-                    }
-                    else if (((struct tensor_info*)D)->extents[j] != 1) // if extent = 0 then stride will never be used i.e. no need for section, even if stride would create section
-                    {
-                        plan_struct->sections_D *= ((struct tensor_info*)D)->extents[j];
-                        plan_struct->section_extents_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->extents[j];
-                        plan_struct->section_strides_D[plan_struct->sections_nmode_D] = ((struct tensor_info*)D)->strides[j];
-                        plan_struct->sections_nmode_D++;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    plan_struct->section_size_D *= sizeof_datatype(((struct tensor_info*)D)->type);
+
     *plan = (TAPP_tensor_product) plan_struct;
     err = cutensorDestroyOperationDescriptor(contraction_desc);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
@@ -207,8 +167,6 @@ fail:
     if (contraction_desc) cutensorDestroyOperationDescriptor(contraction_desc);
     if (permutation_desc) cutensorDestroyOperationDescriptor(permutation_desc);
     if (plan_pref) cutensorDestroyPlanPreference(plan_pref);
-    delete[] plan_struct->section_strides_D;
-    delete[] plan_struct->section_extents_D;
     delete plan_struct;
     return tapp_error(err);
 }
@@ -223,8 +181,6 @@ TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
     err = cutensorDestroyPlan(*plan_struct->permutation_plan);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
     delete plan_struct->permutation_plan;
-    delete[] plan_struct->section_strides_D;
-    delete[] plan_struct->section_extents_D;
     delete plan_struct;
     return tapp_error(err);
 }
