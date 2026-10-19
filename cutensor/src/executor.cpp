@@ -17,7 +17,6 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 
     if(attr){ 
         size_t size;
-        exec_struct->device = new int;
         TAPP_error terr = TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &(exec_struct->device));
         if(terr!=TAPP_SUCCESS) return terr;
         terr = TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &(exec_struct->stream));

@@ -1,11 +1,7 @@
 #include "../include/product.h"
 #include "../include/status.h"
 #include "../include/executor.h"
-
-const uint32_t kAlignment = 128;
-int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
-void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
-cutensorOperator_t translate_operator(TAPP_element_op op);
+#include "../include/util.h"
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_executor exec,
@@ -303,46 +299,4 @@ cleanup:
     if (E_d_alloc) { cerr = cudaFreeAsync(E_d_alloc, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
     if (contraction_work) { cerr = cudaFreeAsync(contraction_work, stream); if (cerr != cudaSuccess && TAPP_check_success(result)) result = tapp_error(cerr); }
     return result;
-}
-
-int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides)
-{
-    int64_t index = 0;
-    for (int i = 0; i < nmode; i++)
-    {
-        index += coordinates[i] * strides[i];
-    }
-    return index;
-
-}
-
-void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents)
-{
-    if (nmode <= 0)
-    {
-        return;
-    }
-
-    int k = 0;
-    do
-    {
-        coordinates[k] = (coordinates[k] + 1) % extents[k];
-        k++;
-    } while (coordinates[k - 1] == 0 && k < nmode);
-}
-
-cutensorOperator_t translate_operator(TAPP_element_op op)
-{
-    switch (op)
-    {
-    case TAPP_IDENTITY:
-        return CUTENSOR_OP_IDENTITY;
-        break;
-    case TAPP_CONJUGATE:
-        return CUTENSOR_OP_CONJ;
-        break;
-    default: // TODO: Default should probably be an error
-        return CUTENSOR_OP_IDENTITY;
-        break;
-    }
 }

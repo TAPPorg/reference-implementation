@@ -27,6 +27,7 @@ void chained_diff_op();
 void chained_same_op();
 void negative_str();
 void subtensors();
+void permute();
 void wait_one();
 void attributes();
 void multiple_devices();
@@ -55,6 +56,8 @@ int main(int argc, char const *argv[])
     negative_str();*/
     printf("Subtensors: \n");
     subtensors();
+    printf("Permute: \n");
+    permute();
     printf("Wait one: \n");
     wait_one();
     printf("Attributes: \n");
@@ -1465,6 +1468,89 @@ void subtensors()
     TAPP_destroy_tensor_info(info_B);
     TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_executor(exec);
+}
+
+void permute(){
+    int nmode_A = 2;
+    int64_t extents_A[2] = {3, 3};
+    int64_t strides_A[2] = {1, 3};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
+
+    int nmode_B = 2;
+    int64_t extents_B[2] = {3, 3};
+    int64_t strides_B[2] = {1, 3};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_C32, nmode_B, extents_B, strides_B);
+
+    int nmode_C = 2;
+    int64_t extents_C[2] = {3, 3};
+    int64_t strides_C[2] = {1, 3};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_C32, nmode_C, extents_C, strides_C);
+
+    TAPP_executor exec;
+    TAPP_create_executor(&exec, 0);
+
+    TAPP_tensor_permute plan;
+    TAPP_element_op op_A = TAPP_CONJUGATE;
+    TAPP_element_op op_B = TAPP_IDENTITY;
+    TAPP_element_op op_C = TAPP_CONJUGATE;
+    int64_t idx_A[2] = {'a', 'b'};
+    int64_t idx_B[2] = {'a', 'b'};
+    int64_t idx_C[2] = {'a', 'b'};
+    TAPP_prectype prec = TAPP_DEFAULT_PREC;
+    TAPP_create_tensor_permute(&plan, exec, op_A, info_A, idx_A, op_B, info_B, idx_B, op_C, info_C, idx_C, prec);
+
+    TAPP_status status;
+
+    std::complex<float> alpha = 1;
+
+    std::complex<float> A[9] = {
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3},
+        {1, 1}, {3, 2}, {5, 3}};
+
+    std::complex<float> B[9] = {
+        {1, 1}, {1, 1}, {1, 1},
+        {2, 2}, {2, 2}, {2, 2},
+        {3, 3}, {3, 3}, {3, 3}};
+
+    std::complex<float> beta = {0, 1};
+
+    std::complex<float> C[9] = {
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1},
+        {1, 2}, {2, 1}, {3, 1}};
+
+    void *A_d, *B_d, *C_d, *D_d; // Device pointers
+    cudaMalloc((void**)&A_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&B_d, 9 * sizeof(std::complex<float>));
+    cudaMalloc((void**)&C_d, 9 * sizeof(std::complex<float>));
+
+    cudaMemcpy(A_d, (void*)A, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, (void*)B, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, (void*)C, 9 * sizeof(std::complex<float>), cudaMemcpyHostToDevice);
+
+    assert(uintptr_t(A_d) % 128 == 0);
+    assert(uintptr_t(B_d) % 128 == 0);
+    assert(uintptr_t(C_d) % 128 == 0);
+
+    TAPP_execute_permute(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d);
+    TAPP_wait_all(exec);
+
+    cudaMemcpy((void*)C, (void*)C_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
+
+    print_tensor_c(nmode_C, extents_C, strides_C, C);
+
+    if (A_d) cudaFree(A_d);
+    if (B_d) cudaFree(B_d);
+    if (C_d) cudaFree(C_d);
+    TAPP_destroy_tensor_permute(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
     TAPP_destroy_executor(exec);
 }
 

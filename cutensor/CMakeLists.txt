@@ -37,8 +37,10 @@ target_sources(tapp-cutensor
     src/error.cpp
     src/executor.cpp
     src/product.cpp
+    src/permute.cpp
     src/status.cpp
     src/tensor.cpp
+    src/util.cpp
 )
 
 set_target_properties(tapp-cutensor PROPERTIES
