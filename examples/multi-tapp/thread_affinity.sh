@@ -5,7 +5,7 @@
 #
 # usage: thread_affinity.sh [-i seconds] [program name or pid]
 #
-# The default program is tapp-reference-async: start this script, then the example in another terminal.
+# The default program is multi-tapp-tblis-two-exec: start this script, then the example in another terminal.
 
 set -euo pipefail
 
@@ -20,7 +20,7 @@ while getopts "i:h" opt; do
 done
 shift $((OPTIND - 1))
 (( $# <= 1 )) || usage
-target=${1:-tapp-reference-async}
+target=${1:-multi-tapp-tblis-two-exec}
 
 if [[ $target =~ ^[0-9]+$ ]]; then
     pid=$target

@@ -1,25 +1,29 @@
-#define _GNU_SOURCE // for cpu_set_t and the CPU_* macros
 #include "multi_tapp.h"
-#include "tapp_tblis.h"
-#include <sched.h>
+#include "tapp_cutensor.h"
+#include <cuda_runtime.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 
 /*
- * htop check threads
- * start program
- * htop -p $(pgrep -n -f tapp-reference-async)
- * (See to that the PROCESSOR column is there)
- * press: H
- * press enter on the program to continue it after the executors have been created
+ * The asynchronous example of async.c on cuTENSOR: each executor has a CUDA stream of its own, and the tensors are in
+ * device memory. Check that the products of the two executors overlap with
+ * nsys profile ./multi-tapp-cutensor-two-exec
  */
 
 #define WARM_UP_RUNS 5
 #define MEASURED_RUNS 5
 #define N 1000 // extent of every mode: each product is about 2 * N^3 = 2 GFLOP
+
+#define CUDA_CHECK(call)                                                                       \
+    do {                                                                                       \
+        cudaError_t cerr_ = (call);                                                            \
+        if (cerr_ != cudaSuccess) {                                                            \
+            fprintf(stderr, "%s:%d: %s: %s\n", __FILE__, __LINE__, #call, cudaGetErrorString(cerr_)); \
+            exit(1);                                                                           \
+        }                                                                                      \
+    } while (0)
 
 // D_ij = alpha * A_ik * B_kj + beta * C_ij, every tensor N x N in column-major order
 int64_t ext[2] = {N, N};
@@ -65,7 +69,14 @@ static bool same_data(const double* x, const double* y, size_t size, double tole
     return true;
 }
 
-// Computes the result of the product with the reference implementation into ddr
+// Copies the device tensor d_dev back into the host buffer d_host and checks it against the reference ddr
+static void check_result(const char* name, const double* ddr, const double* d_dev, double* d_host, size_t size)
+{
+    CUDA_CHECK(cudaMemcpy(d_host, d_dev, size * sizeof(double), cudaMemcpyDeviceToHost));
+    if (!same_data(ddr, d_host, size, 1e-10)) printf("%s does not match the reference\n", name);
+}
+
+// Computes the result of the product with the reference implementation into ddr. All tensors are in host memory.
 void run_reference(const double* da, const double* db, const double* dc, double* ddr)
 {
     Multi_TAPP_backend b;
@@ -89,37 +100,35 @@ void run_reference(const double* da, const double* db, const double* dc, double*
 
     Multi_TAPP_destroy_tensor_product(b, p);
 
+    Multi_TAPP_destroy_tensor_info(b, ta);
+    Multi_TAPP_destroy_tensor_info(b, tb);
+    Multi_TAPP_destroy_tensor_info(b, td);
+
     Multi_TAPP_destroy_executor(b, er);
 
     Multi_TAPP_shutdown(b);
     Multi_TAPP_destroy_backend(b);
 }
 
-// Times the product on TBLIS with one and two executors, writing into dd1 and dd2, and checks the results against ddr.
-// A, B and C are only read, so both executors share them. Each executor writes its own D.
-void run_example(const double* da, const double* db, const double* dc, const double* ddr, double* dd1, double* dd2, const size_t size)
+// Times the product on cuTENSOR with one and two executors, writing into dd1 and dd2, and checks the results against
+// ddr. da, db, dc, dd1 and dd2 are in device memory, ddr and dd_host in host memory. A, B and C are only read, so both
+// executors share them. Each executor writes its own D.
+void run_example(const double* da, const double* db, const double* dc, const double* ddr, double* dd1, double* dd2, double* dd_host, const size_t size)
 {
     Multi_TAPP_backend b;
-    Multi_TAPP_create_backend(&b, TAPP_TBLIS_LIBPATH);
+    Multi_TAPP_create_backend(&b, TAPP_CUTENSOR_LIBPATH);
     Multi_TAPP_start(b);
 
-    TAPP_executor et1;
+    // Both executors run on device 0. Neither gets TAPP_CUTENSOR_STREAM, so each creates a stream of its own and the
+    // products of the two can run concurrently. The executors copy the attributes, so they can be destroyed right away.
     TAPP_attr a;
     Multi_TAPP_create_attr(b, &a);
-    cpu_set_t s;
-    CPU_ZERO(&s);
-    for (int cpu = 0; cpu < 4; cpu++) CPU_SET(cpu, &s);
-    Multi_TAPP_attr_set(b, a, TAPP_CPU_MASK, sizeof(cpu_set_t), &s);
-    unsigned trcnt = 4;
-    Multi_TAPP_attr_set(b, a, TAPP_THREAD_COUNT, sizeof(int), &trcnt);
+    int device = 0;
+    Multi_TAPP_attr_set(b, a, TAPP_CUTENSOR_DEVICE, sizeof(int), &device);
+
+    TAPP_executor et1;
     Multi_TAPP_create_executor(b, &et1, a);
-
-    printf("pid %d, press enter\n", getpid()); getchar();
-
     TAPP_executor et2;
-    CPU_ZERO(&s);
-    for (int cpu = 4; cpu < 8; cpu++) CPU_SET(cpu, &s);
-    Multi_TAPP_attr_set(b, a, TAPP_CPU_MASK, sizeof(cpu_set_t), &s);
     Multi_TAPP_create_executor(b, &et2, a);
 
     Multi_TAPP_destroy_attr(b, a);
@@ -178,8 +187,11 @@ void run_example(const double* da, const double* db, const double* dc, const dou
         ttmin = ttmin == 0.0 || ttmin > tt ? tt : ttmin;
         ttmean += tt;
 
-        if (!same_data(ddr, dd1, N * N, 1e-10)) printf("dd1 does not match the reference\n");
-        if (!same_data(ddr, dd2, N * N, 1e-10)) printf("dd2 does not match the reference\n");
+        check_result("dd1", ddr, dd1, dd_host, size);
+        check_result("dd2", ddr, dd2, dd_host, size);
+
+        Multi_TAPP_destroy_status(b, s1);
+        Multi_TAPP_destroy_status(b, s2);
     }
 
     tsmean /= MEASURED_RUNS;
@@ -221,10 +233,13 @@ void run_example(const double* da, const double* db, const double* dc, const dou
         ttmin = ttmin == 0.0 || ttmin > tt ? tt : ttmin;
         ttmean += tt;
 
-        if (!same_data(ddr, dd1, size, 1e-10)) printf("dd1 does not match the reference\n");
-        if (!same_data(ddr, dd2, size, 1e-10)) printf("dd2 does not match the reference\n");
+        check_result("dd1", ddr, dd1, dd_host, size);
+        check_result("dd2", ddr, dd2, dd_host, size);
+
+        Multi_TAPP_destroy_status(b, s1);
+        Multi_TAPP_destroy_status(b, s2);
     }
-    
+
     tsmean /= MEASURED_RUNS;
     twmean /= MEASURED_RUNS;
     ttmean /= MEASURED_RUNS;
@@ -246,37 +261,56 @@ void run_example(const double* da, const double* db, const double* dc, const dou
 int main(int argc, char *argv[])
 {
     size_t size = N * N;
-    double* da = malloc(size * sizeof(double));
-    double* db = malloc(size * sizeof(double));
-    double* dc = malloc(size * sizeof(double));
+    size_t bytes = size * sizeof(double);
+    double* ha = malloc(bytes);
+    double* hb = malloc(bytes);
+    double* hc = malloc(bytes);
     double* ddr = calloc(size, sizeof(double));
-    double* dd1 = calloc(size, sizeof(double));
-    double* dd2 = calloc(size, sizeof(double));
-    if (da == NULL || db == NULL || dc == NULL || ddr == NULL || dd1 == NULL || dd2 == NULL)
+    double* dd_host = calloc(size, sizeof(double));
+    if (ha == NULL || hb == NULL || hc == NULL || ddr == NULL || dd_host == NULL)
     {
         fprintf(stderr, "Failed to allocate the tensors\n");
-        free(da);
-        free(db);
-        free(dc);
+        free(ha);
+        free(hb);
+        free(hc);
         free(ddr);
-        free(dd1);
-        free(dd2);
+        free(dd_host);
         return 1;
     }
 
     srand(1);
-    generate_data(da, size);
-    generate_data(db, size);
-    generate_data(dc, size);
+    generate_data(ha, size);
+    generate_data(hb, size);
+    generate_data(hc, size);
 
-    run_reference(da, db, dc, ddr);
-    run_example(da, db, dc, ddr, dd1, dd2, size);
+    run_reference(ha, hb, hc, ddr);
 
-    free(da);
-    free(db);
-    free(dc);
+    double* da;
+    double* db;
+    double* dc;
+    double* dd1;
+    double* dd2;
+    CUDA_CHECK(cudaMalloc((void**)&da, bytes));
+    CUDA_CHECK(cudaMalloc((void**)&db, bytes));
+    CUDA_CHECK(cudaMalloc((void**)&dc, bytes));
+    CUDA_CHECK(cudaMalloc((void**)&dd1, bytes));
+    CUDA_CHECK(cudaMalloc((void**)&dd2, bytes));
+    CUDA_CHECK(cudaMemcpy(da, ha, bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(db, hb, bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(dc, hc, bytes, cudaMemcpyHostToDevice));
+
+    run_example(da, db, dc, ddr, dd1, dd2, dd_host, size);
+
+    CUDA_CHECK(cudaFree(da));
+    CUDA_CHECK(cudaFree(db));
+    CUDA_CHECK(cudaFree(dc));
+    CUDA_CHECK(cudaFree(dd1));
+    CUDA_CHECK(cudaFree(dd2));
+
+    free(ha);
+    free(hb);
+    free(hc);
     free(ddr);
-    free(dd1);
-    free(dd2);
+    free(dd_host);
     return 0;
 }
