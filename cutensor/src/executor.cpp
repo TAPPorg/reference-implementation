@@ -1,39 +1,75 @@
-#include "../include/executor.h"
-#include "../include/status.h"
-#include "../include/attributes.h"
+#include "internal.h"
 
 TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 {
-    struct executor* exec_struct = new struct executor;  
+    if (!exec) return TAPP_ERR_NULL_POINTER;
 
-    cutensorHandle_t* libhandle = new cutensorHandle_t;
-    cutensorStatus_t err = cutensorCreate(libhandle);
+    int device = 0;
+    cudaStream_t stream = nullptr;
+    bool owns_stream = true;
+
+    if(attr)
+    { 
+        const attributes& a = *reinterpret_cast<attributes*>(attr);
+
+        bool device_set = false;
+        std::map<TAPP_key, std::vector<char>>::const_iterator device_itr = a.find(TAPP_CUTENSOR_DEVICE);
+        if (device_itr != a.end())
+        {
+            int n;
+            std::memcpy(&n, device_itr->second.data(), sizeof(int));
+            device = n;
+            device_set = true;
+        }
+
+        std::map<TAPP_key, std::vector<char>>::const_iterator stream_itr = a.find(TAPP_CUTENSOR_STREAM);
+        if (stream_itr != a.end())
+        {
+            cudaStream_t n;
+            std::memcpy(&n, stream_itr->second.data(), sizeof(cudaStream_t));
+            stream = n;
+            owns_stream = false;
+#if CUDART_VERSION >= 12080
+            int stream_device;
+            cudaError_t cerr = cudaStreamGetDevice(stream, &stream_device);
+            if (cerr != cudaSuccess) return tapp_error(cerr);
+            if (device_set && device != stream_device)
+            {
+                return TAPP_ERR_ATTR_INVALID_STREAM;
+            }
+            else
+            {
+                device = stream_device;
+            }
+#endif
+        }
+    }
+
+    cudaError_t cerr = cudaSetDevice(device);
+    if (cerr != cudaSuccess) return tapp_error(cerr);
+
+    cutensorHandle_t libhandle;
+    cutensorStatus_t err = cutensorCreate(&libhandle);
     if (err != CUTENSOR_STATUS_SUCCESS)
     {
-        delete libhandle;
         return tapp_error(err);
     }
-    exec_struct->libhandle = libhandle;
 
-    if(attr){ 
-        size_t size;
-        TAPP_error terr = TAPP_attr_get(attr, TAPP_CUTENSOR_DEVICE, &size, (void**) &(exec_struct->device));
-        if(terr!=TAPP_SUCCESS) return terr;
-        terr = TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &(exec_struct->stream));
-        if(terr!=TAPP_SUCCESS) return terr;
-
-        exec_struct->need_alloc = false; 
-    }else{
-        int* device_id = new int;
-        *device_id = 0;
-        exec_struct->device = device_id;
-        cudaStream_t* stream = (cudaStream_t*)malloc(sizeof(cudaStream_t));
-        cudaError_t cerr = cudaStreamCreate(stream);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-        exec_struct->stream = stream;
-
-        exec_struct->need_alloc = true; 
+    if (owns_stream)
+    {
+        cerr = cudaStreamCreate(&stream);
+        if (cerr != cudaSuccess)
+        {
+            cutensorDestroy(libhandle);
+            return tapp_error(cerr);
+        }
     }
+
+    struct executor* exec_struct = new struct executor;
+    exec_struct->libhandle = libhandle;
+    exec_struct->stream = stream;
+    exec_struct->owns_stream = owns_stream;
+    exec_struct->device = device;
 
     *exec = (TAPP_executor)exec_struct;
     return TAPP_SUCCESS;
@@ -43,20 +79,16 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
 {
     struct executor* exec_struct = (struct executor*) exec;
 
-    cudaError_t cerr = cudaSetDevice(*(exec_struct->device));
+    cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
 
-    if(exec_struct->need_alloc){
-        delete exec_struct->device;
-
-        cudaError_t cerr = cudaStreamDestroy(*(exec_struct->stream));
+    if(exec_struct->owns_stream){
+        cudaError_t cerr = cudaStreamDestroy(exec_struct->stream);
         if (cerr != cudaSuccess) return tapp_error(cerr);
-        free(exec_struct->stream);
     }
 
-    cutensorStatus_t err = cutensorDestroy(*(exec_struct->libhandle));
+    cutensorStatus_t err = cutensorDestroy(exec_struct->libhandle);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
-    delete exec_struct->libhandle;
 
     delete exec_struct;
 
@@ -66,18 +98,18 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
 TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status)
 {
     struct executor* exec_struct = (struct executor*) exec;
-    cudaError_t cerr = cudaSetDevice(*(exec_struct->device));
+    cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
-    return create_status(*(exec_struct->stream), status);
+    return create_status(exec_struct->stream, exec_struct->device, status);
 }
 
 TAPP_error TAPP_wait_all(TAPP_executor exec)
 {
     struct executor* exec_struct = (struct executor*) exec;
-    cudaError_t cerr = cudaSetDevice(*(exec_struct->device));
+    cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
 
-    cerr = cudaStreamSynchronize(*((exec_struct->stream)));
+    cerr = cudaStreamSynchronize(exec_struct->stream);
     if (cerr != cudaSuccess) return tapp_error(cerr);
     return TAPP_SUCCESS;
 }
@@ -85,7 +117,7 @@ TAPP_error TAPP_wait_all(TAPP_executor exec)
 TAPP_error TAPP_wait_one(TAPP_executor exec, TAPP_status status)
 {
     struct executor* exec_struct = (struct executor*) exec;
-    cudaError_t cerr = cudaSetDevice(*(exec_struct->device));
+    cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
 
     cerr = cudaEventSynchronize(((struct status*) status)->event);

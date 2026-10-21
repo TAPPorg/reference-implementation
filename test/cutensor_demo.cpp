@@ -1537,7 +1537,7 @@ void permute(){
     assert(uintptr_t(B_d) % 128 == 0);
     assert(uintptr_t(C_d) % 128 == 0);
 
-    TAPP_execute_permute(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)B_d, (void *)&beta, (void *)C_d);
+    TAPP_execute_permute(plan, exec, &status, (void *)&alpha, (void *)A_d, (void *)&beta, (void *)B_d, (void *)C_d);
     TAPP_wait_all(exec);
 
     cudaMemcpy((void*)C, (void*)C_d, 9 * sizeof(std::complex<float>), cudaMemcpyDeviceToHost);
@@ -1547,6 +1547,7 @@ void permute(){
     if (A_d) cudaFree(A_d);
     if (B_d) cudaFree(B_d);
     if (C_d) cudaFree(C_d);
+    TAPP_destroy_status(status);
     TAPP_destroy_tensor_permute(plan);
     TAPP_destroy_tensor_info(info_A);
     TAPP_destroy_tensor_info(info_B);
@@ -1762,6 +1763,15 @@ void attributes(){
 
 // Launch 2 contractions on 2 devices
 void multiple_devices(){
+    // Uses devices 1 and 2
+    int device_count = 0;
+    cudaGetDeviceCount(&device_count);
+    if (device_count < 3)
+    {
+        printf("Skipped: needs 3 devices, found %d\n", device_count);
+        return;
+    }
+
     int nmode_A = 3;
     int64_t extents_A[3] = {4, 3, 3};
     int64_t strides_A[3] = {1, 4, 12};

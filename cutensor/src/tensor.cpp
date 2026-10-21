@@ -1,5 +1,4 @@
-#include "../include/tensor.h"
-#include "../include/executor.h"
+#include "internal.h"
 
 TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    TAPP_datatype type,

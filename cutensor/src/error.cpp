@@ -1,4 +1,4 @@
-#include "../include/error.h"
+#include "internal.h"
 
 
 bool TAPP_check_success(TAPP_error error) {

@@ -1,5 +1,29 @@
 #ifndef TAPP_CUTENSOR_H_
 #define TAPP_CUTENSOR_H_
 
-#include "attributes.h"
-#endif 
+/*
+ * Public definitions of the cuTENSOR implementation of TAPP, beyond the common interface in tapp.h. They are specific
+ * to this implementation: other implementations do not know them.
+ */
+
+#include <tapp.h>
+
+/*
+ * Attribute keys for TAPP_attr_set. An executor reads its attributes when it is created.
+ */
+enum
+{
+    /*
+     * One cudaStream_t: the stream the executor runs its operations on. The executor does not take ownership of it,
+     * the caller destroys it after the executor. Without it the executor creates and owns a stream of its own.
+     */
+    TAPP_CUTENSOR_STREAM = 0,
+
+    /*
+     * One int: the CUDA device the executor runs on. Without it the executor uses the device of TAPP_CUTENSOR_STREAM
+     * (CUDA 12.8 or later), or device 0.
+     */
+    TAPP_CUTENSOR_DEVICE = 1
+};
+
+#endif  /* TAPP_CUTENSOR_H_ */

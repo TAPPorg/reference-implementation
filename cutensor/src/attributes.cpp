@@ -1,8 +1,9 @@
-#include "../include/attributes.h"
-#include "../include/executor.h"
+#include "internal.h"
 
 TAPP_EXPORT TAPP_error TAPP_create_attr(TAPP_attr *attr){
-    Attributes* attr_ptr = new Attributes();
+    if (!attr) return 5;
+
+    attributes* attr_ptr = new attributes();
     *attr = reinterpret_cast<TAPP_attr>(attr_ptr);
 
     return TAPP_SUCCESS;
@@ -12,7 +13,7 @@ TAPP_error TAPP_destroy_attr(TAPP_attr attr)
 {
     if (attr == 0) return TAPP_SUCCESS;
 
-    Attributes* a = reinterpret_cast<Attributes*>(attr);
+    attributes* a = reinterpret_cast<attributes*>(attr);
     delete a;
     return TAPP_SUCCESS;
 }
@@ -43,7 +44,7 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
         default:
         return TAPP_ERR_ATTR_UNKNOWN_KEY;
     }
-    Attributes& a = *reinterpret_cast<Attributes*>(attr);
+    attributes& a = *reinterpret_cast<attributes*>(attr);
     const char* bytes = static_cast<const char*>(value);
 
     a[key].assign(bytes, bytes + size);
@@ -54,7 +55,7 @@ TAPP_error TAPP_attr_get(TAPP_attr attr, TAPP_key key, size_t *size, void** valu
 {
     if (!attr || !size || !value) return TAPP_ERR_NULL_POINTER;
 
-    Attributes& a = *reinterpret_cast<Attributes*>(attr);
+    attributes& a = *reinterpret_cast<attributes*>(attr);
     std::map<TAPP_key, std::vector<char>>::iterator it = a.find(key);
     if (it == a.end())
     {
@@ -72,18 +73,7 @@ TAPP_error TAPP_attr_clear(TAPP_attr attr, TAPP_key key)
 {
     if (!attr) return TAPP_ERR_NULL_POINTER;
 
-    Attributes& a = *reinterpret_cast<Attributes*>(attr);
-    if(key==TAPP_CUTENSOR_STREAM){
-        cudaStream_t stream;
-        size_t size;
-        TAPP_attr_get(attr, TAPP_CUTENSOR_STREAM, &size, (void**) &stream);
-
-        if(stream!=nullptr){
-            cudaError_t status = cudaStreamDestroy(stream);
-            if(status!=cudaSuccess) return TAPP_ERR_ATTR_INVALID_STREAM;
-        }
-    }
-
+    attributes& a = *reinterpret_cast<attributes*>(attr);
     a.erase(key);
     return TAPP_SUCCESS;
 }

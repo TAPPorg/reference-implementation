@@ -1,6 +1,6 @@
-#include "../include/status.h"
+#include "internal.h"
 
-TAPP_error create_status(cudaStream_t stream, TAPP_status* status)
+TAPP_error create_status(cudaStream_t stream, int device, TAPP_status* status)
 {
     if (status == nullptr) return TAPP_SUCCESS;
     struct status* s = new struct status;
@@ -18,7 +18,7 @@ TAPP_error create_status(cudaStream_t stream, TAPP_status* status)
         return tapp_error(cerr);
     }
 
-    cerr = cudaStreamGetDevice(stream, &(s->device));
+    s->device = device;
     if (cerr != cudaSuccess) return tapp_error(cerr);
     
     *status = (TAPP_status)s;

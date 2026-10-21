@@ -38,9 +38,12 @@ target_sources(tapp-cutensor
     src/executor.cpp
     src/product.cpp
     src/permute.cpp
+    src/runtime.cpp
     src/status.cpp
     src/tensor.cpp
     src/util.cpp
+    src/internal.h
+    include/tapp_cutensor.h
 )
 
 set_target_properties(tapp-cutensor PROPERTIES
@@ -50,7 +53,7 @@ set_target_properties(tapp-cutensor PROPERTIES
 )
 
 target_include_directories(tapp-cutensor
-  PRIVATE
+  PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
