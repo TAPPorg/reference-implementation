@@ -72,8 +72,7 @@ target_sources(
     src/tensor.cpp
     src/product.cpp
     src/permute.cpp
-    src/helpers.cpp
-    src/tblis_utils.cpp
+    src/util.cpp
     src/internal.h
     include/tapp_tblis.h
   )
