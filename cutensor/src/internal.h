@@ -153,6 +153,26 @@ struct device_scope
     cudaError_t error; // Of making the device current
 };
 
+// Owns a cuTENSOR object and destroys it when it goes out of scope, unless release() handed it on
+template <typename T, cutensorStatus_t (*Destroy)(T)>
+struct cutensor_owner
+{
+    T handle = nullptr;
+
+    cutensor_owner() = default;
+    ~cutensor_owner() { if (handle) Destroy(handle); }
+    cutensor_owner(const cutensor_owner&) = delete;
+    cutensor_owner& operator=(const cutensor_owner&) = delete;
+
+    // Gives up ownership, for example to a plan struct that destroys it later
+    T release() { T h = handle; handle = nullptr; return h; }
+};
+
+typedef cutensor_owner<cutensorTensorDescriptor_t, cutensorDestroyTensorDescriptor> tensor_descriptor;
+typedef cutensor_owner<cutensorOperationDescriptor_t, cutensorDestroyOperationDescriptor> operation_descriptor;
+typedef cutensor_owner<cutensorPlanPreference_t, cutensorDestroyPlanPreference> plan_preference;
+typedef cutensor_owner<cutensorPlan_t, cutensorDestroyPlan> plan_owner;
+
 /* ---------------------------------------------------------------------------------------------------------------------
  * Tensors
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -166,6 +186,8 @@ struct tensor_info
 
 // True if A and B have the same extents, strides and indices, so one can be computed in the memory layout of the other
 bool same_structure(const tensor_info* A, const int64_t* idx_A, const tensor_info* B, const int64_t* idx_B);
+
+cutensorStatus_t create_descriptor(cutensorHandle_t handle, const tensor_info* info, tensor_descriptor& desc);
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Attributes

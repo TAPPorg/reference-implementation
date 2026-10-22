@@ -29,6 +29,9 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     // cuTENSOR computes C in the layout of B, so they must have the same structure
     if (!same_structure(info_B, idx_B, info_C, idx_C)) return TAPP_ERR_B_C_MISMATCH;
 
+    cutensorComputeDescriptor_t cuprec;
+    if (!translate_prectype(prec, info_C->type, cuprec)) return TAPP_ERR_UNSUPPORTED_PRECISION;
+
     struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
@@ -46,93 +49,60 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     device_scope scope(exec_struct->device);
     if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
-    // Resources are null-initialized so cleanup only releases what was created. They are declared before the first
-    // goto, which may not jump past an initialization
-    cutensorTensorDescriptor_t descA = nullptr;
-    cutensorTensorDescriptor_t descC = nullptr;
-    cutensorOperationDescriptor_t desc = nullptr;
-    cutensorPlanPreference_t plan_pref = nullptr;
-    cutensorPlan_t cuplan = nullptr;
     cutensorStatus_t err;
-    TAPP_error result = TAPP_SUCCESS; // Set for errors that are not from cuTENSOR
-    cutensorDataType_t scalar_type;
 
-    err = cutensorCreateTensorDescriptor(libhandle,
-                &descA,
-                info_A->extents.size(),
-                info_A->extents.data(),
-                info_A->strides.data(),
-                info_A->type, kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    tensor_descriptor descA;
+    err = create_descriptor(libhandle, info_A, descA);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     // B has the layout of C, so B needs no descriptor of its own
-    err = cutensorCreateTensorDescriptor(libhandle,
-                &descC,
-                info_C->extents.size(),
-                info_C->extents.data(),
-                info_C->strides.data(),
-                info_C->type, kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    tensor_descriptor descC;
+    err = create_descriptor(libhandle, info_C, descC);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
+    plan_preference plan_pref;
     err = cutensorCreatePlanPreference(libhandle,
-                &plan_pref,
+                &plan_pref.handle,
                 CUTENSOR_ALGO_DEFAULT,
                 CUTENSOR_JIT_MODE_NONE);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
-    cutensorComputeDescriptor_t cuprec;
-    if (!translate_prectype(prec, info_C->type, cuprec))
-    {
-        result = TAPP_ERR_UNSUPPORTED_PRECISION;
-        goto cleanup; // The descriptors already exist
-    }
-    
     // cuTENSOR computes D = alpha op(A) + gamma op(C) and requires the same descriptor and modes for its C and D: TAPP B
     // takes the place of its C and TAPP C that of its D, both with the layout of TAPP C
+    operation_descriptor desc;
     err = cutensorCreateElementwiseBinary(libhandle,
-                &desc,
-                descA, cuidx_A.data(), cuop_A,
-                descC, cuidx_C.data(), cuop_B,
-                descC, cuidx_C.data(),
+                &desc.handle,
+                descA.handle, cuidx_A.data(), cuop_A,
+                descC.handle, cuidx_C.data(), cuop_B,
+                descC.handle, cuidx_C.data(),
                 CUTENSOR_OP_ADD,
                 cuprec);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
+    cutensorDataType_t scalar_type;
     err = cutensorOperationDescriptorGetAttribute(libhandle,
-                desc,
+                desc.handle,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
                 (void*)&scalar_type,
                 sizeof(scalar_type));
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     // execute passes alpha and beta in the datatype of C, so cuTENSOR must expect that type
-    if (scalar_type != info_C->type)
-    {
-        result = TAPP_ERR_UNSUPPORTED_PRECISION;
-        goto cleanup;
-    }
+    if (scalar_type != info_C->type) return TAPP_ERR_UNSUPPORTED_PRECISION;
 
-    err = cutensorCreatePlan(libhandle, &cuplan, desc, plan_pref, 0);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    plan_owner cuplan;
+    err = cutensorCreatePlan(libhandle, &cuplan.handle, desc.handle, plan_pref.handle, 0);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
-    {
-        struct permute_plan* plan_struct = new struct permute_plan;
-        plan_struct->plan = cuplan;
-        plan_struct->type_C = info_C->type;
-        plan_struct->conj_scalars = flip;
-        plan_struct->device = exec_struct->device;
-        *plan = (TAPP_tensor_permute) plan_struct;
-        cuplan = nullptr; // Owned by plan_struct now, so cleanup leaves it
-    }
+    struct permute_plan* plan_struct = new (std::nothrow) struct permute_plan;
+    if (!plan_struct) return TAPP_ERR_OUT_OF_MEMORY;   // cuplan still owns the plan and destroys it
+    plan_struct->plan = cuplan.release();
+    plan_struct->type_C = info_C->type;
+    plan_struct->conj_scalars = flip;
+    plan_struct->device = exec_struct->device;
+    *plan = (TAPP_tensor_permute) plan_struct;
 
-    // Reached on success and on failure: the descriptors and the preference are only needed to create the plan
-cleanup:
-    if (cuplan) cutensorDestroyPlan(cuplan);
-    if (desc) cutensorDestroyOperationDescriptor(desc);
-    if (plan_pref) cutensorDestroyPlanPreference(plan_pref);
-    if (descA) cutensorDestroyTensorDescriptor(descA);
-    if (descC) cutensorDestroyTensorDescriptor(descC);
-    return result != TAPP_SUCCESS ? result : tapp_error(err);
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_permute(TAPP_tensor_permute plan)

@@ -122,3 +122,13 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
     std::copy(strides, strides + t->strides.size(), t->strides.begin());
     return TAPP_SUCCESS;
 }
+
+cutensorStatus_t create_descriptor(cutensorHandle_t handle, const tensor_info* info, tensor_descriptor& desc)
+{
+    return cutensorCreateTensorDescriptor(handle,
+                                          &desc.handle,
+                                          info->extents.size(),
+                                          info->extents.data(),
+                                          info->strides.data(),
+                                          info->type, kAlignment);
+}

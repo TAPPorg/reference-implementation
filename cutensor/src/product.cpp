@@ -1,4 +1,3 @@
-#include "tapp/product.h"
 #include "internal.h"
 
 TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
@@ -35,7 +34,10 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     }
 
     // cuTENSOR computes D in the layout of C, so they must have the same structure
-    if (!same_structure((struct tensor_info*)C, idx_C, (struct tensor_info*)D, idx_D)) return TAPP_ERR_C_D_MISMATCH;
+    if (!same_structure(info_C, idx_C, info_D, idx_D)) return TAPP_ERR_C_D_MISMATCH;
+
+    cutensorComputeDescriptor_t cuprec;
+    if (!translate_prectype(prec, info_D->type, cuprec)) return TAPP_ERR_UNSUPPORTED_PRECISION;
 
     struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
@@ -56,127 +58,85 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     device_scope scope(exec_struct->device);
     if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
-    // Resources are null-initialized so the fail: path only releases what was created.
-    cutensorTensorDescriptor_t descA = nullptr;
-    cutensorTensorDescriptor_t descB = nullptr;
-    cutensorTensorDescriptor_t descD = nullptr;
-    cutensorOperationDescriptor_t desc = nullptr;
-    cutensorPlanPreference_t plan_pref = nullptr;
-    cutensorPlan_t cuplan = nullptr;
+    // The cuTENSOR objects below destroy themselves when the function returns, also on errors
     cutensorStatus_t err;
-    TAPP_error result = TAPP_SUCCESS; // Set for errors that are not from cuTENSOR
-    cutensorDataType_t scalarType;
-    uint64_t workspace_size_estimate = 0;
-    cutensorComputeDescriptor_t cuprec;
-    uint64_t workspace_limit;
-    uint64_t workspace_size = 0;
 
-    err = cutensorCreateTensorDescriptor(libhandle,
-                &descA,
-                info_A->extents.size(),
-                info_A->extents.data(),
-                info_A->strides.data(),
-                info_A->type, kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    tensor_descriptor descA;
+    err = create_descriptor(libhandle, info_A, descA);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
-    err = cutensorCreateTensorDescriptor(libhandle,
-                &descB,
-                info_B->extents.size(),
-                info_B->extents.data(),
-                info_B->strides.data(),
-                info_B->type, kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    tensor_descriptor descB;
+    err = create_descriptor(libhandle, info_B, descB);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     // C has the layout of D, so C needs no descriptor of its own
-    err = cutensorCreateTensorDescriptor(libhandle,
-                &descD,
-                info_D->extents.size(),
-                info_D->extents.data(),
-                info_D->strides.data(),
-                info_D->type, kAlignment);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    tensor_descriptor descD;
+    err = create_descriptor(libhandle, info_D, descD);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
-    if (!translate_prectype(prec, info_C->type, cuprec))
-    {
-        result = TAPP_ERR_UNSUPPORTED_PRECISION;
-        goto cleanup; // The descriptors already exist
-    }
-
+    operation_descriptor desc;
     err = cutensorCreateContraction(libhandle,
-                &desc,
-                descA, cuidx_A.data(), cuop_A,
-                descB, cuidx_B.data(), cuop_B,
-                descD, cuidx_D.data(), cuop_C,
-                descD, cuidx_D.data(),
+                &desc.handle,
+                descA.handle, cuidx_A.data(), cuop_A,
+                descB.handle, cuidx_B.data(), cuop_B,
+                descD.handle, cuidx_D.data(), cuop_C,
+                descD.handle, cuidx_D.data(),
                 cuprec);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
+    cutensorDataType_t scalar_type;
     err = cutensorOperationDescriptorGetAttribute(libhandle,
-                desc,
+                desc.handle,
                 CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
-                (void*)&scalarType,
-                sizeof(scalarType));
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+                (void*)&scalar_type,
+                sizeof(scalar_type));
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     // execute passes alpha and beta in the datatype of D, so cuTENSOR must expect that type
-    if (scalarType != info_D->type)
-    {
-        result = TAPP_ERR_UNSUPPORTED_PRECISION;
-        goto cleanup;
-    }
+    if (scalar_type != info_D->type) return TAPP_ERR_UNSUPPORTED_PRECISION;
 
-    err = cutensorCreatePlanPreference(
-                libhandle,
-                &plan_pref,
+    plan_preference plan_pref;
+    err = cutensorCreatePlanPreference(libhandle,
+                &plan_pref.handle,
                 CUTENSOR_ALGO_DEFAULT,
                 CUTENSOR_JIT_MODE_NONE);
-    if (err != CUTENSOR_STATUS_SUCCESS) { plan_pref = nullptr; goto cleanup; }
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
+    uint64_t workspace_size_estimate = 0;
     err = cutensorEstimateWorkspaceSize(libhandle,
-                desc,
-                plan_pref,
+                desc.handle,
+                plan_pref.handle,
                 CUTENSOR_WORKSPACE_DEFAULT,
                 &workspace_size_estimate);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
     // cuTENSOR recommends some workspace (e.g. 128 MiB) for contractions; the plan picks its algorithm within this limit
     // and execute only provides what the chosen algorithm requires
     // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
-    workspace_limit = std::max(workspace_size_estimate, uint64_t(128) << 20);
+    const uint64_t workspace_limit = std::max(workspace_size_estimate, uint64_t(128) << 20);
 
-    err = cutensorCreatePlan(libhandle,
-                &cuplan,
-                desc,
-                plan_pref,
-                workspace_limit);
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    plan_owner cuplan;
+    err = cutensorCreatePlan(libhandle, &cuplan.handle, desc.handle, plan_pref.handle, workspace_limit);
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
+    uint64_t workspace_size = 0;
     err = cutensorPlanGetAttribute(libhandle,
-                cuplan,
+                cuplan.handle,
                 CUTENSOR_PLAN_REQUIRED_WORKSPACE,
                 &workspace_size,
                 sizeof(workspace_size));
-    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
 
-    {
-        struct product_plan* plan_struct = new struct product_plan;
-        plan_struct->plan = cuplan;
-        plan_struct->type_D = info_D->type;
-        plan_struct->conj_scalars = flip;
-        plan_struct->workspace_size = workspace_size;
-        plan_struct->device = exec_struct->device;
-        *plan = (TAPP_tensor_product) plan_struct;
-        cuplan = nullptr; // Owned by plan_struct now, so cleanup leaves it
-    }
+    struct product_plan* plan_struct = new (std::nothrow) struct product_plan;
+    if (!plan_struct) return TAPP_ERR_OUT_OF_MEMORY; // cuplan still owns the plan and destroys it
+    plan_struct->plan = cuplan.release();
+    plan_struct->type_D = info_D->type;
+    plan_struct->conj_scalars = flip;
+    plan_struct->workspace_size = workspace_size;
+    plan_struct->device = exec_struct->device;
+    *plan = (TAPP_tensor_product) plan_struct;
 
-cleanup:
-    if (cuplan) cutensorDestroyPlan(cuplan);
-    if (desc) cutensorDestroyOperationDescriptor(desc);
-    if (plan_pref) cutensorDestroyPlanPreference(plan_pref);
-    if (descA) cutensorDestroyTensorDescriptor(descA);
-    if (descB) cutensorDestroyTensorDescriptor(descB);
-    if (descD) cutensorDestroyTensorDescriptor(descD);
-    return result != TAPP_SUCCESS ? result : tapp_error(err);
+    return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
