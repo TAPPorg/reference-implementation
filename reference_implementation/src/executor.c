@@ -3,7 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - September 2024
  */
-#include "../include/executor.h"
+#include "internal.h"
 
 TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr) {
     *exec = (TAPP_executor)malloc(sizeof(int));

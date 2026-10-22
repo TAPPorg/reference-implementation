@@ -1,14 +1,33 @@
-#ifndef TAPP_REF_IMPL_REF_IMPL_PRODUCT_H_
-#define TAPP_REF_IMPL_REF_IMPL_PRODUCT_H_
+#ifndef TAPP_REF_IMPL_INTERNAL_H_
+#define TAPP_REF_IMPL_INTERNAL_H_
 
-#include <tapp/product.h>
+/*
+ * Internal definitions shared by the source files of the reference implementation of TAPP: the objects behind the
+ * handles and the helpers of the product. Not part of the public interface, that is tapp.h.
+ */
+
+#include <tapp.h>
 
 #include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "tensor.h"
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Tensors
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+struct tensor_info
+{
+    TAPP_datatype type;
+    int nmode;
+    int64_t* extents;
+    int64_t* strides;
+};
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Products
+ * ------------------------------------------------------------------------------------------------------------------ */
 
 struct plan
 {
@@ -70,4 +89,9 @@ struct plan
     TAPP_element_op op_D;
 };
 
-#endif  /* TAPP_REF_IMPL_REF_IMPL_PRODUCT_H_ */
+// Helpers of product_template.c, which is compiled once per combination of types (see product_instantiations.gen.c)
+int64_t calcualte_offset(int64_t* coords, int nmode, int64_t* strides);
+void increment_coordinates(int64_t* coordinates, int nmode, int64_t* extents);
+int check_executor_existence(TAPP_executor exec, int error_code);
+
+#endif  /* TAPP_REF_IMPL_INTERNAL_H_ */

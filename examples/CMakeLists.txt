@@ -205,6 +205,14 @@ if(TAPP_REFERENCE_ENABLE_TBLIS AND TAPP_REFERENCE_ENABLE_CUTENSOR)
       multi-tapp/multi-tapp_cutensor_tblis.c
     )
 
+  # For the attribute keys in tapp_tblis.h and tapp_cutensor.h: the implementations are loaded at run time, not linked
+  target_include_directories(
+    multi-tapp-cutensor-tblis
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/tblis/include
+      ${PROJECT_SOURCE_DIR}/cutensor/include
+    )
+
   target_compile_definitions(
     multi-tapp-cutensor-tblis
     PRIVATE

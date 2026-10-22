@@ -3,8 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - July 2024
  */
-#include "../include/product.h"
-#include "../include/product_template.h"
+#include "internal.h"
 
 int64_t calculate_size(const int64_t* extents, const int nmode);
 int extract_H_indices(const int nmode_A, const int64_t* idx_A,

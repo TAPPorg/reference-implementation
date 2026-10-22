@@ -3,8 +3,7 @@
  * Paolo Bientinesi
  * Umeå University - August 2026
  */
-#include "../include/product.h"
-#include "../include/product_template.h"
+#include "internal.h"
 
 #define CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D, T_ACC) check_tensor_existence_ ## T_A ## _ ## T_B ## _ ## T_C ## _ ## T_D ## _ ## T_ACC
 #define CHECK_TENSOR_EXISTENCE(T_A, T_B, T_C, T_D, T_ACC) CHECK_TENSOR_EXISTENCE2(T_A, T_B, T_C, T_D, T_ACC)

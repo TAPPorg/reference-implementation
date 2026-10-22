@@ -75,11 +75,7 @@ target_sources(
     reference_implementation/src/product_template.c
     reference_implementation/src/product_instantiations.gen.c
     reference_implementation/src/generate_product_instantiations.py
-    reference_implementation/include/error.h
-    reference_implementation/include/executor.h
-    reference_implementation/include/tensor.h
-    reference_implementation/include/product.h
-    reference_implementation/include/product_template.h
+    reference_implementation/src/internal.h
   )
 
 set_source_files_properties(
@@ -97,11 +93,6 @@ set_property(
      C_EXTENSIONS NO
 )
 
-target_include_directories(
-  tapp-reference
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/reference_implementation/include
-)
 if (APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp-reference PRIVATE "-undefined;dynamic_lookup")
 endif()
