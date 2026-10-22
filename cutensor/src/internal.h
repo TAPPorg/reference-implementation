@@ -183,6 +183,10 @@ struct executor
     cutensorHandle_t libhandle;
     int device;
     bool owns_stream; // true if TAPP created the stream and must destroy it
+    // Reused by the products of this executor: they run one after another on its stream. Not safe to use one executor
+    // from several host threads at the same time
+    void *workspace = nullptr;
+    uint64_t workspace_capacity = 0;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -205,6 +209,7 @@ struct product_plan
     cutensorPlan_t plan;
     cutensorDataType_t type_D;
     bool conj_scalars;
+    uint64_t workspace_size = 0;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------

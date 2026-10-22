@@ -85,6 +85,13 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     device_scope scope(exec_struct->device);
     if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
+    if (exec_struct->workspace)
+    {
+        cudaFreeAsync(exec_struct->workspace, exec_struct->stream);
+        // A stream we do not own is not destroyed below, so wait here until the free has happened
+        if (!exec_struct->owns_stream) cudaStreamSynchronize(exec_struct->stream);
+    }
+
     if(exec_struct->owns_stream){
         cudaError_t cerr = cudaStreamDestroy(exec_struct->stream);
         if (cerr != cudaSuccess) return tapp_error(cerr);

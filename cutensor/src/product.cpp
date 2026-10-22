@@ -67,6 +67,9 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     TAPP_error result = TAPP_SUCCESS; // Set for errors that are not from cuTENSOR
     cutensorDataType_t scalarType;
     uint64_t workspace_size_estimate = 0;
+    cutensorComputeDescriptor_t cuprec;
+    uint64_t workspace_limit;
+    uint64_t workspace_size = 0;
 
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descA,
@@ -93,7 +96,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 info_D->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
-    cutensorComputeDescriptor_t cuprec;
     if (!translate_prectype(prec, info_C->type, cuprec))
     {
         result = TAPP_ERR_UNSUPPORTED_PRECISION;
@@ -137,11 +139,23 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                 &workspace_size_estimate);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
+    // cuTENSOR recommends some workspace (e.g. 128 MiB) for contractions; the plan picks its algorithm within this limit
+    // and execute only provides what the chosen algorithm requires
+    // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
+    workspace_limit = std::max(workspace_size_estimate, uint64_t(128) << 20);
+
     err = cutensorCreatePlan(libhandle,
                 &cuplan,
                 desc,
                 plan_pref,
-                workspace_size_estimate);
+                workspace_limit);
+    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    err = cutensorPlanGetAttribute(libhandle,
+                cuplan,
+                CUTENSOR_PLAN_REQUIRED_WORKSPACE,
+                &workspace_size,
+                sizeof(workspace_size));
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     {
@@ -149,6 +163,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         plan_struct->plan = cuplan;
         plan_struct->type_D = info_D->type;
         plan_struct->conj_scalars = flip;
+        plan_struct->workspace_size = workspace_size;
         *plan = (TAPP_tensor_product) plan_struct;
         cuplan = nullptr; // Owned by plan_struct now, so cleanup leaves it
     }
@@ -201,34 +216,27 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
     const cudaStream_t stream = exec_struct->stream;
-    cudaError_t cerr;
     cutensorStatus_t err;
 
     device_scope scope(exec_struct->device);
     if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
-    void *workspace = nullptr;
-    uint64_t workspace_size = 0;
-
-    err = cutensorPlanGetAttribute(libhandle,
-                plan_struct->plan,
-                CUTENSOR_PLAN_REQUIRED_WORKSPACE,
-                &workspace_size,
-                sizeof(workspace_size));
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
-
-    workspace_size = std::max(workspace_size, uint64_t(128 * 1024 * 1024)); // 128 MiB recommended minimum size https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorcontract
-    cerr = cudaMallocAsync(&workspace, workspace_size, stream);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    if (plan_struct->workspace_size > exec_struct->workspace_capacity)
+    {
+        if (exec_struct->workspace) cudaFreeAsync(exec_struct->workspace, stream);
+        exec_struct->workspace = nullptr;
+        exec_struct->workspace_capacity = 0;
+        cudaError_t cerr = cudaMallocAsync(&exec_struct->workspace, plan_struct->workspace_size, stream);
+        if (cerr != cudaSuccess) return tapp_error(cerr);
+        exec_struct->workspace_capacity = plan_struct->workspace_size;
+    }
 
     err = cutensorContract(libhandle,
                 plan_struct->plan,
                 &alpha_buf, A, B,
                 &beta_buf,  C ? C : D, D, // cuTENSOR refuses NULL even when beta is zero and C is not read, D has the same layout
-                workspace, workspace_size, stream);
-    cerr = cudaFreeAsync(workspace, stream);
+                exec_struct->workspace, plan_struct->workspace_size, stream);
     if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
 
     return create_status(stream, exec_struct->device, status);
 }
