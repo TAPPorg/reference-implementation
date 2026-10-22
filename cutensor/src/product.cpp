@@ -53,8 +53,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     translate_operator(((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_B);
     translate_operator(((op_C == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_C);
 
-    cudaError_t cerr = cudaSetDevice(exec_struct->device);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
     // Resources are null-initialized so the fail: path only releases what was created.
     cutensorTensorDescriptor_t descA = nullptr;
@@ -204,8 +204,8 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     cudaError_t cerr;
     cutensorStatus_t err;
 
-    cerr = cudaSetDevice(exec_struct->device);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
     void *workspace = nullptr;
     uint64_t workspace_size = 0;

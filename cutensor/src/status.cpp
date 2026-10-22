@@ -3,8 +3,11 @@
 TAPP_error create_status(cudaStream_t stream, int device, TAPP_status* status)
 {
     if (status == nullptr) return TAPP_SUCCESS;
-    struct status* s = new struct status;
-    cudaError_t cerr = cudaEventCreate(&s->event);
+    struct status* s = new (std::nothrow) struct status;
+    if (!s) return TAPP_ERR_OUT_OF_MEMORY;
+
+    // A status only needs to know when the operation is done, and events without timing are cheaper
+    cudaError_t cerr = cudaEventCreateWithFlags(&s->event, cudaEventDisableTiming);
     if (cerr != cudaSuccess)
     {
         delete s;
@@ -19,25 +22,30 @@ TAPP_error create_status(cudaStream_t stream, int device, TAPP_status* status)
     }
 
     s->device = device;
-    if (cerr != cudaSuccess) return tapp_error(cerr);
-    
     *status = (TAPP_status)s;
     return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_status_get_error(TAPP_status status)
 {
+    if (!status) return TAPP_ERR_NULL_POINTER;
+
+    // A failed kernel leaves a sticky error that CUDA reports for every later call, so after such a failure this
+    // reports it for every status, not only for the one of the operation that failed
     cudaError_t cerr = cudaEventQuery(((struct status*)status)->event);
     if (cerr == cudaSuccess) return TAPP_SUCCESS;
+    if (cerr == cudaErrorNotReady) return TAPP_ERR_STATUS_RUNNING;
     return tapp_error(cerr);
 }
 
 TAPP_error TAPP_destroy_status(TAPP_status status)
 {
-    cudaError_t cerr = cudaSetDevice(((struct status*)status)->device);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    if (!status) return TAPP_ERR_NULL_POINTER;
 
-    cerr = cudaEventDestroy(((struct status*)status)->event);
+    device_scope scope(((struct status*)status)->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
+
+    cudaError_t cerr = cudaEventDestroy(((struct status*)status)->event);
     delete (struct status*)status;
     if (cerr != cudaSuccess) return tapp_error(cerr);
     return TAPP_SUCCESS;

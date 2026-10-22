@@ -43,8 +43,8 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     translate_operator(((op_A == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_A);
     translate_operator(((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_B);
 
-    cudaError_t cerr = cudaSetDevice(exec_struct->device);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
     // Resources are null-initialized so cleanup only releases what was created. They are declared before the first
     // goto, which may not jump past an initialization
@@ -171,12 +171,10 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
     const cudaStream_t stream = exec_struct->stream;
-    cudaError_t cerr;
-    cutensorStatus_t err = CUTENSOR_STATUS_SUCCESS;
-    TAPP_error result = TAPP_SUCCESS;
+    cutensorStatus_t err;
 
-    cerr = cudaSetDevice(exec_struct->device);
-    if (cerr != cudaSuccess) return tapp_error(cerr);
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
     err = cutensorElementwiseBinaryExecute(
         libhandle,
@@ -191,7 +189,5 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
     if (err != CUTENSOR_STATUS_SUCCESS) { return tapp_error(err); }
 
     // CUDA Event
-    result = create_status(stream, exec_struct->device, status);
-
-    return result;
+    return create_status(stream, exec_struct->device, status);
 }

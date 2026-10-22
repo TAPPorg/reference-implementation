@@ -60,6 +60,9 @@ enum
     TAPP_ERR_MISALIGNED = 27,
     TAPP_ERR_UNSUPPORTED_ELEMENT_OP = 28,
     TAPP_ERR_OUT_OF_MEMORY = 29,
+    // The error of a status whose operation has not finished yet, not a failure
+    TAPP_ERR_STATUS_RUNNING = 30,
+    TAPP_ERR_STATUS_WRONG_DEVICE = 31,
 };
 
 typedef enum
@@ -91,6 +94,8 @@ static inline const char* tapp_error_string(int code)
     case TAPP_ERR_MISALIGNED:       return "Tensor data must be aligned to 128 bytes.";
     case TAPP_ERR_UNSUPPORTED_ELEMENT_OP: return "The element operation is not supported.";
     case TAPP_ERR_OUT_OF_MEMORY:    return "Out of host memory.";
+    case TAPP_ERR_STATUS_RUNNING:   return "The operation has not finished yet.";
+    case TAPP_ERR_STATUS_WRONG_DEVICE: return "The status is of an operation on another device than the executor.";
     default:                        return "Unknown TAPP error code.";
     }
 }
@@ -125,6 +130,28 @@ void load_scalar(cutensorDataType_t type, const void* value, bool conj, void* ou
 
 // True if p is NULL or aligned to kAlignment, which the tensor descriptors promise cuTENSOR for the data
 bool is_aligned(const void* p);
+
+// Makes a device current for as long as it exists and then makes the device current again that was current before, so
+// TAPP functions do not change the current device of the calling program. Check error before using the device
+struct device_scope
+{
+    explicit device_scope(int device)
+    {
+        if (cudaGetDevice(&previous) != cudaSuccess) previous = -1;
+        error = cudaSetDevice(device);
+    }
+
+    ~device_scope()
+    {
+        if (previous >= 0) cudaSetDevice(previous);
+    }
+
+    device_scope(const device_scope&) = delete;
+    device_scope& operator=(const device_scope&) = delete;
+
+    int previous;      // -1 if it could not be determined, then nothing is restored
+    cudaError_t error; // Of making the device current
+};
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Tensors
