@@ -120,6 +120,7 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
         plan_struct->plan = cuplan;
         plan_struct->type_C = info_C->type;
         plan_struct->conj_scalars = flip;
+        plan_struct->device = exec_struct->device;
         *plan = (TAPP_tensor_permute) plan_struct;
         cuplan = nullptr; // Owned by plan_struct now, so cleanup leaves it
     }
@@ -158,6 +159,9 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
     if (!plan || !exec || !alpha || !beta || !A || !C) return TAPP_ERR_NULL_POINTER;
 
     struct permute_plan* plan_struct = (struct permute_plan*) plan;
+    struct executor* exec_struct = (struct executor*) exec;
+
+    if (plan_struct->device != exec_struct->device) return TAPP_ERR_PLAN_WRONG_DEVICE;
 
     // B is only read when beta is not zero
     if (!B && !is_zero_scalar(plan_struct->type_C, beta)) return TAPP_ERR_NULL_POINTER;
@@ -169,7 +173,6 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
     load_scalar(plan_struct->type_C, alpha, plan_struct->conj_scalars, &alpha_buf);
     load_scalar(plan_struct->type_C, beta, plan_struct->conj_scalars, &beta_buf);
 
-    struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
     const cudaStream_t stream = exec_struct->stream;

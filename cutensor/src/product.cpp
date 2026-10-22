@@ -164,6 +164,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         plan_struct->type_D = info_D->type;
         plan_struct->conj_scalars = flip;
         plan_struct->workspace_size = workspace_size;
+        plan_struct->device = exec_struct->device;
         *plan = (TAPP_tensor_product) plan_struct;
         cuplan = nullptr; // Owned by plan_struct now, so cleanup leaves it
     }
@@ -203,6 +204,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     if (!plan || !exec || !alpha || !beta || !A || !B || !D) return TAPP_ERR_NULL_POINTER;
 
     struct product_plan* plan_struct = (struct product_plan*) plan;
+    struct executor* exec_struct = (struct executor*) exec;
+
+    if (plan_struct->device != exec_struct->device) return TAPP_ERR_PLAN_WRONG_DEVICE;
 
     // C is only read when beta is not zero
     if (!C && !is_zero_scalar(plan_struct->type_D, beta)) return TAPP_ERR_NULL_POINTER;
@@ -214,7 +218,6 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     load_scalar(plan_struct->type_D, alpha, plan_struct->conj_scalars, &alpha_buf);
     load_scalar(plan_struct->type_D, beta, plan_struct->conj_scalars, &beta_buf);
 
-    struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
     const cudaStream_t stream = exec_struct->stream;

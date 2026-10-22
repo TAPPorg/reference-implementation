@@ -15,6 +15,11 @@
  */
 
 /*
+ * Plans and statuses belong to the device of the executor they were created with. Executing a plan or waiting for a
+ * status with an executor on another device is refused with an error.
+ */
+
+/*
  * Attribute keys for TAPP_attr_set. An executor reads its attributes when it is created.
  */
 enum

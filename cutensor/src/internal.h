@@ -63,6 +63,7 @@ enum
     // The error of a status whose operation has not finished yet, not a failure
     TAPP_ERR_STATUS_RUNNING = 30,
     TAPP_ERR_STATUS_WRONG_DEVICE = 31,
+    TAPP_ERR_PLAN_WRONG_DEVICE = 32,
 };
 
 typedef enum
@@ -96,6 +97,7 @@ static inline const char* tapp_error_string(int code)
     case TAPP_ERR_OUT_OF_MEMORY:    return "Out of host memory.";
     case TAPP_ERR_STATUS_RUNNING:   return "The operation has not finished yet.";
     case TAPP_ERR_STATUS_WRONG_DEVICE: return "The status is of an operation on another device than the executor.";
+    case TAPP_ERR_PLAN_WRONG_DEVICE: return "The plan was created for another device than the executor's.";
     default:                        return "Unknown TAPP error code.";
     }
 }
@@ -196,6 +198,8 @@ struct permute_plan
     cutensorPlan_t plan;       // C = alpha op_A'(A) + beta op_B'(B), op_C folded into op_A' and op_B'
     cutensorDataType_t type_C;
     bool conj_scalars;         // op_C is CONJUGATE: alpha and beta are conjugated when executed
+    // Of the executor the plan was created with; it can only run there
+    int device;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -208,6 +212,8 @@ struct product_plan
     cutensorDataType_t type_D;
     bool conj_scalars;
     uint64_t workspace_size = 0;
+    // Of the executor the plan was created with; it can only run there
+    int device;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
