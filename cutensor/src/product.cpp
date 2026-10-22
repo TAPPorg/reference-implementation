@@ -24,11 +24,15 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     const struct tensor_info* info_B = (struct tensor_info*)B;
     const struct tensor_info* info_C = (struct tensor_info*)C;
     const struct tensor_info* info_D = (struct tensor_info*)D;
-    if ((info_A->nmode > 0 && !idx_A) || (info_B->nmode > 0 && !idx_B) || (info_C->nmode > 0 && !idx_C) || (info_D->nmode > 0 && !idx_D))
+    if ((info_A->extents.size() > 0 && !idx_A) || (info_B->extents.size() > 0 && !idx_B) || (info_C->extents.size() > 0 && !idx_C) || (info_D->extents.size() > 0 && !idx_D))
     {
         return TAPP_ERR_NULL_POINTER;
     }
     if (info_A->type != info_D->type || info_B->type != info_D->type || info_C->type != info_D->type) return TAPP_ERR_INVALID_DATATYPE;
+    if (!is_valid_op(op_A) || !is_valid_op(op_B) || !is_valid_op(op_C) || !is_valid_op(op_D))
+    {
+        return TAPP_ERR_UNSUPPORTED_ELEMENT_OP;
+    }
 
     // cuTENSOR computes D in the layout of C, so they must have the same structure
     if (!same_structure((struct tensor_info*)C, idx_C, (struct tensor_info*)D, idx_D)) return TAPP_ERR_C_D_MISMATCH;
@@ -36,14 +40,18 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
-    std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + info_A->nmode);
-    std::vector<int32_t> cuidx_B = std::vector<int32_t>(idx_B, idx_B + info_B->nmode);
-    std::vector<int32_t> cuidx_D = std::vector<int32_t>(idx_D, idx_D + info_D->nmode);
+    std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + info_A->extents.size());
+    std::vector<int32_t> cuidx_B = std::vector<int32_t>(idx_B, idx_B + info_B->extents.size());
+    std::vector<int32_t> cuidx_D = std::vector<int32_t>(idx_D, idx_D + info_D->extents.size());
 
     const bool flip = (op_D == TAPP_CONJUGATE);
-    const TAPP_element_op op_A_eff = ((op_A == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY;
-    const TAPP_element_op op_B_eff = ((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY;
-    const TAPP_element_op op_C_eff = ((op_C == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY;
+    cutensorOperator_t cuop_A;
+    cutensorOperator_t cuop_B;
+    cutensorOperator_t cuop_C;
+    // Cannot fail: the ops were validated above and folding gives IDENTITY or CONJUGATE
+    translate_operator(((op_A == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_A);
+    translate_operator(((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_B);
+    translate_operator(((op_C == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_C);
 
     cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
@@ -62,36 +70,43 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descA,
-                info_A->nmode,
-                info_A->extents,
-                info_A->strides,
-                translate_datatype(info_A->type), kAlignment);
+                info_A->extents.size(),
+                info_A->extents.data(),
+                info_A->strides.data(),
+                info_A->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descB,
-                info_B->nmode,
-                info_B->extents,
-                info_B->strides,
-                translate_datatype(info_B->type), kAlignment);
+                info_B->extents.size(),
+                info_B->extents.data(),
+                info_B->strides.data(),
+                info_B->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     // C has the layout of D, so C needs no descriptor of its own
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descD,
-                info_D->nmode,
-                info_D->extents,
-                info_D->strides,
-                translate_datatype(info_D->type), kAlignment);
+                info_D->extents.size(),
+                info_D->extents.data(),
+                info_D->strides.data(),
+                info_D->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    cutensorComputeDescriptor_t cuprec;
+    if (!translate_prectype(prec, info_C->type, cuprec))
+    {
+        result = TAPP_ERR_UNSUPPORTED_PRECISION;
+        goto cleanup; // The descriptors already exist
+    }
 
     err = cutensorCreateContraction(libhandle,
                 &desc,
-                descA, cuidx_A.data(), translate_operator(op_A_eff),
-                descB, cuidx_B.data(), translate_operator(op_B_eff),
-                descD, cuidx_D.data(), translate_operator(op_C_eff),
+                descA, cuidx_A.data(), cuop_A,
+                descB, cuidx_B.data(), cuop_B,
+                descD, cuidx_D.data(), cuop_C,
                 descD, cuidx_D.data(),
-                translate_prectype(prec, ((struct tensor_info*)D)->type));
+                cuprec);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     err = cutensorOperationDescriptorGetAttribute(libhandle,
@@ -102,7 +117,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     // execute passes alpha and beta in the datatype of D, so cuTENSOR must expect that type
-    if (scalarType != translate_datatype(info_D->type))
+    if (scalarType != info_D->type)
     {
         result = TAPP_ERR_UNSUPPORTED_PRECISION;
         goto cleanup;

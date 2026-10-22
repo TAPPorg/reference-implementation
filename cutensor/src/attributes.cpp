@@ -1,7 +1,7 @@
 #include "internal.h"
 
 TAPP_EXPORT TAPP_error TAPP_create_attr(TAPP_attr *attr){
-    if (!attr) return 5;
+    if (!attr) return TAPP_ERR_NULL_POINTER;
 
     attributes* attr_ptr = new attributes();
     *attr = reinterpret_cast<TAPP_attr>(attr_ptr);

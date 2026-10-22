@@ -7,6 +7,7 @@
  * that is tapp_cutensor.h.
  */
 
+#include <cutensor/types.h>
 #include <tapp.h>
 #include <tapp_cutensor.h>
 
@@ -57,6 +58,8 @@ enum
     TAPP_ERR_C_D_MISMATCH = 25,
     TAPP_ERR_UNSUPPORTED_PRECISION = 26,
     TAPP_ERR_MISALIGNED = 27,
+    TAPP_ERR_UNSUPPORTED_ELEMENT_OP = 28,
+    TAPP_ERR_OUT_OF_MEMORY = 29,
 };
 
 typedef enum
@@ -77,11 +80,17 @@ static inline const char* tapp_error_string(int code)
 {
     switch (code)
     {
+    case TAPP_ERR_NMODE_NEGATIVE:   return "The number of modes must not be negative.";
+    case TAPP_ERR_EXTENTS_NEGATIVE: return "Extents must not be negative.";
     case TAPP_ERR_INVALID_KEY:      return "Invalid attribute key.";
+    case TAPP_ERR_NULL_POINTER:     return "A required pointer is NULL.";
+    case TAPP_ERR_INVALID_DATATYPE: return "The datatype is not supported, or the tensors have different datatypes.";
     case TAPP_ERR_B_C_MISMATCH:     return "B and C must have the same extents, strides and indices.";
     case TAPP_ERR_C_D_MISMATCH:     return "C and D must have the same extents, strides and indices.";
-    case TAPP_ERR_UNSUPPORTED_PRECISION: return "The precision needs scalars of another type than the tensors, which is not supported.";
+    case TAPP_ERR_UNSUPPORTED_PRECISION: return "The precision is not supported for this datatype.";
     case TAPP_ERR_MISALIGNED:       return "Tensor data must be aligned to 128 bytes.";
+    case TAPP_ERR_UNSUPPORTED_ELEMENT_OP: return "The element operation is not supported.";
+    case TAPP_ERR_OUT_OF_MEMORY:    return "Out of host memory.";
     default:                        return "Unknown TAPP error code.";
     }
 }
@@ -90,11 +99,11 @@ static inline const char* tapp_error_string(int code)
  * Datatypes
  * ------------------------------------------------------------------------------------------------------------------ */
 
-cutensorDataType_t translate_datatype(TAPP_datatype type);
+bool translate_datatype(TAPP_datatype in, cutensorDataType_t& out);
 
-cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
+bool translate_prectype(TAPP_prectype in, cutensorDataType_t datatype, cutensorComputeDescriptor_t& out);
 
-size_t sizeof_datatype(TAPP_datatype type);
+size_t sizeof_datatype(cutensorDataType_t type);
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Utilities
@@ -103,13 +112,16 @@ size_t sizeof_datatype(TAPP_datatype type);
 const uint32_t kAlignment = 128;
 int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
 void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
-cutensorOperator_t translate_operator(TAPP_element_op op);
+bool translate_operator(TAPP_element_op in, cutensorOperator_t& out);
+
+// True if op is an element operation this implementation supports
+bool is_valid_op(TAPP_element_op op);
 
 // True if the scalar of type `type` at `value` is zero. False for types it does not know
-bool is_zero_scalar(TAPP_datatype type, const void* value);
+bool is_zero_scalar(cutensorDataType_t type, const void* value);
 
 // Copies the scalar of type `type` at `value` to `out`, conjugated if `conj`. out must have room for a TAPP_C64
-void load_scalar(TAPP_datatype type, const void* value, bool conj, void* out);
+void load_scalar(cutensorDataType_t type, const void* value, bool conj, void* out);
 
 // True if p is NULL or aligned to kAlignment, which the tensor descriptors promise cuTENSOR for the data
 bool is_aligned(const void* p);
@@ -120,13 +132,9 @@ bool is_aligned(const void* p);
 
 struct tensor_info
 {
-    int nmode;
-    int64_t *extents;
-    int64_t *strides;
-    size_t elements;
-    size_t copy_size;
-    int64_t data_offset;
-    TAPP_datatype type;
+    cutensorDataType_t type;
+    std::vector<int64_t> extents;
+    std::vector<int64_t> strides;
 };
 
 // True if A and B have the same extents, strides and indices, so one can be computed in the memory layout of the other
@@ -157,7 +165,7 @@ struct executor
 struct permute_plan
 {
     cutensorPlan_t plan;       // C = alpha op_A'(A) + beta op_B'(B), op_C folded into op_A' and op_B'
-    TAPP_datatype type_C;
+    cutensorDataType_t type_C;
     bool conj_scalars;         // op_C is CONJUGATE: alpha and beta are conjugated when executed
 };
 
@@ -168,7 +176,7 @@ struct permute_plan
 struct product_plan
 {
     cutensorPlan_t plan;
-    TAPP_datatype type_D;
+    cutensorDataType_t type_D;
     bool conj_scalars;
 };
 

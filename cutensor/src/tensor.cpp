@@ -6,79 +6,119 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
                                    const int64_t* extents,
                                    const int64_t* strides)
 {
-    struct tensor_info* tensor_info = new struct tensor_info;
+    if (!info) return TAPP_ERR_NULL_POINTER;
+    if (nmode < 0) return TAPP_ERR_NMODE_NEGATIVE;
+    if (nmode > 0 && (!extents || !strides)) return TAPP_ERR_NULL_POINTER;
 
-    size_t elements = 1;
-    for (int i = 0; i < nmode; ++i)
-        elements *= extents[i];
-    tensor_info->copy_size = 1;
-    tensor_info->data_offset = 0;
     for (int i = 0; i < nmode; i++)
     {
-        tensor_info->copy_size += (extents[i] - 1)*strides[i];
-        if (strides[i] < 0)
-        {
-            tensor_info->data_offset += extents[i] * strides[i];
-        }
+        if (extents[i] < 0) return TAPP_ERR_EXTENTS_NEGATIVE;
     }
-    tensor_info->copy_size *= sizeof_datatype(type);
-    tensor_info->data_offset *= sizeof_datatype(type);
-    tensor_info->type = type;
-    tensor_info->elements = elements;
-    tensor_info->nmode = nmode;
-    tensor_info->extents = new int64_t[nmode];
-    tensor_info->strides = new int64_t[nmode];
-    for (int i = 0; i < nmode; ++i)
+
+    cutensorDataType_t cutype;
+    if (!translate_datatype(type, cutype)) return TAPP_ERR_INVALID_DATATYPE;
+
+    struct tensor_info* t = nullptr;
+
+    try
     {
-        tensor_info->extents[i] = extents[i];
-        tensor_info->strides[i] = strides[i];
+        t = new tensor_info{cutype,
+                            std::vector<int64_t>(extents, extents + nmode),
+                            std::vector<int64_t>(strides, strides + nmode)};
     }
-    *info = (TAPP_tensor_info) tensor_info;
+    catch (const std::bad_alloc&)
+    {
+        return TAPP_ERR_OUT_OF_MEMORY;
+    }
+
+    *info = reinterpret_cast<TAPP_tensor_info>(t);
     return TAPP_SUCCESS;
 }
 
 TAPP_error TAPP_destroy_tensor_info(TAPP_tensor_info info)
 {
-    struct tensor_info* tensor_info = (struct tensor_info*) info;
-    delete[] tensor_info->extents;
-    delete[] tensor_info->strides;
-    delete tensor_info;
+    if (!info) return TAPP_ERR_NULL_POINTER;
+    delete reinterpret_cast<tensor_info*>(info);
     return TAPP_SUCCESS;
 }
 
 int TAPP_get_nmodes(TAPP_tensor_info info)
 {
-    return ((struct tensor_info*) info)->nmode;
+    // No error code can be returned here, so -1 signals an invalid handle
+    if (!info) return -1;
+
+    tensor_info* t = reinterpret_cast<tensor_info*>(info);
+    return (int)t->extents.size();
 }
 
 TAPP_error TAPP_set_nmodes(TAPP_tensor_info info,
                            int nmodes)
 {
-    return TAPP_ERR_NOT_IMPLEMENTED; // Cutensor does not support changing modes/extents/strides after descriptor creation.
+    if (!info) return TAPP_ERR_NULL_POINTER;
+    if (nmodes < 0) return TAPP_ERR_NMODE_NEGATIVE;
+
+    auto t = reinterpret_cast<tensor_info*>(info);
+
+    try
+    {
+        t->extents.reserve(nmodes);
+        t->strides.reserve(nmodes);
+    }
+    catch (const std::bad_alloc&)
+    {
+        return TAPP_ERR_OUT_OF_MEMORY;
+    }
+    // Existing modes are kept; new modes start with extent 0 and stride 0
+    t->extents.resize(nmodes);
+    t->strides.resize(nmodes);
+
+    return TAPP_SUCCESS;
 }
 
 void TAPP_get_extents(TAPP_tensor_info info,
                       int64_t* extents)
 {
-    memcpy(extents, ((struct tensor_info*) info)->extents, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
-    return; 
+    if (!info || !extents) return;
+
+    auto t = reinterpret_cast<tensor_info*>(info);
+    std::copy(t->extents.begin(), t->extents.end(), extents);
 }
 
 TAPP_error TAPP_set_extents(TAPP_tensor_info info,
                             const int64_t* extents)
 {
-    return TAPP_ERR_NOT_IMPLEMENTED; // Cutensor does not support changing modes/extents/strides after descriptor creation.
+    if (!info) return TAPP_ERR_NULL_POINTER;
+
+    auto t = reinterpret_cast<tensor_info*>(info);
+
+    if (t->extents.size() > 0 && !extents) return TAPP_ERR_NULL_POINTER;
+    for (size_t i = 0; i < t->extents.size(); i++)
+    {
+        if (extents[i] < 0) return TAPP_ERR_EXTENTS_NEGATIVE;
+    }
+
+    std::copy(extents, extents + t->extents.size(), t->extents.begin());
+    return TAPP_SUCCESS;
 }
 
 void TAPP_get_strides(TAPP_tensor_info info,
                       int64_t* strides)
 {
-    memcpy(strides, ((struct tensor_info*) info)->strides, ((struct tensor_info*) info)->nmode * sizeof(int64_t));
-    return; 
+    if (!info || !strides) return;
+
+    auto t = reinterpret_cast<tensor_info*>(info);
+    std::copy(t->strides.begin(), t->strides.end(), strides);
 }
 
 TAPP_error TAPP_set_strides(TAPP_tensor_info info,
                             const int64_t* strides)
 {
-    return TAPP_ERR_NOT_IMPLEMENTED; // Cutensor does not support changing modes/extents/strides after descriptor creation.
+    if (!info) return TAPP_ERR_NULL_POINTER;
+
+    auto t = reinterpret_cast<tensor_info*>(info);
+
+    if (t->strides.size() > 0 && !strides) return TAPP_ERR_NULL_POINTER;
+
+    std::copy(strides, strides + t->strides.size(), t->strides.begin());
+    return TAPP_SUCCESS;
 }

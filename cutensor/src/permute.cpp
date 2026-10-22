@@ -19,11 +19,12 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     const struct tensor_info* info_A = (struct tensor_info*)A;
     const struct tensor_info* info_B = (struct tensor_info*)B;
     const struct tensor_info* info_C = (struct tensor_info*)C;
-    if ((info_A->nmode > 0 && !idx_A) || (info_B->nmode > 0 && !idx_B) || (info_C->nmode > 0 && !idx_C))
+    if ((info_A->extents.size() > 0 && !idx_A) || (info_B->extents.size() > 0 && !idx_B) || (info_C->extents.size() > 0 && !idx_C))
     {
         return TAPP_ERR_NULL_POINTER;
     }
     if (info_A->type != info_C->type || info_B->type != info_C->type) return TAPP_ERR_INVALID_DATATYPE;
+    if (!is_valid_op(op_A) || !is_valid_op(op_B) || !is_valid_op(op_C)) return TAPP_ERR_UNSUPPORTED_ELEMENT_OP;
 
     // cuTENSOR computes C in the layout of B, so they must have the same structure
     if (!same_structure(info_B, idx_B, info_C, idx_C)) return TAPP_ERR_B_C_MISMATCH;
@@ -31,13 +32,16 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     struct executor* exec_struct = (struct executor*) exec;
     cutensorHandle_t libhandle = exec_struct->libhandle;
 
-    std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + info_A->nmode);
-    std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + info_C->nmode);
+    std::vector<int32_t> cuidx_A = std::vector<int32_t>(idx_A, idx_A + info_A->extents.size());
+    std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + info_C->extents.size());
 
     // conj(alpha op_A(A) + beta op_B(B)) = conj(alpha) op_A'(A) + conj(beta) op_B'(B), with op_A', op_B' flipped
     const bool flip = (op_C == TAPP_CONJUGATE);
-    const TAPP_element_op op_A_eff = ((op_A == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY;
-    const TAPP_element_op op_B_eff = ((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY;
+    cutensorOperator_t cuop_A;
+    cutensorOperator_t cuop_B;
+    // Cannot fail: the ops were validated above and folding gives IDENTITY or CONJUGATE
+    translate_operator(((op_A == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_A);
+    translate_operator(((op_B == TAPP_CONJUGATE) != flip) ? TAPP_CONJUGATE : TAPP_IDENTITY, cuop_B);
 
     cudaError_t cerr = cudaSetDevice(exec_struct->device);
     if (cerr != cudaSuccess) return tapp_error(cerr);
@@ -55,19 +59,19 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
 
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descA,
-                info_A->nmode,
-                info_A->extents,
-                info_A->strides,
-                translate_datatype(info_A->type), kAlignment);
+                info_A->extents.size(),
+                info_A->extents.data(),
+                info_A->strides.data(),
+                info_A->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     // B has the layout of C, so B needs no descriptor of its own
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descC,
-                info_C->nmode,
-                info_C->extents,
-                info_C->strides,
-                translate_datatype(info_C->type), kAlignment);
+                info_C->extents.size(),
+                info_C->extents.data(),
+                info_C->strides.data(),
+                info_C->type, kAlignment);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     err = cutensorCreatePlanPreference(libhandle,
@@ -76,15 +80,22 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
                 CUTENSOR_JIT_MODE_NONE);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
+    cutensorComputeDescriptor_t cuprec;
+    if (!translate_prectype(prec, info_C->type, cuprec))
+    {
+        result = TAPP_ERR_UNSUPPORTED_PRECISION;
+        goto cleanup; // The descriptors already exist
+    }
+    
     // cuTENSOR computes D = alpha op(A) + gamma op(C) and requires the same descriptor and modes for its C and D: TAPP B
     // takes the place of its C and TAPP C that of its D, both with the layout of TAPP C
     err = cutensorCreateElementwiseBinary(libhandle,
                 &desc,
-                descA, cuidx_A.data(), translate_operator(op_A_eff),
-                descC, cuidx_C.data(), translate_operator(op_B_eff),
+                descA, cuidx_A.data(), cuop_A,
+                descC, cuidx_C.data(), cuop_B,
                 descC, cuidx_C.data(),
                 CUTENSOR_OP_ADD,
-                translate_prectype(prec, info_C->type));
+                cuprec);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     err = cutensorOperationDescriptorGetAttribute(libhandle,
@@ -95,7 +106,7 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     // execute passes alpha and beta in the datatype of C, so cuTENSOR must expect that type
-    if (scalar_type != translate_datatype(info_C->type))
+    if (scalar_type != info_C->type)
     {
         result = TAPP_ERR_UNSUPPORTED_PRECISION;
         goto cleanup;

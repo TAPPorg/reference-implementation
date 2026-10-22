@@ -1,92 +1,50 @@
 #include "internal.h"
 
-cutensorDataType_t translate_datatype(TAPP_datatype type)
+bool translate_datatype(TAPP_datatype in, cutensorDataType_t& out)
 {
-    switch (type)
+    switch (in)
     {
-    case TAPP_F32:
-        return CUTENSOR_R_32F;
-        break;
-    case TAPP_F64:
-        return CUTENSOR_R_64F;
-        break;
-    case TAPP_C32:
-        return CUTENSOR_C_32F;
-        break;
-    case TAPP_C64:
-        return CUTENSOR_C_64F;
-        break;
-    case TAPP_F16:
-        return CUTENSOR_R_16F;
-        break;
-    case TAPP_BF16:
-        return CUTENSOR_R_16BF;
-        break;
-    default: // TODO: Default should probably be an error
-        return CUTENSOR_R_32F;
-        break;
+        case TAPP_F32:  out = CUTENSOR_R_32F;  return true;
+        case TAPP_F64:  out = CUTENSOR_R_64F;  return true;
+        case TAPP_C32:  out = CUTENSOR_C_32F;  return true;
+        case TAPP_C64:  out = CUTENSOR_C_64F;  return true;
+        //case TAPP_F16:  out = CUTENSOR_R_16F;  return true;
+        //case TAPP_BF16: out = CUTENSOR_R_16BF; return true;
+        default:                               return false;
     }
 }
 
-cutensorComputeDescriptor_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype)
+bool translate_prectype(TAPP_prectype in, cutensorDataType_t datatype, cutensorComputeDescriptor_t& out)
 {
-    switch (prec)
+    switch (in)
     {
         case TAPP_DEFAULT_PREC:
             switch (datatype)
             {
-            case TAPP_F32:
-            case TAPP_C32:
-                return CUTENSOR_COMPUTE_DESC_32F;
-                break;
-            case TAPP_F64:
-            case TAPP_C64:
-                return CUTENSOR_COMPUTE_DESC_64F;
-                break;
-            default: // TODO: Default should probably be an error
-                return CUTENSOR_COMPUTE_DESC_32F;
-                break;
+                case CUTENSOR_R_32F:
+                case CUTENSOR_C_32F:  out = CUTENSOR_COMPUTE_DESC_32F; return true;
+                case CUTENSOR_R_64F:
+                case CUTENSOR_C_64F:  out = CUTENSOR_COMPUTE_DESC_64F; return true;
+                //case CUTENSOR_R_16F: out = CUTENSOR_COMPUTE_DESC_16F; return true;
+                default: return false;
             }
-            break;
-        case TAPP_F32F32_ACCUM_F32:
-            return CUTENSOR_COMPUTE_DESC_32F;
-            break;
-        case TAPP_F64F64_ACCUM_F64:
-            return CUTENSOR_COMPUTE_DESC_64F;
-            break;
-        case TAPP_F16F16_ACCUM_F16:
-            return CUTENSOR_COMPUTE_DESC_16F;
-            break;
-        default: // TODO: Default should probably be an error
-            return CUTENSOR_COMPUTE_DESC_32F;
-            break;
+        case TAPP_F32F32_ACCUM_F32: out = CUTENSOR_COMPUTE_DESC_32F; return true;
+        case TAPP_F64F64_ACCUM_F64: out = CUTENSOR_COMPUTE_DESC_64F; return true;
+        //case TAPP_F16F16_ACCUM_F16: out = CUTENSOR_COMPUTE_DESC_16F; return true;
+        default: return false;
     }
 }
 
-size_t sizeof_datatype(TAPP_datatype type)
+size_t sizeof_datatype(cutensorDataType_t type)
 {
     switch (type)
     {
-    case TAPP_F32:
-        return sizeof(float);
-        break;
-    case TAPP_F64:
-        return sizeof(double);
-        break;
-    case TAPP_C32: 
-        return sizeof(std::complex<float>);
-        break;
-    case TAPP_C64:
-        return sizeof(std::complex<double>);
-        break;
-    /*case TAPP_F16: // Fix these datatypes
-        //return _Float16;
-        break;
-    case TAPP_BF16:
-        //return __bf16;
-        break;*/
-    default: // TODO: Default should probably be an error
-        return sizeof(float);
-        break;
+        case CUTENSOR_R_32F: return sizeof(float);
+        case CUTENSOR_R_64F: return sizeof(double);
+        case CUTENSOR_C_32F: return sizeof(std::complex<float>);
+        case CUTENSOR_C_64F: return sizeof(std::complex<double>);
+        //case CUTENSOR_R_16F: return ;
+        //case CUTENSOR_R_16BF: return ;
+        default: return 0;
     }
 }
