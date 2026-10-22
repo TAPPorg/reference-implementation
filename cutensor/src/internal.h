@@ -55,6 +55,8 @@ enum
     TAPP_ERR_INVALID_DATATYPE = 23,
     TAPP_ERR_B_C_MISMATCH = 24,
     TAPP_ERR_C_D_MISMATCH = 25,
+    TAPP_ERR_UNSUPPORTED_PRECISION = 26,
+    TAPP_ERR_MISALIGNED = 27,
 };
 
 typedef enum
@@ -78,6 +80,8 @@ static inline const char* tapp_error_string(int code)
     case TAPP_ERR_INVALID_KEY:      return "Invalid attribute key.";
     case TAPP_ERR_B_C_MISMATCH:     return "B and C must have the same extents, strides and indices.";
     case TAPP_ERR_C_D_MISMATCH:     return "C and D must have the same extents, strides and indices.";
+    case TAPP_ERR_UNSUPPORTED_PRECISION: return "The precision needs scalars of another type than the tensors, which is not supported.";
+    case TAPP_ERR_MISALIGNED:       return "Tensor data must be aligned to 128 bytes.";
     default:                        return "Unknown TAPP error code.";
     }
 }
@@ -106,6 +110,9 @@ bool is_zero_scalar(TAPP_datatype type, const void* value);
 
 // Copies the scalar of type `type` at `value` to `out`, conjugated if `conj`. out must have room for a TAPP_C64
 void load_scalar(TAPP_datatype type, const void* value, bool conj, void* out);
+
+// True if p is NULL or aligned to kAlignment, which the tensor descriptors promise cuTENSOR for the data
+bool is_aligned(const void* p);
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Tensors
@@ -160,11 +167,9 @@ struct permute_plan
 
 struct product_plan
 {
-    size_t copy_size_D;
+    cutensorPlan_t plan;
     TAPP_datatype type_D;
-    TAPP_element_op op_D;
-    cutensorPlan_t* contraction_plan;
-    cutensorPlan_t* permutation_plan;
+    bool conj_scalars;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------

@@ -50,6 +50,8 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
     cutensorPlanPreference_t plan_pref = nullptr;
     cutensorPlan_t cuplan = nullptr;
     cutensorStatus_t err;
+    TAPP_error result = TAPP_SUCCESS; // Set for errors that are not from cuTENSOR
+    cutensorDataType_t scalar_type;
 
     err = cutensorCreateTensorDescriptor(libhandle,
                 &descA,
@@ -85,6 +87,20 @@ TAPP_error TAPP_create_tensor_permute(TAPP_tensor_permute* plan,
                 translate_prectype(prec, info_C->type));
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
+    err = cutensorOperationDescriptorGetAttribute(libhandle,
+                desc,
+                CUTENSOR_OPERATION_DESCRIPTOR_SCALAR_TYPE,
+                (void*)&scalar_type,
+                sizeof(scalar_type));
+    if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    // execute passes alpha and beta in the datatype of C, so cuTENSOR must expect that type
+    if (scalar_type != translate_datatype(info_C->type))
+    {
+        result = TAPP_ERR_UNSUPPORTED_PRECISION;
+        goto cleanup;
+    }
+
     err = cutensorCreatePlan(libhandle, &cuplan, desc, plan_pref, 0);
     if (err != CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
@@ -104,7 +120,7 @@ cleanup:
     if (plan_pref) cutensorDestroyPlanPreference(plan_pref);
     if (descA) cutensorDestroyTensorDescriptor(descA);
     if (descC) cutensorDestroyTensorDescriptor(descC);
-    return tapp_error(err);
+    return result != TAPP_SUCCESS ? result : tapp_error(err);
 }
 
 TAPP_error TAPP_destroy_tensor_permute(TAPP_tensor_permute plan)
@@ -133,6 +149,8 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
     // B is only read when beta is not zero
     if (!B && !is_zero_scalar(plan_struct->type_C, beta)) return TAPP_ERR_NULL_POINTER;
 
+    if (!is_aligned(A) || !is_aligned(B) || !is_aligned(C)) return TAPP_ERR_MISALIGNED;
+
     // op_C is folded into op_A and op_B, so a conjugated C also conjugates the scalars
     std::complex<double> alpha_buf, beta_buf; // Room for a scalar of any type
     load_scalar(plan_struct->type_C, alpha, plan_struct->conj_scalars, &alpha_buf);
@@ -155,7 +173,7 @@ TAPP_error TAPP_execute_permute(TAPP_tensor_permute plan,
         &alpha_buf,
         A,
         &beta_buf,
-        B,
+        B ? B : C, // cuTENSOR refuses NULL even when beta is zero and B is not read, C has the same layout
         C,
         stream
     );

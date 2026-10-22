@@ -9,6 +9,12 @@
 #include <tapp.h>
 
 /*
+ * Tensor data passed to TAPP_execute_product and TAPP_execute_permute must be device memory aligned to 128 bytes, as
+ * cudaMalloc returns it. A pointer into the middle of an allocation, such as to a subtensor, usually is not: the execute
+ * functions refuse it with an error.
+ */
+
+/*
  * Attribute keys for TAPP_attr_set. An executor reads its attributes when it is created.
  */
 enum

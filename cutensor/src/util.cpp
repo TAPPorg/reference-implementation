@@ -87,3 +87,8 @@ void load_scalar(TAPP_datatype type, const void* value, bool conj, void* out)
         break;
     }
 }
+
+bool is_aligned(const void* p)
+{
+    return p == nullptr || uintptr_t(p) % kAlignment == 0;
+}
