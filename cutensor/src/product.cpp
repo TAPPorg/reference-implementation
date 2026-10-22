@@ -180,6 +180,8 @@ cleanup:
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
+    if (!plan) return TAPP_ERR_NULL_POINTER;
+
     struct product_plan* plan_struct = (struct product_plan*) plan;
     cutensorStatus_t err;
     err = cutensorDestroyPlan(plan_struct->plan);

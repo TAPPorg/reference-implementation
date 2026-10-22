@@ -136,6 +136,8 @@ cleanup:
 
 TAPP_error TAPP_destroy_tensor_permute(TAPP_tensor_permute plan)
 {
+    if (!plan) return TAPP_ERR_NULL_POINTER;
+
     struct permute_plan* plan_struct = (struct permute_plan*) plan;
     cutensorStatus_t err;
     err = cutensorDestroyPlan(plan_struct->plan);

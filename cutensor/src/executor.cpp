@@ -83,26 +83,31 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     struct executor* exec_struct = (struct executor*) exec;
 
     device_scope scope(exec_struct->device);
-    if (scope.error != cudaSuccess) return tapp_error(scope.error);
+    if (scope.error != cudaSuccess)
+    {
+        // Without its device the GPU resources cannot be released and leak, but the executor is gone either way
+        delete exec_struct;
+        return tapp_error(scope.error);
+    }
+
+    TAPP_error result = TAPP_SUCCESS;
+    // Keeps the first error: destroying continues after a failure so nothing else leaks
+    auto keep_first = [&result](TAPP_error e) { if (result == TAPP_SUCCESS) result = e; };
 
     if (exec_struct->workspace)
     {
-        cudaFreeAsync(exec_struct->workspace, exec_struct->stream);
+        keep_first(tapp_error(cudaFreeAsync(exec_struct->workspace, exec_struct->stream)));
         // A stream we do not own is not destroyed below, so wait here until the free has happened
-        if (!exec_struct->owns_stream) cudaStreamSynchronize(exec_struct->stream);
+        if (!exec_struct->owns_stream) keep_first(tapp_error(cudaStreamSynchronize(exec_struct->stream)));
     }
 
-    if(exec_struct->owns_stream){
-        cudaError_t cerr = cudaStreamDestroy(exec_struct->stream);
-        if (cerr != cudaSuccess) return tapp_error(cerr);
-    }
+    if(exec_struct->owns_stream) keep_first(tapp_error(cudaStreamDestroy(exec_struct->stream)));
 
-    cutensorStatus_t err = cutensorDestroy(exec_struct->libhandle);
-    if (err != CUTENSOR_STATUS_SUCCESS) return tapp_error(err);
+    keep_first(tapp_error(cutensorDestroy(exec_struct->libhandle)));
 
     delete exec_struct;
 
-    return TAPP_SUCCESS;
+    return result;
 }
 
 TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status)

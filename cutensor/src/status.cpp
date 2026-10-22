@@ -43,7 +43,12 @@ TAPP_error TAPP_destroy_status(TAPP_status status)
     if (!status) return TAPP_ERR_NULL_POINTER;
 
     device_scope scope(((struct status*)status)->device);
-    if (scope.error != cudaSuccess) return tapp_error(scope.error);
+    if (scope.error != cudaSuccess)
+    {
+        // Without its device the event cannot be destroyed and leaks, but the status is gone either way
+        delete (struct status*)status;
+        return tapp_error(scope.error);
+    }
 
     cudaError_t cerr = cudaEventDestroy(((struct status*)status)->event);
     delete (struct status*)status;

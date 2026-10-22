@@ -115,8 +115,6 @@ size_t sizeof_datatype(cutensorDataType_t type);
  * ------------------------------------------------------------------------------------------------------------------ */
 
 const uint32_t kAlignment = 128;
-int64_t compute_index(const int64_t* coordinates, int nmode, const int64_t* strides);
-void increment_coordinates(int64_t* coordinates, int nmode, const int64_t* extents);
 bool translate_operator(TAPP_element_op in, cutensorOperator_t& out);
 
 // True if op is an element operation this implementation supports
