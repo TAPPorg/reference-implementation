@@ -266,6 +266,74 @@ if(TAPP_REFERENCE_ENABLE_TBLIS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     )
 
   add_dependencies(tapp-reference-ccd tapp-tblis)
+
+  # Script to generate input tensors
+  find_package(OpenMP REQUIRED)
+  add_executable(tapp-tblis-ccd-reference)
+
+  target_sources(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      CCD/tblis/reference/main.cpp
+    )
+
+  target_include_directories(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  target_link_libraries(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      tapp-tblis
+      OpenMP::OpenMP_CXX
+    )
+
+endif()
+
+if(TAPP_REFERENCE_ENABLE_CUTENSOR)
+  # Script to generate input tensors
+  find_package(OpenMP REQUIRED)
+  add_executable(tapp-cutensor-ccd)
+
+  target_sources(
+    tapp-cutensor-ccd
+    PRIVATE
+      CCD/cutensor/1-gpu-1-stream/main.cpp
+    )
+
+  target_include_directories(
+    tapp-cutensor-ccd
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-cutensor,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  target_link_libraries(
+    tapp-cutensor-ccd
+    PRIVATE
+      tapp-cutensor
+      CUDA::cudart
+      OpenMP::OpenMP_CXX
+    )
+  add_executable(tapp-cutensor-ccd-2-streams)
+
+  target_sources(
+    tapp-cutensor-ccd-2-streams
+    PRIVATE
+      CCD/cutensor/1-gpu-2-stream/main.cpp
+    )
+
+  target_include_directories(
+    tapp-cutensor-ccd-2-streams
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-cutensor,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  target_link_libraries(
+    tapp-cutensor-ccd-2-streams
+    PRIVATE
+      tapp-cutensor
+      CUDA::cudart
+      OpenMP::OpenMP_CXX
+    )
 endif()
 
 # ----------------------------------------------------------------------------

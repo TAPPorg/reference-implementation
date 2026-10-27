@@ -7,11 +7,11 @@
  * that is tapp_cutensor.h.
  */
 
+#include <cuda_runtime.h>
 #include <cutensor/types.h>
 #include <tapp.h>
 #include <tapp_cutensor.h>
 
-#include <cuda_runtime.h>
 #include <cutensor.h>
 
 #include <algorithm>
