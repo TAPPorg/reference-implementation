@@ -292,7 +292,7 @@ if(TAPP_REFERENCE_ENABLE_TBLIS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(TAPP_REFERENCE_ENABLE_CUTENSOR)
-  # Script to generate input tensors
+  # Script to compute solution with 1 GPU and 1 stream tensors
   find_package(OpenMP REQUIRED)
   add_executable(tapp-cutensor-ccd)
 
@@ -314,6 +314,7 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR)
       CUDA::cudart
       OpenMP::OpenMP_CXX
     )
+  # Script to compute solution with 1 GPU and 2 streams tensors
   add_executable(tapp-cutensor-ccd-2-streams)
 
   target_sources(
@@ -329,6 +330,27 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR)
     )
   target_link_libraries(
     tapp-cutensor-ccd-2-streams
+    PRIVATE
+      tapp-cutensor
+      CUDA::cudart
+      OpenMP::OpenMP_CXX
+    )
+  # Script to compute solution with 2 GPUs and 2 streams tensors
+  add_executable(tapp-cutensor-ccd-2-gpus-2-streams)
+
+  target_sources(
+    tapp-cutensor-ccd-2-gpus-2-streams
+    PRIVATE
+      CCD/cutensor/2-gpu-2-stream/main.cpp
+    )
+
+  target_include_directories(
+    tapp-cutensor-ccd-2-gpus-2-streams
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-cutensor,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  target_link_libraries(
+    tapp-cutensor-ccd-2-gpus-2-streams
     PRIVATE
       tapp-cutensor
       CUDA::cudart

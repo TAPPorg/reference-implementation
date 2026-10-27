@@ -648,7 +648,7 @@ int main(int argc, char const *argv[])
     cudaMallocAsync(&V5_d, sizeof(double)*num_V5, stream2);
     cudaMemcpyAsync(V5_d, V5, num_V5 * sizeof(double), cudaMemcpyHostToDevice, stream2);
 
-    error = TAPP_execute_permute(plan_16, exec2, 0, (void *)&ALPHA_ONE, (void *)V5_d, (void *)&BETA_ONE, (void *)Z2_d, (void *)Z2_d);
+    error = TAPP_execute_permute(plan_5, exec2, 0, (void *)&ALPHA_ONE, (void *)V5_d, (void *)&BETA_ONE, (void *)Z2_d, (void *)Z2_d);
     printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
     message_len = TAPP_explain_error(error, 0, NULL);
     message_buff = (char*) malloc((message_len + 1) * sizeof(char));

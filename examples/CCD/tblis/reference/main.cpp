@@ -595,7 +595,7 @@ int main(int argc, char const *argv[])
     //////////////////////////////////
     // Last Accumulation with V5
     //////////////////////////////////
-    error = TAPP_execute_permute(plan_16, exec, 0, (void *)&ALPHA_ONE, (void *)V5, (void *)&BETA_ONE, (void *)Z2, (void *)Z2);
+    error = TAPP_execute_permute(plan_5, exec, 0, (void *)&ALPHA_ONE, (void *)V5, (void *)&BETA_ONE, (void *)Z2, (void *)Z2);
     printf(TAPP_check_success(error) ? "Success\n" : "Fail\n");
     message_len = TAPP_explain_error(error, 0, NULL);
     message_buff = (char*) malloc((message_len + 1) * sizeof(char));
