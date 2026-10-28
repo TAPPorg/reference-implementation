@@ -97,9 +97,11 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_V1;
     TAPP_create_tensor_info(&info_V1, TAPP_F64, nmode_V1, extents_V1, strides_V1);
     size_t num_V1 = nocc*nocc*nvir*nvir;
-    double V1[num_V1];
+    double* V1 = nullptr;
+    cudaMallocHost(&V1, sizeof(double)*num_V1);
     std::string name = "V1";
     read_tensor(V1, num_V1, name, nocc, nvir);
+
     void* V1_d = nullptr;
     cudaMallocAsync(&V1_d, sizeof(double)*num_V1, stream2);
     cudaMemcpyAsync(V1_d, V1, num_V1 * sizeof(double), cudaMemcpyHostToDevice, stream2);
@@ -113,10 +115,13 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_T1;
     TAPP_create_tensor_info(&info_T1, TAPP_F64, nmode_T1, extents_T1, strides_T1);
     size_t num_T1 = nocc*nocc*nvir*nvir;
-    double T1[num_T1];
+    double* T1 = nullptr;
+    cudaMallocHost(&T1, sizeof(double)*num_T1);
     name = "T1";
     read_tensor(T1, num_T1, name, nocc, nvir);
+
     void* T1_d = nullptr;
+    cudaStreamSynchronize(stream2);
     cudaMallocAsync(&T1_d, sizeof(double)*num_T1, stream2);
     cudaMemcpyAsync(T1_d, T1, num_T1 * sizeof(double), cudaMemcpyHostToDevice, stream2);
     printf("T1 done!\n");
@@ -129,10 +134,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_F1;
     TAPP_create_tensor_info(&info_F1, TAPP_F64, nmode_F1, extents_F1, strides_F1);
     size_t num_F1 = nocc*nocc;
-    double F1[num_F1];
-    void* F1_d = nullptr;
+    double* F1 = nullptr;
+    cudaMallocHost(&F1, sizeof(double)*num_F1);
     name = "F1";
     read_tensor(F1, num_F1, name, nocc, nvir);
+
+    void* F1_d = nullptr;
     printf("F1 done!\n");
 
     // V2 vvvv
@@ -143,10 +150,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_V2;
     TAPP_create_tensor_info(&info_V2, TAPP_F64, nmode_V2, extents_V2, strides_V2);
     size_t num_V2 = nvir*nvir*nvir*nvir;
-    double V2[num_V2];
-    void* V2_d = nullptr;
+    double *V2 = nullptr;
+    cudaMallocHost(&V2, sizeof(double)*num_V2);
     name = "V2";
     read_tensor(V2, num_V2, name, nocc, nvir);
+
+    void* V2_d = nullptr;
     printf("V2 done!\n");
 
     // V3 voov
@@ -157,10 +166,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_V3;
     TAPP_create_tensor_info(&info_V3, TAPP_F64, nmode_V3, extents_V3, strides_V3);
     size_t num_V3 = nvir*nocc*nocc*nvir;
-    double V3[num_V3];
-    void* V3_d = nullptr;
+    double* V3 = nullptr;
+    cudaMallocHost(&V3, sizeof(double)*num_V3);
     name = "V3";
     read_tensor(V3, num_V3, name, nocc, nvir);
+
+    void* V3_d = nullptr;
     printf("V3 done!\n");
 
     // F2 vv
@@ -171,10 +182,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_F2;
     TAPP_create_tensor_info(&info_F2, TAPP_F64, nmode_F2, extents_F2, strides_F2);
     size_t num_F2 = nvir*nvir;
-    double F2[num_F2];
-    void* F2_d = nullptr;
+    double* F2 = nullptr;
+    cudaMallocHost(&F2, sizeof(double)*num_F2);
     name = "F2";
     read_tensor(F2, num_F2, name, nocc, nvir);
+
+    void* F2_d = nullptr;
     printf("F2 done!\n");
 
     // V4 oooo
@@ -185,10 +198,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_V4;
     TAPP_create_tensor_info(&info_V4, TAPP_F64, nmode_V4, extents_V4, strides_V4);
     size_t num_V4 = nocc*nocc*nocc*nocc;
-    double V4[num_V4];
-    void* V4_d = nullptr;
+    double* V4 = nullptr;
+    cudaMallocHost(&V4, sizeof(double)*num_V4);
     name = "V4";
     read_tensor(V4, num_V4, name, nocc, nvir);
+
+    void* V4_d = nullptr;
     printf("V4 done!\n");
 
     // V5 vvoo
@@ -199,10 +214,12 @@ int main(int argc, char const *argv[])
     TAPP_tensor_info info_V5;
     TAPP_create_tensor_info(&info_V5, TAPP_F64, nmode_V5, extents_V5, strides_V5);
     size_t num_V5 = nvir*nvir*nocc*nocc;
-    double V5[num_V5];
-    void* V5_d = nullptr;
+    double* V5 = nullptr;
+    cudaMallocHost(&V5, sizeof(double)*num_V5);
     name = "V5";
     read_tensor(V5, num_V5, name, nocc, nvir);
+
+    void* V5_d = nullptr;
     printf("V5 done!\n");
 
     // Z2_d1 vvoo
@@ -721,6 +738,16 @@ int main(int argc, char const *argv[])
     TAPP_destroy_tensor_info(info_Z2);
     // Tmp vvoo
     TAPP_destroy_tensor_info(info_Tmp);
+
+    // Cleanup host allocated data
+    cudaFreeHost(V1);
+    cudaFreeHost(T1);
+    cudaFreeHost(F1);
+    cudaFreeHost(V2);
+    cudaFreeHost(V3);
+    cudaFreeHost(F2);
+    cudaFreeHost(V4);
+    cudaFreeHost(V5);
     
     TAPP_destroy_attr(attr1);
     TAPP_destroy_attr(attr2);

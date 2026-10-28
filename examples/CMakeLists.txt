@@ -358,6 +358,62 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR)
     )
 endif()
 
+if(TAPP_REFERENCE_ENABLE_CUTENSOR AND TAPP_REFERENCE_ENABLE_TBLIS)
+  add_executable(multi-tapp-ccd)
+
+  target_sources(
+    multi-tapp-ccd
+    PRIVATE
+      CCD/multi-tapp/main.cpp
+    )
+
+  # Only the header of tapp-tblis is used: the library is loaded at runtime
+  target_include_directories(
+    multi-tapp-ccd
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+      $<TARGET_PROPERTY:tapp-cutensor,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+
+  target_compile_definitions(
+    multi-tapp-ccd
+    PRIVATE
+      TAPP_TBLIS_LIBPATH="$<TARGET_FILE:tapp-tblis>"
+      TAPP_CUTENSOR_LIBPATH="$<TARGET_FILE:tapp-cutensor>"
+    )
+
+  target_link_libraries(
+    multi-tapp-ccd
+    PRIVATE
+      multi-tapp
+    )
+
+  add_dependencies(multi-tapp tapp-tblis tapp-cutensor)
+
+  # Script to generate input tensors
+  find_package(OpenMP REQUIRED)
+  add_executable(tapp-tblis-ccd-reference)
+
+  target_sources(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      CCD/tblis/reference/main.cpp
+    )
+
+  target_include_directories(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  target_link_libraries(
+    tapp-tblis-ccd-reference
+    PRIVATE
+      tapp-tblis
+      OpenMP::OpenMP_CXX
+    )
+
+endif()
+
 # ----------------------------------------------------------------------------
 # exercise: contraction
 
