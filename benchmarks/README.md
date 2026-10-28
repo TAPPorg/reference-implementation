@@ -15,6 +15,7 @@ Back-end: `tapp::cublas` if `TAPP_CUBLAS`, else `tapp::cutensor`. Add a benchmar
 by dropping a source file here and listing it in `CMakeLists.txt`.
 
 # How to run `benchmark.cu` script
+First, load the modules listed in ../nvhpc-cuda13.
 
 Toy script to run benchmarks for PP/PH contractions with the following arguments:
 - SEED: int
@@ -32,8 +33,16 @@ Toy script to run benchmarks for PP/PH contractions with the following arguments
 
 Generating executables:
 ```{shell}
-make cutensor
+# Set necessary env variables
+export TAPP_INCLUDE_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/api/include/tapp
+export TAPP_API_INCLUDE_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/api/include
+
+export TAPP_CUBLAS_LIBRARY_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/build/cublas_bindings
+export TAPP_CUBLAS_INCLUDE_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/cublas_bindings/include
 make cublas
+
+export TAPP_CUTENSOR_LIBRARY_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/build/cutensor_bindings
+make cutensor
 ```
 
 Running examples:
@@ -42,7 +51,15 @@ Running examples:
 ./cutensor_benchmark 123 100 140 0.0 10 20 1 64 PP 1 1 0
 ```
 
-Note: you will need to:
-- modify the include/lib paths
+Note: 
+You will need to:
 - add the lib paths to LD_LIBRARY_PATH env variable
+```
+# For cuBLAS
+export TAPP_LIBRARY_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/build/cublas_bindings
+# For cuTENSOR
+export TAPP_LIBRARY_PATH=/lustre/work/pdl17866/shared/lee-maximee/reference-implementation/build/cutensor_bindings
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TAPP_LIBRARY_PATH 
+```
 
