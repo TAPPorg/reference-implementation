@@ -194,6 +194,91 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR)
 
 endif()
 
+option(TAPP_REFERENCE_ENABLE_CUBLAS "Build cuBLAS/TTGT bindings" OFF)
+
+if(TAPP_REFERENCE_ENABLE_CUBLAS)
+
+  include(CheckLanguage)
+  check_language(CXX)
+  if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
+  else()
+    message(FATAL_ERROR "Cannot build TAPP with cuBLAS due to missing CXX language support; ensure that the CXX compiler can be discovered")
+  endif()
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  else()
+    message(FATAL_ERROR "Cannot build TAPP with cuBLAS due to missing CUDA language support; ensure that the CUDA compiler can be discovered")
+  endif()
+
+  # CUDAToolkit provides CUDA::cudart and CUDA::cublas
+  find_package(CUDAToolkit REQUIRED)
+
+  set(TAPP_OZAKI_EMULATION_VERSION 0 CACHE STRING
+      "FP64 emulation in the cuBLAS bindings: 0 = none, 1 = cuBLAS fixed-point emulation (CUDA >= 13), 2 = Ozaki-II via GEMMul8")
+  set_property(CACHE TAPP_OZAKI_EMULATION_VERSION PROPERTY STRINGS 0 1 2)
+
+  # cuTT (transpose library) is not part of the CUDA toolkit. Use the installation
+  # at CUTT_ROOT if given, otherwise fetch and build it
+  if(NOT DEFINED CUTT_ROOT AND DEFINED ENV{CUTT_ROOT})
+    set(CUTT_ROOT $ENV{CUTT_ROOT})
+  endif()
+  if(CUTT_ROOT)
+    message(STATUS "Using cuTT from: ${CUTT_ROOT}")
+    add_library(cutt STATIC IMPORTED GLOBAL)
+    set_target_properties(cutt PROPERTIES
+      IMPORTED_LOCATION "${CUTT_ROOT}/lib/libcutt.a"
+      INTERFACE_INCLUDE_DIRECTORIES "${CUTT_ROOT}/include"
+    )
+  else()
+    include(FetchContent)
+    find_package(Git REQUIRED)
+
+    # The ValeevGroup fork of cuTT, which adds a CMake build. It does not build with
+    # CUDA 13 as is; cublas/cmake/cutt-cuda13.patch explains and fixes that
+    FetchContent_Declare(
+      cutt
+      GIT_REPOSITORY https://github.com/ValeevGroup/cutt.git
+      GIT_TAG 0e8685bf82910bc7435835f846e88f1b39f47f09
+      PATCH_COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_SOURCE_DIR}/cublas/cmake/cutt-cuda13.patch
+      UPDATE_DISCONNECTED TRUE
+    )
+
+    FetchContent_MakeAvailable(cutt)
+
+    # cuTT's target carries no include directory and is linked into the shared tapp-cublas
+    target_include_directories(cutt INTERFACE ${cutt_SOURCE_DIR}/src)
+    set_target_properties(cutt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+      set_target_properties(cutt PROPERTIES CUDA_ARCHITECTURES "80;90")
+    endif()
+  endif()
+
+  # GEMMul8 (Ozaki-II), built in place at OZAKI_II_ROOT
+  if(TAPP_OZAKI_EMULATION_VERSION STREQUAL "2")
+    if(NOT DEFINED OZAKI_II_ROOT AND DEFINED ENV{OZAKI_II_ROOT})
+      set(OZAKI_II_ROOT $ENV{OZAKI_II_ROOT})
+    endif()
+    if(NOT OZAKI_II_ROOT)
+      message(FATAL_ERROR "OZAKI_II_ROOT not found; set OZAKI_II_ROOT to the GEMMul8 directory")
+    endif()
+    if(NOT OZAKI_II_COMPUTE_CAPABILITY)
+      message(FATAL_ERROR "OZAKI_II_COMPUTE_CAPABILITY not set; set it to the GPU_ARCH GEMMul8 was built for (e.g. 90)")
+    endif()
+    message(STATUS "Using GEMMul8 from: ${OZAKI_II_ROOT}")
+    add_library(gemmul8 STATIC IMPORTED GLOBAL)
+    set_target_properties(gemmul8 PROPERTIES
+      IMPORTED_LOCATION "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+      INTERFACE_INCLUDE_DIRECTORIES "${OZAKI_II_ROOT}/include"
+    )
+  endif()
+
+  # this provides tapp-cublas target
+  add_subdirectory(cublas)
+
+endif()
+
 # ----------------------------------------------------------------------------
 # testing
 
@@ -364,6 +449,37 @@ if(BUILD_TESTING)
     add_test(
       NAME tapp-cutensor-demo
       COMMAND $<TARGET_FILE:tapp-cutensor-demo>
+      )
+  endif()
+
+  # cuBLAS demo
+  if(TAPP_REFERENCE_ENABLE_CUBLAS)
+    add_executable(tapp-cublas-demo)
+
+    target_sources(
+      tapp-cublas-demo
+      PRIVATE
+        test/cublas_demo.cpp
+        cublas/include/tapp_cublas.h
+      )
+
+    target_include_directories(
+      tapp-cublas-demo
+      PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/cublas/include
+    )
+
+    target_link_libraries(
+      tapp-cublas-demo
+      PRIVATE
+         tapp::cublas
+         CUDA::cudart
+      )
+
+    add_test(
+      NAME tapp-cublas-demo
+      COMMAND $<TARGET_FILE:tapp-cublas-demo>
       )
   endif()
 

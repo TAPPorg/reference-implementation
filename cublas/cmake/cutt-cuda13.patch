@@ -1,0 +1,62 @@
+Make cuTT build with CUDA 13
+
+Applied by the top-level CMakeLists.txt to the cuTT sources it fetches
+(https://github.com/ValeevGroup/cutt at 0e8685bf82910bc7435835f846e88f1b39f47f09)
+when CUTT_ROOT is not set.
+
+CUDA 13 removed the clockRate and memoryClockRate members of cudaDeviceProp.
+cuTT reads them in its performance model (prepmodel5 in cuttGpuModel.cpp) and in
+a debug printout (printMatlab in cuttplan.cpp). This patch reads the same values
+with cudaDeviceGetAttribute(cudaDevAttrClockRate / cudaDevAttrMemoryClockRate),
+which exists in all CUDA versions and returns the same units (kHz). The device
+queried is the current one, which is the device cuTT took prop from
+(getDeviceProp in cutt.cpp calls cudaGetDevice).
+
+The benchmark cutt_bench.cpp uses the same members but is not built (EXCLUDE_FROM_ALL),
+so it is left unchanged.
+
+diff --git a/src/cuttGpuModel.cpp b/src/cuttGpuModel.cpp
+index eca8417..9bbe58d 100755
+--- a/src/cuttGpuModel.cpp
++++ b/src/cuttGpuModel.cpp
+@@ -801,12 +801,19 @@ void prepmodel5(cudaDeviceProp& prop, GpuModelProp& gpuModelProp,
+   int cl_full, int cl_part,
+   double& delta_ll, double& mem_cycles, double& sh_mem_cycles, double& MWP) {
+ 
++  // CUDA 13 removed cudaDeviceProp::clockRate and memoryClockRate. Query them for
++  // the current device instead, which is the device prop belongs to. Both in kHz.
++  int device, clockRate, memoryClockRate;
++  cudaGetDevice(&device);
++  cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, device);
++  cudaDeviceGetAttribute(&memoryClockRate, cudaDevAttrMemoryClockRate, device);
++
+   double active_SM = prop.multiProcessorCount;
+   // Memory bandwidth in GB/s
+-  double mem_BW = (double)(prop.memoryClockRate*2*(prop.memoryBusWidth/8))/1.0e6;
++  double mem_BW = (double)(memoryClockRate*2*(prop.memoryBusWidth/8))/1.0e6;
+   if (prop.ECCEnabled) mem_BW *= (1.0 - 0.125);
+   // GPU clock in GHz
+-  double freq = (double)prop.clockRate/1.0e6;
++  double freq = (double)clockRate/1.0e6;
+   int warpSize = prop.warpSize;
+ 
+   int active_warps_per_SM = nthread*numActiveBlock/warpSize;
+diff --git a/src/cuttplan.cpp b/src/cuttplan.cpp
+index 39798c6..52737e7 100755
+--- a/src/cuttplan.cpp
++++ b/src/cuttplan.cpp
+@@ -784,8 +784,13 @@ void printMatlab(cudaDeviceProp& prop, std::list<cuttPlan_t>& plans, std::vector
+   static int count = 0;
+   count++;
+   int i = 0;
++  // CUDA 13 removed cudaDeviceProp::clockRate. Query it for the current device
++  // instead, which is the device prop belongs to. In kHz.
++  int device, clockRate;
++  cudaGetDevice(&device);
++  cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, device);
+   // Conversion factor from wallclok time to total number of cycles = (GPU clock in Hz) x #SM
+-  double freq_SM = (double)(prop.clockRate*1000)*(double)prop.multiProcessorCount;
++  double freq_SM = (double)(clockRate*1000)*(double)prop.multiProcessorCount;
+   for (auto it=plans.begin();it != plans.end();it++,i++) {
+     TensorSplit& ts = it->tensorSplit;
+     LaunchConfig& lc = it->launchConfig;
