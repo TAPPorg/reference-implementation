@@ -403,6 +403,8 @@ int main(int argc, char const *argv[])
     if(!TAPP_check_success(error)) printf(message_buff);
     free(message_buff);
 
+    cudaFreeAsync(F2_d);
+
     //////////////////////////////////
     // Contractions with M1 intermediate: M1(e,f,m,n) = T1(e,d,m,n) J1(f,d)
     // with J1(f,d) = V1(l,m,d,e) T1(e,f,l,m)

@@ -386,31 +386,11 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR AND TAPP_REFERENCE_ENABLE_TBLIS)
     multi-tapp-ccd
     PRIVATE
       multi-tapp
+      CUDA::cudart
+      cutensor::cutensor
     )
 
-  add_dependencies(multi-tapp tapp-tblis tapp-cutensor)
-
-  # Script to generate input tensors
-  find_package(OpenMP REQUIRED)
-  add_executable(tapp-tblis-ccd-reference)
-
-  target_sources(
-    tapp-tblis-ccd-reference
-    PRIVATE
-      CCD/tblis/reference/main.cpp
-    )
-
-  target_include_directories(
-    tapp-tblis-ccd-reference
-    PRIVATE
-      $<TARGET_PROPERTY:tapp-tblis,INTERFACE_INCLUDE_DIRECTORIES>
-    )
-  target_link_libraries(
-    tapp-tblis-ccd-reference
-    PRIVATE
-      tapp-tblis
-      OpenMP::OpenMP_CXX
-    )
+  add_dependencies(multi-tapp-ccd tapp-tblis tapp-cutensor)
 
 endif()
 
