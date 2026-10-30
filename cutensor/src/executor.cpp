@@ -110,16 +110,6 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     return result;
 }
 
-TAPP_error TAPP_executor_get_status(TAPP_executor exec, TAPP_status* status)
-{
-    if (!exec) return TAPP_ERR_NULL_POINTER;
-
-    struct executor* exec_struct = (struct executor*) exec;
-    device_scope scope(exec_struct->device);
-    if (scope.error != cudaSuccess) return tapp_error(scope.error);
-    return create_status(exec_struct->stream, exec_struct->device, status);
-}
-
 TAPP_error TAPP_wait_all(TAPP_executor exec)
 {
     if (!exec) return TAPP_ERR_NULL_POINTER;
