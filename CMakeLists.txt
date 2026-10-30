@@ -161,6 +161,35 @@ if(TAPP_REFERENCE_ENABLE_CUTENSOR)
   target_compile_definitions(tapp-reference PRIVATE TAPP_REFERENCE_ENABLE_CUTENSOR=1)
   find_package(CUDAToolkit REQUIRED)
 
+  # cuTENSOR is not part of the CUDA toolkit; look for it separately
+  if(NOT TARGET cutensor::cutensor)
+    find_path(CUTENSOR_INCLUDE_DIR
+      NAMES cutensor.h
+      HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
+            ${CUDAToolkit_LIBRARY_ROOT}
+      PATH_SUFFIXES include
+    )
+    find_library(CUTENSOR_LIBRARY
+      NAMES cutensor
+      HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
+            ${CUDAToolkit_LIBRARY_ROOT}
+      PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+
+    if(NOT CUTENSOR_INCLUDE_DIR OR NOT CUTENSOR_LIBRARY)
+      message(FATAL_ERROR "cuTENSOR not found; set CUTENSOR_ROOT to the cuTENSOR installation prefix")
+    endif()
+    message(STATUS "Found cuTENSOR: ${CUTENSOR_LIBRARY}")
+    message(STATUS "cuTENSOR include: ${CUTENSOR_INCLUDE_DIR}")
+
+    add_library(cutensor::cutensor UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(cutensor::cutensor PROPERTIES
+      IMPORTED_LOCATION "${CUTENSOR_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${CUTENSOR_INCLUDE_DIR}"
+    )
+  endif()
+
+  # this provides tapp-cutensor target
   add_subdirectory(cutensor)
 
 endif()

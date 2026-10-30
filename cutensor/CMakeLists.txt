@@ -1,36 +1,67 @@
-# cuTENSOR is not part of the CUDA toolkit; look for it separately
-if(NOT TARGET cutensor::cutensor)
-  find_path(CUTENSOR_INCLUDE_DIR
-    NAMES cutensor.h
-    HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
-          ${CUDAToolkit_LIBRARY_ROOT}
-    PATH_SUFFIXES include
-  )
-  find_library(CUTENSOR_LIBRARY
-    NAMES cutensor
-    HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
-          ${CUDAToolkit_LIBRARY_ROOT}
-    PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
-  )
+cmake_minimum_required(VERSION 3.15)
 
-  if(NOT CUTENSOR_INCLUDE_DIR OR NOT CUTENSOR_LIBRARY)
-    message(FATAL_ERROR "cuTENSOR not found; set CUTENSOR_ROOT to the cuTENSOR installation prefix")
-  endif()
-  message(STATUS "Found cuTENSOR: ${CUTENSOR_LIBRARY}")
-  message(STATUS "cuTENSOR include: ${CUTENSOR_INCLUDE_DIR}")
+set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
-  add_library(cutensor::cutensor UNKNOWN IMPORTED GLOBAL)
-  set_target_properties(cutensor::cutensor PROPERTIES
-    IMPORTED_LOCATION "${CUTENSOR_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CUTENSOR_INCLUDE_DIR}"
-  )
+# see https://semver.org/
+set (TAPP_CUTENSOR_MAJOR_VERSION 0)
+set (TAPP_CUTENSOR_MINOR_VERSION 5)
+set (TAPP_CUTENSOR_PATCH_VERSION 0)
+set (TAPP_CUTENSOR_PRERELEASE_ID )
+set (TAPP_CUTENSOR_BUILD_ID )
+
+set(TAPP_CUTENSOR_VERSION "${TAPP_CUTENSOR_MAJOR_VERSION}.${TAPP_CUTENSOR_MINOR_VERSION}.${TAPP_CUTENSOR_PATCH_VERSION}")
+if (TAPP_CUTENSOR_PRERELEASE_ID)
+  set(TAPP_CUTENSOR_EXT_VERSION "${TAPP_CUTENSOR_VERSION}-${TAPP_CUTENSOR_PRERELEASE_ID}")
+else(TAPP_CUTENSOR_PRERELEASE_ID)
+  set(TAPP_CUTENSOR_EXT_VERSION "${TAPP_CUTENSOR_VERSION}")
+endif(TAPP_CUTENSOR_PRERELEASE_ID)
+if (TAPP_CUTENSOR_BUILD_ID)
+  set(TAPP_CUTENSOR_EXT_VERSION "${TAPP_CUTENSOR_EXT_VERSION}+${TAPP_CUTENSOR_BUILD_ID}")
+endif(TAPP_CUTENSOR_BUILD_ID)
+
+# Extract the git revision tag information
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  find_package(Git REQUIRED)
+  execute_process(
+          COMMAND ${GIT_EXECUTABLE} rev-parse -q HEAD
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          OUTPUT_VARIABLE TAPP_CUTENSOR_REVISION )
+  string(REGEX MATCH "[0-9a-f]*"
+          TAPP_CUTENSOR_REVISION "${TAPP_CUTENSOR_REVISION}")
+else()
+  set(TAPP_CUTENSOR_REVISION "unknown")
 endif()
+
+project(tapp-cutensor
+        VERSION ${TAPP_CUTENSOR_VERSION}
+        DESCRIPTION "TAPP implementation backed by cuTENSOR"
+        LANGUAGES CXX
+        HOMEPAGE_URL "https://github.com/TAPPOrg/")
+
+include(GNUInstallDirs)
+
+set(TAPP_CUTENSOR_INSTALL_BINDIR "bin"
+        CACHE PATH "TAPP CUTENSOR binary install directory")
+set(TAPP_CUTENSOR_INSTALL_INCLUDEDIR "include"
+        CACHE PATH "TAPP CUTENSOR INCLUDE install directory")
+set(TAPP_CUTENSOR_INSTALL_LIBDIR "lib"
+        CACHE PATH "TAPP CUTENSOR LIB install directory")
+set(TAPP_CUTENSOR_INSTALL_DATADIR "share/mpqc/${TAPP_CUTENSOR_EXT_VERSION}/data"
+        CACHE PATH "TAPP CUTENSOR DATA install directory")
+set(TAPP_CUTENSOR_INSTALL_DOCDIR "share/tapp/${TAPP_CUTENSOR_EXT_VERSION}/doc"
+        CACHE PATH "TAPP CUTENSOR DOC install directory")
+set(TAPP_CUTENSOR_INSTALL_CMAKEDIR "lib/cmake/mpqc"
+        CACHE PATH "TAPP CUTENSOR CMAKE install directory")
+
+# Expects the tapp-api and cutensor::cutensor targets (the latter found in the
+# top-level CMakeLists.txt) to be available.
 
 add_library(tapp-cutensor SHARED)
 set_property(TARGET tapp-cutensor PROPERTY EXPORT_NAME cutensor)
 add_library(tapp::cutensor ALIAS tapp-cutensor)
 
-target_sources(tapp-cutensor
+target_sources(
+  tapp-cutensor
   PRIVATE
     src/attributes.cpp
     src/datatype.cpp
@@ -44,20 +75,25 @@ target_sources(tapp-cutensor
     src/util.cpp
     src/internal.h
     include/tapp_cutensor.h
+  )
+
+set_property(
+   TARGET tapp-cutensor
+   PROPERTY
+     CXX_STANDARD 20
+     CXX_STANDARD_REQUIRED YES
+     CXX_EXTENSIONS NO
+     POSITION_INDEPENDENT_CODE ON
 )
 
-set_target_properties(tapp-cutensor PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 20
-  CXX_STANDARD_REQUIRED YES
-)
-
-target_include_directories(tapp-cutensor
+target_include_directories(
+  tapp-cutensor
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(tapp-cutensor
+target_link_libraries(
+  tapp-cutensor
   PUBLIC
     tapp-api
   PRIVATE
@@ -65,9 +101,9 @@ target_link_libraries(tapp-cutensor
     CUDA::cudart
 )
 
-install(TARGETS tapp-cutensor EXPORT tapp
-  COMPONENT cutensor)
-
 if(APPLE AND CMAKE_C_COMPILER_ID MATCHES "^(Clang|AppleClang)$")
   target_link_options(tapp-cutensor PRIVATE "-undefined;dynamic_lookup")
 endif()
+
+install(TARGETS tapp-cutensor EXPORT tapp
+  COMPONENT cutensor)
