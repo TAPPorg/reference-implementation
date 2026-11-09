@@ -8,13 +8,33 @@
 
 namespace {
 
+// true if the memory spanned by the tensors x and y may overlap
+bool may_overlap(const tblis::tblis_tensor* x, const tblis::tblis_tensor* y, ptrdiff_t size)
+{
+    auto span = [size](const tblis::tblis_tensor* t, const char*& lo, const char*& hi)
+    {
+        lo = hi = (const char*)t->data;
+        for (int i = 0; i < t->ndim; i++)
+        {
+            ptrdiff_t ext = (ptrdiff_t)(t->len[i] - 1) * (ptrdiff_t)t->stride[i] * size;
+            if (ext < 0) lo += ext; else hi += ext;
+        }
+        hi += size;
+    };
+    const char *xlo, *xhi, *ylo, *yhi;
+    span(x, xlo, xhi);
+    span(y, ylo, yhi);
+    return xlo < yhi && ylo < xhi;
+}
+
+
 void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, float* B, int op_B, int64_t* idx_B,
                     int nmode_C, int64_t* extents_C, int64_t* strides_C, float* C, int op_C, int64_t* idx_C,
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, float* D, int op_D, int64_t* idx_D,
                     float alpha, float beta);
 bool compare_tensors_s(float* A, float* B, int size);
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out);
 
 void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, double* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, double* B, int op_B, int64_t* idx_B,
@@ -22,7 +42,7 @@ void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, doubl
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, double* D, int op_D, int64_t* idx_D,
                     double alpha, double beta);
 bool compare_tensors_d(double* A, double* B, int size);
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out);
 
 void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::complex<float>* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, std::complex<float>* B, int op_B, int64_t* idx_B,
@@ -30,7 +50,7 @@ void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, std::complex<float>* D, int op_D, int64_t* idx_D,
                     std::complex<float> alpha, std::complex<float> beta);
 bool compare_tensors_c(std::complex<float>* A, std::complex<float>* B, int size);
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out);
 
 void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::complex<double>* A, int op_A, int64_t* idx_A,
                     int nmode_B, int64_t* extents_B, int64_t* strides_B, std::complex<double>* B, int op_B, int64_t* idx_B,
@@ -38,7 +58,7 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
                     int nmode_D, int64_t* extents_D, int64_t* strides_D, std::complex<double>* D, int op_D, int64_t* idx_D,
                     std::complex<double> alpha, std::complex<double> beta);
 bool compare_tensors_z(std::complex<double>* A, std::complex<double>* B, int size);
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2);
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out);
 
 
 
@@ -98,12 +118,12 @@ void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float
     tblis::tblis_init_tensor_scaled_s(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
     tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
 
-    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_s(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_s(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D, &tblis_D);
     
-    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_s(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_s(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D, &tblis_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
-    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_add(NULL, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_mult(NULL, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
 
     delete[] tblis_idx_A;
@@ -135,7 +155,7 @@ void run_tblis_mult_s(int nmode_A, int64_t* extents_A, int64_t* strides_A, float
     delete tblis_B_reduced;
 }
 
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, float*> contract_unique_idx_s(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out)
 {
     int nmode_reduced = 0;
     int64_t size_reduced = 1;
@@ -172,13 +192,23 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
     idx_reduced[nmode_reduced] = '\0';
 
+    // If nothing to sum out, positive strides, no conjugation, no scaling and no overlap with D,
+    // use the operand itself instead of a copy
+    bool positive_strides = true;
+    for (int i = 0; i < tensor->ndim; i++) if (tensor->stride[i] <= 0) positive_strides = false;
+    if (nmode_reduced == tensor->ndim && positive_strides && !tensor->conj &&
+        tensor->scalar.data.s == float(1) && !may_overlap(tensor, out, sizeof(float)))
+    {
+        tblis::tblis_init_tensor_s(tblis_reduced, tensor->ndim, tensor->len, (float*)tensor->data, tensor->stride);
+        return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, (float*)nullptr};
+    }
     float* data_reduced = new float[size_reduced];
     for (size_t i = 0; i < size_reduced; i++)
     {
         data_reduced[i] = 0;
     }
     tblis::tblis_init_tensor_s(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
-    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    tblis::tblis_tensor_add(NULL, NULL, tensor, idx, tblis_reduced, idx_reduced);
     return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
@@ -212,12 +242,12 @@ void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, doubl
     tblis::tblis_init_tensor_scaled_d(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
     tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
 
-    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_d(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_d(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D, &tblis_D);
     
-    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_d(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_d(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D, &tblis_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
-    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_add(NULL, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_mult(NULL, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
 
     delete[] tblis_idx_A;
@@ -249,7 +279,7 @@ void run_tblis_mult_d(int nmode_A, int64_t* extents_A, int64_t* strides_A, doubl
     delete tblis_B_reduced;
 }
 
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, double*> contract_unique_idx_d(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out)
 {
     int nmode_reduced = 0;
     int64_t size_reduced = 1;
@@ -286,6 +316,16 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
     idx_reduced[nmode_reduced] = '\0';
 
+    // If nothing to sum out, positive strides, no conjugation, no scaling and no overlap with D,
+    // use the operand itself instead of a copy
+    bool positive_strides = true;
+    for (int i = 0; i < tensor->ndim; i++) if (tensor->stride[i] <= 0) positive_strides = false;
+    if (nmode_reduced == tensor->ndim && positive_strides && !tensor->conj &&
+        tensor->scalar.data.d == double(1) && !may_overlap(tensor, out, sizeof(double)))
+    {
+        tblis::tblis_init_tensor_d(tblis_reduced, tensor->ndim, tensor->len, (double*)tensor->data, tensor->stride);
+        return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, (double*)nullptr};
+    }
     double* data_reduced = new double[size_reduced];
     for (size_t i = 0; i < size_reduced; i++)
     {
@@ -293,7 +333,7 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
 
     tblis::tblis_init_tensor_d(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
-    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    tblis::tblis_tensor_add(NULL, NULL, tensor, idx, tblis_reduced, idx_reduced);
     return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
@@ -329,19 +369,19 @@ void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
     tblis::tblis_init_tensor_scaled_c(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
     tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
 
-    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_c(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_c(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D, &tblis_D);
     
-    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_c(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_c(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D, &tblis_D);
 
     tblis_C.conj = op_C;
 
-    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_mult(NULL, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_add(NULL, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_scale(NULL, NULL, &tblis_D, tblis_idx_D);
 
     delete[] tblis_idx_A;
     delete[] tblis_len_A;
@@ -372,7 +412,7 @@ void run_tblis_mult_c(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
     delete tblis_B_reduced;
 }
 
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<float>*> contract_unique_idx_c(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out)
 {
     int nmode_reduced = 0;
     int64_t size_reduced = 1;
@@ -409,6 +449,16 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
     idx_reduced[nmode_reduced] = '\0';
 
+    // If nothing to sum out, positive strides, no conjugation, no scaling and no overlap with D,
+    // use the operand itself instead of a copy
+    bool positive_strides = true;
+    for (int i = 0; i < tensor->ndim; i++) if (tensor->stride[i] <= 0) positive_strides = false;
+    if (nmode_reduced == tensor->ndim && positive_strides && !tensor->conj &&
+        tensor->scalar.data.c == std::complex<float>(1) && !may_overlap(tensor, out, sizeof(std::complex<float>)))
+    {
+        tblis::tblis_init_tensor_c(tblis_reduced, tensor->ndim, tensor->len, (std::complex<float>*)tensor->data, tensor->stride);
+        return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, (std::complex<float>*)nullptr};
+    }
     std::complex<float>* data_reduced = new std::complex<float>[size_reduced];
     for (size_t i = 0; i < size_reduced; i++)
     {
@@ -416,7 +466,7 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
 
     tblis::tblis_init_tensor_c(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
-    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    tblis::tblis_tensor_add(NULL, NULL, tensor, idx, tblis_reduced, idx_reduced);
     return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
@@ -452,19 +502,19 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
     tblis::tblis_init_tensor_scaled_z(&tblis_D, 0, nmode_D, tblis_len_D, D, tblis_stride_D);
     tblis::label_type* tblis_idx_D = translate_idx_to_tblis(nmode_D, idx_D);
 
-    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_z(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D);
+    auto [tblis_A_reduced, tblis_idx_A_reduced, tblis_len_A_reduced, tblis_stride_A_reduced, tblis_data_A_reduced] = contract_unique_idx_z(&tblis_A, tblis_idx_A, nmode_B, tblis_idx_B, nmode_D, tblis_idx_D, &tblis_D);
     
-    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_z(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D);
+    auto [tblis_B_reduced, tblis_idx_B_reduced, tblis_len_B_reduced, tblis_stride_B_reduced, tblis_data_B_reduced] = contract_unique_idx_z(&tblis_B, tblis_idx_B, nmode_A, tblis_idx_A, nmode_D, tblis_idx_D, &tblis_D);
 
     tblis_C.conj = op_C;
 
-    tblis::tblis_tensor_add(tblis_single, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_add(NULL, NULL, &tblis_C, tblis_idx_C, &tblis_D, tblis_idx_D);
 
-    tblis::tblis_tensor_mult(tblis_single, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_mult(NULL, NULL, tblis_A_reduced, tblis_idx_A_reduced, tblis_B_reduced, tblis_idx_B_reduced, &tblis_D, tblis_idx_D);
 
     tblis_D.conj = op_D;
 
-    tblis::tblis_tensor_scale(tblis_single, NULL, &tblis_D, tblis_idx_D);
+    tblis::tblis_tensor_scale(NULL, NULL, &tblis_D, tblis_idx_D);
 
     delete[] tblis_idx_A;
     delete[] tblis_len_A;
@@ -495,7 +545,7 @@ void run_tblis_mult_z(int nmode_A, int64_t* extents_A, int64_t* strides_A, std::
     delete tblis_B_reduced;
 }
 
-std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2)
+std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::stride_type*, std::complex<double>*> contract_unique_idx_z(tblis::tblis_tensor* tensor, tblis::label_type* idx, int nmode_1, tblis::label_type* idx_1, int nmode_2, tblis::label_type* idx_2, const tblis::tblis_tensor* out)
 {
     int nmode_reduced = 0;
     int64_t size_reduced = 1;
@@ -532,6 +582,16 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
     idx_reduced[nmode_reduced] = '\0';
 
+    // If nothing to sum out, positive strides, no conjugation, no scaling and no overlap with D,
+    // use the operand itself instead of a copy
+    bool positive_strides = true;
+    for (int i = 0; i < tensor->ndim; i++) if (tensor->stride[i] <= 0) positive_strides = false;
+    if (nmode_reduced == tensor->ndim && positive_strides && !tensor->conj &&
+        tensor->scalar.data.z == std::complex<double>(1) && !may_overlap(tensor, out, sizeof(std::complex<double>)))
+    {
+        tblis::tblis_init_tensor_z(tblis_reduced, tensor->ndim, tensor->len, (std::complex<double>*)tensor->data, tensor->stride);
+        return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, (std::complex<double>*)nullptr};
+    }
     std::complex<double>* data_reduced = new std::complex<double>[size_reduced];
     for (size_t i = 0; i < size_reduced; i++)
     {
@@ -539,7 +599,7 @@ std::tuple<tblis::tblis_tensor*, tblis::label_type*, tblis::len_type*, tblis::st
     }
 
     tblis::tblis_init_tensor_z(tblis_reduced, nmode_reduced, len_reduced, data_reduced, stride_reduced);
-    tblis::tblis_tensor_add(tblis_single, NULL, tensor, idx, tblis_reduced, idx_reduced);
+    tblis::tblis_tensor_add(NULL, NULL, tensor, idx, tblis_reduced, idx_reduced);
     return {tblis_reduced, idx_reduced, len_reduced, stride_reduced, data_reduced};
 }
 
