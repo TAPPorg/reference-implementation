@@ -86,33 +86,4 @@ enum
     TAPP_DEFAULT_EMULATION_MANTISSA_CONTROL = TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC,
 };
 
-/* Type used for Ozaki-II scheme. It dictates the number of splits, which is also equal to the number of executed GEMMs.
- * There are not clear relation between the number of splits and the accuracy of the GEMM.
- */
-typedef int TAPP_num_gemm;
-
-enum
-{
-    TAPP_DEFAULT_NUM_GEMM = 10,
-    TAPP_2_GEMM = 2,
-    TAPP_3_GEMM = 3,
-    TAPP_4_GEMM = 4,
-    TAPP_5_GEMM = 5,
-    TAPP_6_GEMM = 6,
-    TAPP_7_GEMM = 7,
-    TAPP_8_GEMM = 8,
-    TAPP_9_GEMM = 9,
-    TAPP_10_GEMM = 10,
-    TAPP_11_GEMM = 11,
-    TAPP_12_GEMM = 12,
-    TAPP_13_GEMM = 13,
-    TAPP_14_GEMM = 14,
-    TAPP_15_GEMM = 15,
-    TAPP_16_GEMM = 16,
-    TAPP_17_GEMM = 17,
-    TAPP_18_GEMM = 18,
-    TAPP_19_GEMM = 19,
-    TAPP_20_GEMM = 20,
-};
-
 #endif  /* TAPP_CUBLAS_H_ */

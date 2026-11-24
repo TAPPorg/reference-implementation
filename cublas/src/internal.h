@@ -8,7 +8,8 @@
 
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-#include <cutt.h>
+//#include <cutt.h>
+#include <cutensor.h>
 #include <library_types.h>
 #include <map>
 #include <tapp.h>
@@ -57,12 +58,13 @@ enum
     TAPP_ERR_MISALIGNED = 27,
     TAPP_ERR_UNSUPPORTED_ELEMENT_OP = 28,
     TAPP_ERR_OUT_OF_MEMORY = 29,
+    TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED = 30,
     // The error of a status whose operation has not finished yet, not a failure
-    TAPP_ERR_STATUS_RUNNING = 30,
     TAPP_ERR_STATUS_WRONG_DEVICE = 31,
     TAPP_ERR_PLAN_WRONG_DEVICE = 32,
     TAPP_ERR_UNSUPPORTED_DATATYPE = 33,
     TAPP_ERR_PLAN_WRONG_EXECUTOR = 34,
+    TAPP_ERR_STATUS_RUNNING = 35,
 };
 
 typedef enum
@@ -70,12 +72,14 @@ typedef enum
     TAPP_ERROR_TYPE_TAPP_BASE   = 0,
     TAPP_ERROR_TYPE_CUDA_BASE   = 100000,
     TAPP_ERROR_TYPE_CUBLAS_BASE = 200000,
-    TAPP_ERROR_TYPE_CUTT_BASE   = 300000,
+    // TAPP_ERROR_TYPE_CUTT_BASE   = 300000,
+    TAPP_ERROR_TYPE_CUTENSOR_BASE   = 300000,
 } TAPP_error_base;
 
 inline TAPP_error tapp_error(cudaError_t e)    { return e == cudaSuccess ? TAPP_SUCCESS : (int)e + TAPP_ERROR_TYPE_CUDA_BASE; }
 inline TAPP_error tapp_error(cublasStatus_t e) { return e == CUBLAS_STATUS_SUCCESS ? TAPP_SUCCESS : (int)e + TAPP_ERROR_TYPE_CUBLAS_BASE; }
-inline TAPP_error tapp_error(cuttResult e)     { return e == CUTT_SUCCESS ? TAPP_SUCCESS : (int)e + TAPP_ERROR_TYPE_CUTT_BASE; }
+// inline TAPP_error tapp_error(cuttResult e)     { return e == CUTT_SUCCESS ? TAPP_SUCCESS : (int)e + TAPP_ERROR_TYPE_CUTT_BASE; }
+inline TAPP_error tapp_error(cutensorStatus_t e) { return e == CUTENSOR_STATUS_SUCCESS ? TAPP_SUCCESS : (int)e + TAPP_ERROR_TYPE_CUTENSOR_BASE; }
 
 static inline const char* tapp_error_string(int code)
 {
@@ -110,6 +114,7 @@ static inline const char* tapp_error_string(int code)
     case TAPP_ERR_MISALIGNED:       return "Tensor data must be aligned to 128 bytes.";
     case TAPP_ERR_UNSUPPORTED_ELEMENT_OP: return "The element operation is not supported.";
     case TAPP_ERR_OUT_OF_MEMORY:    return "Out of host memory.";
+    case TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED:    return "Product plan creation failed.";
     case TAPP_ERR_STATUS_RUNNING:   return "The operation has not finished yet.";
     case TAPP_ERR_STATUS_WRONG_DEVICE: return "The status is of an operation on another device than the executor.";
     case TAPP_ERR_PLAN_WRONG_DEVICE: return "The plan was created for another device than the executor's.";
@@ -126,6 +131,7 @@ static inline const char* tapp_error_string(int code)
 // Translate a TAPP computational precision into the cuBLAS compute type passed
 // to cublasGemmEx. `datatype` resolves TAPP_DEFAULT_PREC.
 cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
+cutensorComputeDescriptor_t translate_prectype_permutation(TAPP_datatype datatype);
 
 // If `prec` is one of the variable-precision compute types (TAPP_F_*/TAPP_C_*
 // digit counts), return its decimal digit count (> 0); otherwise return 0.
@@ -170,10 +176,9 @@ struct executor
 {
     cudaStream_t stream;
     cublasHandle_t cublas;
+    cutensorHandle_t cutensor;
     TAPP_emulation_strategy emulation_strategy;
     TAPP_emulation_mantissa_control emulation_mantissa_control;
-    // Requested number of GEMM in Ozaki-II emulation scheme (0 = emulation off). Only meaningful when built with OZAKI_EMULATION_VERSION=2
-    TAPP_num_gemm num_gemm;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -191,14 +196,11 @@ struct product_plan
 {
     bool failed;         // set when the contraction is outside TTGT's support
 
-    // Stream of the executor the plan was created with. The cuTT plans are bound to it, so the plan can only be
-    // executed with that executor
-    cudaStream_t stream;
-
     // Transpose plans. transposeX == false means tensor X is already in the
     // layout the GEMM expects, so it is fed to the GEMM unchanged.
     bool transposeA, transposeB, transposeC;
-    cuttHandle planA, planB, planC;
+    // cuttHandle planA, planB, planC;
+    cutensorPlan_t planA, planB, planC, planD;
 
     // GEMM configuration (CT = alpha * op(A) * op(B)).
     cublasOperation_t transa, transb;
@@ -214,15 +216,21 @@ struct product_plan
     size_t elements_A, elements_B, elements_D;
     TAPP_datatype type_A, type_B, type_D;
 
-    // Host<->device transfer description per operand.
-    size_t copy_size_A;  int64_t data_offset_A;
-    size_t copy_size_B;  int64_t data_offset_B;
-    size_t copy_size_C;  int64_t data_offset_C;
-    size_t copy_size_D;  int64_t data_offset_D;
-
     TAPP_element_op op_D;
 };
 
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Permutes
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+struct permute_plan
+{
+    cutensorPlan_t plan;       // C = alpha op_A'(A) + beta op_B'(B), op_C folded into op_A' and op_B'
+    cutensorDataType_t type_C;
+    bool conj_scalars;         // op_C is CONJUGATE: alpha and beta are conjugated when executed
+    // Of the executor the plan was created with; it can only run there
+    int device;
+};
 /* ---------------------------------------------------------------------------------------------------------------------
  * Status
  * ------------------------------------------------------------------------------------------------------------------ */

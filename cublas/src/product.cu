@@ -4,13 +4,10 @@
 #include <cublas_v2.h>
 #include <cuComplex.h>
 #include <cuda_runtime_api.h>
-#include <cutt.h>
 #include <cuda_runtime.h>
-#if OZAKI_EMULATION_VERSION==2
-#include <gemmul8.hpp>
-#endif
 
 #if OZAKI_EMULATION_VERSION==2
+#include <gemmul8.hpp>
 #include <complex>
 #include <gemmul8.hpp>
 #include <type_traits>
@@ -26,6 +23,99 @@
 #include <unordered_map>
 #include <vector>
 
+/* The number of GEMM in OS-II is related to the number of GEMM according to recommandations in README this repo: 
+* https://github.com/RIKEN-RCCS/GEMMul8
+* 30b5b5d01e96c0e4a490396d5a806e86bcc36581
+* formatted as effective bits / number of low-precision real matrix multiplications.
+*
+* num_moduli 	INT8-Real 	INT8-Complex 	FP8-Real 	FP8-Complex
+* 2 	          7 / 2 	   7 / 4 	    13 / 5 	     12 / 10
+* 3 	          11 / 3 	   11 / 6 	    18 / 7 	     16 / 15
+* 4 	          15 / 4 	   15 / 8 	    23 / 9 	     22 / 21
+* 5 	          19 / 5 	   19 / 10 	    28 / 11 	  27 / 28
+* 6 	          23 / 6 	   23 / 12 	    34 / 14 	  32 / 34
+* 7 	          27 / 7 	   27 / 14 	    39 / 17 	  35 / 37
+* 8 	          31 / 8 	   30 / 16 	    44 / 20 	  40 / 43
+* 9 	          35 / 9 	   34 / 18 	    48 / 22 	  46 / 49
+* 10 	          39 / 10 	   38 / 20 	    53 / 25 	  51 / 55
+* 11 	          43 / 11 	   41 / 22 	    58 / 28 	  56 / 61
+* 12 	          47 / 12 	   45 / 24 	    63 / 31 	  61 / 67
+* 13 	          51 / 13 	   48 / 26 	    68 / 34 	  66 / 73
+* 14 	          55 / 14 	   52 / 28 	    73 / 37 	  70 / 78
+* 15 	          58 / 15 	   55 / 30 	    78 / 40 	  75 / 84
+* 16 	          62 / 16 	   58 / 32 	    84 / 43 	  80 / 90
+* 17 	          66 / 17 	   62 / 34 	    89 / 46 	  85 / 96
+* 18 	          70 / 18 	   65 / 36 	    94 / 49 	  90 / 102
+* 19 	          73 / 19 	   68 / 38 	    99 / 52 	  95 / 108
+* 20 	          77 / 20 	   71 / 40 	    102 / 54 	  100 / 114
+*/
+
+cutensorOperator_t translate_operator(TAPP_element_op op)
+{
+    switch (op)
+    {
+    case TAPP_IDENTITY:
+        return CUTENSOR_OP_IDENTITY;
+        break;
+    case TAPP_CONJUGATE:
+        return CUTENSOR_OP_CONJ;
+        break;
+    default: // TODO: Default should probably be an error
+        return CUTENSOR_OP_IDENTITY;
+        break;
+    }
+}
+
+#if OZAKI_EMULATION_VERSION==2
+std::map<int,int> OS_II_INT8_table = {
+   {2 , 7 }, 
+   {3 , 11}, 
+   {4 , 15}, 
+   {5 , 19}, 
+   {6 , 23}, 
+   {7 , 27}, 
+   {8 , 30}, 
+   {9 , 34}, 
+   {10, 38}, 
+   {11, 41}, 
+   {12, 45}, 
+   {13, 48}, 
+   {14, 52}, 
+   {15, 55}, 
+   {16, 58}, 
+   {17, 62}, 
+   {18, 65}, 
+   {19, 68}, 
+   {20, 71}, 
+};
+#endif
+
+const uint32_t ALIGNMENT_REQUIREMENT = 128;
+
+void load_scalar(cutensorDataType_t type, const void* value, bool conj, void* out)
+{
+    switch (type)
+    {
+    case CUTENSOR_C_32F:
+    {
+        std::complex<float> v = *(const std::complex<float>*)value;
+        if (conj) v = std::conj(v);
+        memcpy(out, &v, sizeof(v));
+        break;
+    }
+    case CUTENSOR_C_64F:
+    {
+        std::complex<double> v = *(const std::complex<double>*)value;
+        if (conj) v = std::conj(v);
+        memcpy(out, &v, sizeof(v));
+        break;
+    }
+    default: // Real types: conjugation does nothing
+        memcpy(out, value, sizeof_datatype(type));
+        break;
+    }
+}
+
 // ===========================================================================
 // CUDA / cuBLAS / cuTT error checks. Unlike the upstream my-ttgt macros these throw
 // instead of exit()-ing, so the binding can report a TAPP error and keep the
@@ -33,71 +123,71 @@
 // ===========================================================================
 
 // Carries the TAPP error code of the failed call to the catch in TAPP_execute_product
-struct tapp_exception : std::runtime_error
-{
-    TAPP_error code;
-    tapp_exception(TAPP_error code, const std::string& what) : std::runtime_error(what), code(code) {}
-};
-
-static inline void cuda_check(cudaError_t code)
-{
-    if (code != cudaSuccess)
-        throw tapp_exception(tapp_error(code), std::string("CUDA error: ") + cudaGetErrorString(code));
-}
-
-static inline void cublas_check(cublasStatus_t stat)
-{
-    if (stat != CUBLAS_STATUS_SUCCESS)
-        throw tapp_exception(tapp_error(stat), std::string("cuBLAS error: ") + cublasGetStatusString(stat));
-}
-
-static inline void cutt_check(cuttResult err)
-{
-    if (err != CUTT_SUCCESS)
-        throw tapp_exception(tapp_error(err), "cuTT error " + std::to_string((int)err));
-}
+// struct tapp_exception : std::runtime_error
+// {
+//     TAPP_error code;
+//     tapp_exception(TAPP_error code, const std::string& what) : std::runtime_error(what), code(code) {}
+// };
+// 
+// static inline void cuda_check(cudaError_t code)
+// {
+//     if (code != cudaSuccess)
+//         throw tapp_exception(tapp_error(code), std::string("CUDA error: ") + cudaGetErrorString(code));
+// }
+// 
+// static inline void cublas_check(cublasStatus_t stat)
+// {
+//     if (stat != CUBLAS_STATUS_SUCCESS)
+//         throw tapp_exception(tapp_error(stat), std::string("cuBLAS error: ") + cublasGetStatusString(stat));
+// }
+// 
+// static inline void cutt_check(cuttResult err)
+// {
+//     if (err != CUTT_SUCCESS)
+//         throw tapp_exception(tapp_error(err), "cuTT error " + std::to_string((int)err));
+// }
 
 // ===========================================================================
 // Index/permutation helpers implementing the TTGT index bookkeeping.
 // ===========================================================================
 
 // Contracted ("bounded") labels of `mode`: those not present in `modeC`.
-static void get_bounded_indices(int** bounded, int* n_bounded,
-                                const int* mode, int rank,
-                                const int* modeC, int rankC)
+static void get_bounded_indices(int64_t** bounded, int* n_bounded,
+                                const int64_t* mode, int rank,
+                                const int64_t* modeC, int rankC)
 {
-    std::vector<int> tmp(rank);
+    std::vector<int64_t> tmp(rank);
     *n_bounded = 0;
     for (int i = 0; i < rank; i++)
     {
-        int idx = mode[i];
+        int64_t idx = mode[i];
         if (std::find(modeC, modeC + rankC, idx) == modeC + rankC)
             tmp[(*n_bounded)++] = idx;
     }
-    *bounded = new int[*n_bounded > 0 ? *n_bounded : 1];
+    *bounded = new int64_t[*n_bounded > 0 ? *n_bounded : 1];
     for (int i = 0; i < *n_bounded; i++)
         (*bounded)[i] = tmp[i];
 }
 
 // Free labels of `mode`: those also present in `modeC` (first n_free of them).
-static void get_free_indices(int* free_idx, int n_free,
-                             const int* mode, int rank,
-                             const int* modeC, int rankC)
+static void get_free_indices(int64_t* free_idx, int n_free,
+                             const int64_t* mode, int rank,
+                             const int64_t* modeC, int rankC)
 {
     int index = 0;
     for (int i = 0; i < rank && index < n_free; i++)
     {
-        int idx = mode[i];
+        int64_t idx = mode[i];
         if (std::find(modeC, modeC + rankC, idx) != modeC + rankC)
             free_idx[index++] = idx;
     }
 }
 
 // permutation[i] = position, in `mode`, of the label sitting at modeT[i].
-static void get_permutation(int* permutation, const int* mode,
-                            const int* modeT, int rank)
+static void get_permutation(int* permutation, const int64_t* mode,
+                            const int64_t* modeT, int rank)
 {
-    std::unordered_map<int, int> pos;
+    std::unordered_map<int64_t, int> pos;
     for (int i = 0; i < rank; i++)
         pos[modeT[i]] = i;
     for (int i = 0; i < rank; i++)
@@ -138,6 +228,91 @@ static void make_scalar(TAPP_datatype type, double value, void* out)
 }
 
 // ===========================================================================
+// Create cuTENSOR plans for A -> AT and B -> BT. Returns a value for p->failed, so false if it succeed.
+// ===========================================================================
+static cutensorStatus_t create_cutensor_permute_plan(cutensorHandle_t cutensor, cutensorPlan_t* plan, tensor_info* A_info, int64_t* modeA, int64_t* modeAT, TAPP_element_op op_A,
+                               const int* permutation)
+{
+
+    uint32_t nmodeA = A_info->nmode;
+    cutensorStatus_t status;
+    int64_t extentsAT[nmodeA];
+    int64_t stridesAT[nmodeA];                                                     
+
+    std::vector<int32_t> cuidx_A = std::vector<int32_t>(modeA, modeA + nmodeA);
+    std::vector<int32_t> cuidx_AT = std::vector<int32_t>(modeAT, modeAT + nmodeA);
+
+    // Tensor descriptors
+    cutensorTensorDescriptor_t descA;
+    status = cutensorCreateTensorDescriptor(
+        cutensor,
+        &descA,
+        nmodeA,
+        A_info->extents,
+        A_info->strides,
+        get_cuda_datatype(A_info->type),
+        ALIGNMENT_REQUIREMENT
+    );
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    for(uint32_t i=0; i<nmodeA; i++) extentsAT[i] = A_info->extents[permutation[i]];
+    stridesAT[0] = 1;
+    for(uint32_t i=1; i<nmodeA; i++) stridesAT[i] = stridesAT[i-1] * extentsAT[i-1];
+
+    cutensorTensorDescriptor_t descAT;
+    status = cutensorCreateTensorDescriptor(
+        cutensor,
+        &descAT,
+        nmodeA,
+        extentsAT,
+        stridesAT,
+        get_cuda_datatype(A_info->type),
+        ALIGNMENT_REQUIREMENT
+    );
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    // Permute descriptor and plan
+    cutensorOperationDescriptor_t descPermute;
+    status = cutensorCreatePermutation(
+        cutensor,
+        &descPermute,
+        descA,
+        cuidx_A.data(),
+        translate_operator(op_A),
+        descAT,
+        cuidx_AT.data(),
+        translate_prectype_permutation(A_info->type)
+    );
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    cutensorPlanPreference_t pref;
+    status = cutensorCreatePlanPreference(cutensor,
+                &pref,
+                CUTENSOR_ALGO_DEFAULT,
+                CUTENSOR_JIT_MODE_NONE);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    status = cutensorCreatePlan(cutensor, plan, descPermute, pref, 0);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    // Cleanup
+    status = cutensorDestroyTensorDescriptor(descA);
+    status = cutensorDestroyTensorDescriptor(descAT);
+    status = cutensorDestroyPlanPreference(pref);
+    status = cutensorDestroyOperationDescriptor(descPermute);
+
+    return CUTENSOR_STATUS_SUCCESS;
+
+cleanup:
+    if(descA) cutensorDestroyTensorDescriptor(descA);
+    if(descAT) cutensorDestroyTensorDescriptor(descAT);
+    if(pref) cutensorDestroyPlanPreference(pref);
+    if(descPermute) cutensorDestroyOperationDescriptor(descPermute);
+
+    return status;
+}
+
+// ===========================================================================
 // cuTT plan creation with extent-1 squeezing.
 //
 // cuTT rejects any transpose whose dims contain a size-1 axis (and rank < 2)
@@ -148,51 +323,51 @@ static void make_scalar(TAPP_datatype type, double value, void* out)
 // the target layout). On a genuine cuTT failure the (reduced) parameters are
 // printed and an exception is thrown.
 // ===========================================================================
-static bool cutt_plan_squeezed(cudaStream_t stream, cuttHandle* plan, int rank, const int* dim,
-                               const int* permutation, size_t sizeofType,
-                               const char* which)
-{
-    std::vector<int> old_to_new(rank, -1);
-    std::vector<int> sdim;
-    int new_rank = 0;
-    for (int i = 0; i < rank; i++)
-        if (dim[i] != 1)
-        {
-            old_to_new[i] = new_rank++;
-            sdim.push_back(dim[i]);
-        }
-
-    std::vector<int> sperm;
-    for (int i = 0; i < rank; i++)
-    {
-        int axis = permutation[i];
-        if (dim[axis] != 1)
-            sperm.push_back(old_to_new[axis]);
-    }
-
-    bool identity = true;
-    for (int i = 0; i < new_rank; i++)
-        if (sperm[i] != i) { identity = false; break; }
-    if (new_rank < 2 || identity)
-        return false;
-
-    cuttResult err = cuttPlan(plan, new_rank, sdim.data(), sperm.data(), sizeofType, stream);
-    if (err != CUTT_SUCCESS)
-    {
-        fprintf(stderr,
-                "TTGT: cuttPlan failed for tensor %s (err=%d): rank=%d "
-                "elemsize=%zu dim=[",
-                which, err, new_rank, sizeofType);
-        for (int i = 0; i < new_rank; i++)
-            fprintf(stderr, "%d%s", sdim[i], i + 1 < new_rank ? "," : "");
-        fprintf(stderr, "] perm=[");
-        for (int i = 0; i < new_rank; i++)
-            fprintf(stderr, "%d%s", sperm[i], i + 1 < new_rank ? "," : "");
-        fprintf(stderr, "]\n");
-        throw std::runtime_error("cuTT plan creation failed");
-    }
-    return true;
-}
+// static bool cutt_plan_squeezed(cudaStream_t stream, cuttHandle* plan, int rank, const int* dim,
+//                                const int* permutation, size_t sizeofType,
+//                                const char* which)
+// {
+//     std::vector<int> old_to_new(rank, -1);
+//     std::vector<int> sdim;
+//     int new_rank = 0;
+//     for (int i = 0; i < rank; i++)
+//         if (dim[i] != 1)
+//         {
+//             old_to_new[i] = new_rank++;
+//             sdim.push_back(dim[i]);
+//         }
+// 
+//     std::vector<int> sperm;
+//     for (int i = 0; i < rank; i++)
+//     {
+//         int axis = permutation[i];
+//         if (dim[axis] != 1)
+//             sperm.push_back(old_to_new[axis]);
+//     }
+// 
+//     bool identity = true;
+//     for (int i = 0; i < new_rank; i++)
+//         if (sperm[i] != i) { identity = false; break; }
+//     if (new_rank < 2 || identity)
+//         return false;
+// 
+//     cuttResult err = cuttPlan(plan, new_rank, sdim.data(), sperm.data(), sizeofType, stream);
+//     if (err != CUTT_SUCCESS)
+//     {
+//         fprintf(stderr,
+//                 "TTGT: cuttPlan failed for tensor %s (err=%d): rank=%d "
+//                 "elemsize=%zu dim=[",
+//                 which, err, new_rank, sizeofType);
+//         for (int i = 0; i < new_rank; i++)
+//             fprintf(stderr, "%d%s", sdim[i], i + 1 < new_rank ? "," : "");
+//         fprintf(stderr, "] perm=[");
+//         for (int i = 0; i < new_rank; i++)
+//             fprintf(stderr, "%d%s", sperm[i], i + 1 < new_rank ? "," : "");
+//         fprintf(stderr, "]\n");
+//         throw std::runtime_error("cuTT plan creation failed");
+//     }
+//     return true;
+// }
 
 // ===========================================================================
 // Support checks.
@@ -281,7 +456,7 @@ void dispatch_gemmul8(
     std::visit([&]<typename typeC>(
       std::type_identity<typeC>) {
 // Ozaki-II doesnt not have support for FP8 on H100
-#if OZAKI_II_COMPUTE_CAPABILITY!=90
+#if OZAKI_II_COMPUTE_CAPABILITY>1000000
          if constexpr(true) gemmul8::gemm<typeC, BACKEND>(
            cublas,
            transa, transb,
@@ -439,19 +614,13 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->elements_A = A_info->elements;
     p->elements_B = B_info->elements;
     p->elements_D = D_info->elements;
-    p->copy_size_A = A_info->copy_size;  p->data_offset_A = A_info->data_offset;
-    p->copy_size_B = B_info->copy_size;  p->data_offset_B = B_info->data_offset;
-    p->copy_size_C = C_info->copy_size;  p->data_offset_C = C_info->data_offset;
-    p->copy_size_D = D_info->copy_size;  p->data_offset_D = D_info->data_offset;
     p->compute_type = translate_prectype(prec, D_info->type);
 
     // The TTGT/cuBLAS-GEMM back-end handles plain (Case 1/2) contractions over
     // dense, positive-stride tensors with identity element-wise ops only. The
     // variable-precision (digit-count) compute types are FP64 emulation, so
     // they require an F64/C64 output.
-    if (op_A != TAPP_IDENTITY || op_B != TAPP_IDENTITY ||
-        op_C != TAPP_IDENTITY || op_D != TAPP_IDENTITY ||
-        !is_supported_datatype(A_info->type) ||
+    if (!is_supported_datatype(A_info->type) ||
         !is_supported_datatype(B_info->type) ||
         !is_supported_datatype(D_info->type) ||
         !tensor_strides_supported(A_info) || !tensor_strides_supported(B_info) ||
@@ -470,10 +639,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     // count is only consumed when built with EMULATION (CUDA >= 13) - otherwise
     // it stays 0 and the GEMM runs in plain FP64. The digits->mantissa-bits
     // conversion happens at execute.
-    p->prec_digits = 0;
-#if OZAKI_EMULATION_VERSION==1
+    // Note: works since emulated types are >= 1000
     p->prec_digits = tapp_prec_digits(prec);
-#endif
 
     int rankA = A_info->nmode;
     int rankB = B_info->nmode;
@@ -481,17 +648,17 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     // Size with a floor of 1 so .data()/[0] are always valid even for scalars.
     auto sz = [](int r) { return r > 0 ? (size_t)r : (size_t)1; };
-    std::vector<int> dimA(sz(rankA)), modeA(sz(rankA));
-    std::vector<int> dimB(sz(rankB)), modeB(sz(rankB));
-    std::vector<int> dimC(sz(rankC)), modeC(sz(rankC));
-    for (int i = 0; i < rankA; i++) { dimA[i] = (int)A_info->extents[i]; modeA[i] = (int)idx_A[i]; }
-    for (int i = 0; i < rankB; i++) { dimB[i] = (int)B_info->extents[i]; modeB[i] = (int)idx_B[i]; }
-    for (int i = 0; i < rankC; i++) { dimC[i] = (int)D_info->extents[i]; modeC[i] = (int)idx_D[i]; }
+    std::vector<int64_t> dimA(sz(rankA)), modeA(sz(rankA));
+    std::vector<int64_t> dimB(sz(rankB)), modeB(sz(rankB));
+    std::vector<int64_t> dimC(sz(rankC)), modeC(sz(rankC));
+    for (int i = 0; i < rankA; i++) { dimA[i] = A_info->extents[i]; modeA[i] = idx_A[i]; }
+    for (int i = 0; i < rankB; i++) { dimB[i] = B_info->extents[i]; modeB[i] = idx_B[i]; }
+    for (int i = 0; i < rankC; i++) { dimC[i] = D_info->extents[i]; modeC[i] = idx_D[i]; }
 
     p->m = p->n = p->k = p->lda = p->ldb = p->ldc = 1;
 
     // --- BASELINE TTGT index scheme ---
-    int* bounded = nullptr;
+    int64_t* bounded = nullptr;
     int n_bounded = 0;
     if (A_info->elements > B_info->elements)
         get_bounded_indices(&bounded, &n_bounded, modeA.data(), rankA, modeC.data(), rankC);
@@ -514,31 +681,35 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         return TAPP_ERR_UNSUPPORTED_DATATYPE;
     }
 
-    std::vector<int> freeA(n_freeA > 0 ? n_freeA : 1);
+    std::vector<int64_t> freeA(n_freeA > 0 ? n_freeA : 1);
     get_free_indices(freeA.data(), n_freeA, modeA.data(), rankA, modeC.data(), rankC);
-    std::vector<int> freeB(n_freeB > 0 ? n_freeB : 1);
+    std::vector<int64_t> freeB(n_freeB > 0 ? n_freeB : 1);
     get_free_indices(freeB.data(), n_freeB, modeB.data(), rankB, modeC.data(), rankC);
 
     // modeAT/modeBT always receive exactly rankA/rankB labels. modeCT receives
     // n_freeA+n_freeB, which EXCEEDS rankC when a Hadamard index is shared (it
     // appears in both free sets); size it to the real write length so the copy
     // never overflows. get_permutation reads only the first rankC entries.
-    std::vector<int> modeAT(sz(rankA)), modeBT(sz(rankB));
-    std::vector<int> modeCT(std::max((size_t)(n_freeA + n_freeB), sz(rankC)));
+    std::vector<int64_t> modeAT(sz(rankA)), modeBT(sz(rankB));
+    std::vector<int64_t> modeCT(std::max((size_t)(n_freeA + n_freeB), sz(rankC)));
     std::vector<int> permA(sz(rankA)), permB(sz(rankB)), permC(sz(rankC));
-    std::vector<int> dimCT(sz(rankC));
+    std::vector<int64_t> dimCT(sz(rankC));
 
     // Tensor A: keep the leading index in place where possible (col-major).
+    bool A_colmajor = A_info->strides[0]==1;
+    if(!A_colmajor){
+        return TAPP_ERR_NOT_IMPLEMENTED;
+    }
     if (std::find(freeA.data(), freeA.data() + n_freeA, modeA[0]) != freeA.data() + n_freeA)
     {
-        std::memcpy(modeAT.data(), freeA.data(), n_freeA * sizeof(int));
-        std::memcpy(modeAT.data() + n_freeA, bounded, n_bounded * sizeof(int));
+        std::memcpy(modeAT.data(), freeA.data(), n_freeA * sizeof(int64_t));
+        std::memcpy(modeAT.data() + n_freeA, bounded, n_bounded * sizeof(int64_t));
         p->transa = CUBLAS_OP_N;
     }
     else
     {
-        std::memcpy(modeAT.data(), bounded, n_bounded * sizeof(int));
-        std::memcpy(modeAT.data() + n_bounded, freeA.data(), n_freeA * sizeof(int));
+        std::memcpy(modeAT.data(), bounded, n_bounded * sizeof(int64_t));
+        std::memcpy(modeAT.data() + n_bounded, freeA.data(), n_freeA * sizeof(int64_t));
         p->transa = CUBLAS_OP_T;
     }
     get_permutation(permA.data(), modeAT.data(), modeA.data(), rankA);
@@ -556,16 +727,20 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     }
 
     // Tensor B.
+    bool B_colmajor = B_info->strides[0]==1;
+    if(!B_colmajor){
+        return TAPP_ERR_NOT_IMPLEMENTED;
+    }
     if (std::find(freeB.data(), freeB.data() + n_freeB, modeB[0]) != freeB.data() + n_freeB)
     {
-        std::memcpy(modeBT.data(), freeB.data(), n_freeB * sizeof(int));
-        std::memcpy(modeBT.data() + n_freeB, bounded, n_bounded * sizeof(int));
+        std::memcpy(modeBT.data(), freeB.data(), n_freeB * sizeof(int64_t));
+        std::memcpy(modeBT.data() + n_freeB, bounded, n_bounded * sizeof(int64_t));
         p->transb = CUBLAS_OP_T;
     }
     else
     {
-        std::memcpy(modeBT.data(), bounded, n_bounded * sizeof(int));
-        std::memcpy(modeBT.data() + n_bounded, freeB.data(), n_freeB * sizeof(int));
+        std::memcpy(modeBT.data(), bounded, n_bounded * sizeof(int64_t));
+        std::memcpy(modeBT.data() + n_bounded, freeB.data(), n_freeB * sizeof(int64_t));
         p->transb = CUBLAS_OP_N;
     }
     get_permutation(permB.data(), modeBT.data(), modeB.data(), rankB);
@@ -581,8 +756,16 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     }
 
     // Tensor C/D: assume output order [free(A), free(B)].
-    std::memcpy(modeCT.data(), freeA.data(), n_freeA * sizeof(int));
-    std::memcpy(modeCT.data() + n_freeA, freeB.data(), n_freeB * sizeof(int));
+    bool C_colmajor = C_info->strides[0]==1 or C_info->elements==1;
+    if(!C_colmajor){
+        return TAPP_ERR_NOT_IMPLEMENTED;
+    }
+    bool D_colmajor = D_info->strides[0]==1 or D_info->elements==1;
+    if(!D_colmajor){
+        return TAPP_ERR_NOT_IMPLEMENTED;
+    }
+    std::memcpy(modeCT.data(), freeA.data(), n_freeA * sizeof(int64_t));
+    std::memcpy(modeCT.data() + n_freeA, freeB.data(), n_freeB * sizeof(int64_t));
     get_permutation(permC.data(), modeC.data(), modeCT.data(), rankC);
     for (int i = 0; i < rankC; i++) dimCT[permC[i]] = dimC[i];
     for (int i = 0; i < n_freeA; i++) p->ldc *= dimCT[i];
@@ -593,47 +776,148 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->transposeB = !std::equal(modeB.begin(), modeB.end(), modeBT.begin());
     p->transposeC = !std::equal(modeC.begin(), modeC.end(), modeCT.begin());
 
-    // cuTT plan inputs (A and B transpose from their own layout, C from CT).
-    int rA = rankA, rB = rankB, rC = rankC;
-    int* dimA_p = dimA.data();   int* permA_p = permA.data();
-    int* dimB_p = dimB.data();   int* permB_p = permB.data();
-    int* dimCT_p = dimCT.data(); int* permC_p = permC.data();
-    size_t es_A = sizeof_datatype(p->type_A);
-    size_t es_B = sizeof_datatype(p->type_B);
-    size_t es_C = sizeof_datatype(p->type_D);
+    // cuTENSOR plans
+    int* permA_p = permA.data();
+    int* permB_p = permB.data();
+    int* permC_p = permC.data();
+    struct executor* exec_struct = (struct executor*) exec;
+    TAPP_element_op op_AD = ((op_A==TAPP_CONJUGATE || op_D==TAPP_CONJUGATE) && ~(op_A==TAPP_CONJUGATE && op_D==TAPP_CONJUGATE))? TAPP_CONJUGATE : TAPP_IDENTITY;
+    TAPP_element_op op_BD = ((op_B==TAPP_CONJUGATE || op_D==TAPP_CONJUGATE) && ~(op_B==TAPP_CONJUGATE && op_D==TAPP_CONJUGATE))? TAPP_CONJUGATE : TAPP_IDENTITY;
+    TAPP_element_op op_CD = ((op_C==TAPP_CONJUGATE || op_D==TAPP_CONJUGATE) && ~(op_C==TAPP_CONJUGATE && op_D==TAPP_CONJUGATE))? TAPP_CONJUGATE : TAPP_IDENTITY;
 
-    // complex64 needs an extra leading dimension of 2 (cuTT element-size limit).
-    int *cA = nullptr, *cpA = nullptr, *cB = nullptr, *cpB = nullptr, *cC = nullptr, *cpC = nullptr;
-    if (p->type_A == TAPP_C64) { rA++; cA = prepend(dimA.data(), rankA, 2); dimA_p = cA; cpA = shift_permutation(permA.data(), rankA); permA_p = cpA; es_A /= 2; }
-    if (p->type_B == TAPP_C64) { rB++; cB = prepend(dimB.data(), rankB, 2); dimB_p = cB; cpB = shift_permutation(permB.data(), rankB); permB_p = cpB; es_B /= 2; }
-    if (p->type_D == TAPP_C64) { rC++; cC = prepend(dimCT.data(), rankC, 2); dimCT_p = cC; cpC = shift_permutation(permC.data(), rankC); permC_p = cpC; es_C /= 2; }
+    p->transposeA = p->transposeA || op_AD!=TAPP_IDENTITY;
+    p->transposeB = p->transposeB || op_BD!=TAPP_IDENTITY;
+    p->transposeC = p->transposeC || op_CD!=TAPP_IDENTITY;
 
-    struct executor* exec_struct = reinterpret_cast<struct executor*>(exec);
-    p->stream = exec_struct->stream;
-    try
-    {
-        if (p->transposeA) p->transposeA = cutt_plan_squeezed(exec_struct->stream, &p->planA, rA, dimA_p, permA_p, es_A, "A");
-        if (p->transposeB) p->transposeB = cutt_plan_squeezed(exec_struct->stream, &p->planB, rB, dimB_p, permB_p, es_B, "B");
-        if (p->transposeC) p->transposeC = cutt_plan_squeezed(exec_struct->stream, &p->planC, rC, dimCT_p, permC_p, es_C, "C");
+    // cuTENSOR objects def 
+    cutensorStatus_t status;
+    cutensorPlanPreference_t pref;
+    cutensorTensorDescriptor_t descC;
+    cutensorTensorDescriptor_t descCT;
+    cutensorOperationDescriptor_t descPermute;
+    cutensorOperationDescriptor_t descAccumulation;
+
+    std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + rankC);
+
+    status = cutensorCreatePlanPreference(exec_struct->cutensor,
+                &pref,
+                CUTENSOR_ALGO_DEFAULT,
+                CUTENSOR_JIT_MODE_NONE);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    // Plan A->op_AD(AT) and B->op_BD(BT) 
+    if (p->transposeA){
+        status = create_cutensor_permute_plan(exec_struct->cutensor, &p->planA, A_info, modeA.data(), modeAT.data(), op_AD, permA_p);
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
     }
-    catch (const std::exception&)
-    {
-        p->failed = true;
-        p->transposeA = p->transposeB = p->transposeC = false;
+    if (p->transposeB){
+        status = create_cutensor_permute_plan(exec_struct->cutensor, &p->planB, B_info, modeB.data(), modeBT.data(), op_BD, permB_p);
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
     }
 
-    delete[] cA; delete[] cpA; delete[] cB; delete[] cpB; delete[] cC; delete[] cpC;
+    // Plan C_T-> C_tilde
+    status = cutensorCreateTensorDescriptor(
+        exec_struct->cutensor,
+        &descC,
+        rankC,
+        C_info->extents,
+        C_info->strides,
+        get_cuda_datatype(C_info->type),
+        ALIGNMENT_REQUIREMENT
+    );
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    if (p->transposeC){
+        int64_t stridesCT[rankC];                                                     
+        int64_t idx_CT[rankC];                                                     
+        for(uint32_t i=0; i<rankC; i++) idx_CT[permC[i]] = idx_C[i];
+        stridesCT[0] = 1;
+        for(uint32_t i=1; i<rankC; i++) stridesCT[i] = stridesCT[i-1] * dimCT.data()[i-1];
+
+        status = cutensorCreateTensorDescriptor(
+            exec_struct->cutensor,
+            &descCT,
+            rankC,
+            dimCT.data(),
+            stridesCT,
+            get_cuda_datatype(C_info->type),
+            ALIGNMENT_REQUIREMENT
+        );
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+        std::vector<int32_t> cuidx_CT = std::vector<int32_t>(idx_CT, idx_CT + rankC);
+
+        status = cutensorCreatePermutation(
+            exec_struct->cutensor,
+            &descPermute,
+            descCT,
+            cuidx_CT.data(),
+            translate_operator(TAPP_IDENTITY),
+            descC,
+            cuidx_C.data(),
+            translate_prectype_permutation(C_info->type)
+        );
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        status = cutensorCreatePlan(exec_struct->cutensor, &p->planC, descPermute, pref, 0);
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+        status = cutensorDestroyOperationDescriptor(descPermute);
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        status = cutensorDestroyTensorDescriptor(descCT);
+        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    }
+
+    // Last plan D = op_D(alpha) C_tilde + op_D(beta) op_CD(C)
+    // Note: D, tilde_C and C are assumed to have the same structure
+    status = cutensorCreateElementwiseBinary(
+        exec_struct->cutensor,
+        &descAccumulation,
+        descC,
+        cuidx_C.data(),
+        translate_operator(TAPP_IDENTITY),
+        descC,
+        cuidx_C.data(),
+        translate_operator(op_CD),
+        descC,
+        cuidx_C.data(),
+        CUTENSOR_OP_ADD,
+        translate_prectype_permutation(C_info->type)
+    );
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    status = cutensorCreatePlan(exec_struct->cutensor, &p->planD, descAccumulation, pref, 0);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    status = cutensorDestroyOperationDescriptor(descAccumulation);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    status = cutensorDestroyTensorDescriptor(descC);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+
+    status = cutensorDestroyPlanPreference(pref);
+    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
     *plan = (TAPP_tensor_product)p;
-    return p->failed ? TAPP_ERR_UNSUPPORTED_DATATYPE : TAPP_SUCCESS;
+    return p->failed ? TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED : TAPP_SUCCESS;
+
+cleanup:
+    if(pref) cutensorDestroyPlanPreference(pref);
+    if(p->planA) cutensorDestroyPlan(p->planA);
+    if(p->planB) cutensorDestroyPlan(p->planB);
+    if(descC) cutensorDestroyTensorDescriptor(descC);
+    if(descCT) cutensorDestroyTensorDescriptor(descCT);
+    if(descPermute) cutensorDestroyOperationDescriptor(descPermute);
+    if(descAccumulation) cutensorDestroyOperationDescriptor(descAccumulation);
+    return tapp_error(status);
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
 {
     struct product_plan* p = (struct product_plan*)plan;
-    if (p->transposeA) cuttDestroy(p->planA);
-    if (p->transposeB) cuttDestroy(p->planB);
-    if (p->transposeC) cuttDestroy(p->planC);
+    if (p->transposeA) cutensorDestroyPlan(p->planA);
+    if (p->transposeB) cutensorDestroyPlan(p->planB);
+    if (p->transposeC) cutensorDestroyPlan(p->planC);
+    cutensorDestroyPlan(p->planD);
     delete p;
     return TAPP_SUCCESS;
 }
@@ -653,209 +937,353 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
                                       void* D)
 {
     struct product_plan* p = (struct product_plan*)plan;
+    if (p->failed) return TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED;
     struct executor* exec_struct = (struct executor*) exec;
-
-    if (p->failed) return TAPP_ERR_UNSUPPORTED_DATATYPE;
-    if (p->stream != exec_struct->stream) return TAPP_ERR_PLAN_WRONG_EXECUTOR;
     cublasHandle_t cublas = exec_struct->cublas;
+    cutensorHandle_t cutensor = exec_struct->cutensor;
     TAPP_datatype tD = p->type_D;
     size_t esD = sizeof_datatype(tD);
     size_t bytes_D = p->elements_D * esD;
     cudaError_t cerr;
+    cutensorStatus_t cutensor_status;
+    cublasStatus_t cublas_status;
 
     bool beta_nonzero = scalar_is_nonzero(beta, tD);
     if (beta_nonzero && C == nullptr) return TAPP_ERR_C_NULL_BETA;
 
-    // TTGT works in place on the output buffer, so when beta != 0 stage C into D.
+    // Variables used in the function moved due to goto statements
+    unsigned char zero[16];
+    unsigned char one[16];
+    std::complex<double> alpha_buf, beta_buf;
+    void *devAT = nullptr, *devBT = nullptr, *devCT = nullptr, *devC_tmp = nullptr;
+    void *work;
+    TAPP_error error;
+
+#if OZAKI_EMULATION_VERSION==2
+    // OS-II variables used in the function moved due to goto statements
+    int TAPP_EMULATION_NUM_GEMM = 16;  
+    const bool fastmode = false;
+    const bool enable_skip_scalA = false;
+    const bool enable_skip_scalB = false;
+    const bool skip_scalA = false;
+    const bool skip_scalB = false;
+    const gemmul8::Backend BACKEND = gemmul8::Backend::INT8; // TODO: add support for FP8
+    size_t worksizeA, worksizeB;
+    size_t worksize;
+    size_t offsetA;
+    size_t offsetB;
+    int8_t *workA    = nullptr;
+    int8_t *workB    = nullptr;
+    int8_t *work_rem = nullptr;
+    TAPP_prectype typeA = p->type_A;
+    TAPP_prectype typeB = p->type_B;
+    TAPP_prectype typeC = p->type_D;
+#endif
+
+
+    // Create a copy of C if beta!=0 due to cutensorElementwiseBinaryExecute limitation:
+    // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorelementwisebinaryexecute
+    void* C_copy = nullptr;
     if (beta_nonzero)
     {
-        if (C != D)
+        if (C == D)
         {
-            cerr = cudaMemcpyAsync(D, (void*)C, bytes_D, cudaMemcpyDeviceToDevice, exec_struct->stream);
-            if (cerr != cudaSuccess) return tapp_error(cerr);
+            cerr = cudaMalloc(&C_copy, p->elements_D * sizeof_datatype(p->type_D));
+            if (cerr != cudaSuccess){
+                error = tapp_error(cerr);
+                goto cleanup;
+            }
+            cerr = cudaMemcpy(C_copy, C, bytes_D, cudaMemcpyDeviceToDevice);
+            if (cerr != cudaSuccess){
+                error = tapp_error(cerr);
+                goto cleanup;
+            }
+        } else C_copy = (void*) C;
+    } else C_copy = (void*) C; // Should not be needed according to cuTENSOR documentation...
+
+    make_scalar(tD, 0.0, zero);
+    make_scalar(tD, 1.0, one);
+
+    if (p->transposeA){
+        cerr = cudaMalloc(&devAT, p->elements_A * sizeof_datatype(p->type_A));
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
+        }
+
+        cutensor_status = cutensorPermute(
+           cutensor,
+           p->planA,
+           one,
+           A,
+           devAT,
+           0 // stream 0 by default
+        );
+        if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(cutensor_status);
+            goto cleanup;
+        }
+    }
+    if (p->transposeB){
+        cerr = cudaMalloc(&devBT, p->elements_B * sizeof_datatype(p->type_B));
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
+        }
+
+        cutensor_status = cutensorPermute(
+           cutensor,
+           p->planB,
+           one,
+           B,
+           devBT,
+           0 // stream 0 by default
+        );
+        if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(cutensor_status);
+            goto cleanup;
         }
     }
 
-    void *devAT = nullptr, *devBT = nullptr, *devCT = nullptr, *devC_tmp = nullptr;
-    TAPP_error result = TAPP_SUCCESS;
-    try
-    {
-        if (p->transposeA) cuda_check(cudaMallocAsync(&devAT, p->elements_A * sizeof_datatype(p->type_A), exec_struct->stream));
-        if (p->transposeB) cuda_check(cudaMallocAsync(&devBT, p->elements_B * sizeof_datatype(p->type_B), exec_struct->stream));
-        if (p->transposeA) cutt_check(cuttExecute(p->planA, (void*)A, devAT));
-        if (p->transposeB) cutt_check(cuttExecute(p->planB, (void*)B, devBT));
-
-        cuda_check(cudaMallocAsync(&devCT, bytes_D, exec_struct->stream));
-
-        unsigned char zero[16];
-        make_scalar(tD, 0.0, zero);
-        cublasStatus_t stat;
+    cerr = cudaMalloc(&devCT, bytes_D);
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
 
 #if OZAKI_EMULATION_VERSION!=2
-#if OZAKI_EMULATION_VERSION==1
         // Configure cuBLAS fixed-point FP64 emulation for the requested number
         // of decimal digits (variable mantissa size). bits = ceil(log2(10)*d).
-        if (p->prec_digits > 0)
-        {
-            if(exec_struct->emulation_strategy == TAPP_EMULATION_STRATEGY_PERFORMANT) {cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_PERFORMANT);}
-	        else { cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_EAGER);}
+#if OZAKI_EMULATION_VERSION==1
+    if (p->prec_digits > 0)
+    {
+	    int* TAPP_EMULATION_STRATEGY;
+	    error = TAPP_attr_get(p->handle, ATTR_KEY_EMULATION_STRATEGY, (void**)&TAPP_EMULATION_STRATEGY);
+       if(*TAPP_EMULATION_STRATEGY == TAPP_EMULATION_STRATEGY_PERFORMANT) {
+          cublas_status = cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_PERFORMANT);
+          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+              error = tapp_error(cublas_status);
+              goto cleanup;
+          }
+       }
+	    else {
+          cublas_status = cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_EAGER);
+          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+              error = tapp_error(cublas_status);
+              goto cleanup;
+          }
+       }
 
-            if(exec_struct->emulation_mantissa_control == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC) {cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC);}
-	        else{cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_FIXED);}
+	    int* TAPP_EMULATION_MANTISSA_CONTROL;
+	    error = TAPP_attr_get(p->handle, ATTR_KEY_EMULATION_MANTISSA_CONTROL, (void**)&TAPP_EMULATION_MANTISSA_CONTROL);
+       if(*TAPP_EMULATION_MANTISSA_CONTROL == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC) {
+          cublas_status = cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC);
+          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+              error = tapp_error(cublas_status);
+              goto cleanup;
+          }
+       }
+	    else{
+          cublas_status = cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_FIXED);
+          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+              error = tapp_error(cublas_status);
+              goto cleanup;
+          }
+       }
 
-            int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
-            cublasSetFixedPointEmulationMaxMantissaBitCount(cublas, bits);
+        int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
+        cublas_status = cublasSetFixedPointEmulationMaxMantissaBitCount(cublas, bits);
+        if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_status);
+            goto cleanup;
         }
+    }
 #endif
 
-        stat = cublasGemmEx(
-            cublas, p->transa, p->transb, p->m, p->n, p->k,
-            alpha, p->transposeA ? devAT : A_d, get_cuda_datatype(p->type_A), p->lda,
-            p->transposeB ? devBT : B_d, get_cuda_datatype(p->type_B), p->ldb,
-            zero, devCT, get_cuda_datatype(tD), p->ldc, p->compute_type, CUBLAS_GEMM_DEFAULT);
-        cublas_check(stat);
+    cublas_status = cublasGemmEx_64(
+        cublas, p->transa, p->transb, p->m, p->n, p->k,
+        one, p->transposeA ? devAT : A, get_cuda_datatype(p->type_A), p->lda,
+        p->transposeB ? devBT : B, get_cuda_datatype(p->type_B), p->ldb,
+        zero, devCT, get_cuda_datatype(tD), p->ldc, p->compute_type, CUBLAS_GEMM_DEFAULT);
+    if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_status);
+        goto cleanup;
+    }
 #else
-        // Configure Ozaki-II fixed-point FP64 emulation
-        int TAPP_EMULATION_NUM_GEMM = exec_struct->num_gemm;
-        const bool fastmode = false;
-        const bool enable_skip_scalA = false;
-        const bool enable_skip_scalB = false;
-        const bool skip_scalA = false;
-        const bool skip_scalB = false;
-        // TODO: add support for FP8
-        const gemmul8::Backend BACKEND = gemmul8::Backend::INT8;
+    // Configure Ozaki-II fixed-point FP64 emulation
+    if (p->prec_digits > 0)
+    {
+       int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
+       for(const auto& [num_moduli, effective_bits]: OS_II_INT8_table){
+          if(effective_bits>=bits){
+             TAPP_EMULATION_NUM_GEMM = num_moduli;  
+             break;
+          }
+       }
+    }
 
-        TAPP_prectype typeA = p->type_A;
-        TAPP_prectype typeB = p->type_B;
-        TAPP_prectype typeC = p->type_D;
+    if(is_complex(p->type_A) or is_complex(p->type_B) or is_complex(p->type_D)){
+      worksize = gemmul8::workSize<true, BACKEND, gemmul8::Func::gemm>(
+         p->m, 
+         p->n, 
+         p->k, 
+         TAPP_EMULATION_NUM_GEMM,
+         enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
+    }
+    else{
+      worksize = gemmul8::workSize<false, BACKEND, gemmul8::Func::gemm>(
+         p->m, 
+         p->n, 
+         p->k, 
+         TAPP_EMULATION_NUM_GEMM,
+         enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
+    }
 
-        // Checked before the workspace is allocated, which the catch below does not free
-        if(
-            not(
-                typeA==typeB and
-                typeA==typeC and
-                typeC==typeB
-            )
-        ) throw std::runtime_error("Ozaki-II does not support tensors of different datatype");
-
-        // Estimate size and create workspace
-        size_t worksizeA, worksizeB;
-        size_t worksize;
-        if(is_complex(p->type_A) or is_complex(p->type_B) or is_complex(p->type_D)){
-          worksize = gemmul8::workSize<true, BACKEND, gemmul8::Func::gemm>(
-             p->m, 
-             p->n, 
-             p->k, 
-             TAPP_EMULATION_NUM_GEMM,
-             enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
-        }
-        else{
-          worksize = gemmul8::workSize<false, BACKEND, gemmul8::Func::gemm>(
-             p->m, 
-             p->n, 
-             p->k, 
-             TAPP_EMULATION_NUM_GEMM,
-             enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
-        }
-
-        void *work;
-        cuda_check(cudaMallocAsync(&work, worksize, exec_struct->stream));
+    cerr = cudaMalloc(&work, worksize);
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
    
-        const size_t offsetA = worksizeA;
-        const size_t offsetB = worksizeB;
-        
-        int8_t *workA    = reinterpret_cast<int8_t *>(work);
-        int8_t *workB    = workA + offsetA;                 
-        int8_t *work_rem = workB + offsetB;
-        dispatch_gemmul8(
-           cublas,
-           get_cpp_datatype(typeC), 
-           BACKEND,
-           p->transa, p->transb,
-           p->m, p->n, p->k,
-           alpha, p->transposeA? devAT: A, p->lda,
-           p->transposeB? devBT: B, p->ldb,
-           zero, devCT, p->ldc,
-           TAPP_EMULATION_NUM_GEMM, fastmode, (void*)work_rem, (void*)workA, (void*)workB,
-           enable_skip_scalA, enable_skip_scalB, skip_scalA, skip_scalB
-        );
-        // GEMMul8 does not check its kernel launches, so pick up a launch error here. Checked after freeing the
-        // workspace, which the catch below does not know about
-        cudaError_t launch_err = cudaGetLastError();
+    offsetA = worksizeA;
+    offsetB = worksizeB;
+    
+    workA    = reinterpret_cast<int8_t *>(work);
+    workB    = workA + offsetA;                 
+    work_rem = workB + offsetB;
+    
+    // Dispatch Ozaki-II GEMM
+    if(
+        not(
+            typeA==typeB and 
+            typeA==typeC and 
+            typeC==typeB
+        )
+    ) throw std::runtime_error("Ozaki-II does not support tensors of different datatype");
+    dispatch_gemmul8(
+       cublas,
+       get_cpp_datatype(typeC), 
+       BACKEND,
+       p->transa, p->transb,
+       p->m, p->n, p->k,
+       one, p->transposeA? devAT: A, p->lda,
+       p->transposeB? devBT: B, p->ldb,
+       zero, devCT, p->ldc,
+       TAPP_EMULATION_NUM_GEMM, fastmode, (void*)work_rem, (void*)workA, (void*)workB,
+       enable_skip_scalA, enable_skip_scalB, skip_scalA, skip_scalB
+    );
 
-        cudaFreeAsync(work, exec_struct->stream);
-        cuda_check(launch_err);
+    cudaFree(work);
 #endif
 
-        if (p->transposeA) { cuda_check(cudaFreeAsync(devAT, exec_struct->stream)); devAT = nullptr; }
-        if (p->transposeB) { cuda_check(cudaFreeAsync(devBT, exec_struct->stream)); devBT = nullptr; }
-
-        cuda_check(cudaMallocAsync(&devC_tmp, bytes_D, exec_struct->stream));
-        if (p->transposeC) cutt_check(cuttExecute(p->planC, devCT, devC_tmp));
-        else cuda_check(cudaMemcpyAsync(devC_tmp, devCT, bytes_D, cudaMemcpyDeviceToDevice, exec_struct->stream));
-        cuda_check(cudaFreeAsync(devCT, exec_struct->stream)); devCT = nullptr;
-
-        // D = beta*D + C_tmp (D already holds staged C when beta != 0).
-        if (beta_nonzero)
-        {
-            unsigned char one[16];
-            make_scalar(tD, 1.0, one);
-            switch (tD)
-            {
-            case TAPP_F64:
-                stat = cublasDgeam(cublas, CUBLAS_OP_N, CUBLAS_OP_N, p->m, p->n,
-                    (const double*)beta, (const double*)D, p->m,
-                    (const double*)one, (const double*)devC_tmp, p->m,
-                    (double*)D, p->m);
-                break;
-            case TAPP_F32:
-                stat = cublasSgeam(cublas, CUBLAS_OP_N, CUBLAS_OP_N, p->m, p->n,
-                    (const float*)beta, (const float*)D, p->m,
-                    (const float*)one, (const float*)devC_tmp, p->m,
-                    (float*)D, p->m);
-                break;
-            case TAPP_C64:
-                stat = cublasZgeam(cublas, CUBLAS_OP_N, CUBLAS_OP_N, p->m, p->n,
-                    (const cuDoubleComplex*)beta, (const cuDoubleComplex*)D, p->m,
-                    (const cuDoubleComplex*)one, (const cuDoubleComplex*)devC_tmp, p->m,
-                    (cuDoubleComplex*)D, p->m);
-                break;
-            case TAPP_C32:
-                stat = cublasCgeam(cublas, CUBLAS_OP_N, CUBLAS_OP_N, p->m, p->n,
-                    (const cuComplex*)beta, (const cuComplex*)D, p->m,
-                    (const cuComplex*)one, (const cuComplex*)devC_tmp, p->m,
-                    (cuComplex*)D, p->m);
-                break;
-            }
-            cublas_check(stat);
+    if (p->transposeA) {
+        cerr = cudaFree(devAT); 
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
         }
-        else
-        {
-            cuda_check(cudaMemcpyAsync(D, devC_tmp, bytes_D, cudaMemcpyDeviceToDevice, exec_struct->stream));
+        devAT = nullptr; 
+    }
+    if (p->transposeB) {
+        cerr = cudaFree(devBT);
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
         }
-        cuda_check(cudaFreeAsync(devC_tmp, exec_struct->stream)); devC_tmp = nullptr;
-    }
-    catch (const tapp_exception& e)
-    {
-        result = e.code;
-    }
-    catch (const std::exception&)
-    {
-        // Thrown for contractions the cuBLAS/TTGT back-end does not support, e.g. mixed datatypes with Ozaki-II
-        result = TAPP_ERR_UNSUPPORTED_DATATYPE;
+        devBT = nullptr; 
     }
 
-    if (result != TAPP_SUCCESS)
-    {
-        if (devAT) cudaFreeAsync(devAT, exec_struct->stream);
-        if (devBT) cudaFreeAsync(devBT, exec_struct->stream);
-        if (devCT) cudaFreeAsync(devCT, exec_struct->stream);
-        if (devC_tmp) cudaFreeAsync(devC_tmp, exec_struct->stream);
-        return result;
+    cerr = cudaMalloc(&devC_tmp, bytes_D);
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
     }
 
-    TAPP_error status_err = create_status(exec_struct->stream, status);
-    if (status_err != TAPP_SUCCESS) return status_err;
+    if (p->transposeC){
+        cutensor_status = cutensorPermute(
+           cutensor,
+           p->planC,
+           one,
+           devCT,
+           devC_tmp,
+           0 // stream 0 by default
+        );
+        if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(cutensor_status);
+            goto cleanup;
+        }
+    }
+    else{
+        cerr = cudaMemcpy(devC_tmp, devCT, bytes_D, cudaMemcpyDeviceToDevice);
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
+        }
+    }
+    cerr = cudaFree(devCT);
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
+    devCT = nullptr;
+
+    // D = beta*C_copy + alpha*C_tmp.
+    load_scalar(get_cuda_datatype(p->type_D), alpha, p->op_D==TAPP_CONJUGATE, &alpha_buf);
+    load_scalar(get_cuda_datatype(p->type_D), beta,  p->op_D==TAPP_CONJUGATE, &beta_buf);
+
+    cutensor_status =  cutensorElementwiseBinaryExecute(
+       cutensor,
+        p->planD,
+        &alpha_buf,
+        devC_tmp,
+        &beta_buf,
+        C_copy,
+        D,
+        0
+    );
+    if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(cutensor_status);
+        goto cleanup;
+    }
+    cerr = cudaFree(devC_tmp); 
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
+    devC_tmp = nullptr;
+
+    if (beta_nonzero && C==D){
+        cerr = cudaFree(C_copy);
+        if (cerr != cudaSuccess){
+            error = tapp_error(cerr);
+            goto cleanup;
+        }
+    }
+    C_copy = nullptr;
+
+    // Force synchronyzation for the moment
+    cerr = cudaDeviceSynchronize();
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
+
+    error = create_status(*(cudaStream_t*)exec, status);
+    if (!TAPP_check_success(error)) goto cleanup;
+
+    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
+    if (cerr != cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
 
     return TAPP_SUCCESS;
+
+cleanup:
+    if(p->transposeA) if(devAT) cudaFree(devAT);
+    if(p->transposeB) if(devBT) cudaFree(devBT);
+    if(p->transposeC) if(devCT) cudaFree(devCT);
+    if(devC_tmp) cudaFree(devC_tmp);
+    if(work) cudaFree(work);
+    return error;
 }

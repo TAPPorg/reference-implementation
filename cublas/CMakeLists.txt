@@ -118,7 +118,8 @@ target_link_libraries(
   PRIVATE
     CUDA::cudart
     CUDA::cublas
-    cutt
+    cutensor::cutensor
+    #cutt
 )
 
 if(TAPP_OZAKI_EMULATION_VERSION STREQUAL "2")

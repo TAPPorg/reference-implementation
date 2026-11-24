@@ -40,14 +40,6 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
             if (mantissa_control < 0) return TAPP_ERR_ATTR_INVALID_VALUE;
         }
         break;
-        case TAPP_CUBLAS_EMULATION_NUM_GEMM:
-        {
-            if (size != sizeof(TAPP_num_gemm)) return TAPP_ERR_ATTR_INVALID_VALUE;
-            TAPP_num_gemm num_gemm;
-            std::memcpy(&num_gemm, value, sizeof(TAPP_num_gemm));
-            if (num_gemm < TAPP_2_GEMM || num_gemm > TAPP_20_GEMM) return TAPP_ERR_ATTR_INVALID_VALUE;
-        }
-        break;
         default:
         return TAPP_ERR_ATTR_UNKNOWN_KEY;
     }

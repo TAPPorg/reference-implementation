@@ -79,6 +79,24 @@ size_t sizeof_datatype(TAPP_datatype type)
     }
 }
 
+cutensorComputeDescriptor_t translate_prectype_permutation(TAPP_datatype datatype)
+{
+    switch (datatype)
+    {
+    case TAPP_F32:
+    case TAPP_C32:
+        return CUTENSOR_COMPUTE_DESC_32F;
+        break;
+    case TAPP_F64:
+    case TAPP_C64:
+        return CUTENSOR_COMPUTE_DESC_64F;
+        break;
+    default: // TODO: Default should probably be an error
+        return CUTENSOR_COMPUTE_DESC_32F;
+        break;
+    }
+}
+
 bool is_complex(TAPP_datatype type)
 {
     switch (type)

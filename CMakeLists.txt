@@ -219,59 +219,124 @@ if(TAPP_REFERENCE_ENABLE_CUBLAS)
       "FP64 emulation in the cuBLAS bindings: 0 = none, 1 = cuBLAS fixed-point emulation (CUDA >= 13), 2 = Ozaki-II via GEMMul8")
   set_property(CACHE TAPP_OZAKI_EMULATION_VERSION PROPERTY STRINGS 0 1 2)
 
-  # cuTT (transpose library) is not part of the CUDA toolkit. Use the installation
-  # at CUTT_ROOT if given, otherwise fetch and build it
-  if(NOT DEFINED CUTT_ROOT AND DEFINED ENV{CUTT_ROOT})
-    set(CUTT_ROOT $ENV{CUTT_ROOT})
-  endif()
-  if(CUTT_ROOT)
-    message(STATUS "Using cuTT from: ${CUTT_ROOT}")
-    add_library(cutt STATIC IMPORTED GLOBAL)
-    set_target_properties(cutt PROPERTIES
-      IMPORTED_LOCATION "${CUTT_ROOT}/lib/libcutt.a"
-      INTERFACE_INCLUDE_DIRECTORIES "${CUTT_ROOT}/include"
+  # Disable cuTT transpose backend for cuTENSOR
+  ## cuTT (transpose library) is not part of the CUDA toolkit. Use the installation
+  ## at CUTT_ROOT if given, otherwise fetch and build it
+  #if(NOT DEFINED CUTT_ROOT AND DEFINED ENV{CUTT_ROOT})
+  #  set(CUTT_ROOT $ENV{CUTT_ROOT})
+  #endif()
+  #if(CUTT_ROOT)
+  #  message(STATUS "Using cuTT from: ${CUTT_ROOT}")
+  #  add_library(cutt STATIC IMPORTED GLOBAL)
+  #  set_target_properties(cutt PROPERTIES
+  #    IMPORTED_LOCATION "${CUTT_ROOT}/lib/libcutt.a"
+  #    INTERFACE_INCLUDE_DIRECTORIES "${CUTT_ROOT}/include"
+  #  )
+  #else()
+  #  include(FetchContent)
+  #  find_package(Git REQUIRED)
+
+  #  # The ValeevGroup fork of cuTT, which adds a CMake build. It does not build with
+  #  # CUDA 13 as is; cublas/cmake/cutt-cuda13.patch explains and fixes that
+  #  FetchContent_Declare(
+  #    cutt
+  #    GIT_REPOSITORY https://github.com/ValeevGroup/cutt.git
+  #    GIT_TAG 0e8685bf82910bc7435835f846e88f1b39f47f09
+  #    PATCH_COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_SOURCE_DIR}/cublas/cmake/cutt-cuda13.patch
+  #    UPDATE_DISCONNECTED TRUE
+  #  )
+
+  #  FetchContent_MakeAvailable(cutt)
+
+  #  # cuTT's target carries no include directory and is linked into the shared tapp-cublas
+  #  target_include_directories(cutt INTERFACE ${cutt_SOURCE_DIR}/src)
+  #  set_target_properties(cutt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  #  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  #    set_target_properties(cutt PROPERTIES CUDA_ARCHITECTURES "80;90")
+  #  endif()
+  #endif()
+
+  # cuTENSOR is not part of the CUDA toolkit; look for it separately
+  if(NOT TARGET cutensor::cutensor)
+    find_path(CUTENSOR_INCLUDE_DIR
+      NAMES cutensor.h
+      HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
+            ${CUDAToolkit_LIBRARY_ROOT}
+      PATH_SUFFIXES include
     )
-  else()
-    include(FetchContent)
-    find_package(Git REQUIRED)
-
-    # The ValeevGroup fork of cuTT, which adds a CMake build. It does not build with
-    # CUDA 13 as is; cublas/cmake/cutt-cuda13.patch explains and fixes that
-    FetchContent_Declare(
-      cutt
-      GIT_REPOSITORY https://github.com/ValeevGroup/cutt.git
-      GIT_TAG 0e8685bf82910bc7435835f846e88f1b39f47f09
-      PATCH_COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_SOURCE_DIR}/cublas/cmake/cutt-cuda13.patch
-      UPDATE_DISCONNECTED TRUE
+    find_library(CUTENSOR_LIBRARY
+      NAMES cutensor
+      HINTS ${CUTENSOR_ROOT} ENV CUTENSOR_ROOT
+            ${CUDAToolkit_LIBRARY_ROOT}
+      PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
     )
 
-    FetchContent_MakeAvailable(cutt)
-
-    # cuTT's target carries no include directory and is linked into the shared tapp-cublas
-    target_include_directories(cutt INTERFACE ${cutt_SOURCE_DIR}/src)
-    set_target_properties(cutt PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      set_target_properties(cutt PROPERTIES CUDA_ARCHITECTURES "80;90")
+    if(NOT CUTENSOR_INCLUDE_DIR OR NOT CUTENSOR_LIBRARY)
+      message(FATAL_ERROR "cuTENSOR not found; set CUTENSOR_ROOT to the cuTENSOR installation prefix")
     endif()
+    message(STATUS "Found cuTENSOR: ${CUTENSOR_LIBRARY}")
+    message(STATUS "cuTENSOR include: ${CUTENSOR_INCLUDE_DIR}")
+
+    add_library(cutensor::cutensor UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(cutensor::cutensor PROPERTIES
+      IMPORTED_LOCATION "${CUTENSOR_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${CUTENSOR_INCLUDE_DIR}"
+    )
   endif()
 
-  # GEMMul8 (Ozaki-II), built in place at OZAKI_II_ROOT
+  # GEMMul8 (Ozaki-II)
   if(TAPP_OZAKI_EMULATION_VERSION STREQUAL "2")
-    if(NOT DEFINED OZAKI_II_ROOT AND DEFINED ENV{OZAKI_II_ROOT})
-      set(OZAKI_II_ROOT $ENV{OZAKI_II_ROOT})
-    endif()
-    if(NOT OZAKI_II_ROOT)
-      message(FATAL_ERROR "OZAKI_II_ROOT not found; set OZAKI_II_ROOT to the GEMMul8 directory")
-    endif()
     if(NOT OZAKI_II_COMPUTE_CAPABILITY)
-      message(FATAL_ERROR "OZAKI_II_COMPUTE_CAPABILITY not set; set it to the GPU_ARCH GEMMul8 was built for (e.g. 90)")
+      message(FATAL_ERROR "OZAKI_II_COMPUTE_CAPABILITY not set; set it to the GPU_ARCH GEMMul8 will be used on (e.g. 80<=)")
     endif()
-    message(STATUS "Using GEMMul8 from: ${OZAKI_II_ROOT}")
-    add_library(gemmul8 STATIC IMPORTED GLOBAL)
-    set_target_properties(gemmul8 PROPERTIES
-      IMPORTED_LOCATION "${OZAKI_II_ROOT}/lib/libgemmul8.a"
-      INTERFACE_INCLUDE_DIRECTORIES "${OZAKI_II_ROOT}/include"
-    )
+
+    # built in place at OZAKI_II_ROOT
+    if(DEFINED OZAKI_II_ROOT)
+       if(NOT OZAKI_II_ROOT)
+         message(FATAL_ERROR "OZAKI_II_ROOT not found; set OZAKI_II_ROOT to the GEMMul8 directory")
+       endif()
+       message(STATUS "Using GEMMul8 from: ${OZAKI_II_ROOT}")
+       add_library(gemmul8 STATIC IMPORTED GLOBAL)
+       set_target_properties(gemmul8 PROPERTIES
+         IMPORTED_LOCATION "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+         INTERFACE_INCLUDE_DIRECTORIES "${OZAKI_II_ROOT}/include"
+       )
+    # Fetch GEMMul8
+    else()
+       include(ExternalProject)
+
+       set(TEMPDIR "${PROJECT_BINARY_DIR}/gemmul8/tmp")
+       set(CUDA_PATH "$ENV{CUDA_PATH}")
+       if("${CUDA_PATH}" STREQUAL "" AND DEFINED CUDAToolkit_ROOT)
+           set(CUDA_PATH "${CUDAToolkit_ROOT}")
+       endif()
+
+       set(OZAKI_II_ROOT "${PROJECT_BINARY_DIR}/gemmul8/install")
+
+       ExternalProject_Add(gemmul8_ext
+           PREFIX "${PROJECT_BINARY_DIR}/gemmul8"
+           GIT_REPOSITORY "https://github.com/RIKEN-RCCS/GEMMul8"
+           GIT_TAG "d8d390125964c7f1c60d5f1e0e5d9656e5614852"
+           CONFIGURE_COMMAND true
+           BUILD_COMMAND make -j4 TEMPDIR=${TEMPDIR} BACKEND=cuda CUDA_PATH=${CUDA_PATH} GPU_ARCH=${OZAKI_II_COMPUTE_CAPABILITY} OPS=gemm OZ2_BACKENDS=${OZ2_BACKENDS}
+           BUILD_IN_SOURCE 1
+           INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory "${OZAKI_II_ROOT}/lib"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "<SOURCE_DIR>/lib/libgemmul8.a"
+                "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "<SOURCE_DIR>/include"
+                "${OZAKI_II_ROOT}/include"
+           BUILD_BYPRODUCTS "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+       )
+
+       file(MAKE_DIRECTORY "${OZAKI_II_ROOT}/include")
+       add_library(gemmul8 STATIC IMPORTED GLOBAL)
+       set_target_properties(gemmul8 PROPERTIES
+         IMPORTED_LOCATION "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+         INTERFACE_INCLUDE_DIRECTORIES "${OZAKI_II_ROOT}/include"
+       )
+    endif()
   endif()
 
   # this provides tapp-cublas target

@@ -26,8 +26,10 @@ size_t TAPP_explain_error(TAPP_error error,
     case TAPP_ERROR_TYPE_CUBLAS_BASE:
         str = std::string("[cuBLAS Status]: ") + cublasGetStatusString(static_cast<cublasStatus_t>(code)) + "\n";
         break;
-    case TAPP_ERROR_TYPE_CUTT_BASE:
-        str = std::string("[cuTT Status]: ") + std::to_string(code);
+    //case TAPP_ERROR_TYPE_CUTT_BASE:
+    //    str = std::string("[cuTT Status]: ") + std::to_string(code);
+    case TAPP_ERROR_TYPE_CUTENSOR_BASE:
+        str = std::string("[cuTENSOR Status]: ") + cutensorGetErrorString(static_cast<cutensorStatus_t>(code)) + "\n";
     default:
         str = "Unknown error type.";
         break;

@@ -7,9 +7,9 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 
     cudaStream_t stream = nullptr;
     cublasHandle_t cublas = nullptr;
+    cutensorHandle_t cutensor = nullptr;
     TAPP_emulation_strategy emulation_strategy = TAPP_DEFAULT_EMULATION_STRATEGY;
     TAPP_emulation_mantissa_control emulation_mantissa_control = TAPP_DEFAULT_EMULATION_MANTISSA_CONTROL;
-    TAPP_num_gemm num_gemm = TAPP_DEFAULT_NUM_GEMM;
 
     if(attr)
     { 
@@ -31,13 +31,6 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
             emulation_mantissa_control = n;
         }
 
-        std::map<TAPP_key, std::vector<char>>::const_iterator num_gemm_itr = a.find(TAPP_CUBLAS_EMULATION_NUM_GEMM);
-        if (num_gemm_itr != a.end())
-        {
-            TAPP_num_gemm n;
-            std::memcpy(&n, num_gemm_itr->second.data(), sizeof(TAPP_num_gemm));
-            num_gemm = n;
-        }
     }
 
     cudaError_t cerr = cudaStreamCreate(&stream);
@@ -61,12 +54,18 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
         return tapp_error(cstat);
     }
 
+    cutensorStatus_t err = cutensorCreate(&cutensor);
+    if (err != CUTENSOR_STATUS_SUCCESS)
+    {
+        return tapp_error(err);
+    }
+
     struct executor* exec_struct = new struct executor;
     exec_struct->stream = stream;
     exec_struct->cublas = cublas;
+    exec_struct->cutensor = cutensor;
     exec_struct->emulation_strategy = emulation_strategy;
     exec_struct->emulation_mantissa_control = emulation_mantissa_control;
-    exec_struct->num_gemm = num_gemm;
 
     *exec = (TAPP_executor)exec_struct;
     return TAPP_SUCCESS;
@@ -83,6 +82,7 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     auto keep_first = [&result](TAPP_error e) { if (result == TAPP_SUCCESS) result = e; };
 
     keep_first(tapp_error(cublasDestroy(exec_struct->cublas)));
+    keep_first(tapp_error(cutensorDestroy(exec_struct->cutensor)));
     keep_first(tapp_error(cudaStreamDestroy(exec_struct->stream)));
 
     delete exec_struct;
