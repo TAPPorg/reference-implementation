@@ -8,7 +8,7 @@ int tapp_prec_digits(TAPP_prectype prec)
     return 0;
 }
 
-cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype)
+bool translate_prectype(TAPP_prectype prec, TAPP_datatype datatype, cublasComputeType_t& out)
 {
     // Variable-precision (digit-count) types map to cuBLAS fixed-point FP64
     // emulation. Without an emulation-capable build (CUDA >= 13) fall back to
@@ -16,10 +16,11 @@ cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatyp
     if (tapp_prec_digits(prec) > 0)
     {
 #if OZAKI_EMULATION_VERSION==1
-        return CUBLAS_COMPUTE_64F_EMULATED_FIXEDPOINT;
+        out = CUBLAS_COMPUTE_64F_EMULATED_FIXEDPOINT;
 #else
-        return CUBLAS_COMPUTE_64F;
+        out = CUBLAS_COMPUTE_64F;
 #endif
+        return true;
     }
 
     switch (prec)
@@ -29,20 +30,23 @@ cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatyp
         {
         case TAPP_F32:
         case TAPP_C32:
-            return CUBLAS_COMPUTE_32F;
+            out = CUBLAS_COMPUTE_32F;
+            return true;
         case TAPP_F64:
         case TAPP_C64:
-            return CUBLAS_COMPUTE_64F;
+            out = CUBLAS_COMPUTE_64F;
+            return true;
         default:
-            return CUBLAS_COMPUTE_32F;
+            return false;
         }
     case TAPP_F32F32_ACCUM_F32:
-        return CUBLAS_COMPUTE_32F;
+        out = CUBLAS_COMPUTE_32F;
+        return true;
     case TAPP_F64F64_ACCUM_F64:
-        return CUBLAS_COMPUTE_64F;
-    default:
-        return CUBLAS_COMPUTE_32F;
+        out = CUBLAS_COMPUTE_64F;
+        return true;
     }
+    return false;
 }
 
 cudaDataType get_cuda_datatype(TAPP_datatype type)
@@ -59,6 +63,23 @@ cudaDataType get_cuda_datatype(TAPP_datatype type)
         return CUDA_C_64F;
     default:
         return CUDA_R_32F;
+    }
+}
+
+cutensorDataType_t get_cutensor_datatype(TAPP_datatype type)
+{
+    switch (type)
+    {
+    case TAPP_F32:
+        return CUTENSOR_R_32F;
+    case TAPP_F64:
+        return CUTENSOR_R_64F;
+    case TAPP_C32:
+        return CUTENSOR_C_32F;
+    case TAPP_C64:
+        return CUTENSOR_C_64F;
+    default:
+        return CUTENSOR_R_32F;
     }
 }
 
@@ -79,22 +100,22 @@ size_t sizeof_datatype(TAPP_datatype type)
     }
 }
 
-cutensorComputeDescriptor_t translate_prectype_permutation(TAPP_datatype datatype)
+bool translate_prectype_permute(TAPP_datatype datatype, cutensorComputeDescriptor_t& out)
 {
     switch (datatype)
     {
     case TAPP_F32:
     case TAPP_C32:
-        return CUTENSOR_COMPUTE_DESC_32F;
+        out = CUTENSOR_COMPUTE_DESC_32F;
+        return true; 
         break;
     case TAPP_F64:
     case TAPP_C64:
-        return CUTENSOR_COMPUTE_DESC_64F;
-        break;
-    default: // TODO: Default should probably be an error
-        return CUTENSOR_COMPUTE_DESC_32F;
+        out = CUTENSOR_COMPUTE_DESC_64F;
+        return true;
         break;
     }
+    return false;
 }
 
 bool is_complex(TAPP_datatype type)
@@ -111,5 +132,24 @@ bool is_complex(TAPP_datatype type)
         return true;
     default:
         return false;
+    }
+}
+
+bool translate_prectype(TAPP_prectype in, cutensorDataType_t datatype, cutensorComputeDescriptor_t& out)
+{
+    switch (in)
+    {
+        case TAPP_DEFAULT_PREC:
+            switch (datatype)
+            {
+                case CUTENSOR_R_32F:
+                case CUTENSOR_C_32F:  out = CUTENSOR_COMPUTE_DESC_32F; return true;
+                case CUTENSOR_R_64F:
+                case CUTENSOR_C_64F:  out = CUTENSOR_COMPUTE_DESC_64F; return true;
+                default: return false; // F16 and BF16 are not supported yet, see translate_datatype
+            }
+        case TAPP_F32F32_ACCUM_F32: out = CUTENSOR_COMPUTE_DESC_32F; return true;
+        case TAPP_F64F64_ACCUM_F64: out = CUTENSOR_COMPUTE_DESC_64F; return true;
+        default: return false; // TAPP_F16F16_ACCUM_F16 waits for F16 support, see translate_datatype
     }
 }

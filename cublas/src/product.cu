@@ -50,22 +50,6 @@
 * 20 	          77 / 20 	   71 / 40 	    102 / 54 	  100 / 114
 */
 
-cutensorOperator_t translate_operator(TAPP_element_op op)
-{
-    switch (op)
-    {
-    case TAPP_IDENTITY:
-        return CUTENSOR_OP_IDENTITY;
-        break;
-    case TAPP_CONJUGATE:
-        return CUTENSOR_OP_CONJ;
-        break;
-    default: // TODO: Default should probably be an error
-        return CUTENSOR_OP_IDENTITY;
-        break;
-    }
-}
-
 #if OZAKI_EMULATION_VERSION==2
 std::map<int,int> OS_II_INT8_table = {
    {2 , 7 }, 
@@ -89,32 +73,6 @@ std::map<int,int> OS_II_INT8_table = {
    {20, 71}, 
 };
 #endif
-
-const uint32_t ALIGNMENT_REQUIREMENT = 128;
-
-void load_scalar(cutensorDataType_t type, const void* value, bool conj, void* out)
-{
-    switch (type)
-    {
-    case CUTENSOR_C_32F:
-    {
-        std::complex<float> v = *(const std::complex<float>*)value;
-        if (conj) v = std::conj(v);
-        memcpy(out, &v, sizeof(v));
-        break;
-    }
-    case CUTENSOR_C_64F:
-    {
-        std::complex<double> v = *(const std::complex<double>*)value;
-        if (conj) v = std::conj(v);
-        memcpy(out, &v, sizeof(v));
-        break;
-    }
-    default: // Real types: conjugation does nothing
-        memcpy(out, value, sizeof_datatype(type));
-        break;
-    }
-}
 
 // ===========================================================================
 // CUDA / cuBLAS / cuTT error checks. Unlike the upstream my-ttgt macros these throw
@@ -238,6 +196,8 @@ static cutensorStatus_t create_cutensor_permute_plan(cutensorHandle_t cutensor, 
     cutensorStatus_t status;
     int64_t extentsAT[nmodeA];
     int64_t stridesAT[nmodeA];                                                     
+    cutensorOperator_t op_cutensor;
+    cutensorComputeDescriptor_t cutensorprec;
 
     std::vector<int32_t> cuidx_A = std::vector<int32_t>(modeA, modeA + nmodeA);
     std::vector<int32_t> cuidx_AT = std::vector<int32_t>(modeAT, modeAT + nmodeA);
@@ -273,15 +233,20 @@ static cutensorStatus_t create_cutensor_permute_plan(cutensorHandle_t cutensor, 
 
     // Permute descriptor and plan
     cutensorOperationDescriptor_t descPermute;
+    translate_operator(op_A, op_cutensor);
+    if(!translate_prectype_permute(A_info->type, cutensorprec)){
+        status = CUTENSOR_STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
     status = cutensorCreatePermutation(
         cutensor,
         &descPermute,
         descA,
         cuidx_A.data(),
-        translate_operator(op_A),
+        op_cutensor,
         descAT,
         cuidx_AT.data(),
-        translate_prectype_permutation(A_info->type)
+        cutensorprec
     );
     if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
@@ -614,7 +579,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->elements_A = A_info->elements;
     p->elements_B = B_info->elements;
     p->elements_D = D_info->elements;
-    p->compute_type = translate_prectype(prec, D_info->type);
+    if(!translate_prectype(prec, D_info->type, p->compute_type)) return TAPP_ERR_UNSUPPORTED_DATATYPE;
 
     // The TTGT/cuBLAS-GEMM back-end handles plain (Case 1/2) contractions over
     // dense, positive-stride tensors with identity element-wise ops only. The
@@ -796,6 +761,9 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     cutensorTensorDescriptor_t descCT;
     cutensorOperationDescriptor_t descPermute;
     cutensorOperationDescriptor_t descAccumulation;
+    cutensorOperator_t op_cutensor; 
+    cutensorOperator_t op_cutensor_CD; 
+    cutensorComputeDescriptor_t cutensor_prec;
 
     std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + rankC);
 
@@ -847,15 +815,20 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
         std::vector<int32_t> cuidx_CT = std::vector<int32_t>(idx_CT, idx_CT + rankC);
 
+        translate_operator(TAPP_IDENTITY, op_cutensor);
+        if(!translate_prectype_permute(C_info->type, cutensor_prec)){
+            status = CUTENSOR_STATUS_NOT_SUPPORTED;
+            goto cleanup;
+        }
         status = cutensorCreatePermutation(
             exec_struct->cutensor,
             &descPermute,
             descCT,
             cuidx_CT.data(),
-            translate_operator(TAPP_IDENTITY),
+            op_cutensor,
             descC,
             cuidx_C.data(),
-            translate_prectype_permutation(C_info->type)
+            cutensor_prec
         );
         if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
         status = cutensorCreatePlan(exec_struct->cutensor, &p->planC, descPermute, pref, 0);
@@ -869,19 +842,25 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
 
     // Last plan D = op_D(alpha) C_tilde + op_D(beta) op_CD(C)
     // Note: D, tilde_C and C are assumed to have the same structure
+    translate_operator(TAPP_IDENTITY, op_cutensor);
+    translate_operator(op_CD, op_cutensor_CD);
+    if(!translate_prectype_permute(C_info->type, cutensor_prec)){
+        status = CUTENSOR_STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
     status = cutensorCreateElementwiseBinary(
         exec_struct->cutensor,
         &descAccumulation,
         descC,
         cuidx_C.data(),
-        translate_operator(TAPP_IDENTITY),
+        op_cutensor,
         descC,
         cuidx_C.data(),
-        translate_operator(op_CD),
+        op_cutensor_CD,
         descC,
         cuidx_C.data(),
         CUTENSOR_OP_ADD,
-        translate_prectype_permutation(C_info->type)
+        cutensor_prec
     );
     if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
 
@@ -941,6 +920,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     struct executor* exec_struct = (struct executor*) exec;
     cublasHandle_t cublas = exec_struct->cublas;
     cutensorHandle_t cutensor = exec_struct->cutensor;
+    cudaStream_t stream = exec_struct->stream;
     TAPP_datatype tD = p->type_D;
     size_t esD = sizeof_datatype(tD);
     size_t bytes_D = p->elements_D * esD;
@@ -950,6 +930,9 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 
     bool beta_nonzero = scalar_is_nonzero(beta, tD);
     if (beta_nonzero && C == nullptr) return TAPP_ERR_C_NULL_BETA;
+
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
 
     // Variables used in the function moved due to goto statements
     unsigned char zero[16];
@@ -988,12 +971,12 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     {
         if (C == D)
         {
-            cerr = cudaMalloc(&C_copy, p->elements_D * sizeof_datatype(p->type_D));
+            cerr = cudaMallocAsync(&C_copy, p->elements_D * sizeof_datatype(p->type_D), stream);
             if (cerr != cudaSuccess){
                 error = tapp_error(cerr);
                 goto cleanup;
             }
-            cerr = cudaMemcpy(C_copy, C, bytes_D, cudaMemcpyDeviceToDevice);
+            cerr = cudaMemcpyAsync(C_copy, C, bytes_D, cudaMemcpyDeviceToDevice, stream);
             if (cerr != cudaSuccess){
                 error = tapp_error(cerr);
                 goto cleanup;
@@ -1005,7 +988,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     make_scalar(tD, 1.0, one);
 
     if (p->transposeA){
-        cerr = cudaMalloc(&devAT, p->elements_A * sizeof_datatype(p->type_A));
+        cerr = cudaMallocAsync(&devAT, p->elements_A * sizeof_datatype(p->type_A), stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1017,7 +1000,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
            one,
            A,
            devAT,
-           0 // stream 0 by default
+           stream
         );
         if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
             error = tapp_error(cutensor_status);
@@ -1025,7 +1008,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         }
     }
     if (p->transposeB){
-        cerr = cudaMalloc(&devBT, p->elements_B * sizeof_datatype(p->type_B));
+        cerr = cudaMallocAsync(&devBT, p->elements_B * sizeof_datatype(p->type_B), stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1037,7 +1020,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
            one,
            B,
            devBT,
-           0 // stream 0 by default
+           stream
         );
         if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
             error = tapp_error(cutensor_status);
@@ -1045,59 +1028,29 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         }
     }
 
-    cerr = cudaMalloc(&devCT, bytes_D);
+    cerr = cudaMallocAsync(&devCT, bytes_D, stream);
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
     }
+    
+    cublasSetStream(cublas, stream);
 
 #if OZAKI_EMULATION_VERSION!=2
+#if OZAKI_EMULATION_VERSION==1
         // Configure cuBLAS fixed-point FP64 emulation for the requested number
         // of decimal digits (variable mantissa size). bits = ceil(log2(10)*d).
-#if OZAKI_EMULATION_VERSION==1
-    if (p->prec_digits > 0)
-    {
-	    int* TAPP_EMULATION_STRATEGY;
-	    error = TAPP_attr_get(p->handle, ATTR_KEY_EMULATION_STRATEGY, (void**)&TAPP_EMULATION_STRATEGY);
-       if(*TAPP_EMULATION_STRATEGY == TAPP_EMULATION_STRATEGY_PERFORMANT) {
-          cublas_status = cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_PERFORMANT);
-          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
-              error = tapp_error(cublas_status);
-              goto cleanup;
-          }
-       }
-	    else {
-          cublas_status = cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_EAGER);
-          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
-              error = tapp_error(cublas_status);
-              goto cleanup;
-          }
-       }
+        if (p->prec_digits > 0)
+        {
+            if(exec_struct->emulation_strategy == TAPP_EMULATION_STRATEGY_PERFORMANT) {cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_PERFORMANT);}
+	        else { cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_EAGER);}
 
-	    int* TAPP_EMULATION_MANTISSA_CONTROL;
-	    error = TAPP_attr_get(p->handle, ATTR_KEY_EMULATION_MANTISSA_CONTROL, (void**)&TAPP_EMULATION_MANTISSA_CONTROL);
-       if(*TAPP_EMULATION_MANTISSA_CONTROL == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC) {
-          cublas_status = cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC);
-          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
-              error = tapp_error(cublas_status);
-              goto cleanup;
-          }
-       }
-	    else{
-          cublas_status = cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_FIXED);
-          if(cublas_status!=CUBLAS_STATUS_SUCCESS){
-              error = tapp_error(cublas_status);
-              goto cleanup;
-          }
-       }
+            if(exec_struct->emulation_mantissa_control == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC) {cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC);}
+	        else{cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_FIXED);}
 
-        int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
-        cublas_status = cublasSetFixedPointEmulationMaxMantissaBitCount(cublas, bits);
-        if(cublas_status!=CUBLAS_STATUS_SUCCESS){
-            error = tapp_error(cublas_status);
-            goto cleanup;
+            int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
+            cublasSetFixedPointEmulationMaxMantissaBitCount(cublas, bits);
         }
-    }
 #endif
 
     cublas_status = cublasGemmEx_64(
@@ -1139,7 +1092,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
          enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
     }
 
-    cerr = cudaMalloc(&work, worksize);
+    cerr = cudaMallocAsync(&work, worksize, stream);
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
@@ -1173,11 +1126,11 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
        enable_skip_scalA, enable_skip_scalB, skip_scalA, skip_scalB
     );
 
-    cudaFree(work);
+    cudaFreeAsync(work, stream);
 #endif
 
     if (p->transposeA) {
-        cerr = cudaFree(devAT); 
+        cerr = cudaFreeAsync(devAT,stream); 
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1185,7 +1138,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         devAT = nullptr; 
     }
     if (p->transposeB) {
-        cerr = cudaFree(devBT);
+        cerr = cudaFreeAsync(devBT, stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1193,7 +1146,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         devBT = nullptr; 
     }
 
-    cerr = cudaMalloc(&devC_tmp, bytes_D);
+    cerr = cudaMallocAsync(&devC_tmp, bytes_D, stream);
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
@@ -1206,7 +1159,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
            one,
            devCT,
            devC_tmp,
-           0 // stream 0 by default
+           stream
         );
         if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
             error = tapp_error(cutensor_status);
@@ -1214,13 +1167,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         }
     }
     else{
-        cerr = cudaMemcpy(devC_tmp, devCT, bytes_D, cudaMemcpyDeviceToDevice);
+        cerr = cudaMemcpyAsync(devC_tmp, devCT, bytes_D, cudaMemcpyDeviceToDevice, stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
         }
     }
-    cerr = cudaFree(devCT);
+    cerr = cudaFreeAsync(devCT, stream);
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
@@ -1239,13 +1192,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         &beta_buf,
         C_copy,
         D,
-        0
+        stream
     );
     if (cutensor_status != CUTENSOR_STATUS_SUCCESS){
         error = tapp_error(cutensor_status);
         goto cleanup;
     }
-    cerr = cudaFree(devC_tmp); 
+    cerr = cudaFreeAsync(devC_tmp, stream); 
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
@@ -1253,7 +1206,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     devC_tmp = nullptr;
 
     if (beta_nonzero && C==D){
-        cerr = cudaFree(C_copy);
+        cerr = cudaFreeAsync(C_copy, stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1261,29 +1214,16 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     }
     C_copy = nullptr;
 
-    // Force synchronyzation for the moment
-    cerr = cudaDeviceSynchronize();
-    if (cerr != cudaSuccess){
-        error = tapp_error(cerr);
-        goto cleanup;
-    }
-
-    error = create_status(*(cudaStream_t*)exec, status);
+    error = create_status(exec_struct->stream, exec_struct->device, status);
     if (!TAPP_check_success(error)) goto cleanup;
-
-    cerr = cudaStreamSynchronize(*(cudaStream_t*)exec);
-    if (cerr != cudaSuccess){
-        error = tapp_error(cerr);
-        goto cleanup;
-    }
 
     return TAPP_SUCCESS;
 
 cleanup:
-    if(p->transposeA) if(devAT) cudaFree(devAT);
-    if(p->transposeB) if(devBT) cudaFree(devBT);
-    if(p->transposeC) if(devCT) cudaFree(devCT);
-    if(devC_tmp) cudaFree(devC_tmp);
-    if(work) cudaFree(work);
+    if(p->transposeA) if(devAT) cudaFreeAsync(devAT, stream);
+    if(p->transposeB) if(devBT) cudaFreeAsync(devBT, stream);
+    if(p->transposeC) if(devCT) cudaFreeAsync(devCT, stream);
+    if(devC_tmp) cudaFreeAsync(devC_tmp, stream);
+    if(work) cudaFreeAsync(work, stream);
     return error;
 }

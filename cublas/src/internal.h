@@ -10,6 +10,7 @@
 #include <cuda_runtime.h>
 //#include <cutt.h>
 #include <cutensor.h>
+#include <cutensor/types.h>
 #include <library_types.h>
 #include <map>
 #include <tapp.h>
@@ -130,8 +131,12 @@ static inline const char* tapp_error_string(int code)
 
 // Translate a TAPP computational precision into the cuBLAS compute type passed
 // to cublasGemmEx. `datatype` resolves TAPP_DEFAULT_PREC.
-cublasComputeType_t translate_prectype(TAPP_prectype prec, TAPP_datatype datatype);
-cutensorComputeDescriptor_t translate_prectype_permutation(TAPP_datatype datatype);
+bool translate_prectype(TAPP_prectype in, TAPP_datatype datatype, cublasComputeType_t& out);
+
+// Translate TAPP precision type for cuTENSOR compute descriptor for cutensorCreateElementwiseBinary. Only used in permute.
+bool translate_prectype(TAPP_prectype in, cutensorDataType_t datatype, cutensorComputeDescriptor_t& out);
+// Translate TAPP data type into cuTENSOR compute descriptor for permute function. Only used in product.
+bool translate_prectype_permute(TAPP_datatype datatype, cutensorComputeDescriptor_t& out);
 
 // If `prec` is one of the variable-precision compute types (TAPP_F_*/TAPP_C_*
 // digit counts), return its decimal digit count (> 0); otherwise return 0.
@@ -139,28 +144,11 @@ int tapp_prec_digits(TAPP_prectype prec);
 
 // CUDA data type (CUDA_R_32F, ...) for a TAPP storage datatype, for cublasGemmEx.
 cudaDataType get_cuda_datatype(TAPP_datatype type);
+cutensorDataType_t get_cutensor_datatype(TAPP_datatype type);
 
 size_t sizeof_datatype(TAPP_datatype type);
 
 bool is_complex(TAPP_datatype type);
-
-/* ---------------------------------------------------------------------------------------------------------------------
- * Tensors
- * ------------------------------------------------------------------------------------------------------------------ */
-
-// Logical/physical description of a dense tensor. The TTGT back-end works on
-// dense (generalized column-major) layouts; `extents`/`strides` are retained
-// both for the host<->device copy bounds and to feed the TTGT plan.
-struct tensor_info
-{
-    int nmode;
-    int64_t* extents;
-    int64_t* strides;
-    size_t elements;
-    size_t copy_size;     // bytes spanned by the data in memory
-    int64_t data_offset;  // byte offset of element 0 (for negative strides)
-    TAPP_datatype type;
-};
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Attributes
@@ -176,6 +164,8 @@ struct executor
 {
     cudaStream_t stream;
     cublasHandle_t cublas;
+    int device;
+    bool owns_stream; // true if TAPP created the stream and must destroy it
     cutensorHandle_t cutensor;
     TAPP_emulation_strategy emulation_strategy;
     TAPP_emulation_mantissa_control emulation_mantissa_control;
@@ -238,9 +228,91 @@ struct permute_plan
 struct status
 {
     cudaEvent_t event;
+    int device;
 };
 
 // Allocate a status object recording the current point of `stream`.
-TAPP_error create_status(cudaStream_t stream, TAPP_status* status);
+TAPP_error create_status(cudaStream_t stream, int device, TAPP_status* status);
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+const uint32_t ALIGNMENT_REQUIREMENT = 128;
+bool translate_operator(TAPP_element_op in, cutensorOperator_t& out);
+
+// True if op is an element operation this implementation supports
+bool is_valid_op(TAPP_element_op op);
+
+// True if the scalar of type `type` at `value` is zero. False for types it does not know
+bool is_zero_scalar(cutensorDataType_t type, const void* value);
+
+// Copies the scalar of type `type` at `value` to `out`, conjugated if `conj`. out must have room for a TAPP_C64
+void load_scalar(cutensorDataType_t type, const void* value, bool conj, void* out);
+
+// True if p is NULL or aligned to kAlignment, which the tensor descriptors promise cuTENSOR for the data
+bool is_aligned(const void* p);
+
+// Makes a device current for as long as it exists and then makes the device current again that was current before, so
+// TAPP functions do not change the current device of the calling program. Check error before using the device
+struct device_scope
+{
+    explicit device_scope(int device)
+    {
+        if (cudaGetDevice(&previous) != cudaSuccess) previous = -1;
+        error = cudaSetDevice(device);
+    }
+
+    ~device_scope()
+    {
+        if (previous >= 0) cudaSetDevice(previous);
+    }
+
+    device_scope(const device_scope&) = delete;
+    device_scope& operator=(const device_scope&) = delete;
+
+    int previous;      // -1 if it could not be determined, then nothing is restored
+    cudaError_t error; // Of making the device current
+};
+
+// Owns a cuTENSOR object and destroys it when it goes out of scope, unless release() handed it on
+template <typename T, cutensorStatus_t (*Destroy)(T)>
+struct cutensor_owner
+{
+    T handle = nullptr;
+
+    cutensor_owner() = default;
+    ~cutensor_owner() { if (handle) Destroy(handle); }
+    cutensor_owner(const cutensor_owner&) = delete;
+    cutensor_owner& operator=(const cutensor_owner&) = delete;
+
+    // Gives up ownership, for example to a plan struct that destroys it later
+    T release() { T h = handle; handle = nullptr; return h; }
+};
+
+typedef cutensor_owner<cutensorTensorDescriptor_t, cutensorDestroyTensorDescriptor> tensor_descriptor;
+typedef cutensor_owner<cutensorOperationDescriptor_t, cutensorDestroyOperationDescriptor> operation_descriptor;
+typedef cutensor_owner<cutensorPlanPreference_t, cutensorDestroyPlanPreference> plan_preference;
+typedef cutensor_owner<cutensorPlan_t, cutensorDestroyPlan> plan_owner;
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Tensors
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+// Logical/physical description of a dense tensor. The TTGT back-end works on
+// dense (generalized column-major) layouts; `extents`/`strides` are retained
+// both for the host<->device copy bounds and to feed the TTGT plan.
+struct tensor_info
+{
+    int nmode;
+    int64_t* extents;
+    int64_t* strides;
+    size_t elements;
+    TAPP_datatype type;
+};
+
+// True if A and B have the same extents, strides and indices, so one can be computed in the memory layout of the other
+bool same_structure(const tensor_info* A, const int64_t* idx_A, const tensor_info* B, const int64_t* idx_B);
+cutensorStatus_t create_descriptor(cutensorHandle_t handle, const tensor_info* info, tensor_descriptor& desc);
 
 #endif  /* TAPP_CUBLAS_INTERNAL_H_ */

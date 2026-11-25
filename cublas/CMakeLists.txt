@@ -72,9 +72,11 @@ target_sources(
     src/error.cpp
     src/executor.cpp
     src/product.cu
+    src/permute.cpp
     src/runtime.cpp
     src/status.cpp
     src/tensor.cpp
+    src/util.cpp
     src/internal.h
     include/tapp_cublas.h
   )

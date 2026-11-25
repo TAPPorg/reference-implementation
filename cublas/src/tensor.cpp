@@ -12,21 +12,6 @@ TAPP_error TAPP_create_tensor_info(TAPP_tensor_info* info,
     for (int i = 0; i < nmode; ++i)
         elements *= extents[i];
 
-    // copy_size / data_offset bound the memory span of the (possibly
-    // negative-strided) tensor, matching the cuTENSOR bindings so host<->device
-    // transfers move exactly the referenced bytes.
-    tensor_info->copy_size = 1;
-    tensor_info->data_offset = 0;
-    for (int i = 0; i < nmode; i++)
-    {
-        tensor_info->copy_size += (extents[i] - 1) * strides[i];
-        if (strides[i] < 0)
-        {
-            tensor_info->data_offset += extents[i] * strides[i];
-        }
-    }
-    tensor_info->copy_size *= sizeof_datatype(type);
-    tensor_info->data_offset *= sizeof_datatype(type);
     tensor_info->type = type;
     tensor_info->elements = elements;
     tensor_info->nmode = nmode;
@@ -89,4 +74,15 @@ TAPP_error TAPP_set_strides(TAPP_tensor_info info,
     (void)info;
     (void)strides;
     return TAPP_ERR_NOT_IMPLEMENTED; // Not supported.
+}
+
+cutensorStatus_t create_descriptor(cutensorHandle_t handle, const tensor_info* info, tensor_descriptor& desc)
+{
+    cutensorDataType_t cutype = get_cutensor_datatype(info->type);
+    return cutensorCreateTensorDescriptor(handle,
+                                          &desc.handle,
+                                          info->nmode,
+                                          info->extents,
+                                          info->strides,
+                                          cutype, ALIGNMENT_REQUIREMENT);
 }

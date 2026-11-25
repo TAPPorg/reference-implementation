@@ -24,6 +24,7 @@ void complex_contraction();
 void outer_product();
 void full_contraction();
 void attributes();
+void permute();
 
 void check_status(TAPP_status status)
 {
@@ -67,8 +68,8 @@ int main(int argc, char const *argv[])
     outer_product();
     printf("Full contraction: \n");
     full_contraction();
-    //printf("Contaction with Hadamard: \n");
-    //contraction_hadamard();
+    printf("Permute: \n");
+    permute();
     return 0;
 }
 
@@ -670,3 +671,104 @@ void full_contraction(){
     TAPP_destroy_status(status);
     TAPP_destroy_executor(exec);
 }
+
+// Test permute opeartion for cuBLAS backend
+void permute()
+{
+    using cf = std::complex<float>;
+    TAPP_executor exec;
+    TAPP_create_executor(&exec, 0);
+
+    const int ni = 2, nk = 3, nj = 2;
+
+    int nmode_A = 3;
+    int64_t extents_A[3] = {nj, ni, nk};
+    int64_t strides_A[3] = {1, nj, nj*ni};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_C32, nmode_A, extents_A, strides_A);
+
+    int nmode_B = 3;
+    int64_t extents_B[3] = {ni, nk, nj};
+    int64_t strides_B[3] = {1, ni, nk*nj};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_C32, nmode_B, extents_B, strides_B);
+
+    int nmode_C = 3;
+    int64_t extents_C[3] = {ni, nk, nj};
+    int64_t strides_C[3] = {1, ni, nk*nj};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_C32, nmode_C, extents_C, strides_C);
+
+    int64_t idx_A[3] = {'j', 'i', 'k'};
+    int64_t idx_B[3] = {'i', 'k', 'j'};
+    int64_t idx_C[3] = {'i', 'k', 'j'};
+
+    TAPP_tensor_permute plan;
+    TAPP_error error = TAPP_create_tensor_permute(&plan, exec,
+        TAPP_IDENTITY, info_A, idx_A,
+        TAPP_IDENTITY, info_B, idx_B,
+        TAPP_IDENTITY, info_C, idx_C,
+        TAPP_DEFAULT_PREC);
+    report_error(error);
+
+    TAPP_status status;
+
+    cf alpha(1.0f, 0.0f);
+    cf beta(1.0f, 0.0f);
+    cf A[12] = {
+        cf(-0.104,-0.652),cf(0.568,0.976),cf(0.434,0.753),
+        cf(-0.387,0.867),cf(-0.16,0.84),cf(-0.987,0.06),
+        cf(0.185,0.642),cf(0.573,0.365),cf(0.281,0.22),
+        cf(0.277,-0.334),cf(0.953,-0.0),cf(0.618,-0.063)
+    };
+    cf B[12] = {
+        cf(-0.768,0.08),cf(0.758,-0.488),cf(-0.013,-0.647),
+        cf(0.446,0.87),cf(-0.053,-0.471),cf(-0.197,-0.501),
+        cf(0.914,0.584),cf(-0.467,-0.448),cf(-0.507,0.346),
+        cf(-0.89,0.789),cf(0.955,0.864),cf(-0.991,-0.037)
+    };
+    cf C[12];
+
+    void *A_d, *B_d, *C_d;
+    cudaMalloc(&A_d, sizeof(A));
+    cudaMalloc(&B_d, sizeof(B));
+    cudaMalloc(&C_d, sizeof(C));
+
+    cudaMemcpy(A_d, A, sizeof(A), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B, sizeof(B), cudaMemcpyHostToDevice);
+
+    error = TAPP_execute_permute(plan, exec, &status,
+        &alpha, A_d, &beta, B_d, C_d);
+    report_error(error);
+
+    TAPP_wait_all(exec);
+    check_status(status);
+    cudaMemcpy(C, C_d, sizeof(C), cudaMemcpyDeviceToHost);
+
+    cf ref[12];
+    for(int i=0; i<ni; i++)
+    for(int k=0; k<nk; k++)
+    for(int j=0; j<nj; j++){
+       int ind_A_ = j + i*nj + k*nj*ni;
+       int ind = i + k*ni + j*ni*nk;
+       ref[ind] = alpha*A[ind_A_]+beta*B[ind];
+    }
+
+    bool ok = true;
+    for (int idx = 0; idx < 12; idx++)
+    {
+        printf("\tC[%d] = (%.3f, %.3f) (ref (%.3f, %.3f))\n",
+            idx, C[idx].real(), C[idx].imag(), ref[idx].real(), ref[idx].imag());
+        if (std::abs(C[idx] - ref[idx]) > 1e-4f) ok = false;
+    }
+    printf(ok ? "\tPASS\n" : "\tFAIL\n");
+
+    cudaFree(A_d); cudaFree(B_d); cudaFree(C_d);
+    TAPP_destroy_tensor_permute(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_status(status);
+    TAPP_destroy_executor(exec);
+}
+

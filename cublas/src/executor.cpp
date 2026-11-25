@@ -5,15 +5,50 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
     
     if (!exec) return TAPP_ERR_NULL_POINTER;
 
+    int device = 0;
     cudaStream_t stream = nullptr;
     cublasHandle_t cublas = nullptr;
     cutensorHandle_t cutensor = nullptr;
+    bool owns_stream = true;
+
     TAPP_emulation_strategy emulation_strategy = TAPP_DEFAULT_EMULATION_STRATEGY;
     TAPP_emulation_mantissa_control emulation_mantissa_control = TAPP_DEFAULT_EMULATION_MANTISSA_CONTROL;
 
     if(attr)
     { 
         const attributes& a = *reinterpret_cast<attributes*>(attr);
+
+        bool device_set = false;
+        std::map<TAPP_key, std::vector<char>>::const_iterator device_itr = a.find(TAPP_CUBLAS_DEVICE);
+        if (device_itr != a.end())
+        {
+            int n;
+            std::memcpy(&n, device_itr->second.data(), sizeof(int));
+            device = n;
+            device_set = true;
+        }
+
+        std::map<TAPP_key, std::vector<char>>::const_iterator stream_itr = a.find(TAPP_CUBLAS_STREAM);
+        if (stream_itr != a.end())
+        {
+            cudaStream_t n;
+            std::memcpy(&n, stream_itr->second.data(), sizeof(cudaStream_t));
+            stream = n;
+            owns_stream = false;
+#if CUDART_VERSION >= 12080
+            int stream_device;
+            cudaError_t cerr = cudaStreamGetDevice(stream, &stream_device);
+            if (cerr != cudaSuccess) return tapp_error(cerr);
+            if (device_set && device != stream_device)
+            {
+                return TAPP_ERR_ATTR_INVALID_STREAM;
+            }
+            else
+            {
+                device = stream_device;
+            }
+#endif
+        }
 
         std::map<TAPP_key, std::vector<char>>::const_iterator stategy_itr = a.find(TAPP_CUBLAS_EMULATION_STRATEGY);
         if (stategy_itr != a.end())
@@ -33,6 +68,9 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 
     }
 
+    device_scope scope(device);
+    if (scope.error != cudaSuccess) return tapp_error(scope.error);
+
     cudaError_t cerr = cudaStreamCreate(&stream);
     if (cerr != cudaSuccess)
     {
@@ -42,15 +80,6 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
     cublasStatus_t cstat = cublasCreate(&cublas);
     if (cstat != CUBLAS_STATUS_SUCCESS)
     {
-        cudaStreamDestroy(stream);
-        return tapp_error(cstat);
-    }
-
-    cstat = cublasSetStream(cublas, stream);
-    if (cstat != CUBLAS_STATUS_SUCCESS)
-    {
-        cudaStreamDestroy(stream);
-        cublasDestroy(cublas);
         return tapp_error(cstat);
     }
 
@@ -60,9 +89,22 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
         return tapp_error(err);
     }
 
+    if (owns_stream)
+    {
+        cerr = cudaStreamCreate(&stream);
+        if (cerr != cudaSuccess)
+        {
+            cutensorDestroy(cutensor);
+            cublasDestroy(cublas);
+            return tapp_error(cerr);
+        }
+    }
+
     struct executor* exec_struct = new struct executor;
+    exec_struct->owns_stream = owns_stream;
     exec_struct->stream = stream;
     exec_struct->cublas = cublas;
+    exec_struct->device = device;
     exec_struct->cutensor = cutensor;
     exec_struct->emulation_strategy = emulation_strategy;
     exec_struct->emulation_mantissa_control = emulation_mantissa_control;
@@ -77,13 +119,21 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
 
     struct executor* exec_struct = (struct executor*) exec;
 
+    device_scope scope(exec_struct->device);
+    if (scope.error != cudaSuccess)
+    {
+        // Without its device the GPU resources cannot be released and leak, but the executor is gone either way
+        delete exec_struct;
+        return tapp_error(scope.error);
+    }
+
     TAPP_error result = TAPP_SUCCESS;
     // Keeps the first error: destroying continues after a failure so nothing else leaks
     auto keep_first = [&result](TAPP_error e) { if (result == TAPP_SUCCESS) result = e; };
 
+    if(exec_struct->owns_stream) keep_first(tapp_error(cudaStreamDestroy(exec_struct->stream)));
     keep_first(tapp_error(cublasDestroy(exec_struct->cublas)));
     keep_first(tapp_error(cutensorDestroy(exec_struct->cutensor)));
-    keep_first(tapp_error(cudaStreamDestroy(exec_struct->stream)));
 
     delete exec_struct;
 
