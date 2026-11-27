@@ -4,7 +4,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
 # see https://semver.org/
 set (TAPP_CUBLAS_MAJOR_VERSION 0)
-set (TAPP_CUBLAS_MINOR_VERSION 5)
+set (TAPP_CUBLAS_MINOR_VERSION 6)
 set (TAPP_CUBLAS_PATCH_VERSION 0)
 set (TAPP_CUBLAS_PRERELEASE_ID )
 set (TAPP_CUBLAS_BUILD_ID )
@@ -120,6 +120,7 @@ target_link_libraries(
   PRIVATE
     CUDA::cudart
     CUDA::cublas
+    CUDA::cublasLt
     cutensor::cutensor
     #cutt
 )

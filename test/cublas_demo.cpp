@@ -25,6 +25,7 @@ void outer_product();
 void full_contraction();
 void attributes();
 void permute();
+void emulated();
 
 void check_status(TAPP_status status)
 {
@@ -70,6 +71,8 @@ int main(int argc, char const *argv[])
     full_contraction();
     printf("Permute: \n");
     permute();
+    printf("Emulated: Contraction with beta != 0: \n");
+    emulated();
     return 0;
 }
 
@@ -361,6 +364,7 @@ void attributes()
     size_t size;
     void* value;
 
+    // check setter
     TAPP_emulation_strategy strategy = TAPP_EMULATION_STRATEGY_PERFORMANT;
     TAPP_error error = TAPP_attr_set(attr, TAPP_CUBLAS_EMULATION_STRATEGY, sizeof(strategy), &strategy);
     printf("\tset TAPP_CUBLAS_EMULATION_STRATEGY (should be 1): %i\n", TAPP_check_success(error));
@@ -368,6 +372,12 @@ void attributes()
     TAPP_emulation_mantissa_control mantissa_control = TAPP_EMULATION_MANTISSA_CONTROL_FIXED;
     error = TAPP_attr_set(attr, TAPP_CUBLAS_EMULATION_MANTISSA_CONTROL, sizeof(mantissa_control), &mantissa_control);
     printf("\tset TAPP_CUBLAS_EMULATION_MANTISSA_CONTROL (should be 1): %i\n", TAPP_check_success(error));
+
+#if OZAKI_EMULATION_VERSION==2
+    TAPP_emulation_OS_II_backend OS_II_backend = TAPP_EMULATION_BACKEND_INT8;
+    error = TAPP_attr_set(attr, TAPP_EMULATION_OS_II_BACKEND, sizeof(OS_II_backend), &OS_II_backend);
+    printf("\tset TAPP_EMULATION_OS_II_BACKEND (should be 1): %i\n", TAPP_check_success(error));
+#endif
 
     TAPP_executor exec;
     error = TAPP_create_executor(&exec, attr);
@@ -772,3 +782,93 @@ void permute()
     TAPP_destroy_executor(exec);
 }
 
+// Same contraction but with beta != 0, exercising the C-into-D staging path, but emulated
+void emulated()
+{
+    TAPP_executor exec;
+    TAPP_create_executor(&exec, 0);
+
+    const int ni = 2, nk = 2, nj = 2;
+
+    int64_t extents_A[2] = {ni, nk};
+    int64_t strides_A[2] = {1, ni};
+    TAPP_tensor_info info_A;
+    TAPP_create_tensor_info(&info_A, TAPP_F64, 2, extents_A, strides_A);
+
+    int64_t extents_B[2] = {nk, nj};
+    int64_t strides_B[2] = {1, nk};
+    TAPP_tensor_info info_B;
+    TAPP_create_tensor_info(&info_B, TAPP_F64, 2, extents_B, strides_B);
+
+    int64_t extents_D[2] = {ni, nj};
+    int64_t strides_D[2] = {1, ni};
+    TAPP_tensor_info info_C;
+    TAPP_create_tensor_info(&info_C, TAPP_F64, 2, extents_D, strides_D);
+    TAPP_tensor_info info_D;
+    TAPP_create_tensor_info(&info_D, TAPP_F64, 2, extents_D, strides_D);
+
+    int64_t idx_A[2] = {'i', 'k'};
+    int64_t idx_B[2] = {'k', 'j'};
+    int64_t idx_D[2] = {'i', 'j'};
+
+    TAPP_tensor_product plan;
+    TAPP_create_tensor_product(&plan, exec,
+        TAPP_IDENTITY, info_A, idx_A,
+        TAPP_IDENTITY, info_B, idx_B,
+        TAPP_IDENTITY, info_C, idx_D,
+        TAPP_IDENTITY, info_D, idx_D,
+        TAPP_F_16_DIGITS);
+
+    TAPP_status status;
+
+    double alpha = 2.0;
+    double beta = 0.5;
+    double A[4] = {1, 2, 3, 4};
+    double B[4] = {1, 0, 0, 1}; // identity
+    double C[4] = {10, 20, 30, 40};
+    double D[4] = {0, 0, 0, 0};
+
+    void *A_d, *B_d, *C_d, *D_d;
+    cudaMalloc(&A_d, sizeof(A));
+    cudaMalloc(&B_d, sizeof(B));
+    cudaMalloc(&C_d, sizeof(C));
+    cudaMalloc(&D_d, sizeof(D));
+    cudaMemcpy(A_d, A, sizeof(A), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B, sizeof(B), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, C, sizeof(C), cudaMemcpyHostToDevice);
+
+    TAPP_error error = TAPP_execute_product(plan, exec, &status,
+        &alpha, A_d, B_d, &beta, C_d, D_d);
+    report_error(error);
+
+    TAPP_wait_all(exec);
+    check_status(status);
+    cudaMemcpy(D, D_d, sizeof(D), cudaMemcpyDeviceToHost);
+
+    double ref[4];
+    for (int j = 0; j < nj; j++)
+        for (int i = 0; i < ni; i++)
+        {
+            double acc = 0.0;
+            for (int k = 0; k < nk; k++)
+                acc += A[i + k * ni] * B[k + j * nk];
+            ref[i + j * ni] = alpha * acc + beta * C[i + j * ni];
+        }
+
+    bool ok = true;
+    for (int idx = 0; idx < 4; idx++)
+    {
+        printf("\tD[%d] = %.3f (ref %.3f)\n", idx, D[idx], ref[idx]);
+        if (std::fabs(D[idx] - ref[idx]) > 1e-9) ok = false;
+    }
+    printf(ok ? "\tPASS\n" : "\tFAIL\n");
+
+    cudaFree(A_d); cudaFree(B_d); cudaFree(C_d); cudaFree(D_d);
+    TAPP_destroy_tensor_product(plan);
+    TAPP_destroy_tensor_info(info_A);
+    TAPP_destroy_tensor_info(info_B);
+    TAPP_destroy_tensor_info(info_C);
+    TAPP_destroy_tensor_info(info_D);
+    TAPP_destroy_status(status);
+    TAPP_destroy_executor(exec);
+}

@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Enable verbose output")
 
 # see https://semver.org/
-set (TAPP_REFERENCE_MAJOR_VERSION 1)
-set (TAPP_REFERENCE_MINOR_VERSION 0)
+set (TAPP_REFERENCE_MAJOR_VERSION 0)
+set (TAPP_REFERENCE_MINOR_VERSION 5)
 set (TAPP_REFERENCE_PATCH_VERSION 0)
 set (TAPP_REFERENCE_PRERELEASE_ID )
 set (TAPP_REFERENCE_BUILD_ID )
@@ -286,6 +286,10 @@ if(TAPP_REFERENCE_ENABLE_CUBLAS)
 
   # GEMMul8 (Ozaki-II)
   if(TAPP_OZAKI_EMULATION_VERSION STREQUAL "2")
+     set(OZAKI_II_BACKEND 0 CACHE STRING
+         "FP64 emulation GEMMul8 Backend: 0 = INT8, 1 = FP8")
+     set_property(CACHE OZAKI_II_BACKEND PROPERTY STRINGS 0 1)
+
     if(NOT OZAKI_II_COMPUTE_CAPABILITY)
       message(FATAL_ERROR "OZAKI_II_COMPUTE_CAPABILITY not set; set it to the GPU_ARCH GEMMul8 will be used on (e.g. 80<=)")
     endif()
@@ -313,6 +317,9 @@ if(TAPP_REFERENCE_ENABLE_CUBLAS)
 
        set(OZAKI_II_ROOT "${PROJECT_BINARY_DIR}/gemmul8/install")
 
+       file(MAKE_DIRECTORY "${OZAKI_II_ROOT}/include")
+       file(MAKE_DIRECTORY "${OZAKI_II_ROOT}/lib")
+
        ExternalProject_Add(gemmul8_ext
            PREFIX "${PROJECT_BINARY_DIR}/gemmul8"
            GIT_REPOSITORY "https://github.com/RIKEN-RCCS/GEMMul8"
@@ -327,7 +334,9 @@ if(TAPP_REFERENCE_ENABLE_CUBLAS)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "<SOURCE_DIR>/include"
                 "${OZAKI_II_ROOT}/include"
-           BUILD_BYPRODUCTS "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+           BUILD_BYPRODUCTS 
+                "${OZAKI_II_ROOT}/lib/libgemmul8.a"
+                "${OZAKI_II_ROOT}/include/gemmul8.hpp"
        )
 
        file(MAKE_DIRECTORY "${OZAKI_II_ROOT}/include")
@@ -336,6 +345,8 @@ if(TAPP_REFERENCE_ENABLE_CUBLAS)
          IMPORTED_LOCATION "${OZAKI_II_ROOT}/lib/libgemmul8.a"
          INTERFACE_INCLUDE_DIRECTORIES "${OZAKI_II_ROOT}/include"
        )
+
+       add_dependencies(gemmul8 gemmul8_ext)
     endif()
   endif()
 

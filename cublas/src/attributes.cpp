@@ -24,6 +24,24 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
     if (!attr || !value) return TAPP_ERR_NULL_POINTER;
 
     switch (key) {
+        case TAPP_CUBLAS_DEVICE:
+        {
+            if (size != sizeof(int)) return TAPP_ERR_ATTR_INVALID_VALUE;
+            int device_id;
+            std::memcpy(&device_id, value, sizeof(int));
+            if (device_id < 0) return TAPP_ERR_ATTR_INVALID_VALUE;
+        }
+        break;
+        case TAPP_CUBLAS_STREAM:
+        {
+            if (size != sizeof(cudaStream_t)) return TAPP_ERR_ATTR_INVALID_VALUE;
+            cudaStream_t stream = *static_cast<cudaStream_t*>(value);
+            if((*((cudaStream_t *) value))==nullptr) break;
+            unsigned int flags = 0;
+            cudaError_t status = cudaStreamGetFlags(stream, &flags);
+            if(status!=cudaSuccess) return TAPP_ERR_ATTR_INVALID_VALUE;
+        }
+        break;
         case TAPP_CUBLAS_EMULATION_STRATEGY:
         {
             if (size != sizeof(TAPP_emulation_strategy)) return TAPP_ERR_ATTR_INVALID_VALUE;
@@ -40,6 +58,17 @@ TAPP_error TAPP_attr_set(TAPP_attr attr, TAPP_key key, size_t size, void* value)
             if (mantissa_control < 0) return TAPP_ERR_ATTR_INVALID_VALUE;
         }
         break;
+#if OZAKI_EMULATION_VERSION==2
+        case TAPP_CUBLAS_EMULATION_OS_II_BACKEND:
+        {
+            if (size != sizeof(TAPP_emulation_os_II_backend)) return TAPP_ERR_ATTR_INVALID_VALUE;
+
+            TAPP_emulation_os_II_backend os_II_backend;
+            std::memcpy(&os_II_backend, value, sizeof(TAPP_emulation_os_II_backend));
+            if (os_II_backend!=TAPP_EMULATION_OS_II_BACKEND_FP8 && os_II_backend!=TAPP_EMULATION_OS_II_BACKEND_INT8) return TAPP_ERR_ATTR_INVALID_VALUE;
+        }
+        break;
+#endif
         default:
         return TAPP_ERR_ATTR_UNKNOWN_KEY;
     }

@@ -6,7 +6,7 @@
  * handles, the error helpers and the datatype translations. Not part of the public interface, that is tapp_cublas.h.
  */
 
-#include <cublas_v2.h>
+#include <cublasLt.h>
 #include <cuda_runtime.h>
 //#include <cutt.h>
 #include <cutensor.h>
@@ -60,12 +60,13 @@ enum
     TAPP_ERR_UNSUPPORTED_ELEMENT_OP = 28,
     TAPP_ERR_OUT_OF_MEMORY = 29,
     TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED = 30,
+    TAPP_ERR_PRODUCT_PLAN_GEMMUL8_FAILED = 31,
     // The error of a status whose operation has not finished yet, not a failure
-    TAPP_ERR_STATUS_WRONG_DEVICE = 31,
     TAPP_ERR_PLAN_WRONG_DEVICE = 32,
     TAPP_ERR_UNSUPPORTED_DATATYPE = 33,
     TAPP_ERR_PLAN_WRONG_EXECUTOR = 34,
     TAPP_ERR_STATUS_RUNNING = 35,
+    TAPP_ERR_STATUS_WRONG_DEVICE = 36,
 };
 
 typedef enum
@@ -148,6 +149,8 @@ cutensorDataType_t get_cutensor_datatype(TAPP_datatype type);
 
 size_t sizeof_datatype(TAPP_datatype type);
 
+bool is_64_bit(TAPP_datatype type);
+
 bool is_complex(TAPP_datatype type);
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -163,12 +166,16 @@ typedef std::map<TAPP_key, std::vector<char>> attributes;
 struct executor
 {
     cudaStream_t stream;
-    cublasHandle_t cublas;
+    cublasLtHandle_t cublasLt;
+    cutensorHandle_t cutensor;
     int device;
     bool owns_stream; // true if TAPP created the stream and must destroy it
-    cutensorHandle_t cutensor;
     TAPP_emulation_strategy emulation_strategy;
     TAPP_emulation_mantissa_control emulation_mantissa_control;
+    void *workspace = nullptr;
+#if OZAKI_EMULATION_VERSION==2
+    TAPP_emulation_os_II_backend os_II_backend;
+#endif
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -182,6 +189,7 @@ struct executor
 // is optionally permuted into a matrix with cuTT, the matrices are multiplied
 // with cuBLAS GEMM, and the result is optionally permuted back. Everything the
 // execution needs is stored here directly (no separate plan/info objects).
+
 struct product_plan
 {
     bool failed;         // set when the contraction is outside TTGT's support
@@ -195,18 +203,23 @@ struct product_plan
     // GEMM configuration (CT = alpha * op(A) * op(B)).
     cublasOperation_t transa, transb;
     int m, n, k, lda, ldb, ldc;
-    cublasComputeType_t compute_type;
 
-    // Requested decimal digits of precision for cuBLAS fixed-point FP64
-    // emulation (0 = emulation off). Only meaningful when built with OZAKI_EMULATION_VERSION=1
-    // and for F64/C64 outputs; converted to a max mantissa bit count at execute.
-    int prec_digits;
+#if OZAKI_EMULATION_VERSION==2
+    // Num of GEMM for Ozaki-II scheme
+    int num_gemm;
+#else
+    cublasLtMatmulDescOpaque_t operationDesc;
+    cublasLtMatrixLayoutOpaque_t Adesc, Bdesc, Cdesc;
+    cublasLtMatmulHeuristicResult_t heuristicResult;
+#endif
 
     // Element counts, for sizing the transposed device buffers.
-    size_t elements_A, elements_B, elements_D;
-    TAPP_datatype type_A, type_B, type_D;
+    size_t bytes_A, bytes_B, bytes_D;
+    TAPP_datatype type_D;
 
     TAPP_element_op op_D;
+
+    size_t workspaceSize;
 };
 
 /* ---------------------------------------------------------------------------------------------------------------------

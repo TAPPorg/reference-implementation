@@ -37,17 +37,17 @@
 * 7 	          27 / 7 	   27 / 14 	    39 / 17 	  35 / 37
 * 8 	          31 / 8 	   30 / 16 	    44 / 20 	  40 / 43
 * 9 	          35 / 9 	   34 / 18 	    48 / 22 	  46 / 49
-* 10 	          39 / 10 	   38 / 20 	    53 / 25 	  51 / 55
-* 11 	          43 / 11 	   41 / 22 	    58 / 28 	  56 / 61
-* 12 	          47 / 12 	   45 / 24 	    63 / 31 	  61 / 67
-* 13 	          51 / 13 	   48 / 26 	    68 / 34 	  66 / 73
-* 14 	          55 / 14 	   52 / 28 	    73 / 37 	  70 / 78
-* 15 	          58 / 15 	   55 / 30 	    78 / 40 	  75 / 84
-* 16 	          62 / 16 	   58 / 32 	    84 / 43 	  80 / 90
-* 17 	          66 / 17 	   62 / 34 	    89 / 46 	  85 / 96
-* 18 	          70 / 18 	   65 / 36 	    94 / 49 	  90 / 102
-* 19 	          73 / 19 	   68 / 38 	    99 / 52 	  95 / 108
-* 20 	          77 / 20 	   71 / 40 	    102 / 54 	  100 / 114
+* 10 	          39 / 10 	   38 / 20 	    53 / 25   51 / 55
+* 11 	          43 / 11 	   41 / 22 	    58 / 28   56 / 61
+* 12 	          47 / 12 	   45 / 24 	    63 / 31   61 / 67
+* 13 	          51 / 13 	   48 / 26 	    68 / 34   66 / 73
+* 14 	          55 / 14 	   52 / 28 	    73 / 37   70 / 78
+* 15 	          58 / 15 	   55 / 30 	    78 / 40   75 / 84
+* 16 	          62 / 16 	   58 / 32 	    84 / 43   80 / 90
+* 17 	          66 / 17 	   62 / 34 	    89 / 46   85 / 96
+* 18 	          70 / 18 	   65 / 36 	    94 / 49   90 / 102
+* 19 	          73 / 19 	   68 / 38 	    99 / 52   95 / 108
+* 20 	          77 / 20 	   71 / 40 	    102 / 54  100 / 114
 */
 
 #if OZAKI_EMULATION_VERSION==2
@@ -72,38 +72,29 @@ std::map<int,int> OS_II_INT8_table = {
    {19, 68}, 
    {20, 71}, 
 };
+
+std::map<int,int> OS_II_FP8_table = {
+   {2 , 12 }, 
+   {3 , 16 }, 
+   {4 , 22 }, 
+   {5 , 27 }, 
+   {6 , 32 }, 
+   {7 , 35 }, 
+   {8 , 40 }, 
+   {9 , 46 }, 
+   {10, 51 }, 
+   {11, 56 }, 
+   {12, 61 }, 
+   {13, 66 }, 
+   {14, 70 }, 
+   {15, 75 }, 
+   {16, 80 }, 
+   {17, 85 }, 
+   {18, 90 }, 
+   {19, 95 }, 
+   {20, 100}, 
+};
 #endif
-
-// ===========================================================================
-// CUDA / cuBLAS / cuTT error checks. Unlike the upstream my-ttgt macros these throw
-// instead of exit()-ing, so the binding can report a TAPP error and keep the
-// host process alive.
-// ===========================================================================
-
-// Carries the TAPP error code of the failed call to the catch in TAPP_execute_product
-// struct tapp_exception : std::runtime_error
-// {
-//     TAPP_error code;
-//     tapp_exception(TAPP_error code, const std::string& what) : std::runtime_error(what), code(code) {}
-// };
-// 
-// static inline void cuda_check(cudaError_t code)
-// {
-//     if (code != cudaSuccess)
-//         throw tapp_exception(tapp_error(code), std::string("CUDA error: ") + cudaGetErrorString(code));
-// }
-// 
-// static inline void cublas_check(cublasStatus_t stat)
-// {
-//     if (stat != CUBLAS_STATUS_SUCCESS)
-//         throw tapp_exception(tapp_error(stat), std::string("cuBLAS error: ") + cublasGetStatusString(stat));
-// }
-// 
-// static inline void cutt_check(cuttResult err)
-// {
-//     if (err != CUTT_SUCCESS)
-//         throw tapp_exception(tapp_error(err), "cuTT error " + std::to_string((int)err));
-// }
 
 // ===========================================================================
 // Index/permutation helpers implementing the TTGT index bookkeeping.
@@ -393,7 +384,7 @@ CudaTypeVar get_cpp_datatype(TAPP_datatype dtype) {
 
 template <gemmul8::Backend BACKEND>
 void dispatch_gemmul8(
-           cublasHandle_t cublas,
+           cublasLtHandle_t cublasLt,
            CudaTypeVar typeC, 
            cublasOperation_t transa,
            cublasOperation_t transb,
@@ -421,9 +412,9 @@ void dispatch_gemmul8(
     std::visit([&]<typename typeC>(
       std::type_identity<typeC>) {
 // Ozaki-II doesnt not have support for FP8 on H100
-#if OZAKI_II_COMPUTE_CAPABILITY>1000000
-         if constexpr(true) gemmul8::gemm<typeC, BACKEND>(
-           cublas,
+#if OZAKI_II_COMPUTE_CAPABILITY>90
+         if constexpr(true) gemmul8::gemmLt<typeC, BACKEND>(
+           cublasLt,
            transa, transb,
            m, n, k,
            (typeC*) alpha, (typeC*) A_d, lda,
@@ -435,8 +426,8 @@ void dispatch_gemmul8(
         );
 #else
          if (BACKEND==gemmul8::Backend::INT8){
-           gemmul8::gemm<typeC, BACKEND>(
-              cublas,
+           gemmul8::gemmLt<typeC, BACKEND>(
+              cublasLt,
               transa, transb,
               m, n, k,
               (typeC*) alpha, (typeC*) A_d, lda,
@@ -448,13 +439,13 @@ void dispatch_gemmul8(
            );
            return;
          }
-         throw std::runtime_error("No implementation of Ozaki-II wityh FP8 support on H100 (compute capability 90)");
+         throw std::runtime_error("No implementation of Ozaki-II with FP8 support on NVIDIA cards with compute capability <=90");
 #endif
     }, typeC);
 }
 
 void dispatch_gemmul8(
-           cublasHandle_t cublas,
+           cublasLtHandle_t cublasLt,
            CudaTypeVar typeC, 
            const gemmul8::Backend BACKEND,
            cublasOperation_t transa,
@@ -483,7 +474,7 @@ void dispatch_gemmul8(
     switch(BACKEND){
        case gemmul8::Backend::INT8:
            dispatch_gemmul8<gemmul8::Backend::INT8>(
-              cublas,
+              cublasLt,
               typeC, 
               transa,
               transb,
@@ -511,7 +502,7 @@ void dispatch_gemmul8(
           break;
        case gemmul8::Backend::FP8:
            dispatch_gemmul8<gemmul8::Backend::FP8>(
-              cublas,
+              cublasLt,
               typeC, 
               transa,
               transb,
@@ -540,6 +531,29 @@ void dispatch_gemmul8(
     }
 }
 
+size_t get_gemmul8_worksize(bool is_complex, gemmul8::Backend backend, size_t m, size_t n, size_t k, int num_gemm, bool enable_skip_scalA, bool enable_skip_scalB, bool fastmode){
+    size_t full_worksize;
+    if(backend == gemmul8::Backend::INT8){
+      if (is_complex){
+         return gemmul8::workSize<true, gemmul8::Backend::INT8, gemmul8::Func::gemm>(
+         m, n, k, num_gemm,
+         enable_skip_scalA, enable_skip_scalB, nullptr, nullptr, fastmode);}
+
+      return gemmul8::workSize<false, gemmul8::Backend::INT8, gemmul8::Func::gemm>(
+         m, n, k, num_gemm,
+         enable_skip_scalA, enable_skip_scalB, nullptr, nullptr, fastmode);
+    }
+#if OZAKI_II_COMPUTE_CAPABILITY>90
+    if (is_complex){
+       return gemmul8::workSize<true, gemmul8::Backend::FP8, gemmul8::Func::gemm>(
+       m, n, k, num_gemm,
+       enable_skip_scalA, enable_skip_scalB, nullptr, nullptr, fastmode);}
+
+    return gemmul8::workSize<false, gemmul8::Backend::FP8, gemmul8::Func::gemm>(
+       m, n, k, num_gemm,
+       enable_skip_scalA, enable_skip_scalB, nullptr, nullptr, fastmode);
+#endif
+}
 #endif
 
 // ===========================================================================
@@ -563,7 +577,6 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
                                       TAPP_prectype prec
                                       )
 {
-    (void)idx_C;
     struct tensor_info* A_info = (struct tensor_info*)A;
     struct tensor_info* B_info = (struct tensor_info*)B;
     struct tensor_info* C_info = (struct tensor_info*)C;
@@ -573,13 +586,12 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->failed = false;
     p->transposeA = p->transposeB = p->transposeC = false;
     p->op_D = op_D;
-    p->type_A = A_info->type;
-    p->type_B = B_info->type;
     p->type_D = D_info->type;
-    p->elements_A = A_info->elements;
-    p->elements_B = B_info->elements;
-    p->elements_D = D_info->elements;
-    if(!translate_prectype(prec, D_info->type, p->compute_type)) return TAPP_ERR_UNSUPPORTED_DATATYPE;
+    p->bytes_A = A_info->elements * sizeof_datatype(A_info->type);
+    p->bytes_B = B_info->elements * sizeof_datatype(B_info->type);
+    p->bytes_D = D_info->elements * sizeof_datatype(D_info->type);
+    cublasComputeType_t compute_type;
+    if(!translate_prectype(prec, D_info->type, compute_type)) return TAPP_ERR_UNSUPPORTED_DATATYPE;
 
     // The TTGT/cuBLAS-GEMM back-end handles plain (Case 1/2) contractions over
     // dense, positive-stride tensors with identity element-wise ops only. The
@@ -598,6 +610,14 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         return TAPP_ERR_UNSUPPORTED_DATATYPE;
     }
 
+    if(compute_type==CUBLAS_COMPUTE_64F_EMULATED_FIXEDPOINT && 
+         (!is_64_bit(A_info->type) || !is_64_bit(B_info->type) || !is_64_bit(C_info->type) || !is_64_bit(D_info->type)))
+    {
+        p->failed = true;
+        *plan = (TAPP_tensor_product)p;
+        return TAPP_ERR_UNSUPPORTED_DATATYPE;
+    }
+
     // Variable-precision cuBLAS fixed-point FP64 emulation. The requested decimal
     // digits come from the compute type (TAPP_F_*/TAPP_C_*); compute_type was
     // already set to the emulated type by translate_prectype above. The digit
@@ -605,7 +625,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     // it stays 0 and the GEMM runs in plain FP64. The digits->mantissa-bits
     // conversion happens at execute.
     // Note: works since emulated types are >= 1000
-    p->prec_digits = tapp_prec_digits(prec);
+    int prec_digits = tapp_prec_digits(prec);
 
     int rankA = A_info->nmode;
     int rankB = B_info->nmode;
@@ -741,6 +761,8 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     p->transposeB = !std::equal(modeB.begin(), modeB.end(), modeBT.begin());
     p->transposeC = !std::equal(modeC.begin(), modeC.end(), modeCT.begin());
 
+    TAPP_error error;
+
     // cuTENSOR plans
     int* permA_p = permA.data();
     int* permB_p = permB.data();
@@ -765,22 +787,43 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     cutensorOperator_t op_cutensor_CD; 
     cutensorComputeDescriptor_t cutensor_prec;
 
+    // size_t workspaceSize = size_t(128) << 20; // Same requirements as cuTENSOR
+    size_t workspaceSize = size_t(1) << 30; // 1 Gib
+
+#if OZAKI_EMULATION_VERSION!=2
+    cublasLtEmulationDesc_t emulationDesc = {};
+    cublasEmulationStrategy_t emulationStrategy = {};
+    cublasStatus_t cublas_err;
+    cublasLtMatmulPreferenceOpaque_t preference = {};
+    bool preference_created = false;
+    int returnedResults = 0;
+#endif
+
     std::vector<int32_t> cuidx_C = std::vector<int32_t>(idx_C, idx_C + rankC);
 
     status = cutensorCreatePlanPreference(exec_struct->cutensor,
                 &pref,
                 CUTENSOR_ALGO_DEFAULT,
                 CUTENSOR_JIT_MODE_NONE);
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     // Plan A->op_AD(AT) and B->op_BD(BT) 
     if (p->transposeA){
         status = create_cutensor_permute_plan(exec_struct->cutensor, &p->planA, A_info, modeA.data(), modeAT.data(), op_AD, permA_p);
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
     }
     if (p->transposeB){
         status = create_cutensor_permute_plan(exec_struct->cutensor, &p->planB, B_info, modeB.data(), modeBT.data(), op_BD, permB_p);
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
     }
 
     // Plan C_T-> C_tilde
@@ -793,7 +836,10 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         get_cuda_datatype(C_info->type),
         ALIGNMENT_REQUIREMENT
     );
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     if (p->transposeC){
         int64_t stridesCT[rankC];                                                     
@@ -811,13 +857,17 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
             get_cuda_datatype(C_info->type),
             ALIGNMENT_REQUIREMENT
         );
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
 
         std::vector<int32_t> cuidx_CT = std::vector<int32_t>(idx_CT, idx_CT + rankC);
 
         translate_operator(TAPP_IDENTITY, op_cutensor);
         if(!translate_prectype_permute(C_info->type, cutensor_prec)){
             status = CUTENSOR_STATUS_NOT_SUPPORTED;
+            error = tapp_error(status);
             goto cleanup;
         }
         status = cutensorCreatePermutation(
@@ -830,14 +880,26 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
             cuidx_C.data(),
             cutensor_prec
         );
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
         status = cutensorCreatePlan(exec_struct->cutensor, &p->planC, descPermute, pref, 0);
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
 
         status = cutensorDestroyOperationDescriptor(descPermute);
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
         status = cutensorDestroyTensorDescriptor(descCT);
-        if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+        if (status!=CUTENSOR_STATUS_SUCCESS){
+            error = tapp_error(status);
+            goto cleanup;
+        }
     }
 
     // Last plan D = op_D(alpha) C_tilde + op_D(beta) op_CD(C)
@@ -846,6 +908,7 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
     translate_operator(op_CD, op_cutensor_CD);
     if(!translate_prectype_permute(C_info->type, cutensor_prec)){
         status = CUTENSOR_STATUS_NOT_SUPPORTED;
+        error = tapp_error(status);
         goto cleanup;
     }
     status = cutensorCreateElementwiseBinary(
@@ -862,24 +925,176 @@ TAPP_error TAPP_create_tensor_product(TAPP_tensor_product* plan,
         CUTENSOR_OP_ADD,
         cutensor_prec
     );
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     status = cutensorCreatePlan(exec_struct->cutensor, &p->planD, descAccumulation, pref, 0);
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     status = cutensorDestroyOperationDescriptor(descAccumulation);
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     status = cutensorDestroyTensorDescriptor(descC);
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
 
     status = cutensorDestroyPlanPreference(pref);
-    if (status!=CUTENSOR_STATUS_SUCCESS) goto cleanup;
+    if (status!=CUTENSOR_STATUS_SUCCESS){
+        error = tapp_error(status);
+        goto cleanup;
+    }
+
+#if OZAKI_EMULATION_VERSION==2
+    p->num_gemm = 16;
+    if (prec_digits > 0)
+    {
+       std::map<int,int> table = (exec_struct->os_II_backend==TAPP_EMULATION_OS_II_BACKEND_INT8)? OS_II_INT8_table : OS_II_FP8_table;
+       int bits = (int)std::ceil(std::log2(10.0) * prec_digits);
+       for(const auto& [num_moduli, effective_bits]: table){
+          if(effective_bits>=bits){
+             p->num_gemm = num_moduli;  
+             break;
+          }
+       }
+    }
+    p->workspaceSize = workspaceSize; // Same requirements as cuTENSOR
+#else
+    
+    // Setting Matmul behaviour
+    cublas_err = cublasLtMatmulDescInit(&p->operationDesc, compute_type, get_cuda_datatype(A_info->type));
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    cublas_err = cublasLtMatmulDescSetAttribute(&p->operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &p->transa, sizeof(p->transa));
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    cublas_err = cublasLtMatmulDescSetAttribute(&p->operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &p->transb, sizeof(p->transb));
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    // Setting emulation config
+    if (prec_digits > 0){
+        cublas_err = cublasLtEmulationDescCreate(&emulationDesc);
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+
+        emulationStrategy = (exec_struct->emulation_strategy == TAPP_EMULATION_STRATEGY_EAGER)? CUBLAS_EMULATION_STRATEGY_EAGER : 
+            CUBLAS_EMULATION_STRATEGY_PERFORMANT;
+        cublas_err = cublasLtEmulationDescSetAttribute(emulationDesc, CUBLASLT_EMULATION_DESC_STRATEGY,
+                                                            &emulationStrategy, sizeof(emulationStrategy));
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+
+        cudaEmulationSpecialValuesSupport specialValuesSupport = CUDA_EMULATION_SPECIAL_VALUES_SUPPORT_DEFAULT;
+        cublas_err = cublasLtEmulationDescSetAttribute(emulationDesc, CUBLASLT_EMULATION_DESC_SPECIAL_VALUES_SUPPORT,
+                                                            &specialValuesSupport, sizeof(specialValuesSupport));
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+
+        cudaEmulationMantissaControl mantissaControl = (exec_struct->emulation_mantissa_control == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC)? CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC : 
+            CUDA_EMULATION_MANTISSA_CONTROL_FIXED;
+        cublas_err = cublasLtEmulationDescSetAttribute(
+            emulationDesc, CUBLASLT_EMULATION_DESC_FIXEDPOINT_MANTISSA_CONTROL, &mantissaControl, sizeof(mantissaControl));
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+
+        int maxMantissaBitCount = (int)std::ceil(std::log2(10.0) * prec_digits);
+        cublas_err = cublasLtEmulationDescSetAttribute(emulationDesc,
+                                                            CUBLASLT_EMULATION_DESC_FIXEDPOINT_MAX_MANTISSA_BIT_COUNT,
+                                                            &maxMantissaBitCount, sizeof(maxMantissaBitCount));
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+
+        cublas_err = cublasLtMatmulDescSetAttribute(&p->operationDesc, CUBLASLT_MATMUL_DESC_EMULATION_DESCRIPTOR,
+                                                         &emulationDesc, sizeof(emulationDesc));
+        if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+            error = tapp_error(cublas_err);
+            goto cleanup;
+        }
+    }
+
+    // Matrix layouts
+    cublas_err = cublasLtMatrixLayoutInit(&p->Adesc, get_cuda_datatype(A_info->type), p->transa == CUBLAS_OP_N ? p->m : p->k,
+                                               p->transa == CUBLAS_OP_N ?  p->k : p->m, p->lda);
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    cublas_err = cublasLtMatrixLayoutInit(&p->Bdesc, get_cuda_datatype(B_info->type), p->transb == CUBLAS_OP_N ?  p->k :  p->n,
+                                               p->transb == CUBLAS_OP_N ?  p->n :  p->k,  p->ldb);
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+    cublas_err = cublasLtMatrixLayoutInit(&p->Cdesc, get_cuda_datatype(C_info->type),  p->m,  p->n,  p->ldc);
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    // preferences
+    cublas_err = cublasLtMatmulPreferenceInit(&preference);
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+    preference_created = true;
+
+    cublas_err = cublasLtMatmulPreferenceSetAttribute(&preference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+                                                           &workspaceSize, sizeof(workspaceSize));
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+
+    cublas_err = cublasLtMatmulAlgoGetHeuristic(exec_struct->cublasLt, &p->operationDesc, &p->Adesc, &p->Bdesc, &p->Cdesc, &p->Cdesc,
+                                                     &preference, 1, &p->heuristicResult, &returnedResults);
+    if (cublas_err!=CUBLAS_STATUS_SUCCESS){
+        error = tapp_error(cublas_err);
+        goto cleanup;
+    }
+    if(returnedResults == 0){
+        error = tapp_error(CUBLAS_STATUS_NOT_SUPPORTED);
+        goto cleanup;
+    }
+
+    p->workspaceSize = std::min(p->heuristicResult.workspaceSize, workspaceSize);
+
+#endif
 
     *plan = (TAPP_tensor_product)p;
     return p->failed ? TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED : TAPP_SUCCESS;
 
 cleanup:
+    p->failed = true;
     if(pref) cutensorDestroyPlanPreference(pref);
     if(p->planA) cutensorDestroyPlan(p->planA);
     if(p->planB) cutensorDestroyPlan(p->planB);
@@ -887,7 +1102,12 @@ cleanup:
     if(descCT) cutensorDestroyTensorDescriptor(descCT);
     if(descPermute) cutensorDestroyOperationDescriptor(descPermute);
     if(descAccumulation) cutensorDestroyOperationDescriptor(descAccumulation);
-    return tapp_error(status);
+
+#if OZAKI_EMULATION_VERSION!=2
+    if(emulationDesc) cublasLtEmulationDescDestroy(emulationDesc);
+    if(preference_created) cublasLtMatmulPreferenceDestroy(&preference);
+#endif
+    return error;
 }
 
 TAPP_error TAPP_destroy_tensor_product(TAPP_tensor_product plan)
@@ -918,12 +1138,13 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     struct product_plan* p = (struct product_plan*)plan;
     if (p->failed) return TAPP_ERR_PRODUCT_PLAN_CREATION_FAILED;
     struct executor* exec_struct = (struct executor*) exec;
-    cublasHandle_t cublas = exec_struct->cublas;
+    cublasLtHandle_t cublasLt = exec_struct->cublasLt;
     cutensorHandle_t cutensor = exec_struct->cutensor;
     cudaStream_t stream = exec_struct->stream;
     TAPP_datatype tD = p->type_D;
-    size_t esD = sizeof_datatype(tD);
-    size_t bytes_D = p->elements_D * esD;
+    size_t bytes_A = p->bytes_A;
+    size_t bytes_B = p->bytes_B;
+    size_t bytes_D = p->bytes_D;
     cudaError_t cerr;
     cutensorStatus_t cutensor_status;
     cublasStatus_t cublas_status;
@@ -945,24 +1166,16 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
 #if OZAKI_EMULATION_VERSION==2
     // OS-II variables used in the function moved due to goto statements
     int TAPP_EMULATION_NUM_GEMM = 16;  
-    const bool fastmode = false;
+    const bool fastmode = false; // Accumulation mode which is more precise
     const bool enable_skip_scalA = false;
     const bool enable_skip_scalB = false;
     const bool skip_scalA = false;
     const bool skip_scalB = false;
-    const gemmul8::Backend BACKEND = gemmul8::Backend::INT8; // TODO: add support for FP8
-    size_t worksizeA, worksizeB;
-    size_t worksize;
-    size_t offsetA;
-    size_t offsetB;
-    int8_t *workA    = nullptr;
-    int8_t *workB    = nullptr;
+    gemmul8::Backend BACKEND = (exec_struct->os_II_backend==TAPP_EMULATION_OS_II_BACKEND_INT8)? gemmul8::Backend::INT8 : gemmul8::Backend::FP8;
+    size_t full_worksize;
     int8_t *work_rem = nullptr;
-    TAPP_prectype typeA = p->type_A;
-    TAPP_prectype typeB = p->type_B;
-    TAPP_prectype typeC = p->type_D;
+    TAPP_prectype type_C = p->type_D;
 #endif
-
 
     // Create a copy of C if beta!=0 due to cutensorElementwiseBinaryExecute limitation:
     // https://docs.nvidia.com/cuda/cutensor/latest/api/cutensor.html#cutensorelementwisebinaryexecute
@@ -971,7 +1184,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     {
         if (C == D)
         {
-            cerr = cudaMallocAsync(&C_copy, p->elements_D * sizeof_datatype(p->type_D), stream);
+            cerr = cudaMallocAsync(&C_copy, bytes_D, stream);
             if (cerr != cudaSuccess){
                 error = tapp_error(cerr);
                 goto cleanup;
@@ -988,7 +1201,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
     make_scalar(tD, 1.0, one);
 
     if (p->transposeA){
-        cerr = cudaMallocAsync(&devAT, p->elements_A * sizeof_datatype(p->type_A), stream);
+        cerr = cudaMallocAsync(&devAT, bytes_A, stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1008,7 +1221,7 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         }
     }
     if (p->transposeB){
-        cerr = cudaMallocAsync(&devBT, p->elements_B * sizeof_datatype(p->type_B), stream);
+        cerr = cudaMallocAsync(&devBT, bytes_B, stream);
         if (cerr != cudaSuccess){
             error = tapp_error(cerr);
             goto cleanup;
@@ -1034,99 +1247,64 @@ TAPP_error TAPP_execute_product(TAPP_tensor_product plan,
         goto cleanup;
     }
     
-    cublasSetStream(cublas, stream);
-
 #if OZAKI_EMULATION_VERSION!=2
-#if OZAKI_EMULATION_VERSION==1
-        // Configure cuBLAS fixed-point FP64 emulation for the requested number
-        // of decimal digits (variable mantissa size). bits = ceil(log2(10)*d).
-        if (p->prec_digits > 0)
-        {
-            if(exec_struct->emulation_strategy == TAPP_EMULATION_STRATEGY_PERFORMANT) {cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_PERFORMANT);}
-	        else { cublasSetEmulationStrategy(cublas, CUBLAS_EMULATION_STRATEGY_EAGER);}
 
-            if(exec_struct->emulation_mantissa_control == TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC) {cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_DYNAMIC);}
-	        else{cublasSetFixedPointEmulationMantissaControl(cublas, CUDA_EMULATION_MANTISSA_CONTROL_FIXED);}
-
-            int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
-            cublasSetFixedPointEmulationMaxMantissaBitCount(cublas, bits);
-        }
-#endif
-
-    cublas_status = cublasGemmEx_64(
-        cublas, p->transa, p->transb, p->m, p->n, p->k,
-        one, p->transposeA ? devAT : A, get_cuda_datatype(p->type_A), p->lda,
-        p->transposeB ? devBT : B, get_cuda_datatype(p->type_B), p->ldb,
-        zero, devCT, get_cuda_datatype(tD), p->ldc, p->compute_type, CUBLAS_GEMM_DEFAULT);
+    //cublas_status = cublasGemmEx_64(
+    //    cublas, p->transa, p->transb, p->m, p->n, p->k,
+    //    one, p->transposeA ? devAT : A, get_cuda_datatype(p->type_A), p->lda,
+    //    p->transposeB ? devBT : B, get_cuda_datatype(p->type_B), p->ldb,
+    //    zero, devCT, get_cuda_datatype(tD), p->ldc, p->compute_type, CUBLAS_GEMM_DEFAULT);
+    cerr = cudaMallocAsync(&(exec_struct->workspace), p->workspaceSize, stream);
+    if(cerr!=cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
+    cublas_status = cublasLtMatmul(cublasLt, &p->operationDesc, 
+        one, p->transposeA ? devAT : A, &p->Adesc, p->transposeB ? devBT : B, &p->Bdesc, 
+        zero, devCT, &p->Cdesc, devCT, &p->Cdesc, 
+        &(p->heuristicResult.algo), exec_struct->workspace, p->workspaceSize, stream);
     if(cublas_status!=CUBLAS_STATUS_SUCCESS){
         error = tapp_error(cublas_status);
         goto cleanup;
     }
+    cerr = cudaFreeAsync(exec_struct->workspace, stream);
+    if(cerr!=cudaSuccess){
+        error = tapp_error(cerr);
+        goto cleanup;
+    }
 #else
-    // Configure Ozaki-II fixed-point FP64 emulation
-    if (p->prec_digits > 0)
-    {
-       int bits = (int)std::ceil(std::log2(10.0) * p->prec_digits);
-       for(const auto& [num_moduli, effective_bits]: OS_II_INT8_table){
-          if(effective_bits>=bits){
-             TAPP_EMULATION_NUM_GEMM = num_moduli;  
-             break;
-          }
-       }
-    }
+    gemmul8::set_memory_savingLt(exec_struct->cublasLt, true);
+    gemmul8::set_max_worksizeLt(exec_struct->cublasLt, p->workspaceSize);
 
-    if(is_complex(p->type_A) or is_complex(p->type_B) or is_complex(p->type_D)){
-      worksize = gemmul8::workSize<true, BACKEND, gemmul8::Func::gemm>(
-         p->m, 
-         p->n, 
-         p->k, 
-         TAPP_EMULATION_NUM_GEMM,
-         enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
-    }
-    else{
-      worksize = gemmul8::workSize<false, BACKEND, gemmul8::Func::gemm>(
-         p->m, 
-         p->n, 
-         p->k, 
-         TAPP_EMULATION_NUM_GEMM,
-         enable_skip_scalA, enable_skip_scalB, &worksizeA, &worksizeB);
-    }
+    full_worksize = get_gemmul8_worksize(is_complex(p->type_D), BACKEND, p->m, p->n, p->k, p->num_gemm, enable_skip_scalA, enable_skip_scalB, fastmode);
 
-    cerr = cudaMallocAsync(&work, worksize, stream);
+    cerr = cudaMallocAsync(&work_rem, std::min(p->workspaceSize, full_worksize), stream);
     if (cerr != cudaSuccess){
         error = tapp_error(cerr);
         goto cleanup;
     }
    
-    offsetA = worksizeA;
-    offsetB = worksizeB;
-    
-    workA    = reinterpret_cast<int8_t *>(work);
-    workB    = workA + offsetA;                 
-    work_rem = workB + offsetB;
-    
     // Dispatch Ozaki-II GEMM
-    if(
-        not(
-            typeA==typeB and 
-            typeA==typeC and 
-            typeC==typeB
-        )
-    ) throw std::runtime_error("Ozaki-II does not support tensors of different datatype");
-    dispatch_gemmul8(
-       cublas,
-       get_cpp_datatype(typeC), 
-       BACKEND,
-       p->transa, p->transb,
-       p->m, p->n, p->k,
-       one, p->transposeA? devAT: A, p->lda,
-       p->transposeB? devBT: B, p->ldb,
-       zero, devCT, p->ldc,
-       TAPP_EMULATION_NUM_GEMM, fastmode, (void*)work_rem, (void*)workA, (void*)workB,
-       enable_skip_scalA, enable_skip_scalB, skip_scalA, skip_scalB
-    );
+    try{
+       dispatch_gemmul8(
+          cublasLt,
+          get_cpp_datatype(type_C), 
+          BACKEND,
+          p->transa, p->transb,
+          p->m, p->n, p->k,
+          one, p->transposeA? devAT: A, p->lda,
+          p->transposeB? devBT: B, p->ldb,
+          zero, devCT, p->ldc,
+          p->num_gemm, fastmode, (void*)work_rem, nullptr, nullptr,
+          enable_skip_scalA, enable_skip_scalB, skip_scalA, skip_scalB
+       );
+    }
+    catch(...){
+          error = TAPP_ERR_PRODUCT_PLAN_GEMMUL8_FAILED;
+          goto cleanup;
+    }
 
-    cudaFreeAsync(work, stream);
+    cudaFreeAsync(work_rem, stream);
 #endif
 
     if (p->transposeA) {

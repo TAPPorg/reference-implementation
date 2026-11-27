@@ -14,6 +14,9 @@ enum
     TAPP_CUBLAS_EMULATION_MANTISSA_CONTROL,
     TAPP_CUBLAS_DEVICE,
     TAPP_CUBLAS_STREAM,
+#if OZAKI_EMULATION_VERSION==2
+    TAPP_CUBLAS_EMULATION_OS_II_BACKEND,
+#endif
 };
 
 /*
@@ -87,4 +90,16 @@ enum
     TAPP_DEFAULT_EMULATION_MANTISSA_CONTROL = TAPP_EMULATION_MANTISSA_CONTROL_DYNAMIC,
 };
 
+#if OZAKI_EMULATION_VERSION==2
+/* Types used for Ozaki-II scheme:
+ * - cuBLAS emulation backend: INT8 or FP8
+ */
+typedef int TAPP_emulation_os_II_backend;
+
+enum
+{
+    TAPP_EMULATION_OS_II_BACKEND_INT8,
+    TAPP_EMULATION_OS_II_BACKEND_FP8,
+};
+#endif
 #endif  /* TAPP_CUBLAS_H_ */

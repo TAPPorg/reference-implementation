@@ -100,6 +100,10 @@ size_t sizeof_datatype(TAPP_datatype type)
     }
 }
 
+bool is_64_bit(TAPP_datatype type){
+    return type==TAPP_C64 || type==TAPP_F64;
+}
+
 bool translate_prectype_permute(TAPP_datatype datatype, cutensorComputeDescriptor_t& out)
 {
     switch (datatype)

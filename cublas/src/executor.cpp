@@ -7,12 +7,15 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
 
     int device = 0;
     cudaStream_t stream = nullptr;
-    cublasHandle_t cublas = nullptr;
+    cublasLtHandle_t cublasLt = nullptr;
     cutensorHandle_t cutensor = nullptr;
     bool owns_stream = true;
 
     TAPP_emulation_strategy emulation_strategy = TAPP_DEFAULT_EMULATION_STRATEGY;
     TAPP_emulation_mantissa_control emulation_mantissa_control = TAPP_DEFAULT_EMULATION_MANTISSA_CONTROL;
+#if OZAKI_EMULATION_VERSION==2
+    TAPP_emulation_os_II_backend os_II_backend = TAPP_EMULATION_OS_II_BACKEND_INT8;
+#endif
 
     if(attr)
     { 
@@ -66,6 +69,16 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
             emulation_mantissa_control = n;
         }
 
+#if OZAKI_EMULATION_VERSION==2
+        std::map<TAPP_key, std::vector<char>>::const_iterator os_II_backend_itr = a.find(TAPP_CUBLAS_EMULATION_OS_II_BACKEND);
+        if (os_II_backend_itr != a.end())
+        {
+            TAPP_emulation_os_II_backend n;
+            std::memcpy(&n, os_II_backend_itr->second.data(), sizeof(TAPP_emulation_os_II_backend));
+            os_II_backend = n;
+        }
+#endif
+
     }
 
     device_scope scope(device);
@@ -77,7 +90,7 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
         return tapp_error(cerr);
     }
 
-    cublasStatus_t cstat = cublasCreate(&cublas);
+    cublasStatus_t cstat = cublasLtCreate(&cublasLt);
     if (cstat != CUBLAS_STATUS_SUCCESS)
     {
         return tapp_error(cstat);
@@ -95,7 +108,7 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
         if (cerr != cudaSuccess)
         {
             cutensorDestroy(cutensor);
-            cublasDestroy(cublas);
+            cublasLtDestroy(cublasLt);
             return tapp_error(cerr);
         }
     }
@@ -103,11 +116,14 @@ TAPP_error TAPP_create_executor(TAPP_executor* exec, TAPP_attr attr)
     struct executor* exec_struct = new struct executor;
     exec_struct->owns_stream = owns_stream;
     exec_struct->stream = stream;
-    exec_struct->cublas = cublas;
+    exec_struct->cublasLt = cublasLt;
     exec_struct->device = device;
     exec_struct->cutensor = cutensor;
     exec_struct->emulation_strategy = emulation_strategy;
     exec_struct->emulation_mantissa_control = emulation_mantissa_control;
+#if OZAKI_EMULATION_VERSION==2
+    exec_struct->os_II_backend = os_II_backend;
+#endif
 
     *exec = (TAPP_executor)exec_struct;
     return TAPP_SUCCESS;
@@ -132,7 +148,7 @@ TAPP_error TAPP_destroy_executor(TAPP_executor exec)
     auto keep_first = [&result](TAPP_error e) { if (result == TAPP_SUCCESS) result = e; };
 
     if(exec_struct->owns_stream) keep_first(tapp_error(cudaStreamDestroy(exec_struct->stream)));
-    keep_first(tapp_error(cublasDestroy(exec_struct->cublas)));
+    keep_first(tapp_error(cublasLtDestroy(exec_struct->cublasLt)));
     keep_first(tapp_error(cutensorDestroy(exec_struct->cutensor)));
 
     delete exec_struct;
